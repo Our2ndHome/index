@@ -56,17 +56,16 @@
       color: black;
     }
 
-    /* Total Raised Box - Background Removed, Soft Shadow Added */
+    /* Total Raised Display */
     .goal-box {
       background: transparent;
       color: #ffffff;
       padding: 10px;
       font-size: 34px;
-      font-weight: 900; /* Extra bold */
+      font-weight: 900;
       text-align: center;
       text-transform: uppercase;
       letter-spacing: 1px;
-      /* Soft visible shadow all around text */
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
@@ -79,7 +78,7 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Text - Background Removed, Smooth Scaling Added */
+    /* Pop-up Alert Banner */
     .alert-banner {
       position: absolute;
       top: 120px;
@@ -91,17 +90,16 @@
       text-transform: uppercase;
       text-align: center;
       display: none;
-      /* Soft glow & multi-layer drop shadow for maximum readability */
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
-      transition: transform 0.1s ease-out; /* Smooth bounce transition */
+      transition: transform 0.1s ease-out;
       transform-origin: center center;
     }
 
     .donor-name {
-      color: #ffea00; /* Bright yellow */
+      color: #ffea00;
       display: block;
       font-size: 48px;
       font-weight: 900;
@@ -151,8 +149,12 @@
     const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
     const CHECK_INTERVAL_SECONDS = 5;
 
+    // GITHUB DETAILS
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
+
     const MINIMUM_ALERT_DURATION_SECONDS = 5; 
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5;    
 
@@ -160,24 +162,10 @@
     let currentTotal = 0; 
     let audioCtx = null;
 
-    // Auto-detect GitHub Username & Repository Name
-    function getGitHubDetails() {
-      let username = "Our2ndHome";
-      let repo = "index";
-      if (window.location.hostname.endsWith(".github.io")) {
-        username = window.location.hostname.split('.')[0];
-        const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
-        repo = pathParts.length > 0 ? pathParts[0] : `${username}.github.io`;
-      }
-      return { username, repo };
-    }
-
+    // Fetch custom sound files from Our2ndHome/index/sounds
     async function loadSoundsFromGitHubFolder() {
-      const { username, repo } = getGitHubDetails();
-      if (!username || !repo) return;
-
       try {
-        const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${SOUNDS_FOLDER}`);
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
         if (!response.ok) throw new Error("Folder fetch failed");
 
         const files = await response.json();
@@ -185,13 +173,13 @@
           .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
           .map(f => f.download_url || f.path);
 
-        console.log(`Loaded ${soundFileList.length} sounds from GitHub folder.`);
+        console.log(`Loaded ${soundFileList.length} custom sounds from https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/tree/main/${SOUNDS_FOLDER}`);
       } catch (err) {
-        console.log("No custom sounds found in 'sounds' folder yet. Using synthesizer fallback.", err);
+        console.log("No custom sounds found in 'sounds' folder yet. Using synthesizer fallback sound.", err);
       }
     }
 
-    // SMOOTH AUDIO BASS BOUNCE ENGINE (No Shaking)
+    // Smooth Audio Bass Bounce Engine
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -221,23 +209,19 @@
           analyser.connect(audioCtx.destination);
 
           let animFrameId;
-          let smoothVolume = 0; // Lerp smoothing for zero-shake fluidity
+          let smoothVolume = 0;
 
           function syncRhythm() {
             analyser.getByteFrequencyData(dataArray);
 
-            // Focus on bass / lower frequencies for a natural punchy bounce
             let sum = 0;
             const bassBins = Math.floor(bufferLength * 0.5); 
             for (let i = 0; i < bassBins; i++) {
               sum += dataArray[i];
             }
-            let avgVolume = sum / bassBins; // 0 to 255
+            let avgVolume = sum / bassBins;
 
-            // Linear interpolation (Lerp) for ultra-smooth scaling without jitter
             smoothVolume += (avgVolume - smoothVolume) * 0.25;
-
-            // Scale from 1.0 up to 1.45 (45% growth on loud beats)
             let scale = 1 + (smoothVolume / 255) * 0.45;
 
             if (banner && banner.classList.contains('show-alert')) {
@@ -272,7 +256,7 @@
           });
 
         } else {
-          // Fallback Synthesizer sound with smooth bounce
+          // Fallback Synthesizer sound
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
