@@ -99,7 +99,7 @@
       padding: 10px;
       text-transform: uppercase;
       text-align: center;
-      white-space: nowrap; /* Prevents text from breaking awkwardly */
+      white-space: nowrap;
       
       /* Smooth Fade In and Fade Out */
       opacity: 0;
@@ -197,8 +197,28 @@
     ];
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
+    let availableSoundsPool = []; // Pool used for non-repeating shuffle draws
     let currentTotal = 0; 
     let audioCtx = null;
+
+    // Fisher-Yates Shuffle Algorithm to randomly shuffle an array
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Get next sound without repeats until all sounds are played
+    function getNextShuffledSound() {
+      if (!availableSoundsPool || availableSoundsPool.length === 0) {
+        availableSoundsPool = shuffleArray(soundFileList);
+        console.log("🔄 Sound pool refilled and reshuffled:", availableSoundsPool);
+      }
+      return availableSoundsPool.pop();
+    }
 
     // 3-STAGE RELIABLE SOUND LOADER
     async function loadSoundsAutomatically() {
@@ -237,14 +257,15 @@
       }
 
       soundFileList = foundSounds;
+      availableSoundsPool = []; // Reset pool so it reshuffles with newly found sounds
 
       if (statusElement) {
-        statusElement.innerHTML = `<b>${soundFileList.length} ljud redo!</b><br><span style="color:#00ff88;">Ljudfiler laddade framgångsrikt.</span>`;
+        statusElement.innerHTML = `<b>${soundFileList.length} ljud redo!</b><br><span style="color:#00ff88;">Slinga utan upprepningar aktiverad.</span>`;
       }
       console.log("Active sound list:", soundFileList);
     }
 
-    // STRAIGHT VERTICAL BOUNCE ENGINE (NO SWAY / ROTATION)
+    // NON-REPEATING SOUND PLAYER WITH BOUNCE
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -257,10 +278,11 @@
         const banner = document.getElementById('alertBanner');
 
         if (soundFileList.length > 0) {
-          const randomSoundPath = soundFileList[Math.floor(Math.random() * soundFileList.length)];
+          // Draw next sound from the shuffled non-repeating deck
+          const nextSoundPath = getNextShuffledSound();
           const audio = new Audio();
           audio.crossOrigin = "anonymous";
-          audio.src = randomSoundPath;
+          audio.src = nextSoundPath;
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
@@ -285,16 +307,12 @@
               for (let i = 0; i < bassBins; i++) {
                 sum += dataArray[i];
               }
-              let avgVolume = sum / bassBins; // 0 to 255
+              let avgVolume = sum / bassBins;
 
-              // Lerp smoothing
               smoothVolume += (avgVolume - smoothVolume) * 0.30;
               const normVol = smoothVolume / 255;
 
-              // 1. Scale expansion
               let scale = 1 + normVol * 0.5;
-              
-              // 2. Vertical Jump up to -25px on beats (Straight up, no side-sway)
               let jumpY = -normVol * 25;
 
               if (banner && banner.classList.contains('show-alert')) {
@@ -318,14 +336,13 @@
             console.log("Audio Analyser note:", e);
           }
 
-          // Resolve immediately when music ends
           audio.addEventListener('ended', () => {
             if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
             resolve(audio.duration || 3);
           });
 
           audio.addEventListener('error', (err) => {
-            console.log("Error loading audio path:", randomSoundPath, err);
+            console.log("Error loading audio path:", nextSoundPath, err);
             resolve(3);
           });
 
@@ -385,7 +402,7 @@
       // 1. Fade IN
       banner.classList.add('show-alert');
 
-      // 2. Play sound and wait for it to finish
+      // 2. Play sound without repeats and wait for it to finish
       const soundDuration = await playAlertSound();
 
       // Ensure at least 2.5s display time for very short sounds
