@@ -102,7 +102,7 @@
       visibility: visible;
     }
 
-    /* Inner Container: Bass-Only Beat Bounce */
+    /* Inner Container: Big, Silky-Smooth Bass Bounce (Zero Jitter) */
     .alert-content {
       background: transparent;
       color: #ffffff;
@@ -116,6 +116,8 @@
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
       transform-origin: center center;
+      /* Spring curve for liquid smooth motion */
+      transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
     .donor-name {
@@ -235,7 +237,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // STRICT BASS-ONLY AUDIO ANALYSER ENGINE
+    // PURE SMOOTH BASS BOUNCE ENGINE (ZERO SHAKE)
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -264,7 +266,6 @@
             const source = audioCtx.createMediaElementSource(audio);
             const analyser = audioCtx.createAnalyser();
             
-            // High FFT resolution (512) to isolate pure bass frequencies
             analyser.fftSize = 512; 
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
@@ -275,39 +276,30 @@
             function syncRhythm() {
               analyser.getByteFrequencyData(dataArray);
 
-              // STRICT BASS SAMPLING: Only read Bins 0, 1, and 2 (0Hz - 250Hz Sub-Bass & Kick Drums)
+              // Strictly sample Sub-Bass & Kick Drum (Bins 0, 1, 2)
               let bassSum = dataArray[0] + dataArray[1] + dataArray[2];
               let avgBass = bassSum / 3;
 
-              // Noise Gate: Ignore non-bass/quiet frequencies completely
-              if (avgBass < 30) {
+              // Noise Gate for clean silence between beats
+              if (avgBass < 25) {
                 avgBass = 0;
               }
 
-              // Smooth volume interpolation
-              smoothVolume += (avgBass - smoothVolume) * 0.22;
+              // Liquid smooth lerp interpolation
+              smoothVolume += (avgBass - smoothVolume) * 0.20;
 
-              // Scale expansion & vertical float on bass hits
-              let scale = 1 + (smoothVolume / 255) * 0.50;
-              let translateY = -(smoothVolume / 255) * 20;
-
-              // Peak Bass Rumble Shake
-              let shakeX = 0;
-              let shakeY = 0;
-              if (smoothVolume > 110) {
-                let peakRatio = (smoothVolume - 110) / 145;
-                shakeX = (Math.random() - 0.5) * peakRatio * 14;
-                shakeY = (Math.random() - 0.5) * peakRatio * 14;
-              }
+              // Big Smooth Scale (up to 1.70x) + Big Smooth Lift (-35px)
+              let scale = 1 + (smoothVolume / 255) * 0.70;
+              let translateY = -(smoothVolume / 255) * 35;
 
               if (content && banner.classList.contains('show-alert')) {
-                content.style.transform = `translate(${shakeX}px, ${translateY + shakeY}px) scale(${scale})`;
+                content.style.transform = `translateY(${translateY}px) scale(${scale})`;
               }
 
               if (!audio.paused && !audio.ended) {
                 animFrameId = requestAnimationFrame(syncRhythm);
               } else {
-                if (content) content.style.transform = `translate(0px, 0px) scale(1)`;
+                if (content) content.style.transform = `translateY(0px) scale(1)`;
               }
             }
 
@@ -319,7 +311,7 @@
 
           const finishAlert = () => {
             cancelAnimationFrame(animFrameId);
-            if (content) content.style.transform = `translate(0px, 0px) scale(1)`;
+            if (content) content.style.transform = `translateY(0px) scale(1)`;
             
             const elapsed = Date.now() - startTime;
             if (elapsed < 3000) {
@@ -352,8 +344,8 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (content) {
-            content.style.transform = `translate(-3px, -10px) scale(1.2)`;
-            setTimeout(() => { content.style.transform = `translate(0px, 0px) scale(1)`; }, 350);
+            content.style.transform = `translateY(-20px) scale(1.4)`;
+            setTimeout(() => { content.style.transform = `translateY(0px) scale(1)`; }, 350);
           }
 
           setTimeout(resolve, 3000);
@@ -387,15 +379,15 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Gentle Fade In
+      // 1. Smooth Fade In
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Bounce strictly on Bass Hits
+      // 2. Play Audio & Big Smooth Bass Swell
       await playAlertSound();
 
-      // 3. Gentle Fade Out when Music Stops
+      // 3. Smooth Fade Out when Music Stops
       banner.classList.remove('show-alert');
-      if (content) content.style.transform = `translate(0px, 0px) scale(1)`;
+      if (content) content.style.transform = `translateY(0px) scale(1)`;
 
       // 4. Break Pause between queued alerts
       setTimeout(() => {
