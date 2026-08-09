@@ -19,7 +19,7 @@
       box-sizing: border-box;
     }
 
-    /* TEST CONTROL PANEL (Used via OBS 'Interact') */
+    /* TEST CONTROL PANEL */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -109,9 +109,9 @@
 </head>
 <body>
 
-  <!-- TEST CONTROL PANEL (Visible in OBS Interact Window) -->
+  <!-- TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4>🧪 Testpanel (Klicka i OBS Interagera)</h4>
+    <h4>🧪 Testpanel (Klicka snabbt för att testa kön!)</h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
     <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
     <button onclick="simulateDonation('En anonym givare', 100)">+100 kr (Anonym)</button>
@@ -130,14 +130,56 @@
   </div>
 
   <script>
-    // =========================================================
-    // CONFIGURATION
-    // Change this URL when the new Musikhjälpen site opens!
-    // =========================================================
     const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
     const CHECK_INTERVAL_SECONDS = 5;
 
     let currentTotal = 0; 
+
+    // =========================================================
+    // ALERT QUEUE SYSTEM
+    // =========================================================
+    const alertQueue = [];
+    let isProcessingAlert = false;
+
+    // Add an alert to the queue
+    function enqueueAlert(donorName, diffAmount, newTotal) {
+      alertQueue.push({ donorName, diffAmount, newTotal });
+      processQueue();
+    }
+
+    // Process queue items one by one
+    function processQueue() {
+      // If an alert is currently playing or queue is empty, wait
+      if (isProcessingAlert || alertQueue.length === 0) return;
+
+      isProcessingAlert = true;
+
+      // Get next alert in line
+      const nextAlert = alertQueue.shift();
+
+      // 1. Play Sound
+      playAlertSound();
+
+      // 2. Update UI
+      const banner = document.getElementById('alertBanner');
+      document.getElementById('donorName').innerText = nextAlert.donorName;
+      document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
+      
+      banner.classList.add('show-alert');
+      document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
+
+      // 3. Keep alert on screen for 6 seconds
+      setTimeout(() => {
+        banner.classList.remove('show-alert');
+        
+        // 4. Brief 0.5s pause before starting the next queued alert
+        setTimeout(() => {
+          isProcessingAlert = false;
+          processQueue(); // Check if more alerts are waiting
+        }, 500);
+
+      }, 6000);
+    }
 
     // Play Alert Sound
     function playAlertSound() {
@@ -146,8 +188,8 @@
       const gain = audioCtx.createGain();
       
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // A5
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); 
       
       gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
@@ -158,45 +200,28 @@
       osc.stop(audioCtx.currentTime + 0.5);
     }
 
-    // Trigger Visual Alert
-    function triggerAlert(donorName, diffAmount, newTotal) {
-      playAlertSound();
-
-      const banner = document.getElementById('alertBanner');
-      
-      document.getElementById('donorName').innerText = donorName;
-      document.getElementById('alertAmount').innerText = `${diffAmount} kr`;
-      
-      banner.classList.add('show-alert');
-      document.getElementById('totalDisplay').innerText = `${newTotal} kr`;
-
-      // Hide popup banner after 6 seconds
-      setTimeout(() => {
-        banner.classList.remove('show-alert');
-      }, 6000);
-    }
-
     // =========================================================
-    // MANUAL TEST BUTTON FUNCTIONS
+    // MANUAL TEST BUTTONS
     // =========================================================
     function simulateDonation(name, amount) {
       currentTotal += amount;
-      triggerAlert(name, amount, currentTotal);
+      enqueueAlert(name, amount, currentTotal);
     }
 
     function resetTotal() {
       currentTotal = 0;
+      alertQueue.length = 0; // Clear queue
       document.getElementById('totalDisplay').innerText = `0 kr`;
     }
 
-    // Hide Test Panel if URL has ?live=1 (e.g. when going live)
+    // Hide Test Panel if URL has ?live=1
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('live') === '1') {
       document.getElementById('testPanel').style.display = 'none';
     }
 
     // =========================================================
-    // LIVE API POLLING (For when Musikhjälpen goes live)
+    // LIVE API POLLING
     // =========================================================
     async function fetchMusikhjalpenData() {
       try {
@@ -214,18 +239,16 @@
           }
         }
 
-        // Initial total setting
         if (currentTotal === 0 && amount > 0) {
           currentTotal = amount;
           document.getElementById('totalDisplay').innerText = `${currentTotal} kr`;
           return;
         }
 
-        // Trigger alert when amount increases
         if (amount > currentTotal) {
           const donationDiff = amount - currentTotal;
           currentTotal = amount;
-          triggerAlert(latestDonorName, donationDiff, currentTotal);
+          enqueueAlert(latestDonorName, donationDiff, currentTotal);
         }
 
       } catch (err) {
