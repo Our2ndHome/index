@@ -56,46 +56,59 @@
       color: black;
     }
 
-    /* Total Raised Box */
+    /* Total Raised Box - Background Removed, Soft Shadow Added */
     .goal-box {
-      background: rgba(20, 20, 20, 0.9);
-      border: 3px solid #00ff88;
-      color: white;
-      padding: 15px 40px;
-      border-radius: 50px;
-      font-size: 30px;
-      font-weight: bold;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+      background: transparent;
+      color: #ffffff;
+      padding: 10px;
+      font-size: 34px;
+      font-weight: 900; /* Extra bold */
       text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      /* Soft visible shadow all around text */
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(0, 255, 136, 0.6);
     }
 
     .amount {
       color: #00ff88;
-      font-size: 36px;
+      font-size: 42px;
+      font-weight: 900;
     }
 
-    /* Pop-up Alert Banner */
+    /* Pop-up Alert Text - Background Removed, Smooth Scaling Added */
     .alert-banner {
       position: absolute;
-      top: 100px;
-      background: linear-gradient(135deg, #ff007f, #7928ca);
-      color: white;
-      padding: 20px 45px;
-      border-radius: 15px;
-      font-size: 28px;
-      font-weight: bold;
+      top: 120px;
+      background: transparent;
+      color: #ffffff;
+      padding: 10px;
+      font-size: 32px;
+      font-weight: 900;
       text-transform: uppercase;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-      display: none;
       text-align: center;
-      transition: transform 0.05s ease-out; /* Smooth 60fps movement */
+      display: none;
+      /* Soft glow & multi-layer drop shadow for maximum readability */
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 0, 0, 0.9),
+        0 0 35px rgba(255, 0, 128, 0.8);
+      transition: transform 0.1s ease-out; /* Smooth bounce transition */
       transform-origin: center center;
     }
 
     .donor-name {
-      color: #ffea00;
+      color: #ffea00; /* Bright yellow */
       display: block;
-      font-size: 38px;
+      font-size: 48px;
+      font-weight: 900;
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(255, 234, 0, 0.7);
     }
 
     .show-alert {
@@ -126,7 +139,7 @@
     DONERADE <span id="alertAmount">50 kr</span>! 🎉
   </div>
 
-  <!-- Total Raised Box -->
+  <!-- Total Raised Display -->
   <div class="goal-box">
     INSAMLAT: <span class="amount" id="totalDisplay">0 kr</span>
   </div>
@@ -147,7 +160,7 @@
     let currentTotal = 0; 
     let audioCtx = null;
 
-    // Auto-detect GitHub username and repo name
+    // Auto-detect GitHub Username & Repository Name
     function getGitHubDetails() {
       let username = "";
       let repo = "";
@@ -178,7 +191,7 @@
       }
     }
 
-    // REAL-TIME AUDIO ANALYSER (Rhythm Sync Engine)
+    // SMOOTH AUDIO BASS BOUNCE ENGINE (No Shaking)
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -198,7 +211,6 @@
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
-          // Connect audio to AnalyserNode to read real-time volume/frequencies
           const source = audioCtx.createMediaElementSource(audio);
           const analyser = audioCtx.createAnalyser();
           analyser.fftSize = 64; 
@@ -209,31 +221,33 @@
           analyser.connect(audioCtx.destination);
 
           let animFrameId;
+          let smoothVolume = 0; // Lerp smoothing for zero-shake fluidity
 
-          // 60FPS animation loop reading rhythm levels
           function syncRhythm() {
             analyser.getByteFrequencyData(dataArray);
 
+            // Focus on bass / lower frequencies for a natural punchy bounce
             let sum = 0;
-            for (let i = 0; i < bufferLength; i++) {
+            const bassBins = Math.floor(bufferLength * 0.5); 
+            for (let i = 0; i < bassBins; i++) {
               sum += dataArray[i];
             }
-            let avgVolume = sum / bufferLength; // 0 to 255
+            let avgVolume = sum / bassBins; // 0 to 255
 
-            // Calculate scale (pulse size) and shake offsets
-            let scale = 1 + (avgVolume / 255) * 0.35; // Expands up to 35% larger on beats
-            let shakeX = (Math.random() - 0.5) * (avgVolume / 12); // Vibrates X
-            let shakeY = (Math.random() - 0.5) * (avgVolume / 12); // Vibrates Y
-            let rotate = (Math.random() - 0.5) * (avgVolume / 25); // Slight tilt
+            // Linear interpolation (Lerp) for ultra-smooth scaling without jitter
+            smoothVolume += (avgVolume - smoothVolume) * 0.25;
+
+            // Scale from 1.0 up to 1.45 (45% growth on loud beats)
+            let scale = 1 + (smoothVolume / 255) * 0.45;
 
             if (banner && banner.classList.contains('show-alert')) {
-              banner.style.transform = `scale(${scale}) translate(${shakeX}px, ${shakeY}px) rotate(${rotate}deg)`;
+              banner.style.transform = `scale(${scale})`;
             }
 
             if (!audio.paused && !audio.ended) {
               animFrameId = requestAnimationFrame(syncRhythm);
             } else {
-              if (banner) banner.style.transform = `scale(1) translate(0px, 0px) rotate(0deg)`;
+              if (banner) banner.style.transform = `scale(1)`;
             }
           }
 
@@ -243,7 +257,7 @@
 
           audio.addEventListener('ended', () => {
             cancelAnimationFrame(animFrameId);
-            if (banner) banner.style.transform = `scale(1) translate(0px, 0px) rotate(0deg)`;
+            if (banner) banner.style.transform = `scale(1)`;
             resolve(audio.duration || MINIMUM_ALERT_DURATION_SECONDS);
           });
 
@@ -258,7 +272,7 @@
           });
 
         } else {
-          // Fallback Synthesizer sound with pulse effect
+          // Fallback Synthesizer sound with smooth bounce
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
@@ -271,10 +285,9 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
 
-          // Pulse banner manually on synth beat
           if (banner) {
-            banner.style.transform = `scale(1.2) rotate(2deg)`;
-            setTimeout(() => { banner.style.transform = `scale(1) rotate(0deg)`; }, 300);
+            banner.style.transform = `scale(1.2)`;
+            setTimeout(() => { banner.style.transform = `scale(1)`; }, 350);
           }
 
           resolve(1.5);
@@ -312,7 +325,7 @@
 
       setTimeout(() => {
         banner.classList.remove('show-alert');
-        banner.style.transform = `scale(1) translate(0px, 0px) rotate(0deg)`;
+        banner.style.transform = `scale(1)`;
         
         setTimeout(() => {
           isProcessingAlert = false;
