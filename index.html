@@ -102,7 +102,7 @@
       visibility: visible;
     }
 
-    /* Inner Container: Smooth Float with Peak Rumble Shake */
+    /* Inner Container: Bass-Only Beat Bounce */
     .alert-content {
       background: transparent;
       color: #ffffff;
@@ -235,7 +235,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // AUDIO ENGINE WITH PEAK VOLUME RUMBLE SHAKE
+    // STRICT BASS-ONLY AUDIO ANALYSER ENGINE
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -263,7 +263,9 @@
           try {
             const source = audioCtx.createMediaElementSource(audio);
             const analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 64; 
+            
+            // High FFT resolution (512) to isolate pure bass frequencies
+            analyser.fftSize = 512; 
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
 
@@ -273,27 +275,29 @@
             function syncRhythm() {
               analyser.getByteFrequencyData(dataArray);
 
-              let sum = 0;
-              const bassBins = Math.floor(bufferLength * 0.6); 
-              for (let i = 0; i < bassBins; i++) {
-                sum += dataArray[i];
+              // STRICT BASS SAMPLING: Only read Bins 0, 1, and 2 (0Hz - 250Hz Sub-Bass & Kick Drums)
+              let bassSum = dataArray[0] + dataArray[1] + dataArray[2];
+              let avgBass = bassSum / 3;
+
+              // Noise Gate: Ignore non-bass/quiet frequencies completely
+              if (avgBass < 30) {
+                avgBass = 0;
               }
-              let avgVolume = sum / bassBins;
 
               // Smooth volume interpolation
-              smoothVolume += (avgVolume - smoothVolume) * 0.18;
+              smoothVolume += (avgBass - smoothVolume) * 0.22;
 
-              // Scale expansion & vertical float
-              let scale = 1 + (smoothVolume / 255) * 0.42;
-              let translateY = -(smoothVolume / 255) * 16;
+              // Scale expansion & vertical float on bass hits
+              let scale = 1 + (smoothVolume / 255) * 0.50;
+              let translateY = -(smoothVolume / 255) * 20;
 
-              // 🔥 PEAK VOLUME RUMBLE SHAKE (Activates near full size!)
+              // Peak Bass Rumble Shake
               let shakeX = 0;
               let shakeY = 0;
               if (smoothVolume > 110) {
-                let peakRatio = (smoothVolume - 110) / 145; // Intensity multiplier
-                shakeX = (Math.random() - 0.5) * peakRatio * 12; // Rumble X
-                shakeY = (Math.random() - 0.5) * peakRatio * 12; // Rumble Y
+                let peakRatio = (smoothVolume - 110) / 145;
+                shakeX = (Math.random() - 0.5) * peakRatio * 14;
+                shakeY = (Math.random() - 0.5) * peakRatio * 14;
               }
 
               if (content && banner.classList.contains('show-alert')) {
@@ -386,7 +390,7 @@
       // 1. Gentle Fade In
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Float with Peak Rumble
+      // 2. Play Audio & Bounce strictly on Bass Hits
       await playAlertSound();
 
       // 3. Gentle Fade Out when Music Stops
