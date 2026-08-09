@@ -1,30 +1,59 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
   <meta charset="UTF-8">
-  <title>OBS Test Alert</title>
+  <title>Musikhjälpen Bössan Overlay</title>
   <style>
     body {
       margin: 0;
       padding: 0;
       background-color: transparent;
-      font-family: 'Segoe UI', Arial, sans-serif;
+      font-family: 'Montserrat', Arial, sans-serif;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      justify-content: flex-end;
       align-items: center;
       height: 100vh;
       overflow: hidden;
+      padding-bottom: 50px;
+      box-sizing: border-box;
     }
 
-    .alert-box {
+    /* Total Raised Counter Box */
+    .goal-box {
+      background: rgba(20, 20, 20, 0.9);
+      border: 3px solid #00ff88;
+      color: white;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 30px;
+      font-weight: bold;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+
+    .amount {
+      color: #00ff88;
+      font-size: 36px;
+    }
+
+    /* Pop-up Alert Banner */
+    .alert-banner {
+      position: absolute;
+      top: 100px;
       background: linear-gradient(135deg, #ff007f, #7928ca);
       color: white;
-      padding: 20px 40px;
+      padding: 20px 45px;
       border-radius: 15px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      font-size: 32px;
+      font-size: 34px;
       font-weight: bold;
       text-transform: uppercase;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      display: none;
+    }
+
+    .show-alert {
+      display: block;
       animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     }
 
@@ -36,58 +65,101 @@
 </head>
 <body>
 
-  <div class="alert-box">
-    <span id="alertText">🎉 ALERT TRIGGERED! 🎉</span>
+  <!-- Donation Popup Banner -->
+  <div class="alert-banner" id="alertBanner">
+    🎉 NY DONATION: <span id="alertText">+0 kr</span> 🎉
+  </div>
+
+  <!-- Total Raised Box -->
+  <div class="goal-box">
+    INSAMLAT: <span class="amount" id="totalDisplay">0 kr</span>
   </div>
 
   <script>
-    // Custom name from URL parameter ?name=Alex
-    const urlParams = new URLSearchParams(window.location.search);
-    const customName = urlParams.get('name');
-    if (customName) {
-      document.getElementById('alertText').innerText = `🎉 ${customName} TRIGGERED AN ALERT! 🎉`;
-    }
+    // =========================================================
+    // CONFIGURATION
+    // Replace this URL when the new Musikhjälpen site opens!
+    // =========================================================
+    const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields=prev_amount";
+    const CHECK_INTERVAL_SECONDS = 5; // Checks every 5 seconds
 
-    // Function to generate a random synthesized arcade chime sound
-    function playRandomSynthSound() {
+    let currentTotal = null; 
+
+    // Sound Synthesizer function
+    function playAlertSound() {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
       
-      // Random frequencies for pitch
-      const freqs = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // C, E, G notes
-      const randomFreq1 = freqs[Math.floor(Math.random() * freqs.length)];
-      const randomFreq2 = freqs[Math.floor(Math.random() * freqs.length)];
-
-      // Note 1
-      const osc1 = audioCtx.createOscillator();
-      const gain1 = audioCtx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(randomFreq1, audioCtx.currentTime);
-      gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-      osc1.connect(gain1);
-      gain1.connect(audioCtx.destination);
-      osc1.start();
-      osc1.stop(audioCtx.currentTime + 0.3);
-
-      // Note 2 (slightly delayed)
-      setTimeout(() => {
-        const osc2 = audioCtx.createOscillator();
-        const gain2 = audioCtx.createGain();
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(randomFreq2, audioCtx.currentTime);
-        gain2.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        osc2.connect(gain2);
-        gain2.connect(audioCtx.destination);
-        osc2.start();
-        osc2.stop(audioCtx.currentTime + 0.4);
-      }, 150);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // Note C5
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // Note A5
+      
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
     }
 
-    // Trigger sound on load
-    window.addEventListener('DOMContentLoaded', () => {
-      playRandomSynthSound();
-    });
+    // Trigger visual alert + sound
+    function triggerAlert(diffAmount, newTotal) {
+      playAlertSound();
+
+      const banner = document.getElementById('alertBanner');
+      const alertText = document.getElementById('alertText');
+      
+      alertText.innerText = `+${diffAmount} kr!`;
+      banner.classList.add('show-alert');
+
+      // Update total display
+      document.getElementById('totalDisplay').innerText = `${newTotal} kr`;
+
+      // Hide popup after 6 seconds
+      setTimeout(() => {
+        banner.classList.remove('show-alert');
+      }, 6000);
+    }
+
+    // Fetch live data from the Musikhjälpen server
+    async function fetchMusikhjalpenData() {
+      try {
+        const response = await fetch(FUNDRAISER_API_URL);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        
+        // Extract amount from JSON
+        let amount = data.amount !== undefined ? data.amount : (data.data ? data.data.amount : 0);
+        amount = Number(amount);
+
+        // First run on startup: Load current total silently
+        if (currentTotal === null) {
+          currentTotal = amount;
+          document.getElementById('totalDisplay').innerText = `${currentTotal} kr`;
+          console.log("Initial total loaded:", currentTotal);
+          return;
+        }
+
+        // If the total increased, trigger the alert!
+        if (amount > currentTotal) {
+          const donationDiff = amount - currentTotal;
+          currentTotal = amount;
+          triggerAlert(donationDiff, currentTotal);
+        }
+
+      } catch (err) {
+        console.log("Connecting to Musikhjälpen API...", err);
+      }
+    }
+
+    // Run initial fetch
+    fetchMusikhjalpenData();
+
+    // Loop every 5 seconds
+    setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
   </script>
 </body>
 </html>
