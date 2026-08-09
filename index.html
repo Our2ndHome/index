@@ -24,12 +24,13 @@
       position: absolute;
       top: 15px;
       left: 15px;
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.9);
       border: 2px solid #00ff88;
       padding: 12px;
       border-radius: 10px;
       color: white;
       z-index: 9999;
+      max-width: 320px;
     }
 
     .test-panel h4 {
@@ -54,6 +55,14 @@
     .test-panel button:hover {
       background: #00ff88;
       color: black;
+    }
+
+    .sound-status {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #444;
+      font-size: 11px;
+      line-height: 1.4;
     }
 
     /* Total Raised Display */
@@ -122,13 +131,16 @@
 </head>
 <body>
 
-  <!-- TEST CONTROL PANEL -->
+  <!-- TEST CONTROL PANEL WITH LIVE SOUND DEBUGGER -->
   <div class="test-panel" id="testPanel">
-    <h4>🧪 Testpanel (OBS Interagera)</h4>
+    <h4>🧪 Testpanel</h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
     <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
     <button onclick="simulateDonation('En anonym givare', 100)">+100 kr (Anonym)</button>
     <button onclick="resetTotal()" style="border-color: #ff0055;">Nollställ</button>
+    
+    <!-- Sound Status Output -->
+    <div class="sound-status" id="soundStatus">🔍 Söker efter ljud i /sounds/ ...</div>
   </div>
 
   <!-- Donation Popup Banner -->
@@ -162,36 +174,58 @@
     let currentTotal = 0; 
     let audioCtx = null;
 
-    // AUTOMATIC GITHUB SOUND FOLDER SCANNER
+    // AUTOMATIC SOUND SCANNER & PROBER
     async function loadSoundsAutomatically() {
-      // 1. Check local storage cache for instant startup
-      const cachedSounds = localStorage.getItem('mh_overlay_sounds');
-      if (cachedSounds) {
-        try {
-          soundFileList = JSON.parse(cachedSounds);
-          console.log("Loaded cached sounds from storage:", soundFileList);
-        } catch(e){}
-      }
+      const statusElement = document.getElementById('soundStatus');
+      let foundSounds = [];
 
-      // 2. Scan GitHub API for new files
+      // Clear old local cache
+      localStorage.removeItem('mh_overlay_sounds');
+
+      // 1. Try scanning GitHub API
       try {
         const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
-        if (!response.ok) throw new Error("Folder status: " + response.status);
-
-        const files = await response.json();
-        
-        // Convert files to SAME-ORIGIN relative paths to eliminate CORS issues
-        const freshSounds = files
-          .filter(f => f.type === 'file' && f.name.match(/\.(mp3|wav|ogg|m4a)$/i))
-          .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
-
-        if (freshSounds.length > 0) {
-          soundFileList = freshSounds;
-          localStorage.setItem('mh_overlay_sounds', JSON.stringify(soundFileList));
-          console.log(`Auto-detected ${soundFileList.length} custom sounds from GitHub:`, soundFileList);
+        if (response.ok) {
+          const files = await response.json();
+          foundSounds = files
+            .filter(f => f.type === 'file' && f.name.match(/\.(mp3|wav|ogg|m4a)$/i))
+            .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
         }
-      } catch (err) {
-        console.log("GitHub API scan note (using cached/fallback sounds):", err);
+      } catch (e) {
+        console.log("GitHub API scan note:", e);
+      }
+
+      // 2. If API returned nothing (e.g. Private repo or API limit), probe common filenames directly!
+      if (foundSounds.length === 0) {
+        const commonNames = [
+          'sound1.mp3', 'sound2.mp3', 'sound3.mp3', 'sound4.mp3', 'sound5.mp3',
+          '1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3',
+          'alert.mp3', 'alert1.mp3', 'alert2.mp3', 'alert3.mp3',
+          'sound1.wav', 'sound2.wav', '1.wav', '2.wav', 'alert.wav'
+        ];
+
+        for (const name of commonNames) {
+          const testPath = `${SOUNDS_FOLDER}/${name}`;
+          try {
+            const testRes = await fetch(testPath, { method: 'HEAD' });
+            if (testRes.ok) {
+              foundSounds.push(testPath);
+            }
+          } catch(e){}
+        }
+      }
+
+      // Update Debug Status Panel
+      if (foundSounds.length > 0) {
+        soundFileList = foundSounds;
+        if (statusElement) {
+          statusElement.innerHTML = `🟢 <b>${soundFileList.length} ljud laddade:</b><br><span style="color:#00ff88;">${soundFileList.map(s => s.replace('sounds/', '')).join(', ')}</span>`;
+        }
+        console.log("Loaded sounds:", soundFileList);
+      } else {
+        if (statusElement) {
+          statusElement.innerHTML = `⚠️ <b style="color:#ffea00;">Inga MP3-filer hittades i /sounds/!</b><br><small>Säkerställ att mappen heter <b>sounds</b> och att filerna slutar på .mp3 (t.ex. sound1.mp3 eller 1.mp3)</small>`;
+        }
       }
     }
 
@@ -213,7 +247,6 @@
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
-          // Connect audio to AnalyserNode for beat bounce
           try {
             const source = audioCtx.createMediaElementSource(audio);
             const analyser = audioCtx.createAnalyser();
@@ -267,17 +300,17 @@
           });
 
           audio.addEventListener('error', (err) => {
-            console.log("Error loading audio file:", randomSoundPath, err);
+            console.log("Error loading audio path:", randomSoundPath, err);
             resolve(MINIMUM_ALERT_DURATION_SECONDS);
           });
 
           audio.play().catch(err => {
-            console.log("Audio playback error:", err);
+            console.log("Audio play error:", err);
             resolve(MINIMUM_ALERT_DURATION_SECONDS);
           });
 
         } else {
-          // Fallback Synthesizer sound if no custom MP3 files exist
+          // Fallback Synthesizer sound if no sound files were found
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
