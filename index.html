@@ -162,8 +162,8 @@
 
     // Auto-detect GitHub Username & Repository Name
     function getGitHubDetails() {
-      let username = "";
-      let repo = "";
+      let username = "Our2ndHome";
+      let repo = "index";
       if (window.location.hostname.endsWith(".github.io")) {
         username = window.location.hostname.split('.')[0];
         const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
