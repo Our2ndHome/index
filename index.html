@@ -90,7 +90,7 @@
     /* Outer Container: Gentle 0.8s Fade In / Fade Out */
     .alert-banner {
       position: absolute;
-      top: 120px;
+      top: 150px;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
@@ -102,7 +102,7 @@
       visibility: visible;
     }
 
-    /* Inner Container: GPU Hardware-Accelerated Zero-Jitter Text */
+    /* Inner Container: Huge Punching Motion with Fast Return */
     .alert-content {
       background: transparent;
       color: #ffffff;
@@ -116,8 +116,6 @@
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
       transform-origin: center center;
-      
-      /* GPU Acceleration - Fixes Sub-Pixel Font Jitter in OBS */
       will-change: transform;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
@@ -241,7 +239,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // PROFESSIONAL VU-METER PEAK-DECAY BASS ENGINE (ZERO SHAKE)
+    // HIGH-ENERGY PUNCH ENGINE (BIG MOTION + FAST RETURN)
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -284,21 +282,23 @@
               let bassSum = dataArray[0] + dataArray[1] + dataArray[2];
               let avgBass = bassSum / 3;
 
-              // Noise Gate
-              if (avgBass < 25) {
+              // Noise Gate for clean silence between beats
+              if (avgBass < 30) {
                 avgBass = 0;
               }
 
-              // PEAK-DECAY ENVELOPE FOLLOWER (Smooth rise, decay glide down)
+              // PUNCH & FAST RETURN ENGINE
               if (avgBass > smoothVolume) {
-                smoothVolume += (avgBass - smoothVolume) * 0.15; // Smooth rise on beat hit
+                // Instant punch up on kick drum hit
+                smoothVolume += (avgBass - smoothVolume) * 0.40; 
               } else {
-                smoothVolume *= 0.91; // Exponential smooth decay down (No twitching)
+                // Fast snap back down to default size between beats
+                smoothVolume *= 0.75; 
               }
 
-              // Big Smooth Scale (up to 1.60x) + Smooth Vertical Lift (-30px)
-              let scale = 1 + (smoothVolume / 255) * 0.60;
-              let translateY = -(smoothVolume / 255) * 30;
+              // Huge Scale (up to 2.10x) + Huge Lift (-45px)
+              let scale = 1 + (smoothVolume / 255) * 1.10;
+              let translateY = -(smoothVolume / 255) * 45;
 
               if (content && banner.classList.contains('show-alert')) {
                 content.style.transform = `translateZ(0) translateY(${translateY}px) scale(${scale})`;
@@ -352,7 +352,7 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (content) {
-            content.style.transform = `translateZ(0) translateY(-20px) scale(1.4)`;
+            content.style.transform = `translateZ(0) translateY(-25px) scale(1.6)`;
             setTimeout(() => { content.style.transform = `translateZ(0) translateY(0px) scale(1)`; }, 350);
           }
 
@@ -390,7 +390,7 @@
       // 1. Smooth Fade In
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Big Smooth Bass Swell
+      // 2. Play Audio & Big Motion Punch
       await playAlertSound();
 
       // 3. Smooth Fade Out when Music Stops
