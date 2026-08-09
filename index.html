@@ -19,6 +19,43 @@
       box-sizing: border-box;
     }
 
+    /* TEST CONTROL PANEL (Used via OBS 'Interact') */
+    .test-panel {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #00ff88;
+      padding: 12px;
+      border-radius: 10px;
+      color: white;
+      z-index: 9999;
+    }
+
+    .test-panel h4 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: #00ff88;
+      text-transform: uppercase;
+    }
+
+    .test-panel button {
+      background: #222;
+      color: white;
+      border: 1px solid #00ff88;
+      padding: 6px 10px;
+      margin: 2px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .test-panel button:hover {
+      background: #00ff88;
+      color: black;
+    }
+
     /* Total Raised Box */
     .goal-box {
       background: rgba(20, 20, 20, 0.9);
@@ -54,7 +91,7 @@
     }
 
     .donor-name {
-      color: #ffea00; /* Yellow highlight for the name */
+      color: #ffea00;
       display: block;
       font-size: 38px;
     }
@@ -71,6 +108,15 @@
   </style>
 </head>
 <body>
+
+  <!-- TEST CONTROL PANEL (Visible in OBS Interact Window) -->
+  <div class="test-panel" id="testPanel">
+    <h4>🧪 Testpanel (Klicka i OBS Interagera)</h4>
+    <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
+    <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
+    <button onclick="simulateDonation('En anonym givare', 100)">+100 kr (Anonym)</button>
+    <button onclick="resetTotal()" style="border-color: #ff0055;">Nollställ</button>
+  </div>
 
   <!-- Donation Popup Banner -->
   <div class="alert-banner" id="alertBanner">
@@ -91,17 +137,17 @@
     const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
     const CHECK_INTERVAL_SECONDS = 5;
 
-    let currentTotal = null; 
+    let currentTotal = 0; 
 
-    // Play Alert Chime Sound
+    // Play Alert Sound
     function playAlertSound() {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // Note C5
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // Note A5
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // A5
       
       gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
@@ -112,7 +158,7 @@
       osc.stop(audioCtx.currentTime + 0.5);
     }
 
-    // Trigger Alert Popup with Donor Name + Amount
+    // Trigger Visual Alert
     function triggerAlert(donorName, diffAmount, newTotal) {
       playAlertSound();
 
@@ -122,27 +168,44 @@
       document.getElementById('alertAmount').innerText = `${diffAmount} kr`;
       
       banner.classList.add('show-alert');
-
-      // Update total display
       document.getElementById('totalDisplay').innerText = `${newTotal} kr`;
 
-      // Hide popup after 6 seconds
+      // Hide popup banner after 6 seconds
       setTimeout(() => {
         banner.classList.remove('show-alert');
       }, 6000);
     }
 
-    // Fetch live data from Musikhjälpen
+    // =========================================================
+    // MANUAL TEST BUTTON FUNCTIONS
+    // =========================================================
+    function simulateDonation(name, amount) {
+      currentTotal += amount;
+      triggerAlert(name, amount, currentTotal);
+    }
+
+    function resetTotal() {
+      currentTotal = 0;
+      document.getElementById('totalDisplay').innerText = `0 kr`;
+    }
+
+    // Hide Test Panel if URL has ?live=1 (e.g. when going live)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('live') === '1') {
+      document.getElementById('testPanel').style.display = 'none';
+    }
+
+    // =========================================================
+    // LIVE API POLLING (For when Musikhjälpen goes live)
+    // =========================================================
     async function fetchMusikhjalpenData() {
       try {
         const response = await fetch(FUNDRAISER_API_URL);
         if (!response.ok) return;
 
         const data = await response.json();
-        
         let amount = Number(data.amount || 0);
 
-        // Get latest donor name if available
         let latestDonorName = "En anonym givare"; 
         if (data.donations && data.donations.length > 0) {
           const lastDonation = data.donations[0];
@@ -151,14 +214,14 @@
           }
         }
 
-        // First run on load: set current total quietly
-        if (currentTotal === null) {
+        // Initial total setting
+        if (currentTotal === 0 && amount > 0) {
           currentTotal = amount;
           document.getElementById('totalDisplay').innerText = `${currentTotal} kr`;
           return;
         }
 
-        // If total increased: Trigger Alert!
+        // Trigger alert when amount increases
         if (amount > currentTotal) {
           const donationDiff = amount - currentTotal;
           currentTotal = amount;
@@ -166,22 +229,12 @@
         }
 
       } catch (err) {
-        console.log("Connecting to Musikhjälpen...", err);
+        console.log("Connecting to Musikhjälpen API...", err);
       }
     }
 
-    // Check automatically every 5 seconds
     fetchMusikhjalpenData();
     setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
-
-
-    // =========================================================
-    // DEMO TRIGGER (Simulates a donation from "Kalle" after 3 seconds)
-    // =========================================================
-    setTimeout(() => {
-      triggerAlert("Kalle", 100, 100);
-      currentTotal = 100;
-    }, 3000);
   </script>
 </body>
 </html>
