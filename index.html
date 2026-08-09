@@ -79,7 +79,6 @@
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 30px rgba(0, 255, 136, 0.6);
-      white-space: nowrap;
     }
 
     .amount {
@@ -88,68 +87,46 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner - Centered & Prevented from Wrapping */
+    /* Pop-up Alert Banner - FADE IN / FADE OUT & DANCE ANIMATION */
     .alert-banner {
       position: absolute;
-      top: 40%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      top: 120px;
+      background: transparent;
+      color: #ffffff;
+      padding: 10px;
+      font-size: 32px;
+      font-weight: 900;
+      text-transform: uppercase;
+      text-align: center;
+      
+      /* Smooth Fade In and Fade Out */
       opacity: 0;
       visibility: hidden;
-      text-align: center;
-      background: transparent;
-      padding: 10px;
-      text-transform: uppercase;
+      transition: opacity 0.5s ease-in-out, transform 0.08s ease-out;
+      transform-origin: center bottom;
+
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
-      transition: opacity 0.5s ease, visibility 0.5s ease;
-      white-space: nowrap; /* Keeps Line 2 together on one line! */
-      pointer-events: none;
     }
 
-    /* Line 1: Donor Name */
+    /* Donor Name - New Color #ace600 */
     .donor-name {
-      color: #ace600; /* Lime Green */
+      color: #ace600;
       display: block;
-      font-size: 56px;
+      font-size: 52px;
       font-weight: 900;
-      margin-bottom: 5px;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 30px rgba(172, 230, 0, 0.7);
+        0 0 30px rgba(172, 230, 0, 0.8);
     }
 
-    /* Line 2: DONERADE 50 KR! */
-    .alert-subtext {
-      color: #ffffff;
-      font-size: 36px;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    /* Smooth Elastic Pop Animation */
+    /* Active visible state for Fade In */
     .show-alert {
       opacity: 1;
       visibility: visible;
-      animation: elasticPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
-
-    @keyframes elasticPop {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.3);
-      }
-      60% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.35);
-      }
-      100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.0);
-      }
     }
   </style>
 </head>
@@ -166,10 +143,10 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner (Clean 2-Line Layout) -->
+  <!-- Donation Popup Banner -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
-    <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
+    DONERADE <span id="alertAmount">50 kr</span>!
   </div>
 
   <!-- Total Raised Display -->
@@ -190,7 +167,7 @@
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
 
-    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
+    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; // Break time between alerts
 
     // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
@@ -210,6 +187,7 @@
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
     let currentTotal = 0; 
+    let audioCtx = null;
 
     // 3-STAGE RELIABLE SOUND LOADER
     async function loadSoundsAutomatically() {
@@ -255,12 +233,17 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // Audio Player - Resolves strictly when audio ends
+    // HIGH-ENERGY RHYTHM DANCE ENGINE
     function playAlertSound() {
       return new Promise((resolve) => {
-        const onEnded = () => {
-          resolve();
-        };
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const banner = document.getElementById('alertBanner');
 
         if (soundFileList.length > 0) {
           const randomSoundPath = soundFileList[Math.floor(Math.random() * soundFileList.length)];
@@ -268,16 +251,82 @@
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
-          audio.addEventListener('ended', onEnded);
-          audio.addEventListener('error', onEnded);
+          try {
+            const source = audioCtx.createMediaElementSource(audio);
+            const analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 64; 
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            let animFrameId;
+            let smoothVolume = 0;
+
+            // 🕺 HIGH ENERGY DANCE ANIMATION LOOP 🕺
+            function syncRhythm() {
+              analyser.getByteFrequencyData(dataArray);
+
+              let sum = 0;
+              const bassBins = Math.floor(bufferLength * 0.4); 
+              for (let i = 0; i < bassBins; i++) {
+                sum += dataArray[i];
+              }
+              let avgVolume = sum / bassBins; // 0 to 255
+
+              // Fast-reacting Lerp for snappy beats
+              smoothVolume += (avgVolume - smoothVolume) * 0.35;
+              const normVol = smoothVolume / 255;
+
+              // 1. Scale up to 1.7x (70% bigger on heavy beats)
+              let scale = 1 + normVol * 0.7;
+              
+              // 2. Vertical Jump up to -35px on beat hits
+              let jumpY = -normVol * 35;
+              
+              // 3. Gentle rhythmic side-to-side sway
+              let tilt = Math.sin(Date.now() / 120) * (normVol * 6);
+
+              if (banner && banner.classList.contains('show-alert')) {
+                banner.style.transform = `scale(${scale}) translateY(${jumpY}px) rotate(${tilt}deg)`;
+              }
+
+              if (!audio.paused && !audio.ended) {
+                animFrameId = requestAnimationFrame(syncRhythm);
+              } else {
+                if (banner) banner.style.transform = `scale(1) translateY(0px) rotate(0deg)`;
+              }
+            }
+
+            audio.addEventListener('play', () => { syncRhythm(); });
+            audio.addEventListener('ended', () => {
+              cancelAnimationFrame(animFrameId);
+              if (banner) banner.style.transform = `scale(1) translateY(0px) rotate(0deg)`;
+            });
+
+          } catch (e) {
+            console.log("Audio Analyser note:", e);
+          }
+
+          // Resolve immediately when music ends
+          audio.addEventListener('ended', () => {
+            if (banner) banner.style.transform = `scale(1) translateY(0px) rotate(0deg)`;
+            resolve(audio.duration || 3);
+          });
+
+          audio.addEventListener('error', (err) => {
+            console.log("Error loading audio path:", randomSoundPath, err);
+            resolve(3);
+          });
 
           audio.play().catch(err => {
             console.log("Audio play error:", err);
-            onEnded();
+            resolve(3);
           });
+
         } else {
           // Fallback Synthesizer sound
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
@@ -290,7 +339,12 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
 
-          setTimeout(resolve, 3000);
+          if (banner) {
+            banner.style.transform = `scale(1.3) translateY(-20px)`;
+            setTimeout(() => { banner.style.transform = `scale(1) translateY(0px)`; }, 350);
+          }
+
+          resolve(1.5);
         }
       });
     }
@@ -298,7 +352,7 @@
     loadSoundsAutomatically();
 
     // =========================================================
-    // IN-SYNC ALERT QUEUE SYSTEM
+    // ALERT QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
@@ -315,27 +369,30 @@
       const nextAlert = alertQueue.shift();
 
       const banner = document.getElementById('alertBanner');
-
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Restart Elastic Pop In
-      banner.classList.remove('show-alert');
-      void banner.offsetWidth; // Force CSS reflow
+      // 1. Fade IN
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Wait until audio finishes
-      await playAlertSound();
+      // 2. Play sound and wait for it to finish
+      const soundDuration = await playAlertSound();
 
-      // 3. Smooth Fade Out when music ends
-      banner.classList.remove('show-alert');
+      // Ensure at least 2.5s display time for very short sounds
+      const remainingDisplayTime = Math.max(0, (2.5 - soundDuration) * 1000);
 
-      // 4. 5-second break before next alert
       setTimeout(() => {
-        isProcessingAlert = false;
-        processQueue();
-      }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
+        // 3. Fade OUT right when the music finishes!
+        banner.classList.remove('show-alert');
+        
+        // 4. Wait for fade out transition (0.5s) + 5-second break pause
+        setTimeout(() => {
+          isProcessingAlert = false;
+          processQueue();
+        }, 500 + (PAUSE_BETWEEN_ALERTS_SECONDS * 1000));
+
+      }, remainingDisplayTime);
     }
 
     // =========================================================
