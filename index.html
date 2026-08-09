@@ -87,13 +87,13 @@
       font-weight: 900;
     }
 
-    /* Outer Container: Gentle 0.8s Fade In / Fade Out */
+    /* Outer Container: Smooth 0.6s Opacity Fade In / Fade Out */
     .alert-banner {
       position: absolute;
-      top: 150px;
+      top: 140px;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       text-align: center;
     }
 
@@ -102,7 +102,7 @@
       visibility: visible;
     }
 
-    /* Inner Container: Huge Punching Motion with Fast Return */
+    /* Inner Container: GPU Hardware Accelerated Spring Wave Motion */
     .alert-content {
       background: transparent;
       color: #ffffff;
@@ -116,10 +116,11 @@
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
       transform-origin: center center;
+      
       will-change: transform;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      transform: translateZ(0);
+      transform: translate3d(0, 25px, 0) scale(0.85);
     }
 
     .donor-name {
@@ -239,7 +240,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // HIGH-ENERGY PUNCH ENGINE (BIG MOTION + FAST RETURN)
+    // ELASTIC SPRING WAVE ENGINE ("text ➔ TEXT ➔ text" Motion)
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -262,64 +263,74 @@
           window.currentAudio = audio;
 
           let animFrameId;
-          let smoothVolume = 0;
+          let analyser = null;
+          let dataArray = null;
 
           try {
             const source = audioCtx.createMediaElementSource(audio);
-            const analyser = audioCtx.createAnalyser();
-            
-            analyser.fftSize = 512; 
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 256; 
             const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
+            dataArray = new Uint8Array(bufferLength);
 
             source.connect(analyser);
             analyser.connect(audioCtx.destination);
-
-            function syncRhythm() {
-              analyser.getByteFrequencyData(dataArray);
-
-              // Strict Sub-Bass & Kick Drum Sampling (Bins 0, 1, 2)
-              let bassSum = dataArray[0] + dataArray[1] + dataArray[2];
-              let avgBass = bassSum / 3;
-
-              // Noise Gate for clean silence between beats
-              if (avgBass < 30) {
-                avgBass = 0;
-              }
-
-              // PUNCH & FAST RETURN ENGINE
-              if (avgBass > smoothVolume) {
-                // Instant punch up on kick drum hit
-                smoothVolume += (avgBass - smoothVolume) * 0.40; 
-              } else {
-                // Fast snap back down to default size between beats
-                smoothVolume *= 0.75; 
-              }
-
-              // Huge Scale (up to 2.10x) + Huge Lift (-45px)
-              let scale = 1 + (smoothVolume / 255) * 1.10;
-              let translateY = -(smoothVolume / 255) * 45;
-
-              if (content && banner.classList.contains('show-alert')) {
-                content.style.transform = `translateZ(0) translateY(${translateY}px) scale(${scale})`;
-              }
-
-              if (!audio.paused && !audio.ended) {
-                animFrameId = requestAnimationFrame(syncRhythm);
-              } else {
-                if (content) content.style.transform = `translateZ(0) translateY(0px) scale(1)`;
-              }
-            }
-
-            audio.addEventListener('play', () => { syncRhythm(); });
-
           } catch (e) {
             console.log("Audio Analyser note:", e);
           }
 
+          // Spring Physics Variables for Silky Smooth Elastic Motion
+          let currentScale = 0.85;
+          let scaleVelocity = 0;
+          let currentY = 25;
+          let yVelocity = 0;
+
+          function syncRhythm() {
+            let bassLevel = 0;
+            if (analyser && dataArray) {
+              analyser.getByteFrequencyData(dataArray);
+              // Read low bass frequencies
+              let bassSum = dataArray[0] + dataArray[1] + dataArray[2] + dataArray[3] + dataArray[4];
+              bassLevel = (bassSum / 5) / 255; // 0.0 to 1.0
+            }
+
+            // Continuous Organic Wave (Breathing Motion)
+            const time = Date.now() * 0.003;
+            const waveScale = Math.sin(time) * 0.12; 
+            const waveY = Math.cos(time) * 10;
+
+            // Target calculations: Bottom-to-Top glide & text -> TEXT -> text swell
+            let targetScale = 0.90 + waveScale + (bassLevel * 0.65); // Swells up to ~1.65x
+            let targetY = 20 + waveY - (bassLevel * 50);            // Glides from +20px down up to -30px top!
+
+            // Spring Physics Equations (Elastic Tension & Smooth Damping)
+            const tension = 0.09;
+            const damping = 0.82;
+
+            let scaleForce = (targetScale - currentScale) * tension;
+            scaleVelocity = (scaleVelocity + scaleForce) * damping;
+            currentScale += scaleVelocity;
+
+            let yForce = (targetY - currentY) * tension;
+            yVelocity = (yVelocity + yForce) * damping;
+            currentY += yVelocity;
+
+            if (content && banner.classList.contains('show-alert')) {
+              content.style.transform = `translate3d(0, ${currentY}px, 0) scale(${currentScale})`;
+            }
+
+            if (!audio.paused && !audio.ended) {
+              animFrameId = requestAnimationFrame(syncRhythm);
+            } else {
+              if (content) content.style.transform = `translate3d(0, 25px, 0) scale(0.85)`;
+            }
+          }
+
+          audio.addEventListener('play', () => { syncRhythm(); });
+
           const finishAlert = () => {
             cancelAnimationFrame(animFrameId);
-            if (content) content.style.transform = `translateZ(0) translateY(0px) scale(1)`;
+            if (content) content.style.transform = `translate3d(0, 25px, 0) scale(0.85)`;
             
             const elapsed = Date.now() - startTime;
             if (elapsed < 3000) {
@@ -352,8 +363,8 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (content) {
-            content.style.transform = `translateZ(0) translateY(-25px) scale(1.6)`;
-            setTimeout(() => { content.style.transform = `translateZ(0) translateY(0px) scale(1)`; }, 350);
+            content.style.transform = `translate3d(0, -20px, 0) scale(1.4)`;
+            setTimeout(() => { content.style.transform = `translate3d(0, 25px, 0) scale(0.85)`; }, 400);
           }
 
           setTimeout(resolve, 3000);
@@ -390,12 +401,12 @@
       // 1. Smooth Fade In
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Big Motion Punch
+      // 2. Play Audio & Elastic Wave Swell
       await playAlertSound();
 
       // 3. Smooth Fade Out when Music Stops
       banner.classList.remove('show-alert');
-      if (content) content.style.transform = `translateZ(0) translateY(0px) scale(1)`;
+      if (content) content.style.transform = `translate3d(0, 25px, 0) scale(0.85)`;
 
       // 4. Break Pause between queued alerts
       setTimeout(() => {
