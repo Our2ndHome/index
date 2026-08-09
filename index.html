@@ -93,7 +93,6 @@
       top: 120px;
       opacity: 0;
       visibility: hidden;
-      /* Slowed down transition for an elegant fade */
       transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
       text-align: center;
     }
@@ -103,7 +102,7 @@
       visibility: visible;
     }
 
-    /* Inner Container: Liquid-Smooth Beat Bounce */
+    /* Inner Container: Smooth Float with Peak Rumble Shake */
     .alert-content {
       background: transparent;
       color: #ffffff;
@@ -117,8 +116,6 @@
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
       transform-origin: center center;
-      /* Added spring curve for silky smooth float and bounce */
-      transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
     .donor-name {
@@ -238,7 +235,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // LIQUID-SMOOTH BOUNCE AUDIO ENGINE
+    // AUDIO ENGINE WITH PEAK VOLUME RUMBLE SHAKE
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -283,21 +280,30 @@
               }
               let avgVolume = sum / bassBins;
 
-              // Softer lerp smoothing (0.15) for fluid liquid motion
-              smoothVolume += (avgVolume - smoothVolume) * 0.15;
+              // Smooth volume interpolation
+              smoothVolume += (avgVolume - smoothVolume) * 0.18;
 
-              // Gentle float and swell range
-              let scale = 1 + (smoothVolume / 255) * 0.40;
-              let translateY = -(smoothVolume / 255) * 15;
+              // Scale expansion & vertical float
+              let scale = 1 + (smoothVolume / 255) * 0.42;
+              let translateY = -(smoothVolume / 255) * 16;
+
+              // 🔥 PEAK VOLUME RUMBLE SHAKE (Activates near full size!)
+              let shakeX = 0;
+              let shakeY = 0;
+              if (smoothVolume > 110) {
+                let peakRatio = (smoothVolume - 110) / 145; // Intensity multiplier
+                shakeX = (Math.random() - 0.5) * peakRatio * 12; // Rumble X
+                shakeY = (Math.random() - 0.5) * peakRatio * 12; // Rumble Y
+              }
 
               if (content && banner.classList.contains('show-alert')) {
-                content.style.transform = `translateY(${translateY}px) scale(${scale})`;
+                content.style.transform = `translate(${shakeX}px, ${translateY + shakeY}px) scale(${scale})`;
               }
 
               if (!audio.paused && !audio.ended) {
                 animFrameId = requestAnimationFrame(syncRhythm);
               } else {
-                if (content) content.style.transform = `translateY(0px) scale(1)`;
+                if (content) content.style.transform = `translate(0px, 0px) scale(1)`;
               }
             }
 
@@ -309,7 +315,7 @@
 
           const finishAlert = () => {
             cancelAnimationFrame(animFrameId);
-            if (content) content.style.transform = `translateY(0px) scale(1)`;
+            if (content) content.style.transform = `translate(0px, 0px) scale(1)`;
             
             const elapsed = Date.now() - startTime;
             if (elapsed < 3000) {
@@ -342,8 +348,8 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (content) {
-            content.style.transform = `translateY(-10px) scale(1.2)`;
-            setTimeout(() => { content.style.transform = `translateY(0px) scale(1)`; }, 350);
+            content.style.transform = `translate(-3px, -10px) scale(1.2)`;
+            setTimeout(() => { content.style.transform = `translate(0px, 0px) scale(1)`; }, 350);
           }
 
           setTimeout(resolve, 3000);
@@ -377,15 +383,15 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Gentle 0.8s Fade In
+      // 1. Gentle Fade In
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Fluid Swell
+      // 2. Play Audio & Float with Peak Rumble
       await playAlertSound();
 
-      // 3. Gentle 0.8s Fade Out when Music Stops
+      // 3. Gentle Fade Out when Music Stops
       banner.classList.remove('show-alert');
-      if (content) content.style.transform = `translateY(0px) scale(1)`;
+      if (content) content.style.transform = `translate(0px, 0px) scale(1)`;
 
       // 4. Break Pause between queued alerts
       setTimeout(() => {
