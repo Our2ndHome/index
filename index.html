@@ -133,28 +133,36 @@
     // =========================================================
     // CONFIGURATION
     // =========================================================
-    // Change this URL when the new Musikhjälpen site opens!
     const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
     const CHECK_INTERVAL_SECONDS = 5;
 
-    // GITHUB SOUND FOLDER CONFIGURATION
-    // ⬇️ Fill in your GitHub Username and Repository Name! ⬇️
-    const GITHUB_USERNAME = "Our2ndHome";
-    const GITHUB_REPO = "index";
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
-
-    // TIMING SETTINGS
-    const MINIMUM_ALERT_DURATION_SECONDS = 5; // Minimum time banner stays on screen
-    const PAUSE_BETWEEN_ALERTS_SECONDS = 5;    // 5-second break between queued alerts
+    const MINIMUM_ALERT_DURATION_SECONDS = 5; 
+    const PAUSE_BETWEEN_ALERTS_SECONDS = 5;    
 
     let soundFileList = [];
     let currentTotal = 0; 
 
-    // Automatically fetch sound files inside "sounds" folder on GitHub
+    // AUTO-DETECT GITHUB DETAILS FROM LINK
+    function getGitHubDetails() {
+      let username = "";
+      let repo = "";
+      if (window.location.hostname.endsWith(".github.io")) {
+        username = window.location.hostname.split('.')[0];
+        const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+        repo = pathParts.length > 0 ? pathParts[0] : `${username}.github.io`;
+      }
+      return { username, repo };
+    }
+
+    // Load sounds from GitHub folder
     async function loadSoundsFromGitHubFolder() {
+      const { username, repo } = getGitHubDetails();
+      if (!username || !repo) return;
+
       try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
+        const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${SOUNDS_FOLDER}`);
         if (!response.ok) throw new Error("Folder fetch failed");
 
         const files = await response.json();
@@ -162,37 +170,46 @@
           .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
           .map(f => f.download_url || f.path);
 
-        console.log("Loaded sounds from GitHub folder:", soundFileList);
+        console.log(`Loaded ${soundFileList.length} sounds from GitHub folder.`);
       } catch (err) {
-        console.log("No custom sounds found in GitHub folder yet. Using synthesizer sound fallback.", err);
+        console.log("No custom sounds found in 'sounds' folder yet. Using synthesizer fallback.", err);
       }
     }
 
-    // Play Sound & Measure its exact duration
+    // Play Sound & Return duration instantly
     function playAlertSound() {
       return new Promise((resolve) => {
         if (soundFileList.length > 0) {
           const randomSound = soundFileList[Math.floor(Math.random() * soundFileList.length)];
           const audio = new Audio(randomSound);
           audio.volume = SOUND_VOLUME;
+          
+          // Prevent OBS garbage collection from stopping audio midway
+          window.currentAudio = audio;
 
-          let resolved = false;
-          const finish = () => {
-            if (!resolved) {
-              resolved = true;
-              resolve(audio.duration && !isNaN(audio.duration) ? audio.duration : MINIMUM_ALERT_DURATION_SECONDS);
-            }
+          const getDuration = () => {
+            const dur = audio.duration;
+            resolve(dur && !isNaN(dur) && dur > 0 ? dur : MINIMUM_ALERT_DURATION_SECONDS);
           };
 
-          audio.addEventListener('ended', finish);
-          audio.addEventListener('error', finish);
+          audio.addEventListener('loadedmetadata', getDuration);
 
-          audio.play().catch(err => {
+          audio.play().then(() => {
+            if (audio.duration && !isNaN(audio.duration)) {
+              getDuration();
+            }
+          }).catch(err => {
             console.log("Audio play error:", err);
-            finish();
+            resolve(MINIMUM_ALERT_DURATION_SECONDS);
           });
+
+          // Safety timeout resolve
+          setTimeout(() => {
+            getDuration();
+          }, 800);
+
         } else {
-          // Fallback Synthesizer sound if no MP3 files are in folder
+          // Fallback Synthesizer sound
           const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
@@ -214,7 +231,7 @@
     loadSoundsFromGitHubFolder();
 
     // =========================================================
-    // DYNAMIC ALERT QUEUE SYSTEM
+    // IN-SYNC ALERT QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
@@ -230,30 +247,30 @@
       isProcessingAlert = true;
       const nextAlert = alertQueue.shift();
 
-      // Display alert text & total
+      // 1. Update UI Text & Display Banner
       const banner = document.getElementById('alertBanner');
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
       banner.classList.add('show-alert');
 
-      // Play sound and wait for sound to finish
+      // 2. Start Sound at the SAME time as the banner appears
       const soundDuration = await playAlertSound();
 
-      // Display for length of sound OR minimum 5 seconds
-      const totalDisplayTime = Math.max(soundDuration, MINIMUM_ALERT_DURATION_SECONDS) * 1000;
+      // 3. Keep banner up for length of sound OR minimum 5 seconds
+      const bannerDurationMs = Math.max(soundDuration, MINIMUM_ALERT_DURATION_SECONDS) * 1000;
 
-      // Wait until sound + display time finishes
+      // 4. Hide banner when time is up
       setTimeout(() => {
         banner.classList.remove('show-alert');
         
-        // Break pause before starting the next queued alert
+        // ⏱️ 5-second break before starting next queued alert
         setTimeout(() => {
           isProcessingAlert = false;
           processQueue();
         }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
 
-      }, totalDisplayTime);
+      }, bannerDurationMs);
     }
 
     // =========================================================
