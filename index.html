@@ -119,40 +119,40 @@
         0 0 30px rgba(172, 230, 0, 0.7);
     }
 
-    /* 🌊 FLUID DANCE WAVE ANIMATION ("text ➔ TEXT ➔ text") */
+    /* 💥 EXPLOSIVE SWELL WAVE ANIMATION ("text ➔ TEXT ➔ text") */
     .show-alert {
       visibility: visible;
-      animation: fluidDanceWave 4.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: explosiveSwellWave 4.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
-    @keyframes fluidDanceWave {
+    @keyframes explosiveSwellWave {
       0% {
         opacity: 0;
-        transform: translateY(60px) scale(0.7);
+        transform: scale(0.4);
       }
-      15% {
+      12% {
         opacity: 1;
-        transform: translateY(15px) scale(0.95); /* text (bottom/small) */
+        transform: scale(0.85); /* "text" (compact resting size) */
       }
-      35% {
+      32% {
         opacity: 1;
-        transform: translateY(-35px) scale(1.45); /* TEXT (Big peak at top!) */
+        transform: scale(1.95); /* "TEXT" - MASSIVE EXPLOSIVE SWELL! */
       }
-      55% {
+      50% {
         opacity: 1;
-        transform: translateY(10px) scale(0.95); /* text (glides down) */
+        transform: scale(0.85); /* "text" (collapses back down) */
       }
-      75% {
+      70% {
         opacity: 1;
-        transform: translateY(-25px) scale(1.35); /* TEXT (Second big swell!) */
+        transform: scale(1.80); /* "TEXT" - SECOND BIG SWELL! */
       }
-      90% {
+      85% {
         opacity: 1;
-        transform: translateY(0px) scale(1.0);
+        transform: scale(0.95); /* "text" */
       }
       100% {
         opacity: 0;
-        transform: translateY(-20px) scale(0.8); /* Smooth fade out */
+        transform: scale(0.5); /* Smooth fade out */
       }
     }
   </style>
@@ -328,12 +328,12 @@
       // 1. Play Audio
       const audioPromise = playAlertSound();
 
-      // 2. Trigger Smooth CSS Dance Animation (forces reflow to restart animation)
+      // 2. Trigger Explosive Swell Wave Animation
       banner.classList.remove('show-alert');
-      void banner.offsetWidth; 
+      void banner.offsetWidth; // Force CSS reflow to restart animation cleanly
       banner.classList.add('show-alert');
 
-      // 3. Wait for audio to finish playing
+      // 3. Wait for audio to finish
       await audioPromise;
 
       // 4. Remove alert banner
