@@ -111,6 +111,300 @@
 
   <!-- TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
+    <h4>🧪 Testpanel</h4>
+    <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
+    <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
+    <button onclick="simulateDonation('En anonym givare', 100)">+100 kr (Anonym)</button>
+    <button onclick="resetTotal()" style="border-color: #ff0055;">Nollställ</button>
+  </div>
+
+  <!-- Donation Popup Banner -->
+  <div class="alert-banner" id="alertBanner">
+    🎉 <span class="donor-name" id="donorName">JOHAN</span> 
+    DONERADE <span id="alertAmount">50 kr</span>! 🎉
+  </div>
+
+  <!-- Total Raised Box -->
+  <div class="goal-box">
+    INSAMLAT: <span class="amount" id="totalDisplay">0 kr</span>
+  </div>
+
+  <script>
+    // =========================================================
+    // CONFIGURATION
+    // =========================================================
+    const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
+    const CHECK_INTERVAL_SECONDS = 5;
+
+    // GITHUB SOUND FOLDER CONFIGURATION
+    // ⬇️ Fill in your GitHub Username and Repo Name here! ⬇️
+    const GITHUB_USERNAME = "YOUR_GITHUB_USERNAME";
+    const GITHUB_REPO = "YOUR_REPOSITORY_NAME";
+    const SOUNDS_FOLDER = "sounds"; 
+    const SOUND_VOLUME = 0.8;
+
+    // Fallback list of sound files in case API loading is slow
+    const FALLBACK_SOUNDS = [
+      'sounds/sound1.mp3',
+      'sounds/sound2.mp3',
+      'sounds/sound3.mp3'
+    ];
+
+    let soundFileList = [];
+
+    // Automatically fetch all audio files inside the "sounds" folder on GitHub
+    async function loadSoundsFromGitHubFolder() {
+      try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
+        if (!response.ok) throw new Error("Folder fetch failed");
+
+        const files = await response.json();
+        
+        // Filter only audio files (.mp3, .wav, .ogg)
+        soundFileList = files
+          .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
+          .map(f => f.download_url || f.path);
+
+        console.log("Loaded sounds from GitHub folder:", soundFileList);
+      } catch (err) {
+        console.log("Using fallback sound list.", err);
+        soundFileList = FALLBACK_SOUNDS;
+      }
+    }
+
+    // Function to play a random sound from the folder
+    function playAlertSound() {
+      const availableSounds = soundFileList.length > 0 ? soundFileList : FALLBACK_SOUNDS;
+      if (availableSounds.length === 0) return;
+
+      // Select random sound
+      const randomSound = availableSounds[Math.floor(Math.random() * availableSounds.length)];
+      
+      const audio = new Audio(randomSound);
+      audio.volume = SOUND_VOLUME;
+      audio.play().catch(err => {
+        console.log("Audio play error:", err);
+      });
+    }
+
+    // Load sounds on startup
+    loadSoundsFromGitHubFolder();
+
+    // =========================================================
+    // ALERT QUEUE SYSTEM
+    // =========================================================
+    const alertQueue = [];
+    let isProcessingAlert = false;
+
+    function enqueueAlert(donorName, diffAmount, newTotal) {
+      alertQueue.push({ donorName, diffAmount, newTotal });
+      processQueue();
+    }
+
+    function processQueue() {
+      if (isProcessingAlert || alertQueue.length === 0) return;
+
+      isProcessingAlert = true;
+      const nextAlert = alertQueue.shift();
+
+      // Play random sound
+      playAlertSound();
+
+      // Update UI
+      const banner = document.getElementById('alertBanner');
+      document.getElementById('donorName').innerText = nextAlert.donorName;
+      document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
+      
+      banner.classList.add('show-alert');
+      document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
+
+      // Display for 6 seconds
+      setTimeout(() => {
+        banner.classList.remove('show-alert');
+        
+        setTimeout(() => {
+          isProcessingAlert = false;
+          processQueue();
+        }, 500);
+
+      }, 6000);
+    }
+
+    // =========================================================
+    // MANUAL TEST BUTTONS
+    // =========================================================
+    let currentTotal = 0; 
+
+    function simulateDonation(name, amount) {
+      currentTotal += amount;
+      enqueueAlert(name, amount, currentTotal);
+    }
+
+    function resetTotal() {
+      currentTotal = 0;
+      alertQueue.length = 0;
+      document.getElementById('totalDisplay').innerText = `0 kr`;
+    }
+
+    // Hide Test Panel if URL has ?live=1
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('live') === '1') {
+      document.getElementById('testPanel').style.display = 'none';
+    }
+
+    // =========================================================
+    // LIVE API POLLING
+    // =========================================================
+    async function fetchMusikhjalpenData() {
+      try {
+        const response = await fetch(FUNDRAISER_API_URL);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        let amount = Number(data.amount || 0);
+
+        let latestDonorName = "En anonym givare"; 
+        if (data.donations && data.donations.length > 0) {
+          const lastDonation = data.donations[0];
+          if (lastDonation.name && lastDonation.name.trim() !== "") {
+            latestDonorName = lastDonation.name;
+          }
+        }
+
+        if (currentTotal === 0 && amount > 0) {
+          currentTotal = amount;
+          document.getElementById('totalDisplay').innerText = `${currentTotal} kr`;
+          return;
+        }
+
+        if (amount > currentTotal) {
+          const donationDiff = amount - currentTotal;
+          currentTotal = amount;
+          enqueueAlert(latestDonorName, donationDiff, currentTotal);
+        }
+
+      } catch (err) {
+        console.log("Connecting to Musikhjälpen API...", err);
+      }
+    }
+
+    fetchMusikhjalpenData();
+    setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Musikhjälpen Bössan Overlay</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      padding-bottom: 50px;
+      box-sizing: border-box;
+    }
+
+    /* TEST CONTROL PANEL */
+    .test-panel {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #00ff88;
+      padding: 12px;
+      border-radius: 10px;
+      color: white;
+      z-index: 9999;
+    }
+
+    .test-panel h4 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: #00ff88;
+      text-transform: uppercase;
+    }
+
+    .test-panel button {
+      background: #222;
+      color: white;
+      border: 1px solid #00ff88;
+      padding: 6px 10px;
+      margin: 2px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .test-panel button:hover {
+      background: #00ff88;
+      color: black;
+    }
+
+    /* Total Raised Box */
+    .goal-box {
+      background: rgba(20, 20, 20, 0.9);
+      border: 3px solid #00ff88;
+      color: white;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 30px;
+      font-weight: bold;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+
+    .amount {
+      color: #00ff88;
+      font-size: 36px;
+    }
+
+    /* Pop-up Alert Banner */
+    .alert-banner {
+      position: absolute;
+      top: 100px;
+      background: linear-gradient(135deg, #ff007f, #7928ca);
+      color: white;
+      padding: 20px 45px;
+      border-radius: 15px;
+      font-size: 28px;
+      font-weight: bold;
+      text-transform: uppercase;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      display: none;
+      text-align: center;
+    }
+
+    .donor-name {
+      color: #ffea00;
+      display: block;
+      font-size: 38px;
+    }
+
+    .show-alert {
+      display: block;
+      animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TEST CONTROL PANEL -->
+  <div class="test-panel" id="testPanel">
     <h4>🧪 Testpanel (Klicka snabbt för att testa kön!)</h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
     <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
