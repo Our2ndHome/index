@@ -65,7 +65,7 @@
       line-height: 1.4;
     }
 
-    /* Total Raised Display */
+    /* Total Raised Display - Clean Text with Soft Shadows */
     .goal-box {
       background: transparent;
       color: #ffffff;
@@ -87,7 +87,7 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner */
+    /* Pop-up Alert Banner - Smooth Beat Bounce */
     .alert-banner {
       position: absolute;
       top: 120px;
@@ -131,16 +131,15 @@
 </head>
 <body>
 
-  <!-- TEST CONTROL PANEL WITH LIVE SOUND DEBUGGER -->
+  <!-- TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4>🧪 Testpanel</h4>
+    <h4>🧪 Testpanel (OBS Interagera)</h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
     <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
     <button onclick="simulateDonation('En anonym givare', 100)">+100 kr (Anonym)</button>
     <button onclick="resetTotal()" style="border-color: #ff0055;">Nollställ</button>
     
-    <!-- Sound Status Output -->
-    <div class="sound-status" id="soundStatus">🔍 Söker efter ljud i /sounds/ ...</div>
+    <div class="sound-status" id="soundStatus">🔍 Läser av mappen 'sounds' automatiskt...</div>
   </div>
 
   <!-- Donation Popup Banner -->
@@ -170,61 +169,42 @@
     const MINIMUM_ALERT_DURATION_SECONDS = 5; 
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5;    
 
+    // Empty list that gets populated 100% dynamically from GitHub
     let soundFileList = [];
     let currentTotal = 0; 
     let audioCtx = null;
 
-    // AUTOMATIC SOUND SCANNER & PROBER
+    // 100% DYNAMIC AUTOMATIC FOLDER SCANNER
     async function loadSoundsAutomatically() {
       const statusElement = document.getElementById('soundStatus');
-      let foundSounds = [];
 
-      // Clear old local cache
-      localStorage.removeItem('mh_overlay_sounds');
-
-      // 1. Try scanning GitHub API
       try {
+        // Query GitHub API for the list of files in /sounds/
         const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
-        if (response.ok) {
-          const files = await response.json();
-          foundSounds = files
-            .filter(f => f.type === 'file' && f.name.match(/\.(mp3|wav|ogg|m4a)$/i))
-            .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
+        if (!response.ok) throw new Error("GitHub API HTTP Status: " + response.status);
+
+        const files = await response.json();
+        
+        // Read EVERY audio file in the folder regardless of name
+        const dynamicSounds = files
+          .filter(f => f.type === 'file' && f.name.match(/\.(mp3|wav|ogg|m4a|aac|flac)$/i))
+          .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
+
+        if (dynamicSounds.length > 0) {
+          soundFileList = dynamicSounds;
+          if (statusElement) {
+            statusElement.innerHTML = `🟢 <b>${soundFileList.length} ljud laddades automatiskt!</b><br><span style="color:#00ff88;">Alla filer i 'sounds' är redo.</span>`;
+          }
+          console.log("Dynamically loaded sounds from GitHub folder:", soundFileList);
+        } else {
+          if (statusElement) {
+            statusElement.innerHTML = `⚠️ <b style="color:#ffea00;">Mappen 'sounds' är tom.</b>`;
+          }
         }
-      } catch (e) {
-        console.log("GitHub API scan note:", e);
-      }
-
-      // 2. If API returned nothing (e.g. Private repo or API limit), probe common filenames directly!
-      if (foundSounds.length === 0) {
-        const commonNames = [
-          'sound1.mp3', 'sound2.mp3', 'sound3.mp3', 'sound4.mp3', 'sound5.mp3',
-          '1.mp3', '2.mp3', '3.mp3', '4.mp3', '5.mp3',
-          'alert.mp3', 'alert1.mp3', 'alert2.mp3', 'alert3.mp3',
-          'sound1.wav', 'sound2.wav', '1.wav', '2.wav', 'alert.wav'
-        ];
-
-        for (const name of commonNames) {
-          const testPath = `${SOUNDS_FOLDER}/${name}`;
-          try {
-            const testRes = await fetch(testPath, { method: 'HEAD' });
-            if (testRes.ok) {
-              foundSounds.push(testPath);
-            }
-          } catch(e){}
-        }
-      }
-
-      // Update Debug Status Panel
-      if (foundSounds.length > 0) {
-        soundFileList = foundSounds;
+      } catch (err) {
+        console.log("Automatic scan error:", err);
         if (statusElement) {
-          statusElement.innerHTML = `🟢 <b>${soundFileList.length} ljud laddade:</b><br><span style="color:#00ff88;">${soundFileList.map(s => s.replace('sounds/', '')).join(', ')}</span>`;
-        }
-        console.log("Loaded sounds:", soundFileList);
-      } else {
-        if (statusElement) {
-          statusElement.innerHTML = `⚠️ <b style="color:#ffea00;">Inga MP3-filer hittades i /sounds/!</b><br><small>Säkerställ att mappen heter <b>sounds</b> och att filerna slutar på .mp3 (t.ex. sound1.mp3 eller 1.mp3)</small>`;
+          statusElement.innerHTML = `⚠️ <b style="color:#ff0055;">Kunde inte läsa av mappen automatiskt.</b><br><small>Kontrollera att mappen heter 'sounds' på GitHub och att ditt repository är publikt.</small>`;
         }
       }
     }
@@ -310,7 +290,7 @@
           });
 
         } else {
-          // Fallback Synthesizer sound if no sound files were found
+          // Fallback Synthesizer sound if no custom MP3 files exist in folder
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
