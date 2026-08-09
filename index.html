@@ -87,10 +87,10 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner - Centered & Anchored */
+    /* Pop-up Alert Banner - Perfectly Centered */
     .alert-banner {
       position: absolute;
-      top: 40%; /* True screen center position */
+      top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
       opacity: 0;
@@ -129,7 +129,8 @@
     /* 💥 CENTERED EXPLOSIVE SWELL ANIMATION ("text ➔ TEXT ➔ text") */
     .show-alert {
       visibility: visible;
-      animation: centerExplosiveSwell 4.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      /* Animation duration gets dynamically matched to audio length in JS */
+      animation: centerExplosiveSwell 4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     @keyframes centerExplosiveSwell {
@@ -159,7 +160,7 @@
       }
       100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.4); /* Fades out into center */
+        transform: translate(-50%, -50%) scale(0.4);
       }
     }
   </style>
@@ -202,7 +203,6 @@
     const SOUND_VOLUME = 0.8;
 
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
-    const MINIMUM_ALERT_DISPLAY_MS = 4500; // Guarantees alert stays on screen for 4.5 seconds minimum!
 
     // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
@@ -267,18 +267,13 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // Direct Audio Player with Guaranteed Display Time
+    // Audio Player - Resolves IMMEDIATELY when music ends
     function playAlertSound() {
       return new Promise((resolve) => {
-        const startTime = Date.now();
+        const banner = document.getElementById('alertBanner');
 
-        const finishAlert = () => {
-          const elapsed = Date.now() - startTime;
-          if (elapsed < MINIMUM_ALERT_DISPLAY_MS) {
-            setTimeout(resolve, MINIMUM_ALERT_DISPLAY_MS - elapsed);
-          } else {
-            resolve();
-          }
+        const onEnded = () => {
+          resolve();
         };
 
         if (soundFileList.length > 0) {
@@ -287,12 +282,20 @@
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
-          audio.addEventListener('ended', finishAlert);
-          audio.addEventListener('error', finishAlert);
+          // Stretch or speed up CSS animation to fit exact audio duration
+          audio.addEventListener('loadedmetadata', () => {
+            if (audio.duration && !isNaN(audio.duration)) {
+              banner.style.animationDuration = `${audio.duration}s`;
+            }
+          });
+
+          // Resolve promise immediately when sound ends
+          audio.addEventListener('ended', onEnded);
+          audio.addEventListener('error', onEnded);
 
           audio.play().catch(err => {
             console.log("Audio play error:", err);
-            finishAlert();
+            onEnded();
           });
         } else {
           // Fallback Synthesizer sound
@@ -309,7 +312,8 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
 
-          finishAlert();
+          banner.style.animationDuration = "3s";
+          setTimeout(resolve, 3000);
         }
       });
     }
@@ -339,21 +343,18 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Play Audio & Start Guaranteed Timer
-      const audioPromise = playAlertSound();
-
-      // 2. Trigger Centered Explosive Swell Wave Animation
+      // 1. Restart CSS animation cleanly
       banner.classList.remove('show-alert');
-      void banner.offsetWidth; // Force CSS reflow to restart animation cleanly
+      void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
-      // 3. Wait for audio + display time
-      await audioPromise;
+      // 2. Play Audio & wait strictly until audio.ended fires!
+      await playAlertSound();
 
-      // 4. Remove alert banner
+      // 3. IMMEDIATELY HIDE BANNER WHEN MUSIC ENDS
       banner.classList.remove('show-alert');
 
-      // 5. Break pause between queued alerts
+      // 4. Break Pause between queued alerts
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
