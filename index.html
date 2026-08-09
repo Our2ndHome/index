@@ -87,13 +87,14 @@
       font-weight: 900;
     }
 
-    /* Outer Container: Handles Smooth Fade In / Fade Out */
+    /* Outer Container: Gentle 0.8s Fade In / Fade Out */
     .alert-banner {
       position: absolute;
       top: 120px;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 0.4s ease, visibility 0.4s ease;
+      /* Slowed down transition for an elegant fade */
+      transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
       text-align: center;
     }
 
@@ -102,7 +103,7 @@
       visibility: visible;
     }
 
-    /* Inner Container: Handles 60FPS Beat Bounce Animation without conflict */
+    /* Inner Container: Liquid-Smooth Beat Bounce */
     .alert-content {
       background: transparent;
       color: #ffffff;
@@ -116,6 +117,8 @@
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
       transform-origin: center center;
+      /* Added spring curve for silky smooth float and bounce */
+      transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
     .donor-name {
@@ -143,7 +146,7 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner (Decoupled Fade & Bounce) -->
+  <!-- Donation Popup Banner -->
   <div class="alert-banner" id="alertBanner">
     <div class="alert-content" id="alertContent">
       <span class="donor-name" id="donorName">JOHAN</span> 
@@ -235,7 +238,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // ENERGETIC DANCE BOUNCE AUDIO ENGINE
+    // LIQUID-SMOOTH BOUNCE AUDIO ENGINE
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -280,10 +283,12 @@
               }
               let avgVolume = sum / bassBins;
 
-              smoothVolume += (avgVolume - smoothVolume) * 0.45;
+              // Softer lerp smoothing (0.15) for fluid liquid motion
+              smoothVolume += (avgVolume - smoothVolume) * 0.15;
 
-              let scale = 1 + (smoothVolume / 255) * 0.65;
-              let translateY = -(smoothVolume / 255) * 22;
+              // Gentle float and swell range
+              let scale = 1 + (smoothVolume / 255) * 0.40;
+              let translateY = -(smoothVolume / 255) * 15;
 
               if (content && banner.classList.contains('show-alert')) {
                 content.style.transform = `translateY(${translateY}px) scale(${scale})`;
@@ -337,7 +342,7 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (content) {
-            content.style.transform = `translateY(-15px) scale(1.35)`;
+            content.style.transform = `translateY(-10px) scale(1.2)`;
             setTimeout(() => { content.style.transform = `translateY(0px) scale(1)`; }, 350);
           }
 
@@ -372,13 +377,13 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Smooth Fade In
+      // 1. Gentle 0.8s Fade In
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Bounce Content
+      // 2. Play Audio & Fluid Swell
       await playAlertSound();
 
-      // 3. Smooth Fade Out when Music Stops
+      // 3. Gentle 0.8s Fade Out when Music Stops
       banner.classList.remove('show-alert');
       if (content) content.style.transform = `translateY(0px) scale(1)`;
 
