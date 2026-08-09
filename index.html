@@ -288,30 +288,45 @@
       }
     }
 
-    fetchMusikhjalpenData();
-    setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
-  </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="sv">
-<head>
-  <meta charset="UTF-8">
-  <title>Musikhjälpen Bössan Overlay</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: transparent;
-      font-family: 'Montserrat', Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-      padding-bottom: 50px;
-      box-sizing: border-box;
+    // =========================================================
+// LIVE API POLLING WITH CACHE PREVENTION
+// =========================================================
+async function fetchMusikhjalpenData() {
+  try {
+    // Adds a unique timestamp (_t=123456) so OBS never loads an old cached version
+    const cacheBusterUrl = FUNDRAISER_API_URL + '&_t=' + Date.now();
+    const response = await fetch(cacheBusterUrl, { cache: 'no-store' });
+    if (!response.ok) return;
+
+    const data = await response.json();
+    let amount = Number(data.amount || 0);
+
+    let latestDonorName = "En anonym givare"; 
+    if (data.donations && data.donations.length > 0) {
+      const lastDonation = data.donations[0];
+      if (lastDonation.name && lastDonation.name.trim() !== "") {
+        latestDonorName = lastDonation.name;
+      }
     }
+
+    // First time OBS opens: set the current live total silently
+    if (currentTotal === 0 && amount > 0) {
+      currentTotal = amount;
+      document.getElementById('totalDisplay').innerText = `${currentTotal} kr`;
+      return;
+    }
+
+    // When new money comes in: queue the alert!
+    if (amount > currentTotal) {
+      const donationDiff = amount - currentTotal;
+      currentTotal = amount;
+      enqueueAlert(latestDonorName, donationDiff, currentTotal);
+    }
+
+  } catch (err) {
+    console.log("Connecting to Musikhjälpen API...", err);
+  }
+}
 
     /* TEST CONTROL PANEL */
     .test-panel {
