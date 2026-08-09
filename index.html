@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OBS Test Alert</title>
+  <style>
+    /* Transparent background so game/camera shows through in OBS */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent; 
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Alert Banner Styling */
+    .alert-box {
+      background: linear-gradient(135deg, #ff007f, #7928ca);
+      color: white;
+      padding: 20px 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      font-size: 32px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    }
+
+    /* Pop-in animation */
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="alert-box" id="alertBox">
+    <span id="alertText">🎉 ALERT TRIGGERED! 🎉</span>
+  </div>
+
+  <script>
+    // List of reliable royalty-free sound effects
+    const soundList = [
+      "https://actions.google.com/sounds/v1/cartoon/pop.ogg",
+      "https://actions.google.com/sounds/v1/cartoon/clink_clank.ogg",
+      "https://actions.google.com/sounds/v1/cartoon/boing_poing.ogg",
+      "https://actions.google.com/sounds/v1/cartoon/metal_twang.ogg"
+    ];
+
+    // Pick a random sound from the array
+    const randomSound = soundList[Math.floor(Math.random() * soundList.length)];
+
+    // Check if a URL parameter like ?name=Alex was provided
+    const urlParams = new URLSearchParams(window.location.search);
+    const customName = urlParams.get('name');
+    
+    if (customName) {
+      document.getElementById('alertText').innerText = `🎉 ${customName} TRIGGERED AN ALERT! 🎉`;
+    }
+
+    // Play the audio automatically when loaded
+    const audio = new Audio(randomSound);
+    audio.play().catch(err => {
+      console.log("Autoplay waiting for interaction or OBS permissions:", err);
+    });
+  </script>
+</body>
+</html>
