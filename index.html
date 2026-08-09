@@ -30,7 +30,7 @@
       border-radius: 10px;
       color: white;
       z-index: 9999;
-      max-width: 320px;
+      max-width: 340px;
     }
 
     .test-panel h4 {
@@ -63,6 +63,7 @@
       border-top: 1px solid #444;
       font-size: 11px;
       line-height: 1.4;
+      word-break: break-all;
     }
 
     /* Total Raised Display */
@@ -88,7 +89,7 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner - Centered & Straight (No Sway) */
+    /* Pop-up Alert Banner */
     .alert-banner {
       position: absolute;
       top: 120px;
@@ -101,7 +102,6 @@
       text-align: center;
       white-space: nowrap;
       
-      /* Smooth Fade In and Fade Out */
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.5s ease-in-out, transform 0.08s ease-out;
@@ -134,7 +134,6 @@
       white-space: nowrap;
     }
 
-    /* Active visible state for Fade In */
     .show-alert {
       opacity: 1;
       visibility: visible;
@@ -143,7 +142,7 @@
 </head>
 <body>
 
-  <!-- TEST CONTROL PANEL -->
+  <!-- TEST CONTROL PANEL WITH LIVE DECK TRACKER -->
   <div class="test-panel" id="testPanel">
     <h4>Testpanel (OBS Interagera)</h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
@@ -154,7 +153,7 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner (Clean 2-Line Layout) -->
+  <!-- Donation Popup Banner -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
@@ -176,7 +175,7 @@
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SOUNDS_FOLDER = "sounds"; 
-    const SOUND_VOLUME = 0.3;
+    const SOUND_VOLUME = 0.2;
 
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
@@ -197,11 +196,12 @@
     ];
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
-    let availableSoundsPool = []; // Pool used for non-repeating shuffle draws
+    let availableSoundsPool = []; 
     let currentTotal = 0; 
     let audioCtx = null;
+    let lastPlayedSoundName = "";
 
-    // Fisher-Yates Shuffle Algorithm to randomly shuffle an array
+    // Fisher-Yates Shuffle Algorithm
     function shuffleArray(array) {
       const shuffled = [...array];
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -215,14 +215,29 @@
     function getNextShuffledSound() {
       if (!availableSoundsPool || availableSoundsPool.length === 0) {
         availableSoundsPool = shuffleArray(soundFileList);
-        console.log("🔄 Sound pool refilled and reshuffled:", availableSoundsPool);
+        console.log("🔄 Kortlek påfylld och omblandad:", availableSoundsPool);
       }
       return availableSoundsPool.pop();
     }
 
-    // 3-STAGE RELIABLE SOUND LOADER
-    async function loadSoundsAutomatically() {
+    // Update Status Tracker in Test Panel
+    function updateStatusUI() {
       const statusElement = document.getElementById('soundStatus');
+      if (!statusElement) return;
+
+      const totalSounds = soundFileList.length;
+      const remaining = availableSoundsPool.length;
+      const currentPlaying = lastPlayedSoundName ? lastPlayedSoundName.replace('sounds/', '') : 'Ingen ännu';
+
+      statusElement.innerHTML = `
+        <b>Totalt laddade ljud:</b> ${totalSounds}<br>
+        <b>Kortlek kvar:</b> <span style="color:#00ff88;">${remaining} / ${totalSounds}</span><br>
+        <small style="color:#aaa;">Spelar senast: ${currentPlaying}</small>
+      `;
+    }
+
+    // FRESH ANTI-CACHE SOUND LOADER
+    async function loadSoundsAutomatically() {
       let foundSounds = [];
 
       try {
@@ -238,7 +253,7 @@
 
       if (foundSounds.length === 0) {
         try {
-          const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
+          const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}?_t=${Date.now()}`);
           if (response.ok) {
             const files = await response.json();
             const apiSounds = files
@@ -257,16 +272,12 @@
       }
 
       soundFileList = foundSounds;
-      availableSoundsPool = []; // Reset pool so it reshuffles with newly found sounds
-
-      if (statusElement) {
-        statusElement.innerHTML = `<b>${soundFileList.length} ljud redo!</b><br><span style="color:#00ff88;">Slinga utan upprepningar aktiverad.</span>`;
-      }
-      console.log("Active sound list:", soundFileList);
+      availableSoundsPool = []; // Force pool refill with complete sound list
+      updateStatusUI();
     }
 
-    // NON-REPEATING SOUND PLAYER WITH BOUNCE
-    function playAlertSound() {
+    // NON-REPEATING SOUND PLAYER WITH AUTOMATIC ERROR RETRY
+    function playAlertSound(attempts = 0) {
       return new Promise((resolve) => {
         if (!audioCtx) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -277,102 +288,115 @@
 
         const banner = document.getElementById('alertBanner');
 
-        if (soundFileList.length > 0) {
-          // Draw next sound from the shuffled non-repeating deck
-          const nextSoundPath = getNextShuffledSound();
-          const audio = new Audio();
-          audio.crossOrigin = "anonymous";
-          audio.src = nextSoundPath;
-          audio.volume = SOUND_VOLUME;
-          window.currentAudio = audio;
+        // Prevent infinite loop if all files fail
+        if (soundFileList.length === 0 || attempts >= soundFileList.length) {
+          console.log("All custom sounds failed, using synth fallback.");
+          playSynthFallback(banner);
+          resolve(1.5);
+          return;
+        }
 
-          try {
-            const source = audioCtx.createMediaElementSource(audio);
-            const analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 64; 
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
+        const nextSoundPath = getNextShuffledSound();
+        lastPlayedSoundName = nextSoundPath;
+        updateStatusUI();
 
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
+        const audio = new Audio();
+        audio.crossOrigin = "anonymous";
+        audio.src = nextSoundPath;
+        audio.volume = SOUND_VOLUME;
+        window.currentAudio = audio;
 
-            let animFrameId;
-            let smoothVolume = 0;
+        let soundFinished = false;
 
-            function syncRhythm() {
-              analyser.getByteFrequencyData(dataArray);
-
-              let sum = 0;
-              const bassBins = Math.floor(bufferLength * 0.4); 
-              for (let i = 0; i < bassBins; i++) {
-                sum += dataArray[i];
-              }
-              let avgVolume = sum / bassBins;
-
-              smoothVolume += (avgVolume - smoothVolume) * 0.30;
-              const normVol = smoothVolume / 255;
-
-              let scale = 1 + normVol * 0.5;
-              let jumpY = -normVol * 25;
-
-              if (banner && banner.classList.contains('show-alert')) {
-                banner.style.transform = `translateX(-50%) translateY(${jumpY}px) scale(${scale})`;
-              }
-
-              if (!audio.paused && !audio.ended) {
-                animFrameId = requestAnimationFrame(syncRhythm);
-              } else {
-                if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
-              }
-            }
-
-            audio.addEventListener('play', () => { syncRhythm(); });
-            audio.addEventListener('ended', () => {
-              cancelAnimationFrame(animFrameId);
-              if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
-            });
-
-          } catch (e) {
-            console.log("Audio Analyser note:", e);
-          }
-
-          audio.addEventListener('ended', () => {
+        const onEnded = () => {
+          if (!soundFinished) {
+            soundFinished = true;
             if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
             resolve(audio.duration || 3);
-          });
+          }
+        };
 
-          audio.addEventListener('error', (err) => {
-            console.log("Error loading audio path:", nextSoundPath, err);
-            resolve(3);
-          });
+        const onError = (err) => {
+          if (!soundFinished) {
+            soundFinished = true;
+            console.warn(`⚠️ Ljud misslyckades (${nextSoundPath}):`, err, "--> Provat nästa ljud i kön...");
+            // Automatically retry with next sound in deck!
+            playAlertSound(attempts + 1).then(resolve);
+          }
+        };
 
-          audio.play().catch(err => {
-            console.log("Audio play error:", err);
-            resolve(3);
-          });
+        audio.addEventListener('ended', onEnded, { once: true });
+        audio.addEventListener('error', onError, { once: true });
 
-        } else {
-          // Fallback Synthesizer sound
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
-          osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); 
-          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.5);
+        try {
+          const source = audioCtx.createMediaElementSource(audio);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64; 
+          const bufferLength = analyser.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
 
-          if (banner) {
-            banner.style.transform = `translateX(-50%) scale(1.2) translateY(-15px)`;
-            setTimeout(() => { banner.style.transform = `translateX(-50%) scale(1) translateY(0px)`; }, 350);
+          source.connect(analyser);
+          analyser.connect(audioCtx.destination);
+
+          let animFrameId;
+          let smoothVolume = 0;
+
+          function syncRhythm() {
+            analyser.getByteFrequencyData(dataArray);
+
+            let sum = 0;
+            const bassBins = Math.floor(bufferLength * 0.4); 
+            for (let i = 0; i < bassBins; i++) {
+              sum += dataArray[i];
+            }
+            let avgVolume = sum / bassBins;
+
+            smoothVolume += (avgVolume - smoothVolume) * 0.30;
+            const normVol = smoothVolume / 255;
+
+            let scale = 1 + normVol * 0.5;
+            let jumpY = -normVol * 25;
+
+            if (banner && banner.classList.contains('show-alert')) {
+              banner.style.transform = `translateX(-50%) translateY(${jumpY}px) scale(${scale})`;
+            }
+
+            if (!audio.paused && !audio.ended) {
+              animFrameId = requestAnimationFrame(syncRhythm);
+            } else {
+              if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
+            }
           }
 
-          resolve(1.5);
+          audio.addEventListener('play', () => { syncRhythm(); });
+
+        } catch (e) {
+          console.log("Audio Analyser note:", e);
         }
+
+        audio.play().catch(err => {
+          onError(err);
+        });
       });
+    }
+
+    function playSynthFallback(banner) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); 
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+
+      if (banner) {
+        banner.style.transform = `translateX(-50%) scale(1.2) translateY(-15px)`;
+        setTimeout(() => { banner.style.transform = `translateX(-50%) scale(1) translateY(0px)`; }, 350);
+      }
     }
 
     loadSoundsAutomatically();
@@ -402,17 +426,17 @@
       // 1. Fade IN
       banner.classList.add('show-alert');
 
-      // 2. Play sound without repeats and wait for it to finish
+      // 2. Play sound without repeats (with automatic retry)
       const soundDuration = await playAlertSound();
 
       // Ensure at least 2.5s display time for very short sounds
       const remainingDisplayTime = Math.max(0, (2.5 - soundDuration) * 1000);
 
       setTimeout(() => {
-        // 3. Fade OUT right when the music finishes!
+        // 3. Fade OUT right when music ends
         banner.classList.remove('show-alert');
         
-        // 4. Wait for fade out transition (0.5s) + 5-second break pause
+        // 4. Wait for fade out transition + 5-second break pause
         setTimeout(() => {
           isProcessingAlert = false;
           processQueue();
@@ -432,6 +456,8 @@
     function resetTotal() {
       currentTotal = 0;
       alertQueue.length = 0;
+      availableSoundsPool = [];
+      updateStatusUI();
       document.getElementById('totalDisplay').innerText = `0 kr`;
     }
 
