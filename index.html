@@ -88,6 +88,8 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.7);
       display: none;
       text-align: center;
+      transition: transform 0.05s ease-out; /* Smooth 60fps movement */
+      transform-origin: center center;
     }
 
     .donor-name {
@@ -98,7 +100,7 @@
 
     .show-alert {
       display: block;
-      animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     }
 
     @keyframes popIn {
@@ -143,8 +145,9 @@
 
     let soundFileList = [];
     let currentTotal = 0; 
+    let audioCtx = null;
 
-    // AUTO-DETECT GITHUB DETAILS FROM LINK
+    // Auto-detect GitHub username and repo name
     function getGitHubDetails() {
       let username = "";
       let repo = "";
@@ -156,7 +159,6 @@
       return { username, repo };
     }
 
-    // Load sounds from GitHub folder
     async function loadSoundsFromGitHubFolder() {
       const { username, repo } = getGitHubDetails();
       if (!username || !repo) return;
@@ -176,41 +178,87 @@
       }
     }
 
-    // Play Sound & Return duration instantly
+    // REAL-TIME AUDIO ANALYSER (Rhythm Sync Engine)
     function playAlertSound() {
       return new Promise((resolve) => {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const banner = document.getElementById('alertBanner');
+
         if (soundFileList.length > 0) {
           const randomSound = soundFileList[Math.floor(Math.random() * soundFileList.length)];
-          const audio = new Audio(randomSound);
+          const audio = new Audio();
+          audio.crossOrigin = "anonymous";
+          audio.src = randomSound;
           audio.volume = SOUND_VOLUME;
-          
-          // Prevent OBS garbage collection from stopping audio midway
           window.currentAudio = audio;
 
-          const getDuration = () => {
-            const dur = audio.duration;
-            resolve(dur && !isNaN(dur) && dur > 0 ? dur : MINIMUM_ALERT_DURATION_SECONDS);
-          };
+          // Connect audio to AnalyserNode to read real-time volume/frequencies
+          const source = audioCtx.createMediaElementSource(audio);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64; 
+          const bufferLength = analyser.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
 
-          audio.addEventListener('loadedmetadata', getDuration);
+          source.connect(analyser);
+          analyser.connect(audioCtx.destination);
 
-          audio.play().then(() => {
-            if (audio.duration && !isNaN(audio.duration)) {
-              getDuration();
+          let animFrameId;
+
+          // 60FPS animation loop reading rhythm levels
+          function syncRhythm() {
+            analyser.getByteFrequencyData(dataArray);
+
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+              sum += dataArray[i];
             }
-          }).catch(err => {
+            let avgVolume = sum / bufferLength; // 0 to 255
+
+            // Calculate scale (pulse size) and shake offsets
+            let scale = 1 + (avgVolume / 255) * 0.35; // Expands up to 35% larger on beats
+            let shakeX = (Math.random() - 0.5) * (avgVolume / 12); // Vibrates X
+            let shakeY = (Math.random() - 0.5) * (avgVolume / 12); // Vibrates Y
+            let rotate = (Math.random() - 0.5) * (avgVolume / 25); // Slight tilt
+
+            if (banner && banner.classList.contains('show-alert')) {
+              banner.style.transform = `scale(${scale}) translate(${shakeX}px, ${shakeY}px) rotate(${rotate}deg)`;
+            }
+
+            if (!audio.paused && !audio.ended) {
+              animFrameId = requestAnimationFrame(syncRhythm);
+            } else {
+              if (banner) banner.style.transform = `scale(1) translate(0px, 0px) rotate(0deg)`;
+            }
+          }
+
+          audio.addEventListener('play', () => {
+            syncRhythm();
+          });
+
+          audio.addEventListener('ended', () => {
+            cancelAnimationFrame(animFrameId);
+            if (banner) banner.style.transform = `scale(1) translate(0px, 0px) rotate(0deg)`;
+            resolve(audio.duration || MINIMUM_ALERT_DURATION_SECONDS);
+          });
+
+          audio.addEventListener('error', (err) => {
             console.log("Audio play error:", err);
             resolve(MINIMUM_ALERT_DURATION_SECONDS);
           });
 
-          // Safety timeout resolve
-          setTimeout(() => {
-            getDuration();
-          }, 800);
+          audio.play().catch(err => {
+            console.log("Audio play blocked/error:", err);
+            resolve(MINIMUM_ALERT_DURATION_SECONDS);
+          });
 
         } else {
-          // Fallback Synthesizer sound
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          // Fallback Synthesizer sound with pulse effect
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
@@ -223,6 +271,12 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
 
+          // Pulse banner manually on synth beat
+          if (banner) {
+            banner.style.transform = `scale(1.2) rotate(2deg)`;
+            setTimeout(() => { banner.style.transform = `scale(1) rotate(0deg)`; }, 300);
+          }
+
           resolve(1.5);
         }
       });
@@ -231,7 +285,7 @@
     loadSoundsFromGitHubFolder();
 
     // =========================================================
-    // IN-SYNC ALERT QUEUE SYSTEM
+    // ALERT QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
@@ -247,24 +301,19 @@
       isProcessingAlert = true;
       const nextAlert = alertQueue.shift();
 
-      // 1. Update UI Text & Display Banner
       const banner = document.getElementById('alertBanner');
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
       banner.classList.add('show-alert');
 
-      // 2. Start Sound at the SAME time as the banner appears
       const soundDuration = await playAlertSound();
-
-      // 3. Keep banner up for length of sound OR minimum 5 seconds
       const bannerDurationMs = Math.max(soundDuration, MINIMUM_ALERT_DURATION_SECONDS) * 1000;
 
-      // 4. Hide banner when time is up
       setTimeout(() => {
         banner.classList.remove('show-alert');
+        banner.style.transform = `scale(1) translate(0px, 0px) rotate(0deg)`;
         
-        // ⏱️ 5-second break before starting next queued alert
         setTimeout(() => {
           isProcessingAlert = false;
           processQueue();
@@ -287,7 +336,6 @@
       document.getElementById('totalDisplay').innerText = `0 kr`;
     }
 
-    // Hide Test Panel if URL has ?live=1
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('live') === '1') {
       document.getElementById('testPanel').style.display = 'none';
