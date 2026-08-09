@@ -102,7 +102,7 @@
       visibility: visible;
     }
 
-    /* Inner Container: Big, Silky-Smooth Bass Bounce (Zero Jitter) */
+    /* Inner Container: GPU Hardware-Accelerated Zero-Jitter Text */
     .alert-content {
       background: transparent;
       color: #ffffff;
@@ -116,8 +116,12 @@
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
       transform-origin: center center;
-      /* Spring curve for liquid smooth motion */
-      transition: transform 0.15s cubic-bezier(0.25, 1, 0.5, 1);
+      
+      /* GPU Acceleration - Fixes Sub-Pixel Font Jitter in OBS */
+      will-change: transform;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translateZ(0);
     }
 
     .donor-name {
@@ -237,7 +241,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // PURE SMOOTH BASS BOUNCE ENGINE (ZERO SHAKE)
+    // PROFESSIONAL VU-METER PEAK-DECAY BASS ENGINE (ZERO SHAKE)
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -276,30 +280,34 @@
             function syncRhythm() {
               analyser.getByteFrequencyData(dataArray);
 
-              // Strictly sample Sub-Bass & Kick Drum (Bins 0, 1, 2)
+              // Strict Sub-Bass & Kick Drum Sampling (Bins 0, 1, 2)
               let bassSum = dataArray[0] + dataArray[1] + dataArray[2];
               let avgBass = bassSum / 3;
 
-              // Noise Gate for clean silence between beats
+              // Noise Gate
               if (avgBass < 25) {
                 avgBass = 0;
               }
 
-              // Liquid smooth lerp interpolation
-              smoothVolume += (avgBass - smoothVolume) * 0.20;
+              // PEAK-DECAY ENVELOPE FOLLOWER (Smooth rise, decay glide down)
+              if (avgBass > smoothVolume) {
+                smoothVolume += (avgBass - smoothVolume) * 0.15; // Smooth rise on beat hit
+              } else {
+                smoothVolume *= 0.91; // Exponential smooth decay down (No twitching)
+              }
 
-              // Big Smooth Scale (up to 1.70x) + Big Smooth Lift (-35px)
-              let scale = 1 + (smoothVolume / 255) * 0.70;
-              let translateY = -(smoothVolume / 255) * 35;
+              // Big Smooth Scale (up to 1.60x) + Smooth Vertical Lift (-30px)
+              let scale = 1 + (smoothVolume / 255) * 0.60;
+              let translateY = -(smoothVolume / 255) * 30;
 
               if (content && banner.classList.contains('show-alert')) {
-                content.style.transform = `translateY(${translateY}px) scale(${scale})`;
+                content.style.transform = `translateZ(0) translateY(${translateY}px) scale(${scale})`;
               }
 
               if (!audio.paused && !audio.ended) {
                 animFrameId = requestAnimationFrame(syncRhythm);
               } else {
-                if (content) content.style.transform = `translateY(0px) scale(1)`;
+                if (content) content.style.transform = `translateZ(0) translateY(0px) scale(1)`;
               }
             }
 
@@ -311,7 +319,7 @@
 
           const finishAlert = () => {
             cancelAnimationFrame(animFrameId);
-            if (content) content.style.transform = `translateY(0px) scale(1)`;
+            if (content) content.style.transform = `translateZ(0) translateY(0px) scale(1)`;
             
             const elapsed = Date.now() - startTime;
             if (elapsed < 3000) {
@@ -344,8 +352,8 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (content) {
-            content.style.transform = `translateY(-20px) scale(1.4)`;
-            setTimeout(() => { content.style.transform = `translateY(0px) scale(1)`; }, 350);
+            content.style.transform = `translateZ(0) translateY(-20px) scale(1.4)`;
+            setTimeout(() => { content.style.transform = `translateZ(0) translateY(0px) scale(1)`; }, 350);
           }
 
           setTimeout(resolve, 3000);
@@ -387,7 +395,7 @@
 
       // 3. Smooth Fade Out when Music Stops
       banner.classList.remove('show-alert');
-      if (content) content.style.transform = `translateY(0px) scale(1)`;
+      if (content) content.style.transform = `translateZ(0) translateY(0px) scale(1)`;
 
       // 4. Break Pause between queued alerts
       setTimeout(() => {
