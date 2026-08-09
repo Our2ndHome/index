@@ -133,23 +133,25 @@
     // =========================================================
     // CONFIGURATION
     // =========================================================
+    // Change this URL when the new Musikhjälpen site opens!
     const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
     const CHECK_INTERVAL_SECONDS = 5;
 
     // GITHUB SOUND FOLDER CONFIGURATION
+    // ⬇️ Fill in your GitHub Username and Repository Name! ⬇️
     const GITHUB_USERNAME = "YOUR_GITHUB_USERNAME";
     const GITHUB_REPO = "YOUR_REPOSITORY_NAME";
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
-    
+
     // TIMING SETTINGS
     const MINIMUM_ALERT_DURATION_SECONDS = 5; // Minimum time banner stays on screen
-    const PAUSE_BETWEEN_ALERTS_SECONDS = 5;    // ⏱️ 5-second break between queued alerts
+    const PAUSE_BETWEEN_ALERTS_SECONDS = 5;    // 5-second break between queued alerts
 
     let soundFileList = [];
     let currentTotal = 0; 
 
-    // Automatically load sound files inside "sounds" folder on GitHub
+    // Automatically fetch sound files inside "sounds" folder on GitHub
     async function loadSoundsFromGitHubFolder() {
       try {
         const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
@@ -162,7 +164,7 @@
 
         console.log("Loaded sounds from GitHub folder:", soundFileList);
       } catch (err) {
-        console.log("No sounds found in GitHub folder. Using synthesizer sound.", err);
+        console.log("No custom sounds found in GitHub folder yet. Using synthesizer sound fallback.", err);
       }
     }
 
@@ -245,7 +247,7 @@
       setTimeout(() => {
         banner.classList.remove('show-alert');
         
-        // ⏱️ 5-second break before starting the next queued alert
+        // Break pause before starting the next queued alert
         setTimeout(() => {
           isProcessingAlert = false;
           processQueue();
