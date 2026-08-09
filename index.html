@@ -87,10 +87,23 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner with Fade In / Out Transition */
+    /* Outer Container: Handles Smooth Fade In / Fade Out */
     .alert-banner {
       position: absolute;
       top: 120px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+      text-align: center;
+    }
+
+    .show-alert {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Inner Container: Handles 60FPS Beat Bounce Animation without conflict */
+    .alert-content {
       background: transparent;
       color: #ffffff;
       padding: 10px;
@@ -98,10 +111,6 @@
       font-weight: 900;
       text-transform: uppercase;
       text-align: center;
-      opacity: 0;
-      visibility: hidden;
-      /* Smooth opacity fade in/out */
-      transition: opacity 0.5s ease, visibility 0.5s ease;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
@@ -110,7 +119,7 @@
     }
 
     .donor-name {
-      color: #ace600; /* Requested vibrant lime green */
+      color: #ace600; /* Vibrant Lime Green */
       display: block;
       font-size: 52px;
       font-weight: 900;
@@ -118,18 +127,6 @@
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 30px rgba(172, 230, 0, 0.7);
-    }
-
-    /* Shown Class triggers Fade In & Pop Animation */
-    .show-alert {
-      opacity: 1;
-      visibility: visible;
-      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    @keyframes popIn {
-      0% { transform: scale(0.3); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
     }
   </style>
 </head>
@@ -146,10 +143,12 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner -->
+  <!-- Donation Popup Banner (Decoupled Fade & Bounce) -->
   <div class="alert-banner" id="alertBanner">
-    <span class="donor-name" id="donorName">JOHAN</span> 
-    DONERADE <span id="alertAmount">50 kr</span>!
+    <div class="alert-content" id="alertContent">
+      <span class="donor-name" id="donorName">JOHAN</span> 
+      DONERADE <span id="alertAmount">50 kr</span>!
+    </div>
   </div>
 
   <!-- Total Raised Display -->
@@ -170,7 +169,7 @@
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
 
-    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; // Break between queued alerts
+    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
     // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
@@ -247,6 +246,7 @@
         }
 
         const banner = document.getElementById('alertBanner');
+        const content = document.getElementById('alertContent');
         const startTime = Date.now();
 
         if (soundFileList.length > 0) {
@@ -273,7 +273,6 @@
             function syncRhythm() {
               analyser.getByteFrequencyData(dataArray);
 
-              // Focus heavily on bass frequencies for energetic bounce
               let sum = 0;
               const bassBins = Math.floor(bufferLength * 0.6); 
               for (let i = 0; i < bassBins; i++) {
@@ -281,21 +280,19 @@
               }
               let avgVolume = sum / bassBins;
 
-              // Fast, snappy beat response
               smoothVolume += (avgVolume - smoothVolume) * 0.45;
 
-              // Scale up to 1.65x + Vertical Dance Bob (up to -22px)
               let scale = 1 + (smoothVolume / 255) * 0.65;
               let translateY = -(smoothVolume / 255) * 22;
 
-              if (banner && banner.classList.contains('show-alert')) {
-                banner.style.transform = `translateY(${translateY}px) scale(${scale})`;
+              if (content && banner.classList.contains('show-alert')) {
+                content.style.transform = `translateY(${translateY}px) scale(${scale})`;
               }
 
               if (!audio.paused && !audio.ended) {
                 animFrameId = requestAnimationFrame(syncRhythm);
               } else {
-                if (banner) banner.style.transform = `translateY(0px) scale(1)`;
+                if (content) content.style.transform = `translateY(0px) scale(1)`;
               }
             }
 
@@ -305,12 +302,10 @@
             console.log("Audio Analyser note:", e);
           }
 
-          // Function called when music ends to finish alert
           const finishAlert = () => {
             cancelAnimationFrame(animFrameId);
-            if (banner) banner.style.transform = `translateY(0px) scale(1)`;
+            if (content) content.style.transform = `translateY(0px) scale(1)`;
             
-            // Ensure alert stays visible for at least 3s if sound is tiny
             const elapsed = Date.now() - startTime;
             if (elapsed < 3000) {
               setTimeout(resolve, 3000 - elapsed);
@@ -319,7 +314,6 @@
             }
           };
 
-          // HIDE IMMEDIATELY WHEN AUDIO ENDS
           audio.addEventListener('ended', finishAlert);
           audio.addEventListener('error', finishAlert);
 
@@ -342,9 +336,9 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
 
-          if (banner) {
-            banner.style.transform = `translateY(-15px) scale(1.35)`;
-            setTimeout(() => { banner.style.transform = `translateY(0px) scale(1)`; }, 350);
+          if (content) {
+            content.style.transform = `translateY(-15px) scale(1.35)`;
+            setTimeout(() => { content.style.transform = `translateY(0px) scale(1)`; }, 350);
           }
 
           setTimeout(resolve, 3000);
@@ -372,21 +366,23 @@
       const nextAlert = alertQueue.shift();
 
       const banner = document.getElementById('alertBanner');
+      const content = document.getElementById('alertContent');
+
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Fade in and show banner
+      // 1. Smooth Fade In
       banner.classList.add('show-alert');
 
-      // 2. Play sound and wait for it to finish!
+      // 2. Play Audio & Bounce Content
       await playAlertSound();
 
-      // 3. IMMEDIATELY FADE OUT WHEN MUSIC STOPS
+      // 3. Smooth Fade Out when Music Stops
       banner.classList.remove('show-alert');
-      banner.style.transform = `translateY(0px) scale(1)`;
+      if (content) content.style.transform = `translateY(0px) scale(1)`;
 
-      // 4. Break pause before next queued alert
+      // 4. Break Pause between queued alerts
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
