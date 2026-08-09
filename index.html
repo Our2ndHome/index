@@ -87,7 +87,7 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner */
+    /* Pop-up Alert Banner with Fade In / Out Transition */
     .alert-banner {
       position: absolute;
       top: 120px;
@@ -98,33 +98,37 @@
       font-weight: 900;
       text-transform: uppercase;
       text-align: center;
-      display: none;
+      opacity: 0;
+      visibility: hidden;
+      /* Smooth opacity fade in/out */
+      transition: opacity 0.5s ease, visibility 0.5s ease;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
-      transition: transform 0.1s ease-out;
       transform-origin: center center;
     }
 
     .donor-name {
-      color: #ffea00;
+      color: #ace600; /* Requested vibrant lime green */
       display: block;
-      font-size: 48px;
+      font-size: 52px;
       font-weight: 900;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 30px rgba(255, 234, 0, 0.7);
+        0 0 30px rgba(172, 230, 0, 0.7);
     }
 
+    /* Shown Class triggers Fade In & Pop Animation */
     .show-alert {
-      display: block;
-      animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      opacity: 1;
+      visibility: visible;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     @keyframes popIn {
-      0% { transform: scale(0); opacity: 0; }
+      0% { transform: scale(0.3); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
     }
   </style>
@@ -142,7 +146,7 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner (NO EMOTES) -->
+  <!-- Donation Popup Banner -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     DONERADE <span id="alertAmount">50 kr</span>!
@@ -166,8 +170,7 @@
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
 
-    const MINIMUM_ALERT_DURATION_SECONDS = 5; 
-    const PAUSE_BETWEEN_ALERTS_SECONDS = 5;    
+    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; // Break between queued alerts
 
     // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
@@ -233,7 +236,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // Direct Sound Player with Smooth Rhythm Bounce
+    // ENERGETIC DANCE BOUNCE AUDIO ENGINE
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -244,12 +247,18 @@
         }
 
         const banner = document.getElementById('alertBanner');
+        const startTime = Date.now();
 
         if (soundFileList.length > 0) {
           const randomSoundPath = soundFileList[Math.floor(Math.random() * soundFileList.length)];
-          const audio = new Audio(randomSoundPath);
+          const audio = new Audio();
+          audio.crossOrigin = "anonymous";
+          audio.src = randomSoundPath;
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
+
+          let animFrameId;
+          let smoothVolume = 0;
 
           try {
             const source = audioCtx.createMediaElementSource(audio);
@@ -261,60 +270,66 @@
             source.connect(analyser);
             analyser.connect(audioCtx.destination);
 
-            let animFrameId;
-            let smoothVolume = 0;
-
             function syncRhythm() {
               analyser.getByteFrequencyData(dataArray);
 
+              // Focus heavily on bass frequencies for energetic bounce
               let sum = 0;
-              const bassBins = Math.floor(bufferLength * 0.5); 
+              const bassBins = Math.floor(bufferLength * 0.6); 
               for (let i = 0; i < bassBins; i++) {
                 sum += dataArray[i];
               }
               let avgVolume = sum / bassBins;
 
-              smoothVolume += (avgVolume - smoothVolume) * 0.25;
-              let scale = 1 + (smoothVolume / 255) * 0.45;
+              // Fast, snappy beat response
+              smoothVolume += (avgVolume - smoothVolume) * 0.45;
+
+              // Scale up to 1.65x + Vertical Dance Bob (up to -22px)
+              let scale = 1 + (smoothVolume / 255) * 0.65;
+              let translateY = -(smoothVolume / 255) * 22;
 
               if (banner && banner.classList.contains('show-alert')) {
-                banner.style.transform = `scale(${scale})`;
+                banner.style.transform = `translateY(${translateY}px) scale(${scale})`;
               }
 
               if (!audio.paused && !audio.ended) {
                 animFrameId = requestAnimationFrame(syncRhythm);
               } else {
-                if (banner) banner.style.transform = `scale(1)`;
+                if (banner) banner.style.transform = `translateY(0px) scale(1)`;
               }
             }
 
             audio.addEventListener('play', () => { syncRhythm(); });
-            audio.addEventListener('ended', () => {
-              cancelAnimationFrame(animFrameId);
-              if (banner) banner.style.transform = `scale(1)`;
-            });
 
           } catch (e) {
             console.log("Audio Analyser note:", e);
           }
 
-          audio.addEventListener('ended', () => {
-            if (banner) banner.style.transform = `scale(1)`;
-            resolve(audio.duration || MINIMUM_ALERT_DURATION_SECONDS);
-          });
+          // Function called when music ends to finish alert
+          const finishAlert = () => {
+            cancelAnimationFrame(animFrameId);
+            if (banner) banner.style.transform = `translateY(0px) scale(1)`;
+            
+            // Ensure alert stays visible for at least 3s if sound is tiny
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 3000) {
+              setTimeout(resolve, 3000 - elapsed);
+            } else {
+              resolve();
+            }
+          };
 
-          audio.addEventListener('error', (err) => {
-            console.log("Error loading audio path:", randomSoundPath, err);
-            resolve(MINIMUM_ALERT_DURATION_SECONDS);
-          });
+          // HIDE IMMEDIATELY WHEN AUDIO ENDS
+          audio.addEventListener('ended', finishAlert);
+          audio.addEventListener('error', finishAlert);
 
           audio.play().catch(err => {
             console.log("Audio play error:", err);
-            resolve(MINIMUM_ALERT_DURATION_SECONDS);
+            finishAlert();
           });
 
         } else {
-          // Fallback Synthesizer sound if no custom MP3 files exist
+          // Fallback Synthesizer sound
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
@@ -328,11 +343,11 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (banner) {
-            banner.style.transform = `scale(1.2)`;
-            setTimeout(() => { banner.style.transform = `scale(1)`; }, 350);
+            banner.style.transform = `translateY(-15px) scale(1.35)`;
+            setTimeout(() => { banner.style.transform = `translateY(0px) scale(1)`; }, 350);
           }
 
-          resolve(1.5);
+          setTimeout(resolve, 3000);
         }
       });
     }
@@ -340,7 +355,7 @@
     loadSoundsAutomatically();
 
     // =========================================================
-    // ALERT QUEUE SYSTEM
+    // IN-SYNC ALERT QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
@@ -360,21 +375,22 @@
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
+
+      // 1. Fade in and show banner
       banner.classList.add('show-alert');
 
-      const soundDuration = await playAlertSound();
-      const bannerDurationMs = Math.max(soundDuration, MINIMUM_ALERT_DURATION_SECONDS) * 1000;
+      // 2. Play sound and wait for it to finish!
+      await playAlertSound();
 
+      // 3. IMMEDIATELY FADE OUT WHEN MUSIC STOPS
+      banner.classList.remove('show-alert');
+      banner.style.transform = `translateY(0px) scale(1)`;
+
+      // 4. Break pause before next queued alert
       setTimeout(() => {
-        banner.classList.remove('show-alert');
-        banner.style.transform = `scale(1)`;
-        
-        setTimeout(() => {
-          isProcessingAlert = false;
-          processQueue();
-        }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
-
-      }, bannerDurationMs);
+        isProcessingAlert = false;
+        processQueue();
+      }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
     }
 
     // =========================================================
