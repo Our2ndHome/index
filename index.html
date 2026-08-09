@@ -87,10 +87,12 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner */
+    /* Pop-up Alert Banner - Centered & Anchored */
     .alert-banner {
       position: absolute;
-      top: 130px;
+      top: 40%; /* True screen center position */
+      left: 50%;
+      transform: translate(-50%, -50%);
       opacity: 0;
       visibility: hidden;
       text-align: center;
@@ -106,6 +108,11 @@
         0 0 35px rgba(255, 0, 128, 0.8);
       transform-origin: center center;
       will-change: transform, opacity;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .donor-name {
@@ -119,40 +126,40 @@
         0 0 30px rgba(172, 230, 0, 0.7);
     }
 
-    /* 💥 EXPLOSIVE SWELL WAVE ANIMATION ("text ➔ TEXT ➔ text") */
+    /* 💥 CENTERED EXPLOSIVE SWELL ANIMATION ("text ➔ TEXT ➔ text") */
     .show-alert {
       visibility: visible;
-      animation: explosiveSwellWave 4.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      animation: centerExplosiveSwell 4.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
-    @keyframes explosiveSwellWave {
+    @keyframes centerExplosiveSwell {
       0% {
         opacity: 0;
-        transform: scale(0.4);
+        transform: translate(-50%, -50%) scale(0.3);
       }
-      12% {
+      15% {
         opacity: 1;
-        transform: scale(0.85); /* "text" (compact resting size) */
+        transform: translate(-50%, -50%) scale(0.85); /* "text" (compact resting size) */
       }
-      32% {
+      38% {
         opacity: 1;
-        transform: scale(1.95); /* "TEXT" - MASSIVE EXPLOSIVE SWELL! */
+        transform: translate(-50%, -50%) scale(1.85); /* "TEXT" - EXPLODES FROM CENTER! */
       }
-      50% {
+      58% {
         opacity: 1;
-        transform: scale(0.85); /* "text" (collapses back down) */
+        transform: translate(-50%, -50%) scale(0.85); /* "text" (shrinks back to center) */
       }
-      70% {
+      78% {
         opacity: 1;
-        transform: scale(1.80); /* "TEXT" - SECOND BIG SWELL! */
+        transform: translate(-50%, -50%) scale(1.65); /* "TEXT" - SECOND SWELL FROM CENTER! */
       }
-      85% {
+      90% {
         opacity: 1;
-        transform: scale(0.95); /* "text" */
+        transform: translate(-50%, -50%) scale(1.0);
       }
       100% {
         opacity: 0;
-        transform: scale(0.5); /* Smooth fade out */
+        transform: translate(-50%, -50%) scale(0.4); /* Fades out into center */
       }
     }
   </style>
@@ -195,6 +202,7 @@
     const SOUND_VOLUME = 0.8;
 
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
+    const MINIMUM_ALERT_DISPLAY_MS = 4500; // Guarantees alert stays on screen for 4.5 seconds minimum!
 
     // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
@@ -259,26 +267,32 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // Direct Audio Player
+    // Direct Audio Player with Guaranteed Display Time
     function playAlertSound() {
       return new Promise((resolve) => {
+        const startTime = Date.now();
+
+        const finishAlert = () => {
+          const elapsed = Date.now() - startTime;
+          if (elapsed < MINIMUM_ALERT_DISPLAY_MS) {
+            setTimeout(resolve, MINIMUM_ALERT_DISPLAY_MS - elapsed);
+          } else {
+            resolve();
+          }
+        };
+
         if (soundFileList.length > 0) {
           const randomSoundPath = soundFileList[Math.floor(Math.random() * soundFileList.length)];
           const audio = new Audio(randomSoundPath);
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
-          audio.addEventListener('ended', () => {
-            resolve(audio.duration || 4);
-          });
-
-          audio.addEventListener('error', () => {
-            resolve(4);
-          });
+          audio.addEventListener('ended', finishAlert);
+          audio.addEventListener('error', finishAlert);
 
           audio.play().catch(err => {
             console.log("Audio play error:", err);
-            resolve(4);
+            finishAlert();
           });
         } else {
           // Fallback Synthesizer sound
@@ -295,7 +309,7 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
 
-          resolve(3);
+          finishAlert();
         }
       });
     }
@@ -325,15 +339,15 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Play Audio
+      // 1. Play Audio & Start Guaranteed Timer
       const audioPromise = playAlertSound();
 
-      // 2. Trigger Explosive Swell Wave Animation
+      // 2. Trigger Centered Explosive Swell Wave Animation
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow to restart animation cleanly
       banner.classList.add('show-alert');
 
-      // 3. Wait for audio to finish
+      // 3. Wait for audio + display time
       await audioPromise;
 
       // 4. Remove alert banner
