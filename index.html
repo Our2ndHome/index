@@ -79,6 +79,7 @@
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 30px rgba(0, 255, 136, 0.6);
+      white-space: nowrap;
     }
 
     .amount {
@@ -87,7 +88,7 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner - Perfectly Centered */
+    /* Pop-up Alert Banner - Centered & Prevented from Wrapping */
     .alert-banner {
       position: absolute;
       top: 40%;
@@ -97,32 +98,36 @@
       visibility: hidden;
       text-align: center;
       background: transparent;
-      color: #ffffff;
       padding: 10px;
-      font-size: 32px;
-      font-weight: 900;
       text-transform: uppercase;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
       transition: opacity 0.5s ease, visibility 0.5s ease;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      white-space: nowrap; /* Keeps Line 2 together on one line! */
+      pointer-events: none;
     }
 
+    /* Line 1: Donor Name */
     .donor-name {
-      color: #ace600; /* Vibrant Lime Green */
+      color: #ace600; /* Lime Green */
       display: block;
-      font-size: 52px;
+      font-size: 56px;
       font-weight: 900;
+      margin-bottom: 5px;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 30px rgba(172, 230, 0, 0.7);
+    }
+
+    /* Line 2: DONERADE 50 KR! */
+    .alert-subtext {
+      color: #ffffff;
+      font-size: 36px;
+      font-weight: 900;
+      white-space: nowrap;
     }
 
     /* Smooth Elastic Pop Animation */
@@ -161,10 +166,10 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner -->
+  <!-- Donation Popup Banner (Clean 2-Line Layout) -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
-    DONERADE <span id="alertAmount">50 kr</span>!
+    <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
   <!-- Total Raised Display -->
@@ -185,7 +190,7 @@
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
 
-    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; // Break between queued alerts
+    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
     // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
@@ -250,7 +255,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // Rock-solid audio player (Resolves when audio finishes playing)
+    // Audio Player - Resolves strictly when audio ends
     function playAlertSound() {
       return new Promise((resolve) => {
         const onEnded = () => {
@@ -315,12 +320,12 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Smooth Elastic Pop In
+      // 1. Restart Elastic Pop In
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
-      // 2. Play Audio and wait strictly until audio finishes playing
+      // 2. Play Audio & Wait until audio finishes
       await playAlertSound();
 
       // 3. Smooth Fade Out when music ends
