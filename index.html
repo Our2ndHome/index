@@ -133,19 +133,19 @@
 
   <!-- TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4>🧪 Testpanel (OBS Interagera)</h4>
+    <h4>Testpanel (OBS Interagera)</h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
     <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
     <button onclick="simulateDonation('En anonym givare', 100)">+100 kr (Anonym)</button>
     <button onclick="resetTotal()" style="border-color: #ff0055;">Nollställ</button>
     
-    <div class="sound-status" id="soundStatus">🔍 Laddar ljud...</div>
+    <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner -->
+  <!-- Donation Popup Banner (NO EMOTES) -->
   <div class="alert-banner" id="alertBanner">
-    🎉 <span class="donor-name" id="donorName">JOHAN</span> 
-    DONERADE <span id="alertAmount">50 kr</span>! 🎉
+    <span class="donor-name" id="donorName">JOHAN</span> 
+    DONERADE <span id="alertAmount">50 kr</span>!
   </div>
 
   <!-- Total Raised Display -->
@@ -194,7 +194,6 @@
       const statusElement = document.getElementById('soundStatus');
       let foundSounds = [];
 
-      // METHOD 1: Try reading 'sounds/list.txt' if you ever create one
       try {
         const txtRes = await fetch(`sounds/list.txt?_t=${Date.now()}`);
         if (txtRes.ok) {
@@ -206,7 +205,6 @@
         }
       } catch (e) {}
 
-      // METHOD 2: Try GitHub API Auto-Scan
       if (foundSounds.length === 0) {
         try {
           const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
@@ -223,7 +221,6 @@
         } catch (e) {}
       }
 
-      // METHOD 3: Fallback to the 12 TikTok sounds from screenshot
       if (foundSounds.length === 0) {
         foundSounds = TIKTOK_BACKUP_SOUNDS;
       }
@@ -231,7 +228,7 @@
       soundFileList = foundSounds;
 
       if (statusElement) {
-        statusElement.innerHTML = `🟢 <b>${soundFileList.length} ljud redo!</b><br><span style="color:#00ff88;">Ljudfiler laddade framgångsrikt.</span>`;
+        statusElement.innerHTML = `<b>${soundFileList.length} ljud redo!</b><br><span style="color:#00ff88;">Ljudfiler laddade framgångsrikt.</span>`;
       }
       console.log("Active sound list:", soundFileList);
     }
