@@ -4,11 +4,10 @@
   <meta charset="UTF-8">
   <title>OBS Test Alert</title>
   <style>
-    /* Transparent background so game/camera shows through in OBS */
     body {
       margin: 0;
       padding: 0;
-      background-color: transparent; 
+      background-color: transparent;
       font-family: 'Segoe UI', Arial, sans-serif;
       display: flex;
       justify-content: center;
@@ -17,7 +16,6 @@
       overflow: hidden;
     }
 
-    /* Alert Banner Styling */
     .alert-box {
       background: linear-gradient(135deg, #ff007f, #7928ca);
       color: white;
@@ -27,11 +25,9 @@
       font-size: 32px;
       font-weight: bold;
       text-transform: uppercase;
-      letter-spacing: 1px;
       animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     }
 
-    /* Pop-in animation */
     @keyframes popIn {
       0% { transform: scale(0); opacity: 0; }
       100% { transform: scale(1); opacity: 1; }
@@ -40,34 +36,57 @@
 </head>
 <body>
 
-  <div class="alert-box" id="alertBox">
+  <div class="alert-box">
     <span id="alertText">🎉 ALERT TRIGGERED! 🎉</span>
   </div>
 
   <script>
-    // List of reliable royalty-free sound effects
-    const soundList = [
-      "https://actions.google.com/sounds/v1/cartoon/pop.ogg",
-      "https://actions.google.com/sounds/v1/cartoon/clink_clank.ogg",
-      "https://actions.google.com/sounds/v1/cartoon/boing_poing.ogg",
-      "https://actions.google.com/sounds/v1/cartoon/metal_twang.ogg"
-    ];
-
-    // Pick a random sound from the array
-    const randomSound = soundList[Math.floor(Math.random() * soundList.length)];
-
-    // Check if a URL parameter like ?name=Alex was provided
+    // Custom name from URL parameter ?name=Alex
     const urlParams = new URLSearchParams(window.location.search);
     const customName = urlParams.get('name');
-    
     if (customName) {
       document.getElementById('alertText').innerText = `🎉 ${customName} TRIGGERED AN ALERT! 🎉`;
     }
 
-    // Play the audio automatically when loaded
-    const audio = new Audio(randomSound);
-    audio.play().catch(err => {
-      console.log("Autoplay waiting for interaction or OBS permissions:", err);
+    // Function to generate a random synthesized arcade chime sound
+    function playRandomSynthSound() {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Random frequencies for pitch
+      const freqs = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99]; // C, E, G notes
+      const randomFreq1 = freqs[Math.floor(Math.random() * freqs.length)];
+      const randomFreq2 = freqs[Math.floor(Math.random() * freqs.length)];
+
+      // Note 1
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(randomFreq1, audioCtx.currentTime);
+      gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start();
+      osc1.stop(audioCtx.currentTime + 0.3);
+
+      // Note 2 (slightly delayed)
+      setTimeout(() => {
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(randomFreq2, audioCtx.currentTime);
+        gain2.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start();
+        osc2.stop(audioCtx.currentTime + 0.4);
+      }, 150);
+    }
+
+    // Trigger sound on load
+    window.addEventListener('DOMContentLoaded', () => {
+      playRandomSynthSound();
     });
   </script>
 </body>
