@@ -79,6 +79,7 @@
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 30px rgba(0, 255, 136, 0.6);
+      white-space: nowrap;
     }
 
     .amount {
@@ -87,17 +88,18 @@
       font-weight: 900;
     }
 
-    /* Pop-up Alert Banner - FADE IN / FADE OUT & DANCE ANIMATION */
+    /* Pop-up Alert Banner - Centered & Straight (No Sway) */
     .alert-banner {
       position: absolute;
       top: 120px;
+      left: 50%;
+      transform: translateX(-50%);
       background: transparent;
       color: #ffffff;
       padding: 10px;
-      font-size: 32px;
-      font-weight: 900;
       text-transform: uppercase;
       text-align: center;
+      white-space: nowrap; /* Prevents text from breaking awkwardly */
       
       /* Smooth Fade In and Fade Out */
       opacity: 0;
@@ -111,16 +113,25 @@
         0 0 35px rgba(255, 0, 128, 0.8);
     }
 
-    /* Donor Name - New Color #ace600 */
+    /* Donor Name - Color #ace600 */
     .donor-name {
       color: #ace600;
       display: block;
-      font-size: 52px;
+      font-size: 56px;
       font-weight: 900;
+      margin-bottom: 5px;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 30px rgba(172, 230, 0, 0.8);
+    }
+
+    /* Subtext Line 2 */
+    .alert-subtext {
+      color: #ffffff;
+      font-size: 36px;
+      font-weight: 900;
+      white-space: nowrap;
     }
 
     /* Active visible state for Fade In */
@@ -143,10 +154,10 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- Donation Popup Banner -->
+  <!-- Donation Popup Banner (Clean 2-Line Layout) -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
-    DONERADE <span id="alertAmount">50 kr</span>!
+    <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
   <!-- Total Raised Display -->
@@ -167,7 +178,7 @@
     const SOUNDS_FOLDER = "sounds"; 
     const SOUND_VOLUME = 0.8;
 
-    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; // Break time between alerts
+    const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
     // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
@@ -233,7 +244,7 @@
       console.log("Active sound list:", soundFileList);
     }
 
-    // HIGH-ENERGY RHYTHM DANCE ENGINE
+    // STRAIGHT VERTICAL BOUNCE ENGINE (NO SWAY / ROTATION)
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -247,7 +258,9 @@
 
         if (soundFileList.length > 0) {
           const randomSoundPath = soundFileList[Math.floor(Math.random() * soundFileList.length)];
-          const audio = new Audio(randomSoundPath);
+          const audio = new Audio();
+          audio.crossOrigin = "anonymous";
+          audio.src = randomSoundPath;
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
@@ -264,7 +277,6 @@
             let animFrameId;
             let smoothVolume = 0;
 
-            // 🕺 HIGH ENERGY DANCE ANIMATION LOOP 🕺
             function syncRhythm() {
               analyser.getByteFrequencyData(dataArray);
 
@@ -275,34 +287,31 @@
               }
               let avgVolume = sum / bassBins; // 0 to 255
 
-              // Fast-reacting Lerp for snappy beats
-              smoothVolume += (avgVolume - smoothVolume) * 0.35;
+              // Lerp smoothing
+              smoothVolume += (avgVolume - smoothVolume) * 0.30;
               const normVol = smoothVolume / 255;
 
-              // 1. Scale up to 1.7x (70% bigger on heavy beats)
-              let scale = 1 + normVol * 0.7;
+              // 1. Scale expansion
+              let scale = 1 + normVol * 0.5;
               
-              // 2. Vertical Jump up to -35px on beat hits
-              let jumpY = -normVol * 35;
-              
-              // 3. Gentle rhythmic side-to-side sway
-              let tilt = Math.sin(Date.now() / 120) * (normVol * 6);
+              // 2. Vertical Jump up to -25px on beats (Straight up, no side-sway)
+              let jumpY = -normVol * 25;
 
               if (banner && banner.classList.contains('show-alert')) {
-                banner.style.transform = `scale(${scale}) translateY(${jumpY}px) rotate(${tilt}deg)`;
+                banner.style.transform = `translateX(-50%) translateY(${jumpY}px) scale(${scale})`;
               }
 
               if (!audio.paused && !audio.ended) {
                 animFrameId = requestAnimationFrame(syncRhythm);
               } else {
-                if (banner) banner.style.transform = `scale(1) translateY(0px) rotate(0deg)`;
+                if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
               }
             }
 
             audio.addEventListener('play', () => { syncRhythm(); });
             audio.addEventListener('ended', () => {
               cancelAnimationFrame(animFrameId);
-              if (banner) banner.style.transform = `scale(1) translateY(0px) rotate(0deg)`;
+              if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
             });
 
           } catch (e) {
@@ -311,7 +320,7 @@
 
           // Resolve immediately when music ends
           audio.addEventListener('ended', () => {
-            if (banner) banner.style.transform = `scale(1) translateY(0px) rotate(0deg)`;
+            if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
             resolve(audio.duration || 3);
           });
 
@@ -340,8 +349,8 @@
           osc.stop(audioCtx.currentTime + 0.5);
 
           if (banner) {
-            banner.style.transform = `scale(1.3) translateY(-20px)`;
-            setTimeout(() => { banner.style.transform = `scale(1) translateY(0px)`; }, 350);
+            banner.style.transform = `translateX(-50%) scale(1.2) translateY(-15px)`;
+            setTimeout(() => { banner.style.transform = `translateX(-50%) scale(1) translateY(0px)`; }, 350);
           }
 
           resolve(1.5);
@@ -352,7 +361,7 @@
     loadSoundsAutomatically();
 
     // =========================================================
-    // ALERT QUEUE SYSTEM
+    // IN-SYNC ALERT QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
