@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Musikhjälpen Bössan Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -17,6 +18,17 @@
       overflow: hidden;
       padding-bottom: 50px;
       box-sizing: border-box;
+    }
+
+    /* 🎨 HTML5 CANVAS PIXEL ENGINE OVERLAY */
+    #particleCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 998;
     }
 
     /* TEST CONTROL PANEL */
@@ -79,7 +91,6 @@
       z-index: 997;
     }
 
-    /* Upper Label -> #ace600 */
     .countdown-label {
       font-size: 15px;
       font-weight: 800;
@@ -93,7 +104,6 @@
       transition: all 0.5s ease-in-out;
     }
 
-    /* Sleek Timer Numbers */
     .countdown-timer {
       font-size: 34px;
       font-weight: 900;
@@ -121,7 +131,7 @@
     }
 
     .countdown-widget.final-minute .countdown-timer {
-      font-size: 96px; /* BIG centered seconds */
+      font-size: 96px;
       color: #ffffff; 
       text-shadow: 
         0 0 15px rgba(0, 0, 0, 0.9),
@@ -134,7 +144,6 @@
       100% { transform: scale(1.08); }
     }
 
-    /* Timer Finished State */
     .timer-finished .countdown-label {
       color: #ace600;
       font-size: 26px;
@@ -148,132 +157,6 @@
     @keyframes pulseGlow {
       0% { text-shadow: 0 0 10px rgba(172, 230, 0, 0.5); }
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
-    }
-
-    /* ✨ 180 PARTICLE HOURGLASS )( STREAM CONTAINER */
-    .particle-container {
-      position: absolute;
-      top: 65px; /* Spawns directly behind countdown */
-      left: 50%;
-      transform: translateX(-50%);
-      pointer-events: none;
-      z-index: 998;
-      transition: top 0.5s ease-in-out;
-    }
-
-    body.is-final-minute .particle-container {
-      top: 165px;
-    }
-
-    .particle {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      will-change: transform, opacity;
-      animation: hourglassStream 1.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-    }
-
-    /* 🌪️ CURVED )( HOURGLASS SANDSTORM PARTICLES */
-    @keyframes hourglassStream {
-      0% {
-        opacity: 0;
-        transform: translate3d(0, 0, 0) scale(0.2);
-      }
-      20% {
-        opacity: 1;
-        /* Curves OUTWARD to the sides ) ( */
-        transform: translate3d(var(--spreadX), 25px, 0) scale(1.3);
-      }
-      60% {
-        opacity: 0.95;
-        /* Curves BACK INWARD into the text area */
-        transform: translate3d(var(--pinchX), 65px, 0) scale(1.5);
-        filter: brightness(2);
-      }
-      85% {
-        opacity: 0.7;
-        transform: translate3d(var(--disperseX), 95px, 0) scale(0.8);
-      }
-      100% {
-        opacity: 0;
-        transform: translate3d(var(--disperseX), 115px, 0) scale(0.1);
-      }
-    }
-
-    /* Pop-up Alert Banner */
-    .alert-banner {
-      position: absolute;
-      top: 90px;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      visibility: hidden;
-      text-align: center;
-      background: transparent;
-      padding: 10px;
-      text-transform: uppercase;
-      text-shadow: 
-        0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 35px rgba(255, 0, 128, 0.8);
-      white-space: nowrap;
-      pointer-events: none;
-      transform-origin: top center;
-      transition: top 0.5s ease-in-out, opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
-      z-index: 999;
-    }
-
-    body.is-final-minute .alert-banner {
-      top: 185px; /* Shifted lower down during SISTA MINUTEN */
-    }
-
-    .donor-name {
-      color: #ace600; 
-      display: block;
-      font-size: 56px;
-      font-weight: 900;
-      margin-bottom: 5px;
-      text-shadow: 
-        0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 30px rgba(172, 230, 0, 0.8);
-    }
-
-    .alert-subtext {
-      color: #ffffff;
-      font-size: 36px;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    /* 🏎️ PORSCHE SANDSTORM TEXT MATERIALIZATION */
-    .show-alert {
-      visibility: visible;
-      opacity: 1;
-      animation: sandstormTextReveal 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-
-    @keyframes sandstormTextReveal {
-      0% {
-        opacity: 0;
-        transform: translateX(-50%) translateY(-20px) scale(0.3);
-        filter: blur(15px) brightness(2.5);
-      }
-      35% {
-        opacity: 0.3;
-        transform: translateX(-50%) translateY(5px) scale(0.7);
-        filter: blur(8px) brightness(2);
-      }
-      65% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(30px) scale(1.40); /* Flashes into solid text as particles pinch inward! */
-        filter: blur(0px) brightness(1.3);
-      }
-      100% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(20px) scale(1.0);
-        filter: blur(0px) brightness(1.0);
-      }
     }
 
     /* Total Raised Display */
@@ -291,6 +174,7 @@
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 30px rgba(255, 255, 255, 0.6);
       white-space: nowrap;
+      z-index: 999;
     }
 
     .amount {
@@ -325,14 +209,8 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- ✨ 180 PARTICLE HOURGLASS STREAM CONTAINER -->
-  <div class="particle-container" id="particleContainer"></div>
-
-  <!-- Donation Popup Banner -->
-  <div class="alert-banner" id="alertBanner">
-    <span class="donor-name" id="donorName">JOHAN</span> 
-    <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
-  </div>
+  <!-- 🎨 HTML5 CANVAS PIXEL ENGINE -->
+  <canvas id="particleCanvas"></canvas>
 
   <!-- Total Raised Display -->
   <div class="goal-box">
@@ -346,7 +224,6 @@
     const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
     const CHECK_INTERVAL_SECONDS = 5;
 
-    // GITHUB DETAILS
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SOUNDS_FOLDER = "sounds"; 
@@ -354,7 +231,6 @@
 
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
-    // GUARANTEED BACKUP TIKTOK SOUNDS FROM SCREENSHOT
     const TIKTOK_BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
       'sounds/ssstik.io_1786298991426.mp3',
@@ -376,53 +252,189 @@
     let audioCtx = null;
 
     // =========================================================
-    // 🌪️ 180 PARTICLE HOURGLASS )( STREAM ENGINE
+    // 🎨 HTML5 CANVAS PIXEL DUST ENGINE
     // =========================================================
-    function spawnHourglassParticleStream() {
-      const container = document.getElementById('particleContainer');
-      if (!container) return;
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let isCanvasAnimating = false;
+    let particleEnginePhase = 'IDLE'; // 'FLOW' -> 'ASSEMBLE' -> 'HOLD' -> 'DISINTEGRATE' -> 'IDLE'
 
-      container.innerHTML = ''; 
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-      const particleCount = 180; // 180 Dense Sandstorm Particles
-      const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#00ff88'];
+    // Sample pixel target coordinates from offscreen text
+    function sampleTextPixelTargets(donorName, amountText) {
+      const offscreen = document.createElement('canvas');
+      const offCtx = offscreen.getContext('2d');
+      offscreen.width = 1200;
+      offscreen.height = 400;
 
-      for (let i = 0; i < particleCount; i++) {
-        const p = document.createElement('span');
-        p.className = 'particle';
+      offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+      offCtx.textAlign = 'center';
+      offCtx.textBaseline = 'middle';
 
-        // Half particles curve LEFT ), half curve RIGHT (
-        const side = i % 2 === 0 ? -1 : 1; 
+      // Line 1: Donor Name (#ace600)
+      offCtx.font = '900 58px "Montserrat", Arial, sans-serif';
+      offCtx.fillStyle = '#ace600';
+      offCtx.fillText(donorName.toUpperCase(), offscreen.width / 2, 120);
 
-        // 1. Curve Outward ) (
-        const spreadX = side * (100 + Math.random() * 80); 
+      // Line 2: DONERADE X KR! (#ffffff)
+      offCtx.font = '900 38px "Montserrat", Arial, sans-serif';
+      offCtx.fillStyle = '#ffffff';
+      offCtx.fillText(`DONERADE ${amountText.toUpperCase()}!`, offscreen.width / 2, 210);
 
-        // 2. Curve Back Inward into text area
-        const pinchX = side * (15 + Math.random() * 30); 
+      const imgData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
+      const data = imgData.data;
+      const targets = [];
 
-        // 3. Final dust dispersal
-        const disperseX = (Math.random() - 0.5) * 140;
+      // Step by 3 pixels for clean density & 60FPS performance
+      const step = 3; 
+      const startX = (window.innerWidth - offscreen.width) / 2;
+      
+      // Calculate Y position based on final-minute state
+      const isFinal = document.body.classList.contains('is-final-minute');
+      const startY = isFinal ? 180 : 100; 
 
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        const size = 3 + Math.random() * 8;
-        const delay = Math.random() * 0.35; // Staggered stream flow
+      for (let y = 0; y < offscreen.height; y += step) {
+        for (let x = 0; x < offscreen.width; x += step) {
+          const index = (y * offscreen.width + x) * 4;
+          const alpha = data[index + 3];
 
-        p.style.setProperty('--spreadX', `${spreadX}px`);
-        p.style.setProperty('--pinchX', `${pinchX}px`);
-        p.style.setProperty('--disperseX', `${disperseX}px`);
-
-        p.style.width = `${size}px`;
-        p.style.height = `${size}px`;
-        p.style.backgroundColor = color;
-        p.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`;
-        p.style.animationDelay = `${delay}s`;
-
-        container.appendChild(p);
+          if (alpha > 128) {
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            targets.push({
+              tx: startX + x,
+              ty: startY + y,
+              color: `rgb(${r}, ${g}, ${b})`
+            });
+          }
+        }
       }
 
-      setTimeout(() => {
-        container.innerHTML = '';
-      }, 2300);
+      return targets;
+    }
+
+    // Initialize 3,500 particles for sandstorm text assembly
+    function initParticleSandstorm(donorName, amountText) {
+      const targets = sampleTextPixelTargets(donorName, amountText);
+      particles = [];
+
+      const spawnX = window.innerWidth / 2;
+      const spawnY = document.body.classList.contains('is-final-minute') ? 160 : 70;
+
+      // Ensure ~3,500 particles
+      const count = Math.max(3200, targets.length);
+
+      for (let i = 0; i < count; i++) {
+        const target = targets[i % targets.length];
+        
+        // Spawn scattered in dust stream behind countdown
+        const spreadX = (Math.random() - 0.5) * 220;
+        const spreadY = (Math.random() - 0.5) * 40;
+
+        particles.push({
+          x: spawnX + spreadX,
+          y: spawnY + spreadY,
+          vx: (Math.random() - 0.5) * 4,
+          vy: 2 + Math.random() * 5,
+          tx: target.tx,
+          ty: target.ty,
+          color: target.color,
+          size: 1.5 + Math.random() * 2.2,
+          alpha: 0,
+          delay: Math.random() * 45, // Staggered stream flow
+          friction: 0.86 + Math.random() * 0.08,
+          springEase: 0.06 + Math.random() * 0.07,
+          disperseVx: (Math.random() - 0.3) * 6,
+          disperseVy: -(Math.random() * 4 + 1)
+        });
+      }
+
+      particleEnginePhase = 'FLOW';
+      if (!isCanvasAnimating) {
+        isCanvasAnimating = true;
+        requestAnimationFrame(renderCanvasLoop);
+      }
+    }
+
+    // 60FPS Canvas Render Loop
+    let frameCount = 0;
+    function renderCanvasLoop() {
+      if (!isCanvasAnimating) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frameCount++;
+
+      let activeParticles = 0;
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        if (frameCount < p.delay) continue;
+
+        if (particleEnginePhase === 'FLOW') {
+          // Phase 1: Swirl downward from countdown
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha = Math.min(1, p.alpha + 0.08);
+
+          // Flow toward target Y area
+          if (p.y > p.ty - 60) {
+            particleEnginePhase = 'ASSEMBLE';
+          }
+        } 
+        else if (particleEnginePhase === 'ASSEMBLE' || particleEnginePhase === 'HOLD') {
+          // Phase 2 & 3: Spring attraction to text coordinate targets
+          const dx = p.tx - p.x;
+          const dy = p.ty - p.y;
+
+          p.vx += dx * p.springEase;
+          p.vy += dy * p.springEase;
+
+          p.vx *= p.friction;
+          p.vy *= p.friction;
+
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha = Math.min(1, p.alpha + 0.1);
+        } 
+        else if (particleEnginePhase === 'DISINTEGRATE') {
+          // Phase 4: Porsche Disintegration (wind/dust turbulence blowing text away)
+          p.x += p.disperseVx;
+          p.y += p.disperseVy;
+          p.disperseVx += (Math.random() - 0.4) * 0.5; // Wind turbulence
+          p.alpha -= 0.025;
+        }
+
+        if (p.alpha > 0) {
+          activeParticles++;
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.alpha;
+          
+          // Render glowing micro-dust pixel
+          ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+      }
+
+      ctx.globalAlpha = 1;
+
+      if (activeParticles > 0 || particleEnginePhase !== 'IDLE') {
+        requestAnimationFrame(renderCanvasLoop);
+      } else {
+        isCanvasAnimating = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    function triggerDisintegration() {
+      particleEnginePhase = 'DISINTEGRATE';
     }
 
     // =========================================================
@@ -454,7 +466,6 @@
       const now = Date.now();
       const diff = countdownTargetTime - now;
 
-      // When Event Ends
       if (diff <= 0) {
         timerDisplay.innerText = "00";
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
@@ -467,7 +478,6 @@
       widget.classList.remove('timer-finished');
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
-      // 🔥 FINAL 60 SECONDS MODE ("SISTA MINUTEN!")
       if (totalSecondsRemaining <= 60) {
         document.body.classList.add('is-final-minute');
         widget.classList.add('final-minute');
@@ -476,7 +486,6 @@
         return;
       }
 
-      // Normal Mode
       document.body.classList.remove('is-final-minute');
       widget.classList.remove('final-minute');
       label.innerText = "INSAMLINGEN SLUTAR OM";
@@ -498,7 +507,7 @@
     }
 
     function simulateEndGame() {
-      countdownTargetTime = Date.now() + 60000; // 60 seconds left
+      countdownTargetTime = Date.now() + 60000;
       updateCountdownDisplay();
     }
 
@@ -568,7 +577,6 @@
       }
     }
 
-    // Straight Vertical Bounce Sound Player
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -578,8 +586,6 @@
           audioCtx.resume();
         }
 
-        const banner = document.getElementById('alertBanner');
-
         if (soundFileList.length > 0) {
           const nextSoundPath = getNextShuffledSound();
           const audio = new Audio();
@@ -587,53 +593,6 @@
           audio.src = nextSoundPath;
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
-
-          try {
-            const source = audioCtx.createMediaElementSource(audio);
-            const analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 64; 
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
-
-            let animFrameId;
-            let smoothVolume = 0;
-
-            function syncRhythm() {
-              analyser.getByteFrequencyData(dataArray);
-
-              let sum = 0;
-              const bassBins = Math.floor(bufferLength * 0.4); 
-              for (let i = 0; i < bassBins; i++) {
-                sum += dataArray[i];
-              }
-              let avgVolume = sum / bassBins;
-
-              smoothVolume += (avgVolume - smoothVolume) * 0.30;
-              const normVol = smoothVolume / 255;
-
-              let scale = 1 + normVol * 0.4;
-              let jumpY = normVol * 15;
-
-              if (banner && banner.classList.contains('show-alert')) {
-                banner.style.transform = `translateX(-50%) translateY(${jumpY}px) scale(${scale})`;
-              }
-
-              if (!audio.paused && !audio.ended) {
-                animFrameId = requestAnimationFrame(syncRhythm);
-              }
-            }
-
-            audio.addEventListener('play', () => { syncRhythm(); });
-            audio.addEventListener('ended', () => {
-              cancelAnimationFrame(animFrameId);
-            });
-
-          } catch (e) {
-            console.log("Audio Analyser note:", e);
-          }
 
           audio.addEventListener('ended', () => {
             resolve(audio.duration || 3);
@@ -685,30 +644,22 @@
       isProcessingAlert = true;
       const nextAlert = alertQueue.shift();
 
-      const banner = document.getElementById('alertBanner');
-      document.getElementById('donorName').innerText = nextAlert.donorName;
-      document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Spawn 180 Particle Sandstorm Hourglass Stream )(
-      spawnHourglassParticleStream();
+      // 1. Initialize Canvas Sandstorm (3,500 particles spawn and assemble text)
+      initParticleSandstorm(nextAlert.donorName, `${nextAlert.diffAmount} kr`);
 
-      // 2. Text Materializes out of the Sandstorm Stream!
-      banner.classList.remove('show-alert');
-      void banner.offsetWidth; // Force CSS reflow
-      banner.classList.add('show-alert');
-
-      // 3. Play Audio
+      // 2. Play Audio
       await playAlertSound();
 
-      // 4. Smooth Fade Out when music ends
-      banner.classList.remove('show-alert');
+      // 3. Trigger Porsche Disintegration (Text dissolves into dust blowing away)
+      triggerDisintegration();
 
-      // 5. 5-second break before next queued alert
+      // 4. Wait 1.2s for disintegration animation + 5s break pause
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
-      }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
+      }, 1200 + (PAUSE_BETWEEN_ALERTS_SECONDS * 1000));
     }
 
     // =========================================================
