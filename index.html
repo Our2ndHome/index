@@ -166,10 +166,10 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Placed above timeline bar) */
     .goal-widget {
       position: absolute;
-      bottom: 110px;
+      bottom: 125px;
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -192,7 +192,7 @@
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 110px;
+      bottom: 125px;
       right: 35px;
       text-align: center;
       z-index: 1000;
@@ -228,130 +228,155 @@
       opacity: 1;
     }
 
-    /* 📅 WIDGET 5: SINGLE-DAY FULL-WIDTH BOTTOM SCHEDULE BAR */
+    /* 📅 WIDGET 5: HORIZONTAL TIMELINE SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 0;
       left: 0;
       width: 100vw;
-      background: rgba(0, 0, 0, 0.88);
-      border-top: 2px solid #ace600;
-      padding: 10px 25px;
+      background: rgba(0, 0, 0, 0.90);
+      padding: 12px 35px 18px 35px;
       box-sizing: border-box;
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       z-index: 1000;
-      box-shadow: 0 -5px 25px rgba(0,0,0,0.8);
-      gap: 20px;
+      box-shadow: 0 -5px 25px rgba(0,0,0,0.85);
     }
 
-    /* Day Title Badge on Left */
-    .schedule-day-badge {
+    .timeline-header-bar {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-width: 160px;
-      border-right: 1px solid #444;
-      padding-right: 15px;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1750px;
+      margin-bottom: 6px;
     }
 
     .schedule-day-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 900;
       color: #ace600;
       text-transform: uppercase;
       letter-spacing: 1.5px;
+      text-shadow: 0 0 10px rgba(172, 230, 0, 0.5);
     }
 
-    .schedule-day-subtitle {
+    .timeline-subtitle {
       font-size: 10px;
       font-weight: 800;
       color: #00ff88;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
-      letter-spacing: 1px;
     }
 
-    /* Horizontal Row of Events for the Active Day */
-    .schedule-events-row {
+    /* Timeline Container & Axis Line */
+    .timeline-container {
+      position: relative;
+      width: 100%;
+      max-width: 1750px;
+      padding: 8px 0;
+    }
+
+    .timeline-line {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-50%);
+      z-index: 1;
+    }
+
+    .timeline-nodes-row {
+      position: relative;
       display: flex;
       flex-direction: row;
       justify-content: space-around;
       align-items: center;
-      flex: 1;
-      gap: 12px;
+      width: 100%;
+      z-index: 2;
     }
 
-    /* Event Card */
-    .schedule-event-card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 8px;
-      padding: 6px 12px;
+    /* Timeline Node Item */
+    .timeline-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      flex: 1;
       text-align: center;
-      flex: 1;
+    }
+
+    /* Vertical Node Tick Mark (As seen in your screenshot!) */
+    .node-tick {
+      width: 3px;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.4);
+      margin: 6px 0;
       transition: all 0.4s ease;
+      border-radius: 2px;
     }
 
-    /* Inactive Event: Smaller white text */
-    .schedule-event-card.inactive {
-      font-size: 11px;
-      color: #ffffff;
-      opacity: 0.75;
+    .node-time {
+      font-size: 10px;
+      font-weight: 800;
+      color: #aaa;
+      letter-spacing: 0.5px;
     }
 
-    .schedule-event-card.inactive .event-streamer {
+    .node-streamer {
       font-size: 13px;
       font-weight: 800;
       color: #ffffff;
+      white-space: nowrap;
     }
 
-    .schedule-event-card.inactive .event-time {
+    .node-giveaway {
       font-size: 10px;
-      color: #aaa;
+      font-weight: 800;
+      color: #ffea00;
+      white-space: nowrap;
     }
 
-    /* 🔴 ACTIVE LIVE EVENT: #ace600 Lime Green + Larger Font + Glow */
-    .schedule-event-card.active {
-      background: rgba(172, 230, 0, 0.18);
-      border: 2px solid #ace600;
-      box-shadow: 0 0 18px rgba(172, 230, 0, 0.7);
-      transform: scale(1.04);
-      z-index: 10;
-      opacity: 1;
-    }
-
-    .schedule-event-card.active .event-live-tag {
-      display: inline-block;
+    .node-live-tag {
+      display: none;
       background: #ace600;
       color: #000000;
       font-size: 9px;
       font-weight: 900;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-bottom: 3px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-bottom: 2px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
-    .schedule-event-card.active .event-streamer {
-      font-size: 17px; /* Larger font */
+    /* 🔴 ACTIVE LIVE TIMELINE NODE (#ace600 Glowing Pin + Larger Text) */
+    .timeline-node.active .node-tick {
+      width: 5px;
+      height: 26px;
+      background: #ace600;
+      box-shadow: 0 0 12px #ace600, 0 0 22px #ace600;
+    }
+
+    .timeline-node.active .node-live-tag {
+      display: inline-block;
+    }
+
+    .timeline-node.active .node-streamer {
+      font-size: 17px; /* Larger font size */
       font-weight: 900;
       color: #ace600; /* #ace600 Lime Green */
       text-shadow: 0 0 12px rgba(172, 230, 0, 0.9);
     }
 
-    .schedule-event-card.active .event-time {
-      font-size: 11px;
-      font-weight: 800;
+    .timeline-node.active .node-time {
       color: #ffffff;
-    }
-
-    .schedule-event-card.active .event-giveaway {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 900;
-      color: #ffea00;
     }
 
     /* BRB Scene Mode Header */
@@ -442,13 +467,20 @@
     </div>
   </div>
 
-  <!-- 📅 WIDGET 5: SINGLE-DAY FULL-WIDTH BOTTOM SCHEDULE BAR -->
+  <!-- 📅 WIDGET 5: HORIZONTAL TIMELINE SCHEDULE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
-    <div class="schedule-day-badge">
+    <div class="timeline-header-bar">
       <div class="schedule-day-title" id="currentDayTitle">MÅNDAG 14 DEC</div>
-      <div class="schedule-day-subtitle">DAGSSCHEMA</div>
+      <div class="timeline-subtitle">EVENT TIMELINE</div>
     </div>
-    <div class="schedule-events-row" id="scheduleEventsRow"></div>
+    
+    <div class="timeline-container">
+      <!-- The Horizontal Timeline Axis Line -->
+      <div class="timeline-line"></div>
+      
+      <!-- Timeline Node Points -->
+      <div class="timeline-nodes-row" id="scheduleEventsRow"></div>
+    </div>
   </div>
 
   <!-- BRB Header Text -->
@@ -493,35 +525,35 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 EASY SINGLE-DAY SCHEDULE CONFIGURATION (Edit your daily events here!)
+    // 📅 SCHEDULE DATA
     const SCHEDULE_DATA = [
       {
         dayName: "MÅNDAG 14 DEC",
         dateISO: "2026-12-14",
         events: [
-          { id: 0, start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", streamer: "Streamer One", giveaway: "" },
-          { id: 1, start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", streamer: "Streamer Two", giveaway: "" },
-          { id: 2, start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", streamer: "🎁 GIVEAWAY!", giveaway: "Gamer Headset" },
-          { id: 3, start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", streamer: "Streamer Three", giveaway: "" }
+          { id: 0, start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
+          { id: 1, start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
+          { id: 2, start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "🎁 GIVEAWAY!", giveaway: "Gamer Headset" },
+          { id: 3, start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Three", giveaway: "" }
         ]
       },
       {
         dayName: "TISDAG 15 DEC",
         dateISO: "2026-12-15",
         events: [
-          { id: 4, start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", streamer: "Streamer Four", giveaway: "" },
-          { id: 5, start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", streamer: "Streamer Five", giveaway: "" },
-          { id: 6, start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", streamer: "🎁 GIVEAWAY!", giveaway: "Presentkort 500kr" },
-          { id: 7, start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", streamer: "Streamer Six", giveaway: "" }
+          { id: 4, start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Four", giveaway: "" },
+          { id: 5, start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Five", giveaway: "" },
+          { id: 6, start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", name: "🎁 GIVEAWAY!", giveaway: "Presentkort 500kr" },
+          { id: 7, start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Six", giveaway: "" }
         ]
       },
       {
         dayName: "ONSDAG 16 DEC",
         dateISO: "2026-12-16",
         events: [
-          { id: 8, start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", streamer: "Streamer Seven", giveaway: "" },
-          { id: 9, start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", streamer: "🏆 FINAL GIVEAWAY", giveaway: "Stora Vinsten" },
-          { id: 10, start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", streamer: "SLUTSPURT & FINAL!", giveaway: "" }
+          { id: 8, start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Seven", giveaway: "" },
+          { id: 9, start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", name: "🏆 FINAL GIVEAWAY", giveaway: "Stora Vinsten" },
+          { id: 10, start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", name: "SLUTSPURT & FINAL!", giveaway: "" }
         ]
       }
     ];
@@ -603,7 +635,7 @@
     }
 
     // =========================================================
-    // 📅 SINGLE-DAY BOTTOM SCHEDULE BAR & LIVE HIGHLIGHT
+    // 📅 HORIZONTAL TIMELINE SCHEDULE BAR & LIVE HIGHLIGHT
     // =========================================================
     function autoDetectToday() {
       const todayISO = new Date().toISOString().split('T')[0];
@@ -633,19 +665,21 @@
 
         if (isLiveNow) {
           return `
-            <div class="schedule-event-card active">
-              <span class="event-live-tag">🔴 JUST NU</span>
-              <div class="event-streamer">${ev.name}</div>
-              <div class="event-time">${ev.timeText}</div>
-              ${ev.giveaway ? `<div class="event-giveaway">${ev.giveaway}</div>` : ''}
+            <div class="timeline-node active">
+              <span class="node-live-tag">🔴 JUST NU</span>
+              <div class="node-time">${ev.timeText}</div>
+              <div class="node-tick"></div>
+              <div class="node-streamer">${ev.name}</div>
+              ${ev.giveaway ? `<div class="node-giveaway">${ev.giveaway}</div>` : ''}
             </div>
           `;
         } else {
           return `
-            <div class="schedule-event-card inactive">
-              <div class="event-streamer">${ev.name}</div>
-              <div class="event-time">${ev.timeText}</div>
-              ${ev.giveaway ? `<div class="event-giveaway">${ev.giveaway}</div>` : ''}
+            <div class="timeline-node inactive">
+              <div class="node-time">${ev.timeText}</div>
+              <div class="node-tick"></div>
+              <div class="node-streamer">${ev.name}</div>
+              ${ev.giveaway ? `<div class="node-giveaway">${ev.giveaway}</div>` : ''}
             </div>
           `;
         }
@@ -928,7 +962,6 @@
       document.getElementById('totalDisplay').innerText = `0 kr`;
     }
 
-    // Hide Test Panel if live URL has ?live=1
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('live') === '1') {
       document.getElementById('testPanel').style.display = 'none';
