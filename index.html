@@ -75,6 +75,7 @@
       color: #ffffff;
       white-space: nowrap;
       pointer-events: none;
+      transition: all 0.5s ease-in-out;
     }
 
     .countdown-label {
@@ -87,6 +88,7 @@
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 255, 136, 0.6);
+      transition: all 0.5s ease-in-out;
     }
 
     .countdown-timer {
@@ -99,17 +101,41 @@
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 25px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 255, 255, 0.4);
+      transition: all 0.5s ease-in-out;
+    }
+
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
+    .countdown-widget.final-minute .countdown-label {
+      font-size: 24px;
+      color: #ff0055;
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(255, 0, 85, 0.9);
+      animation: finalSecondPulse 1s infinite alternate;
+    }
+
+    .countdown-widget.final-minute .countdown-timer {
+      font-size: 96px; /* BIG centered seconds */
+      color: #ff0055;
+      text-shadow: 
+        0 0 15px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(255, 0, 85, 0.9),
+        0 0 50px rgba(255, 0, 85, 1);
+    }
+
+    @keyframes finalSecondPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.08); }
     }
 
     /* Timer Finished State */
     .timer-finished .countdown-label {
       color: #00ff88;
-      font-size: 24px;
+      font-size: 26px;
       animation: pulseGlow 1.5s infinite alternate;
     }
 
     .timer-finished .countdown-timer {
-      color: #00ff88;
+      display: none; /* Hide numbers when finished */
     }
 
     @keyframes pulseGlow {
@@ -262,7 +288,7 @@
     let audioCtx = null;
 
     // =========================================================
-    // ⏱️ EVENT END COUNTDOWN TIMER ENGINE (December 6 @ 20:00)
+    // ⏱️ EVENT END COUNTDOWN TIMER ENGINE (With 60s Final Mode)
     // =========================================================
     let countdownTargetTime = null;
 
@@ -271,7 +297,6 @@
       let targetYear = now.getFullYear();
       let target = new Date(`${targetYear}-12-06T20:00:00`);
       
-      // If Dec 6 20:00 has already passed this year, target next year
       if (now > target) {
         target = new Date(`${targetYear + 1}-12-06T20:00:00`);
       }
@@ -291,14 +316,28 @@
       const now = Date.now();
       const diff = countdownTargetTime - now;
 
+      // When Event Ends
       if (diff <= 0) {
-        timerDisplay.innerText = "00 : 00 : 00";
+        timerDisplay.innerText = "00";
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
+        widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
         return;
       }
 
       widget.classList.remove('timer-finished');
+      const totalSecondsRemaining = Math.floor(diff / 1000);
+
+      // 🔥 FINAL 60 SECONDS MODE (Shows ONLY big centered seconds)
+      if (totalSecondsRemaining <= 60) {
+        widget.classList.add('final-minute');
+        label.innerText = "SLUTSPURT!";
+        timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
+        return;
+      }
+
+      // Normal Mode
+      widget.classList.remove('final-minute');
       label.innerText = "INSAMLINGEN SLUTAR OM";
 
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
