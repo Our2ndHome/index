@@ -20,7 +20,7 @@
       box-sizing: border-box;
     }
 
-    /* 🌌 COSMIC DUST & STARLIGHT CANVAS OVERLAY */
+    /* 🎨 HTML5 CANVAS COSMIC SANDSTORM OVERLAY */
     #particleCanvas {
       position: absolute;
       top: 0;
@@ -159,7 +159,7 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* 🌟 GLOWING COSMIC VECTOR TEXT BANNER */
+    /* 💎 CRISP VECTOR TEXT POPUP BANNER */
     .alert-banner {
       position: absolute;
       top: 120px;
@@ -173,8 +173,8 @@
       text-transform: uppercase;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(255, 255, 255, 0.9),
-        0 0 35px rgba(172, 230, 0, 0.8);
+        0 0 20px rgba(0, 0, 0, 0.9),
+        0 0 35px rgba(255, 0, 128, 0.8);
       white-space: nowrap;
       pointer-events: none;
       transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
@@ -186,7 +186,7 @@
     }
 
     .donor-name {
-      color: #ace600; /* Neon Lime Green */
+      color: #ace600; /* Lime Green Line 1 */
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -198,7 +198,7 @@
     }
 
     .alert-subtext {
-      color: #ffffff;
+      color: #ffffff; /* Crisp White Line 2 */
       font-size: 38px;
       font-weight: 900;
       white-space: nowrap;
@@ -263,10 +263,10 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 🌌 HTML5 CANVAS COSMIC DUST OVERLAY -->
+  <!-- 🎨 HTML5 CANVAS COSMIC SANDSTORM OVERLAY -->
   <canvas id="particleCanvas"></canvas>
 
-  <!-- 🌟 GLOWING COSMIC VECTOR TEXT BANNER -->
+  <!-- 💎 CRISP VECTOR TEXT POPUP BANNER -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
@@ -312,7 +312,7 @@
     let audioCtx = null;
 
     // =========================================================
-    // 🌌 1,200 MICRO-PARTICLE LETTER-TARGET SWIRL ENGINE
+    // 🌌 450 PARTICLE HOURGLASS STREAM )( & EXPLOSION ENGINE
     // =========================================================
     const canvas = document.getElementById('particleCanvas');
     const ctx = canvas.getContext('2d');
@@ -327,91 +327,45 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Sample pixel target coordinates from offscreen text
-    function sampleTextPixelTargets(donorName, amountText) {
-      const offscreen = document.createElement('canvas');
-      const offCtx = offscreen.getContext('2d');
-      offscreen.width = 1200;
-      offscreen.height = 400;
-
-      offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
-      offCtx.textAlign = 'center';
-      offCtx.textBaseline = 'middle';
-
-      // Line 1: Donor Name (#ace600)
-      offCtx.font = '900 58px "Montserrat", Arial, sans-serif';
-      offCtx.fillStyle = '#ace600';
-      offCtx.fillText(donorName.toUpperCase(), offscreen.width / 2, 120);
-
-      // Line 2: DONERADE X KR! (#ffffff)
-      offCtx.font = '900 38px "Montserrat", Arial, sans-serif';
-      offCtx.fillStyle = '#ffffff';
-      offCtx.fillText(`DONERADE ${amountText.toUpperCase()}!`, offscreen.width / 2, 210);
-
-      const imgData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
-      const data = imgData.data;
-      const targets = [];
-
-      const step = 3; 
-      const startX = (window.innerWidth - offscreen.width) / 2;
-      const isFinal = document.body.classList.contains('is-final-minute');
-      const startY = isFinal ? 185 : 120; 
-
-      for (let y = 0; y < offscreen.height; y += step) {
-        for (let x = 0; x < offscreen.width; x += step) {
-          const index = (y * offscreen.width + x) * 4;
-          if (data[index + 3] > 128) {
-            targets.push({
-              tx: startX + x,
-              ty: startY + y,
-              color: `rgb(${data[index]}, ${data[index + 1]}, ${data[index + 2]})`
-            });
-          }
-        }
-      }
-      return targets;
-    }
-
-    // 1. Zero-Gravity Cosmic Swirl Entrance ONTO LETTER TARGETS
-    function spawnCosmicStarlightSwirl(donorName, amountText) {
-      const targets = sampleTextPixelTargets(donorName, amountText);
+    // 1. Entrance Sandstorm Stream )(
+    function spawnSandstormStream() {
       particles = [];
 
-      const count = 1200; // 1,200 HYPER-DENSE MICRO PARTICLES!
+      const spawnX = window.innerWidth / 2;
+      const startY = document.body.classList.contains('is-final-minute') ? 165 : 35;
+      const targetYCenter = document.body.classList.contains('is-final-minute') ? 220 : 130;
+
+      const count = 450; 
+      const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#00ff88'];
 
       for (let i = 0; i < count; i++) {
-        const target = targets[i % targets.length];
-        const radius = 120 + Math.random() * 260; // Starting orbital distance from letter
-        const angle = Math.random() * Math.PI * 2;
+        const side = i % 2 === 0 ? -1 : 1;
 
         particles.push({
-          radius: radius,
-          angle: angle,
-          swirlSpeed: (0.025 + Math.random() * 0.045) * (Math.random() > 0.5 ? 1 : -1),
-          shrinkSpeed: 2.2 + Math.random() * 3.8, // Inward spiral collapse onto letter
-          tx: target.tx,
-          ty: target.ty,
-          x: target.tx + Math.cos(angle) * radius,
-          y: target.ty + Math.sin(angle) * radius,
-          vx: 0,
-          vy: 0,
-          color: target.color,
-          size: 1.2 + Math.random() * 2.2, // Micro-dust particle size
+          x: spawnX + (Math.random() - 0.5) * 120,
+          y: startY + (Math.random() - 0.5) * 15,
+          vx: (Math.random() - 0.5) * 2.5,
+          vy: 2.5 + Math.random() * 4,
+          side: side,
+          spreadFactor: 90 + Math.random() * 90,
+          startY: startY,
+          targetYCenter: targetYCenter,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: 2.0 + Math.random() * 3.5,
           alpha: 0,
-          sparkleSpeed: 0.06 + Math.random() * 0.12,
-          sparklePhase: Math.random() * Math.PI * 2,
-          delay: Math.random() * 15
+          delay: Math.random() * 20,
+          decay: 0.015
         });
       }
 
-      particleEnginePhase = 'COSMIC_SWIRL';
+      particleEnginePhase = 'STREAM';
       if (!isCanvasAnimating) {
         isCanvasAnimating = true;
         requestAnimationFrame(renderCanvasLoop);
       }
     }
 
-    // 2. 1,000 Particle Deep Space Disintegration Blast
+    // 2. 360° Full-Screen Disintegration Explosion
     function triggerFullExplosion() {
       particleEnginePhase = 'EXPLODE';
       
@@ -419,22 +373,22 @@
       const centerY = document.body.classList.contains('is-final-minute') ? 220 : 130;
 
       particles = [];
-      const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#ff007f', '#00ff88', '#00f0ff'];
+      const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#ff007f', '#00ff88'];
 
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 400; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const blastSpeed = 7 + Math.random() * 28;
+        const blastSpeed = 8 + Math.random() * 26;
 
         particles.push({
-          x: centerX + (Math.random() - 0.5) * 160,
+          x: centerX + (Math.random() - 0.5) * 140,
           y: centerY + (Math.random() - 0.5) * 40,
           vx: Math.cos(angle) * blastSpeed,
           vy: Math.sin(angle) * blastSpeed,
           color: colors[Math.floor(Math.random() * colors.length)],
-          size: 1.0 + Math.random() * 3.0,
+          size: 2.5 + Math.random() * 4.5,
           alpha: 1,
           delay: 0,
-          decay: 0.016 + Math.random() * 0.015,
+          decay: 0.018 + Math.random() * 0.015,
           friction: 0.985
         });
       }
@@ -452,8 +406,6 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frameCount++;
 
-      ctx.globalCompositeOperation = 'lighter';
-
       let activeParticles = 0;
 
       for (let i = 0; i < particles.length; i++) {
@@ -461,22 +413,25 @@
 
         if (frameCount < (p.delay || 0)) continue;
 
-        if (particleEnginePhase === 'COSMIC_SWIRL') {
-          // Zero gravity inward spiral DIRECTLY ONTO LETTER POSITIONS
-          p.angle += p.swirlSpeed;
-          p.radius = Math.max(0, p.radius - p.shrinkSpeed);
+        if (particleEnginePhase === 'STREAM') {
+          p.y += p.vy;
+          p.alpha = Math.min(1, p.alpha + 0.1);
 
-          p.x = p.tx + Math.cos(p.angle) * p.radius;
-          p.y = p.ty + Math.sin(p.angle) * p.radius;
+          // Hourglass Curve )(
+          const progress = Math.min(1, Math.max(0, (p.y - p.startY) / (p.targetYCenter - p.startY)));
+          const waistPinch = Math.sin(progress * Math.PI); // 0 -> 1 -> 0
+          const offsetX = p.side * p.spreadFactor * (1 - waistPinch * 0.85);
 
-          p.sparklePhase += p.sparkleSpeed;
-          const sparkle = (Math.sin(p.sparklePhase) + 1) / 2;
-          p.alpha = Math.min(1, p.alpha + 0.09) * (0.4 + sparkle * 0.6);
+          p.x = (window.innerWidth / 2) + offsetX;
+
+          if (progress >= 1.0) {
+            p.alpha -= p.decay;
+          }
         } 
         else if (particleEnginePhase === 'EXPLODE') {
-          // Deep space 360° starlight blast
           p.x += p.vx;
           p.y += p.vy;
+          if (p.gravity) p.vy += p.gravity;
           p.vx *= (p.friction || 0.985);
           p.vy *= (p.friction || 0.985);
           p.alpha -= p.decay;
@@ -490,7 +445,6 @@
         }
       }
 
-      ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
 
       if (activeParticles > 0 || particleEnginePhase !== 'IDLE') {
@@ -704,25 +658,25 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Swirl 1,200 Starlight Particles DIRECTLY ONTO LETTER TARGETS!
-      spawnCosmicStarlightSwirl(nextAlert.donorName, `${nextAlert.diffAmount} kr`);
+      // 1. Spawn Hourglass Sandstorm Stream )(
+      spawnSandstormStream();
 
       // 2. Play Audio
       const audioPromise = playAlertSound();
 
-      // 3. Crisp Vector Text Fades IN smoothly right as particles lock onto the letters (1.0s delay)
+      // 3. Crisp Vector Text Fades IN smoothly inside the particle cloud (0.5s delay)
       setTimeout(() => {
         banner.classList.add('show-alert');
-      }, 1000);
+      }, 500);
 
       // 4. Wait for audio to finish
       await audioPromise;
 
-      // 5. Crisp Vector Text Fades OUT & Triggers Deep Space Starlight Blast!
+      // 5. Crisp Vector Text Fades OUT & Triggers 360° Full-Screen Particle Blast!
       banner.classList.remove('show-alert');
       triggerFullExplosion();
 
-      // 6. Allow 1.6 seconds for starlight explosion to clear + 5s break pause
+      // 6. Allow 1.6 seconds for explosion to clear + 5s break pause
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
