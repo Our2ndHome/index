@@ -20,7 +20,7 @@
       box-sizing: border-box;
     }
 
-    /* 🎨 HTML5 CANVAS SANDSTORM OVERLAY */
+    /* 🎨 HTML5 CANVAS FULL-SCREEN EXPLOSION OVERLAY */
     #particleCanvas {
       position: absolute;
       top: 0;
@@ -182,11 +182,11 @@
     }
 
     body.is-final-minute .alert-banner {
-      top: 185px; /* Shifted down during SISTA MINUTEN */
+      top: 185px;
     }
 
     .donor-name {
-      color: #ace600; /* Lime Green */
+      color: #ace600; 
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -259,7 +259,7 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 🎨 HTML5 CANVAS SANDSTORM OVERLAY -->
+  <!-- 🎨 HTML5 CANVAS FULL-SCREEN EXPLOSION OVERLAY -->
   <canvas id="particleCanvas"></canvas>
 
   <!-- 💎 CRISP VECTOR TEXT POPUP BANNER -->
@@ -308,7 +308,7 @@
     let audioCtx = null;
 
     // =========================================================
-    // 🌪️ HTML5 CANVAS HOURGLASS )( SANDSTORM ENGINE
+    // 💥 HTML5 CANVAS FULL-SCREEN 360° EXPLOSION ENGINE
     // =========================================================
     const canvas = document.getElementById('particleCanvas');
     const ctx = canvas.getContext('2d');
@@ -373,7 +373,7 @@
       const startY = document.body.classList.contains('is-final-minute') ? 165 : 35;
       const targetYCenter = document.body.classList.contains('is-final-minute') ? 220 : 130;
 
-      const count = 1800; // 1,800 Dense Sandstorm Particles
+      const count = 1800; 
       const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#00ff88'];
 
       for (let i = 0; i < count; i++) {
@@ -397,8 +397,8 @@
           delay: Math.random() * 25,
           friction: 0.88 + Math.random() * 0.06,
           springEase: 0.08 + Math.random() * 0.06,
-          disperseVx: (Math.random() - 0.3) * 7,
-          disperseVy: -(Math.random() * 5 + 1)
+          gravity: 0,
+          decay: 0.02
         });
       }
 
@@ -406,6 +406,48 @@
       if (!isCanvasAnimating) {
         isCanvasAnimating = true;
         requestAnimationFrame(renderCanvasLoop);
+      }
+    }
+
+    // 💥 TRIGGER 360° FULL-SCREEN PARTICLE EXPLOSION BLAST!
+    function triggerDisintegration() {
+      particleEnginePhase = 'DISINTEGRATE';
+      
+      const centerX = window.innerWidth / 2;
+      const centerY = document.body.classList.contains('is-final-minute') ? 220 : 130;
+
+      // 1. Give all text particles explosive 360° velocities across the whole screen
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        
+        const angle = Math.atan2(p.y - centerY, p.x - centerX) + (Math.random() - 0.5) * 0.8;
+        const blastSpeed = 8 + Math.random() * 24; // High-velocity full-screen blast!
+
+        p.vx = Math.cos(angle) * blastSpeed;
+        p.vy = Math.sin(angle) * blastSpeed;
+        p.gravity = 0.15; // Gravity arc
+        p.decay = 0.018 + Math.random() * 0.015;
+      }
+
+      // 2. Spawn 250 extra high-speed explosion shockwave sparks across full screen
+      const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#ff007f', '#00ff88'];
+      for (let i = 0; i < 250; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const blastSpeed = 10 + Math.random() * 32;
+
+        particles.push({
+          x: centerX + (Math.random() - 0.5) * 80,
+          y: centerY + (Math.random() - 0.5) * 40,
+          vx: Math.cos(angle) * blastSpeed,
+          vy: Math.sin(angle) * blastSpeed,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: 2.5 + Math.random() * 4,
+          alpha: 1,
+          delay: 0,
+          decay: 0.015 + Math.random() * 0.015,
+          gravity: 0.12,
+          friction: 0.98
+        });
       }
     }
 
@@ -427,7 +469,7 @@
           p.y += p.vy;
           p.alpha = Math.min(1, p.alpha + 0.1);
 
-          // Calculate Hourglass Curve )(
+          // Hourglass Curve )(
           const progress = Math.min(1, Math.max(0, (p.y - p.startY) / (p.targetYCenter - p.startY)));
           const waistPinch = Math.sin(progress * Math.PI); // 0 -> 1 -> 0
           const offsetX = p.side * p.spreadFactor * (1 - waistPinch * 0.85);
@@ -453,10 +495,13 @@
           p.alpha = Math.min(1, p.alpha + 0.1);
         } 
         else if (particleEnginePhase === 'DISINTEGRATE') {
-          p.x += p.disperseVx;
-          p.y += p.disperseVy;
-          p.disperseVx += (Math.random() - 0.4) * 0.5; // Wind turbulence
-          p.alpha -= 0.03;
+          // 💥 360° Full-Screen Particle Blast Physics
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.gravity) p.vy += p.gravity;
+          p.vx *= (p.friction || 0.98);
+          p.vy *= (p.friction || 0.98);
+          p.alpha -= (p.decay || 0.02);
         }
 
         if (p.alpha > 0) {
@@ -475,10 +520,6 @@
         isCanvasAnimating = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
-    }
-
-    function triggerDisintegration() {
-      particleEnginePhase = 'DISINTEGRATE';
     }
 
     // =========================================================
@@ -621,7 +662,6 @@
       }
     }
 
-    // Straight Vertical Bounce Sound Player
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!audioCtx) {
@@ -640,53 +680,6 @@
           audio.src = nextSoundPath;
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
-
-          try {
-            const source = audioCtx.createMediaElementSource(audio);
-            const analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 64; 
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
-
-            let animFrameId;
-            let smoothVolume = 0;
-
-            function syncRhythm() {
-              analyser.getByteFrequencyData(dataArray);
-
-              let sum = 0;
-              const bassBins = Math.floor(bufferLength * 0.4); 
-              for (let i = 0; i < bassBins; i++) {
-                sum += dataArray[i];
-              }
-              let avgVolume = sum / bassBins;
-
-              smoothVolume += (avgVolume - smoothVolume) * 0.30;
-              const normVol = smoothVolume / 255;
-
-              let scale = 1 + normVol * 0.4;
-              let jumpY = normVol * 15;
-
-              if (banner && banner.classList.contains('show-alert')) {
-                banner.style.transform = `translateX(-50%) translateY(${jumpY}px) scale(${scale})`;
-              }
-
-              if (!audio.paused && !audio.ended) {
-                animFrameId = requestAnimationFrame(syncRhythm);
-              }
-            }
-
-            audio.addEventListener('play', () => { syncRhythm(); });
-            audio.addEventListener('ended', () => {
-              cancelAnimationFrame(animFrameId);
-            });
-
-          } catch (e) {
-            console.log("Audio Analyser note:", e);
-          }
 
           audio.addEventListener('ended', () => {
             resolve(audio.duration || 3);
@@ -757,15 +750,15 @@
       // 4. Wait for audio to finish
       await audioPromise;
 
-      // 5. Hide Crisp Vector Text & Trigger Porsche Disintegration Dust Blast!
+      // 5. Hide Crisp Vector Text & Trigger 360° Full-Screen Particle Blast!
       banner.classList.remove('show-alert');
       triggerDisintegration();
 
-      // 6. Break pause between queued alerts
+      // 6. Allow 1.8 seconds for full-screen explosion to clear + 5s break pause
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
-      }, 1200 + (PAUSE_BETWEEN_ALERTS_SECONDS * 1000));
+      }, 1800 + (PAUSE_BETWEEN_ALERTS_SECONDS * 1000));
     }
 
     // =========================================================
