@@ -78,48 +78,50 @@
       transition: all 0.5s ease-in-out;
     }
 
+    /* Upper Text -> #ace600 */
     .countdown-label {
       font-size: 18px;
       font-weight: 900;
       letter-spacing: 2px;
-      color: #00ff88;
+      color: #ace600; 
       text-transform: uppercase;
       margin-bottom: 2px;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(0, 255, 136, 0.6);
+        0 0 20px rgba(172, 230, 0, 0.6);
       transition: all 0.5s ease-in-out;
     }
 
+    /* Numbers -> Crisp White */
     .countdown-timer {
       font-size: 52px;
       font-weight: 900;
       letter-spacing: 3px;
-      color: #ffffff;
+      color: #ffffff; 
       font-variant-numeric: tabular-nums;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 25px rgba(0, 0, 0, 0.9),
-        0 0 35px rgba(255, 255, 255, 0.4);
+        0 0 35px rgba(255, 255, 255, 0.5);
       transition: all 0.5s ease-in-out;
     }
 
     /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 24px;
-      color: #ff0055;
+      color: #ace600; /* Upper text stays #ace600 */
       letter-spacing: 4px;
-      text-shadow: 0 0 20px rgba(255, 0, 85, 0.9);
+      text-shadow: 0 0 20px rgba(172, 230, 0, 0.9);
       animation: finalSecondPulse 1s infinite alternate;
     }
 
     .countdown-widget.final-minute .countdown-timer {
-      font-size: 96px; /* BIG centered seconds */
-      color: #ff0055;
+      font-size: 96px; /* BIG centered seconds in White */
+      color: #ffffff; 
       text-shadow: 
         0 0 15px rgba(0, 0, 0, 0.9),
-        0 0 30px rgba(255, 0, 85, 0.9),
-        0 0 50px rgba(255, 0, 85, 1);
+        0 0 30px rgba(255, 255, 255, 0.9),
+        0 0 50px rgba(255, 255, 255, 1);
     }
 
     @keyframes finalSecondPulse {
@@ -129,21 +131,21 @@
 
     /* Timer Finished State */
     .timer-finished .countdown-label {
-      color: #00ff88;
+      color: #ace600;
       font-size: 26px;
       animation: pulseGlow 1.5s infinite alternate;
     }
 
     .timer-finished .countdown-timer {
-      display: none; /* Hide numbers when finished */
+      display: none;
     }
 
     @keyframes pulseGlow {
-      0% { text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
-      100% { text-shadow: 0 0 25px rgba(0, 255, 136, 1); }
+      0% { text-shadow: 0 0 10px rgba(172, 230, 0, 0.5); }
+      100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* Total Raised Display */
+    /* Total Raised Display -> Crisp White */
     .goal-box {
       background: transparent;
       color: #ffffff;
@@ -156,12 +158,12 @@
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 30px rgba(0, 255, 136, 0.6);
+        0 0 30px rgba(255, 255, 255, 0.6);
       white-space: nowrap;
     }
 
     .amount {
-      color: #00ff88;
+      color: #ffffff; /* White amount */
       font-size: 42px;
       font-weight: 900;
     }
@@ -169,29 +171,27 @@
     /* Pop-up Alert Banner */
     .alert-banner {
       position: absolute;
-      top: 120px;
+      top: 40%;
       left: 50%;
-      transform: translateX(-50%);
-      background: transparent;
-      color: #ffffff;
-      padding: 10px;
-      text-transform: uppercase;
-      text-align: center;
-      white-space: nowrap;
-      
+      transform: translate(-50%, -50%);
       opacity: 0;
       visibility: hidden;
-      transition: opacity 0.5s ease-in-out, transform 0.08s ease-out;
-      transform-origin: center bottom;
-
+      text-align: center;
+      background: transparent;
+      padding: 10px;
+      text-transform: uppercase;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
         0 0 20px rgba(0, 0, 0, 0.9),
         0 0 35px rgba(255, 0, 128, 0.8);
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+      white-space: nowrap;
+      pointer-events: none;
     }
 
+    /* Upper Text -> #ace600 */
     .donor-name {
-      color: #ace600; /* Lime Green */
+      color: #ace600; 
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -202,6 +202,7 @@
         0 0 30px rgba(172, 230, 0, 0.8);
     }
 
+    /* Subtext Line 2 -> White */
     .alert-subtext {
       color: #ffffff;
       font-size: 36px;
@@ -209,9 +210,26 @@
       white-space: nowrap;
     }
 
+    /* Smooth Elastic Pop Animation */
     .show-alert {
       opacity: 1;
       visibility: visible;
+      animation: elasticPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes elasticPop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.3);
+      }
+      60% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.35);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.0);
+      }
     }
   </style>
 </head>
@@ -227,7 +245,7 @@
     
     <div style="margin-top: 8px; border-top: 1px solid #444; padding-top: 8px;">
       <b>Timer kontroller:</b><br>
-      <button onclick="simulateEndGame()">Simulera Slutspurt (10s)</button>
+      <button onclick="simulateEndGame()">Simulera Slutspurt (60s)</button>
       <button onclick="resetEventTimer()">Återställ till 6 dec 20.00</button>
     </div>
 
@@ -354,7 +372,7 @@
     }
 
     function simulateEndGame() {
-      countdownTargetTime = Date.now() + 10000; // 10 seconds left
+      countdownTargetTime = Date.now() + 60000; // 60 seconds left
       updateCountdownDisplay();
     }
 
@@ -555,25 +573,22 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Fade IN
+      // 1. Restart Elastic Pop In
+      banner.classList.remove('show-alert');
+      void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
-      // 2. Play sound
-      const soundDuration = await playAlertSound();
+      // 2. Play Audio & Wait until audio finishes
+      await playAlertSound();
 
-      const remainingDisplayTime = Math.max(0, (2.5 - soundDuration) * 1000);
+      // 3. Smooth Fade Out when music ends
+      banner.classList.remove('show-alert');
 
+      // 4. 5-second break before next alert
       setTimeout(() => {
-        // 3. Fade OUT when music finishes
-        banner.classList.remove('show-alert');
-        
-        // 4. Break pause between queued alerts
-        setTimeout(() => {
-          isProcessingAlert = false;
-          processQueue();
-        }, 500 + (PAUSE_BETWEEN_ALERTS_SECONDS * 1000));
-
-      }, remainingDisplayTime);
+        isProcessingAlert = false;
+        processQueue();
+      }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
     }
 
     // =========================================================
