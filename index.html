@@ -166,10 +166,10 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Placed above schedule bar) */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
-      bottom: 105px;
+      bottom: 110px;
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -192,7 +192,7 @@
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 105px;
+      bottom: 110px;
       right: 35px;
       text-align: center;
       z-index: 1000;
@@ -228,7 +228,7 @@
       opacity: 1;
     }
 
-    /* 📅 WIDGET 5: FULL-WIDTH BOTTOM DAY-BY-DAY SCHEDULE BAR */
+    /* 📅 WIDGET 5: SINGLE-DAY FULL-WIDTH BOTTOM SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 0;
@@ -239,59 +239,62 @@
       padding: 10px 25px;
       box-sizing: border-box;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       z-index: 1000;
       box-shadow: 0 -5px 25px rgba(0,0,0,0.8);
+      gap: 20px;
     }
 
-    .schedule-bar-container {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-around;
-      align-items: flex-start;
-      width: 100%;
-      max-width: 1800px;
-      gap: 15px;
-    }
-
-    .schedule-day-group {
+    /* Day Title Badge on Left */
+    .schedule-day-badge {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      flex: 1;
+      align-items: flex-start;
+      min-width: 160px;
+      border-right: 1px solid #444;
+      padding-right: 15px;
     }
 
     .schedule-day-title {
-      font-size: 11px;
+      font-size: 16px;
       font-weight: 900;
       color: #ace600;
-      margin-bottom: 6px;
       text-transform: uppercase;
       letter-spacing: 1.5px;
     }
 
-    .day-events-wrapper {
-      display: flex;
-      flex-direction: row;
-      gap: 8px;
-      width: 100%;
-      justify-content: center;
+    .schedule-day-subtitle {
+      font-size: 10px;
+      font-weight: 800;
+      color: #00ff88;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    /* Event Cards */
+    /* Horizontal Row of Events for the Active Day */
+    .schedule-events-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
+      align-items: center;
+      flex: 1;
+      gap: 12px;
+    }
+
+    /* Event Card */
     .schedule-event-card {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
-      padding: 6px 10px;
+      padding: 6px 12px;
       text-align: center;
       flex: 1;
       transition: all 0.4s ease;
     }
 
-    /* Inactive Events: Smaller crisp white text */
+    /* Inactive Event: Smaller white text */
     .schedule-event-card.inactive {
       font-size: 11px;
       color: #ffffff;
@@ -299,7 +302,7 @@
     }
 
     .schedule-event-card.inactive .event-streamer {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 800;
       color: #ffffff;
     }
@@ -309,7 +312,7 @@
       color: #aaa;
     }
 
-    /* 🔴 ACTIVE LIVE EVENT: #ace600 Lime Green + Larger Font + Neon Glow */
+    /* 🔴 ACTIVE LIVE EVENT: #ace600 Lime Green + Larger Font + Glow */
     .schedule-event-card.active {
       background: rgba(172, 230, 0, 0.18);
       border: 2px solid #ace600;
@@ -333,7 +336,7 @@
     }
 
     .schedule-event-card.active .event-streamer {
-      font-size: 16px; /* Larger font size */
+      font-size: 17px; /* Larger font */
       font-weight: 900;
       color: #ace600; /* #ace600 Lime Green */
       text-shadow: 0 0 12px rgba(172, 230, 0, 0.9);
@@ -389,10 +392,17 @@
     </div>
 
     <div class="panel-section">
-      <b>Live Schema Highlighting Test:</b><br>
-      <button onclick="testLiveHighlight(0)">Testa Live Event 1</button>
-      <button onclick="testLiveHighlight(2)">Testa Live Event 2</button>
-      <button onclick="testLiveHighlight(6)">Testa Slutspurt Event</button>
+      <b>Välj Dag att Visa:</b><br>
+      <button onclick="switchDayView(0)">Dag 1 (Måndag)</button>
+      <button onclick="switchDayView(1)">Dag 2 (Tisdag)</button>
+      <button onclick="switchDayView(2)">Dag 3 (Onsdag)</button>
+    </div>
+
+    <div class="panel-section">
+      <b>Live Highlighting Test:</b><br>
+      <button onclick="testLiveHighlight(0)">Live Slot 1</button>
+      <button onclick="testLiveHighlight(1)">Live Slot 2</button>
+      <button onclick="testLiveHighlight(2)">Live Giveaway</button>
       <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
     </div>
 
@@ -432,9 +442,13 @@
     </div>
   </div>
 
-  <!-- 📅 WIDGET 5: FULL-WIDTH BOTTOM DAY-BY-DAY SCHEDULE BAR -->
+  <!-- 📅 WIDGET 5: SINGLE-DAY FULL-WIDTH BOTTOM SCHEDULE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
-    <div class="schedule-bar-container" id="scheduleBarContainer"></div>
+    <div class="schedule-day-badge">
+      <div class="schedule-day-title" id="currentDayTitle">MÅNDAG 14 DEC</div>
+      <div class="schedule-day-subtitle">DAGSSCHEMA</div>
+    </div>
+    <div class="schedule-events-row" id="scheduleEventsRow"></div>
   </div>
 
   <!-- BRB Header Text -->
@@ -479,27 +493,35 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 EASY SCHEDULE CONFIGURATION (Edit your times, streamers & giveaways here!)
+    // 📅 EASY SINGLE-DAY SCHEDULE CONFIGURATION (Edit your daily events here!)
     const SCHEDULE_DATA = [
       {
-        dayName: "FREDAG 4 DEC",
+        dayName: "MÅNDAG 14 DEC",
+        dateISO: "2026-12-14",
         events: [
-          { id: 0, start: "2026-12-04T12:00:00", end: "2026-12-04T15:00:00", timeText: "12:00 - 15:00", streamer: "Streamer One", giveaway: "🎁 Gamer Headset" },
-          { id: 1, start: "2026-12-04T15:00:00", end: "2026-12-04T18:00:00", timeText: "15:00 - 18:00", streamer: "Streamer Two", giveaway: "🎁 Presentkort 500kr" }
+          { id: 0, start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", streamer: "Streamer One", giveaway: "" },
+          { id: 1, start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", streamer: "Streamer Two", giveaway: "" },
+          { id: 2, start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", streamer: "🎁 GIVEAWAY!", giveaway: "Gamer Headset" },
+          { id: 3, start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", streamer: "Streamer Three", giveaway: "" }
         ]
       },
       {
-        dayName: "LÖRDAG 5 DEC",
+        dayName: "TISDAG 15 DEC",
+        dateISO: "2026-12-15",
         events: [
-          { id: 2, start: "2026-12-05T12:00:00", end: "2026-12-05T15:00:00", timeText: "12:00 - 15:00", streamer: "Streamer Three", giveaway: "🎁 T-Shirt Paket" },
-          { id: 3, start: "2026-12-05T15:00:00", end: "2026-12-05T18:00:00", timeText: "15:00 - 18:00", streamer: "Streamer Four", giveaway: "🎁 VIP Roll" }
+          { id: 4, start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", streamer: "Streamer Four", giveaway: "" },
+          { id: 5, start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", streamer: "Streamer Five", giveaway: "" },
+          { id: 6, start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", streamer: "🎁 GIVEAWAY!", giveaway: "Presentkort 500kr" },
+          { id: 7, start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", streamer: "Streamer Six", giveaway: "" }
         ]
       },
       {
-        dayName: "SÖNDAG 6 DEC",
+        dayName: "ONSDAG 16 DEC",
+        dateISO: "2026-12-16",
         events: [
-          { id: 4, start: "2026-12-06T12:00:00", end: "2026-12-06T16:00:00", timeText: "12:00 - 16:00", streamer: "Streamer Five", giveaway: "🎁 Hemlig Vinst" },
-          { id: 5, start: "2026-12-06T16:00:00", end: "2026-12-06T20:00:00", timeText: "16:00 - 20:00", streamer: "SLUTSPURT & FINAL!", giveaway: "🏆 STORA VINSTEN" }
+          { id: 8, start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", streamer: "Streamer Seven", giveaway: "" },
+          { id: 9, start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", streamer: "🏆 FINAL GIVEAWAY", giveaway: "Stora Vinsten" },
+          { id: 10, start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", streamer: "SLUTSPURT & FINAL!", giveaway: "" }
         ]
       }
     ];
@@ -509,6 +531,7 @@
     let availableSoundsPool = []; 
     let currentSponsorIndex = 0;
     let currentTotal = 0; 
+    let activeDayIndex = 0; // Default to Day 1
     let testForcedEventId = -1; // -1 means automatic clock reading
 
     // =========================================================
@@ -580,50 +603,58 @@
     }
 
     // =========================================================
-    // 📅 DAY-BY-DAY BOTTOM SCHEDULE BAR RENDERER & LIVE HIGHLIGHT
+    // 📅 SINGLE-DAY BOTTOM SCHEDULE BAR & LIVE HIGHLIGHT
     // =========================================================
+    function autoDetectToday() {
+      const todayISO = new Date().toISOString().split('T')[0];
+      const foundIdx = SCHEDULE_DATA.findIndex(d => d.dateISO === todayISO);
+      if (foundIdx !== -1) {
+        activeDayIndex = foundIdx;
+      }
+    }
+
     function renderSchedule() {
-      const container = document.getElementById('scheduleBarContainer');
-      if (!container) return;
+      const dayTitleEl = document.getElementById('currentDayTitle');
+      const eventsRowEl = document.getElementById('scheduleEventsRow');
+      if (!dayTitleEl || !eventsRowEl) return;
+
+      const activeDayData = SCHEDULE_DATA[activeDayIndex] || SCHEDULE_DATA[0];
+      dayTitleEl.innerText = activeDayData.dayName;
 
       const now = new Date();
 
-      container.innerHTML = SCHEDULE_DATA.map(dayGroup => {
-        const eventsHtml = dayGroup.events.map(ev => {
-          const startTime = new Date(ev.start);
-          const endTime = new Date(ev.end);
-          
-          // Check if this event is live right now or forced by test button
-          const isLiveNow = (testForcedEventId === ev.id) || 
-                            (testForcedEventId === -1 && now >= startTime && now < endTime);
+      eventsRowEl.innerHTML = activeDayData.events.map(ev => {
+        const startTime = new Date(ev.start);
+        const endTime = new Date(ev.end);
+        
+        // Check if this slot is live right now or forced by test button
+        const isLiveNow = (testForcedEventId === ev.id) || 
+                          (testForcedEventId === -1 && now >= startTime && now < endTime);
 
-          if (isLiveNow) {
-            return `
-              <div class="schedule-event-card active">
-                <span class="event-live-tag">🔴 JUST NU</span>
-                <div class="event-streamer">${ev.streamer}</div>
-                <div class="event-time">${ev.timeText}</div>
-                <div class="event-giveaway">${ev.giveaway}</div>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="schedule-event-card inactive">
-                <div class="event-streamer">${ev.streamer}</div>
-                <div class="event-time">${ev.timeText}</div>
-                <div class="event-giveaway">${ev.giveaway}</div>
-              </div>
-            `;
-          }
-        }).join('');
-
-        return `
-          <div class="schedule-day-group">
-            <div class="schedule-day-title">${dayGroup.dayName}</div>
-            <div class="day-events-wrapper">${eventsHtml}</div>
-          </div>
-        `;
+        if (isLiveNow) {
+          return `
+            <div class="schedule-event-card active">
+              <span class="event-live-tag">🔴 JUST NU</span>
+              <div class="event-streamer">${ev.name}</div>
+              <div class="event-time">${ev.timeText}</div>
+              ${ev.giveaway ? `<div class="event-giveaway">${ev.giveaway}</div>` : ''}
+            </div>
+          `;
+        } else {
+          return `
+            <div class="schedule-event-card inactive">
+              <div class="event-streamer">${ev.name}</div>
+              <div class="event-time">${ev.timeText}</div>
+              ${ev.giveaway ? `<div class="event-giveaway">${ev.giveaway}</div>` : ''}
+            </div>
+          `;
+        }
       }).join('');
+    }
+
+    function switchDayView(dayIndex) {
+      activeDayIndex = dayIndex;
+      renderSchedule();
     }
 
     function testLiveHighlight(eventId) {
@@ -942,6 +973,7 @@
 
     // Initialize All Widgets
     makePanelDraggable();
+    autoDetectToday();
     applySceneMode();
     renderSchedule();
     initCountdown();
