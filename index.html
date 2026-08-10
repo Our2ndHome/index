@@ -65,10 +65,10 @@
       line-height: 1.4;
     }
 
-    /* ⏱️ COUNTDOWN TIMER WIDGET */
+    /* ⏱️ COMPACT & SLEEK COUNTDOWN TIMER WIDGET */
     .countdown-widget {
       position: absolute;
-      top: 35px;
+      top: 25px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -78,31 +78,30 @@
       transition: all 0.5s ease-in-out;
     }
 
-    /* Upper Text -> #ace600 */
+    /* Upper Label -> #ace600 */
     .countdown-label {
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: 2px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
       color: #ace600; 
       text-transform: uppercase;
       margin-bottom: 2px;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(172, 230, 0, 0.6);
+        0 0 15px rgba(172, 230, 0, 0.5);
       transition: all 0.5s ease-in-out;
     }
 
-    /* Numbers -> Crisp White */
+    /* Sleek & Compact Timer Numbers (34px) */
     .countdown-timer {
-      font-size: 52px;
+      font-size: 34px;
       font-weight: 900;
-      letter-spacing: 3px;
+      letter-spacing: 1px;
       color: #ffffff; 
       font-variant-numeric: tabular-nums;
       text-shadow: 
         0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 25px rgba(0, 0, 0, 0.9),
-        0 0 35px rgba(255, 255, 255, 0.5);
+        0 0 20px rgba(0, 0, 0, 0.9);
       transition: all 0.5s ease-in-out;
     }
 
@@ -110,13 +109,13 @@
     .countdown-widget.final-minute .countdown-label {
       font-size: 24px;
       color: #ace600; 
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       text-shadow: 0 0 20px rgba(172, 230, 0, 0.9);
       animation: finalSecondPulse 1s infinite alternate;
     }
 
     .countdown-widget.final-minute .countdown-timer {
-      font-size: 96px; /* BIG centered seconds in White */
+      font-size: 96px; /* BIG centered seconds */
       color: #ffffff; 
       text-shadow: 
         0 0 15px rgba(0, 0, 0, 0.9),
@@ -132,7 +131,7 @@
     /* Timer Finished State */
     .timer-finished .countdown-label {
       color: #ace600;
-      font-size: 26px;
+      font-size: 24px;
       animation: pulseGlow 1.5s infinite alternate;
     }
 
@@ -145,7 +144,7 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* Total Raised Display -> Crisp White */
+    /* Total Raised Display */
     .goal-box {
       background: transparent;
       color: #ffffff;
@@ -163,7 +162,7 @@
     }
 
     .amount {
-      color: #ffffff; /* White amount */
+      color: #ffffff;
       font-size: 42px;
       font-weight: 900;
     }
@@ -252,10 +251,10 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- ⏱️ COUNTDOWN TIMER WIDGET -->
+  <!-- ⏱️ COMPACT COUNTDOWN TIMER WIDGET -->
   <div class="countdown-widget" id="countdownWidget">
     <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
-    <div class="countdown-timer" id="countdownTimer">0d 00 : 00 : 00</div>
+    <div class="countdown-timer" id="countdownTimer">0d 00:00:00</div>
   </div>
 
   <!-- Donation Popup Banner -->
@@ -306,7 +305,7 @@
     let audioCtx = null;
 
     // =========================================================
-    // ⏱️ EVENT END COUNTDOWN TIMER ENGINE
+    // ⏱️ COUNTDOWN TIMER ENGINE (INSAMLINGEN SLUTAR OM)
     // =========================================================
     let countdownTargetTime = null;
 
@@ -346,7 +345,7 @@
       widget.classList.remove('timer-finished');
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
-      // 🔥 FINAL 60 SECONDS MODE ("SISTA MINUTEN!")
+      // 🔥 FINAL 60 SECONDS MODE
       if (totalSecondsRemaining <= 60) {
         widget.classList.add('final-minute');
         label.innerText = "SISTA MINUTEN!";
@@ -363,12 +362,15 @@
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-      const dStr = days > 0 ? `${days}d ` : '';
       const hStr = String(hours).padStart(2, '0');
       const mStr = String(minutes).padStart(2, '0');
       const sStr = String(seconds).padStart(2, '0');
 
-      timerDisplay.innerText = `${dStr}${hStr} : ${mStr} : ${sStr}`;
+      if (days > 0) {
+        timerDisplay.innerText = `${days}d ${hStr}:${mStr}:${sStr}`;
+      } else {
+        timerDisplay.innerText = `${hStr}:${mStr}:${sStr}`;
+      }
     }
 
     function simulateEndGame() {
