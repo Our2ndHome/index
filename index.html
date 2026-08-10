@@ -110,7 +110,7 @@
       margin: 0 4px;
     }
 
-    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE WITH FADE TRANSITION */
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 24px;
       color: #ace600; 
@@ -120,7 +120,7 @@
     }
 
     .countdown-widget.final-minute .countdown-timer {
-      font-size: 96px; /* BIG centered seconds */
+      font-size: 96px; /* GIANT 96px centered seconds */
       color: #ffffff; 
       text-shadow: 
         0 0 15px rgba(0, 0, 0, 0.9),
@@ -149,7 +149,7 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* ✨ #ace600 GREEN PARTICLE SYSTEM */
+    /* ✨ 50 #ace600 GREEN PARTICLE SYSTEM */
     .particle-container {
       position: absolute;
       top: 75px; /* Spawns at the countdown apex */
@@ -157,6 +157,12 @@
       transform: translateX(-50%);
       pointer-events: none;
       z-index: 998;
+      transition: top 0.5s ease-in-out;
+    }
+
+    /* Shift particle origin down when 96px seconds active */
+    body.is-final-minute .particle-container {
+      top: 170px;
     }
 
     .particle {
@@ -165,9 +171,9 @@
       height: 8px;
       background-color: #ace600;
       border-radius: 50%;
-      box-shadow: 0 0 12px #ace600, 0 0 20px #ace600;
+      box-shadow: 0 0 12px #ace600, 0 0 22px #ace600;
       pointer-events: none;
-      animation: particleBurst 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+      animation: particleBurst 1.8s cubic-bezier(0.12, 0.8, 0.25, 1) forwards;
     }
 
     @keyframes particleBurst {
@@ -175,16 +181,19 @@
         opacity: 1;
         transform: translate(0, 0) scale(1);
       }
+      70% {
+        opacity: 0.8;
+      }
       100% {
         opacity: 0;
-        transform: translate(var(--dx), var(--dy)) scale(0.2);
+        transform: translate(var(--dx), var(--dy)) scale(0.1);
       }
     }
 
-    /* Pop-up Alert Banner - Originates from Countdown and fans out (/ \) */
+    /* Pop-up Alert Banner - Originates from Countdown */
     .alert-banner {
       position: absolute;
-      top: 90px; /* Positioned directly under countdown */
+      top: 90px; /* Default position directly under countdown */
       left: 50%;
       transform: translateX(-50%);
       opacity: 0;
@@ -199,9 +208,14 @@
         0 0 35px rgba(255, 0, 128, 0.8);
       white-space: nowrap;
       pointer-events: none;
-      transform-origin: top center; /* Originates at countdown apex! */
-      transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+      transform-origin: top center;
+      transition: top 0.5s ease-in-out, opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
       z-index: 999;
+    }
+
+    /* 🛡️ AUTOMATIC OVERLAP PROTECTION: Pushed down during SISTA MINUTEN */
+    body.is-final-minute .alert-banner {
+      top: 185px; /* Shifted lower down so giant 96px numbers never overlap! */
     }
 
     /* Upper Text -> #ace600 */
@@ -225,21 +239,25 @@
       white-space: nowrap;
     }
 
-    /* 🌋 SMOOTH / \ EXPANSION FROM COUNTDOWN APEX */
+    /* 🌊 SLOWER, DEEPER / \ CURVED EXPANSION (1.3s Duration) */
     .show-alert {
       visibility: visible;
       opacity: 1;
-      animation: growFromCountdown 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      animation: growFromCountdown 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes growFromCountdown {
       0% {
         opacity: 0;
-        transform: translateX(-50%) translateY(-25px) scale(0.1);
+        transform: translateX(-50%) translateY(-35px) scale(0.05);
       }
-      55% {
+      40% {
         opacity: 1;
-        transform: translateX(-50%) translateY(25px) scale(1.35); /* Smooth / \ expansion peak */
+        transform: translateX(-50%) translateY(45px) scale(1.50); /* Dramatic / \ curved fanning expansion */
+      }
+      70% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(18px) scale(0.92); /* Gentle elastic pullback */
       }
       100% {
         opacity: 1;
@@ -296,7 +314,7 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- ✨ PARTICLE BURST CONTAINER -->
+  <!-- ✨ 50 PARTICLE BURST CONTAINER -->
   <div class="particle-container" id="particleContainer"></div>
 
   <!-- Donation Popup Banner -->
@@ -347,22 +365,22 @@
     let audioCtx = null;
 
     // =========================================================
-    // ✨ #ace600 GREEN PARTICLE BURST ENGINE
+    // ✨ 50 #ace600 GREEN PARTICLE BURST ENGINE
     // =========================================================
     function spawnGreenParticles() {
       const container = document.getElementById('particleContainer');
       if (!container) return;
 
-      container.innerHTML = ''; // Clear previous particles
+      container.innerHTML = ''; 
 
-      const particleCount = 22;
+      const particleCount = 50; // Boosted to 50 particles!
       for (let i = 0; i < particleCount; i++) {
         const p = document.createElement('span');
         p.className = 'particle';
 
-        // Downward fanning arch (/ \) angle calculation
-        const angle = (Math.PI / 6) + (Math.random() * (Math.PI * 2 / 3)); 
-        const distance = 90 + Math.random() * 140;
+        // Downward fanning arch (/ \) angle calculation (15° to 165°)
+        const angle = (Math.PI * 0.08) + (Math.random() * (Math.PI * 0.84)); 
+        const distance = 100 + Math.random() * 180; // Expanded trajectory radius
 
         const dx = Math.cos(angle) * distance * (Math.random() > 0.5 ? 1 : -1);
         const dy = Math.sin(angle) * distance;
@@ -370,16 +388,18 @@
         p.style.setProperty('--dx', `${dx}px`);
         p.style.setProperty('--dy', `${dy}px`);
 
-        const size = 6 + Math.random() * 8;
+        const size = 4 + Math.random() * 10;
+        const delay = Math.random() * 0.22; // Staggered burst effect
         p.style.width = `${size}px`;
         p.style.height = `${size}px`;
+        p.style.animationDelay = `${delay}s`;
 
         container.appendChild(p);
       }
 
       setTimeout(() => {
         container.innerHTML = '';
-      }, 1400);
+      }, 2000);
     }
 
     // =========================================================
@@ -417,6 +437,7 @@
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
+        document.body.classList.remove('is-final-minute');
         return;
       }
 
@@ -425,22 +446,15 @@
 
       // 🔥 FINAL 60 SECONDS MODE ("SISTA MINUTEN!")
       if (totalSecondsRemaining <= 60) {
-        if (!widget.classList.contains('final-minute')) {
-          widget.style.opacity = '0';
-          setTimeout(() => {
-            widget.classList.add('final-minute');
-            label.innerText = "SISTA MINUTEN!";
-            timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
-            widget.style.opacity = '1';
-          }, 300);
-        } else {
-          label.innerText = "SISTA MINUTEN!";
-          timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
-        }
+        document.body.classList.add('is-final-minute'); // Shifts alert down automatically
+        widget.classList.add('final-minute');
+        label.innerText = "SISTA MINUTEN!";
+        timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
         return;
       }
 
       // Normal Mode
+      document.body.classList.remove('is-final-minute');
       widget.classList.remove('final-minute');
       label.innerText = "INSAMLINGEN SLUTAR OM";
 
@@ -578,7 +592,7 @@
               const normVol = smoothVolume / 255;
 
               let scale = 1 + normVol * 0.4;
-              let jumpY = normVol * 15; // Bounce expansion
+              let jumpY = normVol * 15;
 
               if (banner && banner.classList.contains('show-alert')) {
                 banner.style.transform = `translateX(-50%) translateY(${jumpY}px) scale(${scale})`;
@@ -653,10 +667,10 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Spawn #ace600 Green Particles from Countdown Apex
+      // 1. Spawn 50 #ace600 Green Particles from Countdown Apex
       spawnGreenParticles();
 
-      // 2. Expand out from countdown in a smooth / \ arch
+      // 2. Expand out from countdown in a smooth 1.3s / \ arch
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
