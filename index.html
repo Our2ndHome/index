@@ -16,7 +16,7 @@
       color: #ffffff;
     }
 
-    /* 🎛️ TEST CONTROL PANEL (Visible in OBS 'Interact') */
+    /* 🎛️ DRAGGABLE TEST CONTROL PANEL */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -29,6 +29,7 @@
       z-index: 99999;
       max-width: 360px;
       font-size: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
     .test-panel h4 {
@@ -36,6 +37,15 @@
       font-size: 13px;
       color: #00ff88;
       text-transform: uppercase;
+      cursor: move; /* Shows hand cursor for dragging */
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 255, 136, 0.1);
+      padding: 5px 8px;
+      border-radius: 5px;
+      border: 1px dashed rgba(0, 255, 136, 0.4);
     }
 
     .test-panel button {
@@ -284,9 +294,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL -->
+  <!-- 🎛️ DRAGGABLE TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4>Testpanel (OBS Interagera)</h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
     <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
     <button onclick="simulateDonation('Anonym', 100)">+100 kr (Anonym)</button>
@@ -360,7 +370,7 @@
     const SOUNDS_FOLDER = "sounds"; 
     const SPONSORS_FOLDER = "sponsors";
     const SOUND_VOLUME = 0.8;
-    const SPONSOR_ROTATE_SECONDS = 15; // Rotates sponsor logo every 15s
+    const SPONSOR_ROTATE_SECONDS = 15;
 
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
@@ -400,7 +410,42 @@
     let availableSoundsPool = []; 
     let currentSponsorIndex = 0;
     let currentTotal = 0; 
-    let audioCtx = null;
+
+    // =========================================================
+    // 🖐️ DRAGGABLE PANEL ENGINE
+    // =========================================================
+    function makePanelDraggable() {
+      const panel = document.getElementById('testPanel');
+      const header = document.getElementById('panelDragHeader');
+      if (!panel || !header) return;
+
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+      header.onmousedown = dragMouseDown;
+
+      function dragMouseDown(e) {
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        panel.style.top = (panel.offsetTop - pos2) + "px";
+        panel.style.left = (panel.offsetLeft - pos1) + "px";
+      }
+
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
+    }
 
     // =========================================================
     // 🎛️ SCENE MODE SWITCHER ENGINE (?scene=game / starting / brb)
@@ -415,7 +460,6 @@
       const goalWidget = document.getElementById('goalWidget');
       const brbHeader = document.getElementById('brbHeader');
 
-      // Hide all by default
       countdownWidget.style.display = 'block';
       scheduleWidget.style.display = 'block';
       sponsorWidget.style.display = 'block';
@@ -423,16 +467,13 @@
       brbHeader.style.display = 'none';
 
       if (scene === 'game' || scene === 'overlay') {
-        // IN-GAME MODE: Keep screen clean!
         countdownWidget.style.display = 'none';
         scheduleWidget.style.display = 'none';
       } 
       else if (scene === 'starting') {
-        // STARTING SOON MODE: Show Countdown + Schedule + Sponsors + Goal
-        // All visible
+        // Show Countdown + Schedule + Sponsors + Goal
       } 
       else if (scene === 'brb' || scene === 'paus') {
-        // BRB MODE: Show "STRAX TILLBAKA" + Schedule + Sponsors
         countdownWidget.style.display = 'none';
         brbHeader.style.display = 'block';
       }
@@ -764,6 +805,7 @@
     }
 
     // Initialize All Widgets
+    makePanelDraggable();
     applySceneMode();
     renderSchedule();
     initCountdown();
