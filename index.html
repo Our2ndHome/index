@@ -65,7 +65,7 @@
       line-height: 1.4;
     }
 
-    /* ⏱️ COMPACT & SLEEK COUNTDOWN TIMER WIDGET */
+    /* ⏱️ COUNTDOWN TIMER WIDGET */
     .countdown-widget {
       position: absolute;
       top: 25px;
@@ -75,7 +75,7 @@
       color: #ffffff;
       white-space: nowrap;
       pointer-events: none;
-      transition: all 0.5s ease-in-out;
+      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
     }
 
     /* Upper Label -> #ace600 */
@@ -92,7 +92,7 @@
       transition: all 0.5s ease-in-out;
     }
 
-    /* Sleek & Compact Timer Numbers (34px) */
+    /* Sleek Timer Numbers */
     .countdown-timer {
       font-size: 34px;
       font-weight: 900;
@@ -105,11 +105,16 @@
       transition: all 0.5s ease-in-out;
     }
 
-    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
+    .sep-dot {
+      color: #ace600;
+      margin: 0 4px;
+    }
+
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE WITH FADE TRANSITION */
     .countdown-widget.final-minute .countdown-label {
       font-size: 24px;
       color: #ace600; 
-      letter-spacing: 3px;
+      letter-spacing: 4px;
       text-shadow: 0 0 20px rgba(172, 230, 0, 0.9);
       animation: finalSecondPulse 1s infinite alternate;
     }
@@ -131,7 +136,7 @@
     /* Timer Finished State */
     .timer-finished .countdown-label {
       color: #ace600;
-      font-size: 24px;
+      font-size: 26px;
       animation: pulseGlow 1.5s infinite alternate;
     }
 
@@ -142,6 +147,104 @@
     @keyframes pulseGlow {
       0% { text-shadow: 0 0 10px rgba(172, 230, 0, 0.5); }
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
+    }
+
+    /* ✨ #ace600 GREEN PARTICLE SYSTEM */
+    .particle-container {
+      position: absolute;
+      top: 75px; /* Spawns at the countdown apex */
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 998;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background-color: #ace600;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #ace600, 0 0 20px #ace600;
+      pointer-events: none;
+      animation: particleBurst 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+
+    @keyframes particleBurst {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(0.2);
+      }
+    }
+
+    /* Pop-up Alert Banner - Originates from Countdown and fans out (/ \) */
+    .alert-banner {
+      position: absolute;
+      top: 90px; /* Positioned directly under countdown */
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      visibility: hidden;
+      text-align: center;
+      background: transparent;
+      padding: 10px;
+      text-transform: uppercase;
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 0, 0, 0.9),
+        0 0 35px rgba(255, 0, 128, 0.8);
+      white-space: nowrap;
+      pointer-events: none;
+      transform-origin: top center; /* Originates at countdown apex! */
+      transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+      z-index: 999;
+    }
+
+    /* Upper Text -> #ace600 */
+    .donor-name {
+      color: #ace600; 
+      display: block;
+      font-size: 56px;
+      font-weight: 900;
+      margin-bottom: 5px;
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(172, 230, 0, 0.8);
+    }
+
+    /* Subtext Line 2 -> White */
+    .alert-subtext {
+      color: #ffffff;
+      font-size: 36px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    /* 🌋 SMOOTH / \ EXPANSION FROM COUNTDOWN APEX */
+    .show-alert {
+      visibility: visible;
+      opacity: 1;
+      animation: growFromCountdown 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes growFromCountdown {
+      0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-25px) scale(0.1);
+      }
+      55% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(25px) scale(1.35); /* Smooth / \ expansion peak */
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(20px) scale(1.0);
+      }
     }
 
     /* Total Raised Display */
@@ -166,70 +269,6 @@
       font-size: 42px;
       font-weight: 900;
     }
-
-    /* Pop-up Alert Banner */
-    .alert-banner {
-      position: absolute;
-      top: 40%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      opacity: 0;
-      visibility: hidden;
-      text-align: center;
-      background: transparent;
-      padding: 10px;
-      text-transform: uppercase;
-      text-shadow: 
-        0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 35px rgba(255, 0, 128, 0.8);
-      transition: opacity 0.5s ease, visibility 0.5s ease;
-      white-space: nowrap;
-      pointer-events: none;
-    }
-
-    /* Upper Text -> #ace600 */
-    .donor-name {
-      color: #ace600; 
-      display: block;
-      font-size: 56px;
-      font-weight: 900;
-      margin-bottom: 5px;
-      text-shadow: 
-        0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 30px rgba(172, 230, 0, 0.8);
-    }
-
-    /* Subtext Line 2 -> White */
-    .alert-subtext {
-      color: #ffffff;
-      font-size: 36px;
-      font-weight: 900;
-      white-space: nowrap;
-    }
-
-    /* Smooth Elastic Pop Animation */
-    .show-alert {
-      opacity: 1;
-      visibility: visible;
-      animation: elasticPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
-
-    @keyframes elasticPop {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.3);
-      }
-      60% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.35);
-      }
-      100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.0);
-      }
-    }
   </style>
 </head>
 <body>
@@ -251,11 +290,14 @@
     <div class="sound-status" id="soundStatus">Laddar ljud...</div>
   </div>
 
-  <!-- ⏱️ COMPACT COUNTDOWN TIMER WIDGET -->
+  <!-- ⏱️ COUNTDOWN TIMER WIDGET -->
   <div class="countdown-widget" id="countdownWidget">
     <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
-    <div class="countdown-timer" id="countdownTimer">0d 00:00:00</div>
+    <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
+
+  <!-- ✨ PARTICLE BURST CONTAINER -->
+  <div class="particle-container" id="particleContainer"></div>
 
   <!-- Donation Popup Banner -->
   <div class="alert-banner" id="alertBanner">
@@ -305,7 +347,43 @@
     let audioCtx = null;
 
     // =========================================================
-    // ⏱️ COUNTDOWN TIMER ENGINE (INSAMLINGEN SLUTAR OM)
+    // ✨ #ace600 GREEN PARTICLE BURST ENGINE
+    // =========================================================
+    function spawnGreenParticles() {
+      const container = document.getElementById('particleContainer');
+      if (!container) return;
+
+      container.innerHTML = ''; // Clear previous particles
+
+      const particleCount = 22;
+      for (let i = 0; i < particleCount; i++) {
+        const p = document.createElement('span');
+        p.className = 'particle';
+
+        // Downward fanning arch (/ \) angle calculation
+        const angle = (Math.PI / 6) + (Math.random() * (Math.PI * 2 / 3)); 
+        const distance = 90 + Math.random() * 140;
+
+        const dx = Math.cos(angle) * distance * (Math.random() > 0.5 ? 1 : -1);
+        const dy = Math.sin(angle) * distance;
+
+        p.style.setProperty('--dx', `${dx}px`);
+        p.style.setProperty('--dy', `${dy}px`);
+
+        const size = 6 + Math.random() * 8;
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+
+        container.appendChild(p);
+      }
+
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 1400);
+    }
+
+    // =========================================================
+    // ⏱️ EVENT END COUNTDOWN TIMER ENGINE
     // =========================================================
     let countdownTargetTime = null;
 
@@ -345,11 +423,20 @@
       widget.classList.remove('timer-finished');
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
-      // 🔥 FINAL 60 SECONDS MODE
+      // 🔥 FINAL 60 SECONDS MODE ("SISTA MINUTEN!")
       if (totalSecondsRemaining <= 60) {
-        widget.classList.add('final-minute');
-        label.innerText = "SISTA MINUTEN!";
-        timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
+        if (!widget.classList.contains('final-minute')) {
+          widget.style.opacity = '0';
+          setTimeout(() => {
+            widget.classList.add('final-minute');
+            label.innerText = "SISTA MINUTEN!";
+            timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
+            widget.style.opacity = '1';
+          }, 300);
+        } else {
+          label.innerText = "SISTA MINUTEN!";
+          timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
+        }
         return;
       }
 
@@ -367,9 +454,9 @@
       const sStr = String(seconds).padStart(2, '0');
 
       if (days > 0) {
-        timerDisplay.innerText = `${days}d ${hStr}:${mStr}:${sStr}`;
+        timerDisplay.innerHTML = `${days}D <span class="sep-dot">•</span> ${hStr}:${mStr}:${sStr}`;
       } else {
-        timerDisplay.innerText = `${hStr}:${mStr}:${sStr}`;
+        timerDisplay.innerHTML = `${hStr}:${mStr}:${sStr}`;
       }
     }
 
@@ -490,8 +577,8 @@
               smoothVolume += (avgVolume - smoothVolume) * 0.30;
               const normVol = smoothVolume / 255;
 
-              let scale = 1 + normVol * 0.5;
-              let jumpY = -normVol * 25;
+              let scale = 1 + normVol * 0.4;
+              let jumpY = normVol * 15; // Bounce expansion
 
               if (banner && banner.classList.contains('show-alert')) {
                 banner.style.transform = `translateX(-50%) translateY(${jumpY}px) scale(${scale})`;
@@ -499,15 +586,12 @@
 
               if (!audio.paused && !audio.ended) {
                 animFrameId = requestAnimationFrame(syncRhythm);
-              } else {
-                if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
               }
             }
 
             audio.addEventListener('play', () => { syncRhythm(); });
             audio.addEventListener('ended', () => {
               cancelAnimationFrame(animFrameId);
-              if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
             });
 
           } catch (e) {
@@ -515,7 +599,6 @@
           }
 
           audio.addEventListener('ended', () => {
-            if (banner) banner.style.transform = `translateX(-50%) translateY(0px) scale(1)`;
             resolve(audio.duration || 3);
           });
 
@@ -542,11 +625,6 @@
           gain.connect(audioCtx.destination);
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
-
-          if (banner) {
-            banner.style.transform = `translateX(-50%) scale(1.2) translateY(-15px)`;
-            setTimeout(() => { banner.style.transform = `translateX(-50%) scale(1) translateY(0px)`; }, 350);
-          }
 
           resolve(1.5);
         }
@@ -575,18 +653,21 @@
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Restart Elastic Pop In
+      // 1. Spawn #ace600 Green Particles from Countdown Apex
+      spawnGreenParticles();
+
+      // 2. Expand out from countdown in a smooth / \ arch
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Wait until audio finishes
+      // 3. Play Audio
       await playAlertSound();
 
-      // 3. Smooth Fade Out when music ends
+      // 4. Smooth Fade Out when music ends
       banner.classList.remove('show-alert');
 
-      // 4. 5-second break before next alert
+      // 5. 5-second break before next queued alert
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
