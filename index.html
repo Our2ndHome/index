@@ -20,7 +20,7 @@
       box-sizing: border-box;
     }
 
-    /* 🎨 HTML5 CANVAS COSMIC SANDSTORM OVERLAY */
+    /* 🎨 HTML5 CANVAS PARTICLE ENGINE OVERLAY */
     #particleCanvas {
       position: absolute;
       top: 0;
@@ -159,60 +159,6 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* 💎 CRISP VECTOR TEXT POPUP BANNER */
-    .alert-banner {
-      position: absolute;
-      top: 120px;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      visibility: hidden;
-      text-align: center;
-      background: transparent;
-      padding: 10px;
-      text-transform: uppercase;
-      text-shadow: 
-        0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(0, 0, 0, 0.9),
-        0 0 35px rgba(255, 0, 128, 0.8);
-      white-space: nowrap;
-      pointer-events: none;
-      transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
-      z-index: 999;
-    }
-
-    body.is-final-minute .alert-banner {
-      top: 185px; /* Shifted down during SISTA MINUTEN */
-    }
-
-    .donor-name {
-      color: #ace600; /* Lime Green Line 1 */
-      display: block;
-      font-size: 56px;
-      font-weight: 900;
-      margin-bottom: 5px;
-      text-shadow: 
-        0 0 12px #ace600,
-        0 0 25px rgba(172, 230, 0, 0.9),
-        0 0 45px rgba(255, 255, 255, 0.6);
-    }
-
-    .alert-subtext {
-      color: #ffffff; /* Crisp White Line 2 */
-      font-size: 38px;
-      font-weight: 900;
-      white-space: nowrap;
-      text-shadow: 
-        0 0 10px rgba(0, 0, 0, 0.9),
-        0 0 20px rgba(255, 255, 255, 0.9),
-        0 0 35px rgba(172, 230, 0, 0.6);
-    }
-
-    .show-alert {
-      opacity: 1;
-      visibility: visible;
-    }
-
     /* Total Raised Display */
     .goal-box {
       background: transparent;
@@ -263,14 +209,8 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 🎨 HTML5 CANVAS COSMIC SANDSTORM OVERLAY -->
+  <!-- 🎨 HTML5 CANVAS PARTICLE ENGINE (ONLY CANVAS RENDERS THE TEXT) -->
   <canvas id="particleCanvas"></canvas>
-
-  <!-- 💎 CRISP VECTOR TEXT POPUP BANNER -->
-  <div class="alert-banner" id="alertBanner">
-    <span class="donor-name" id="donorName">JOHAN</span> 
-    <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
-  </div>
 
   <!-- Total Raised Display -->
   <div class="goal-box">
@@ -312,7 +252,7 @@
     let audioCtx = null;
 
     // =========================================================
-    // 🌌 450 PARTICLE HOURGLASS STREAM )( & EXPLOSION ENGINE
+    // 🎨 PIXEL-ACCURATE CENTERED TEXT SAMPLER
     // =========================================================
     const canvas = document.getElementById('particleCanvas');
     const ctx = canvas.getContext('2d');
@@ -327,76 +267,106 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // 1. Entrance Sandstorm Stream )(
-    function spawnSandstormStream() {
+    function sampleTextPixelTargets(donorName, amountText) {
+      const offscreen = document.createElement('canvas');
+      const offCtx = offscreen.getContext('2d');
+      offscreen.width = 1400;
+      offscreen.height = 400;
+
+      const offCenterX = offscreen.width / 2;
+      const offCenterY = offscreen.height / 2;
+
+      offCtx.clearRect(0, 0, offscreen.width, offscreen.height);
+      offCtx.textAlign = 'center';
+      offCtx.textBaseline = 'middle';
+
+      // Line 1: Donor Name (#ace600 Lime Green)
+      offCtx.font = '900 64px "Montserrat", Arial, sans-serif';
+      offCtx.fillStyle = '#ace600';
+      offCtx.fillText(donorName.toUpperCase(), offCenterX, offCenterY - 45);
+
+      // Line 2: DONERADE X KR! (#ffffff Crisp White)
+      offCtx.font = '900 42px "Montserrat", Arial, sans-serif';
+      offCtx.fillStyle = '#ffffff';
+      offCtx.fillText(`DONERADE ${amountText.toUpperCase()}!`, offCenterX, offCenterY + 45);
+
+      const imgData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
+      const data = imgData.data;
+      const targets = [];
+
+      // High density step = 2px for solid, rich, sharp text coverage!
+      const step = 2; 
+
+      const isFinal = document.body.classList.contains('is-final-minute');
+      const screenCenterX = window.innerWidth / 2;
+      const screenCenterY = isFinal ? 280 : 220; // Perfect vertical position on screen
+
+      for (let y = 0; y < offscreen.height; y += step) {
+        for (let x = 0; x < offscreen.width; x += step) {
+          const index = (y * offscreen.width + x) * 4;
+          if (data[index + 3] > 128) {
+            // Map offscreen coordinate relative to exact screen center!
+            const targetX = screenCenterX + (x - offCenterX);
+            const targetY = screenCenterY + (y - offCenterY);
+
+            targets.push({
+              tx: targetX,
+              ty: targetY,
+              color: `rgb(${data[index]}, ${data[index + 1]}, ${data[index + 2]})`
+            });
+          }
+        }
+      }
+      return targets;
+    }
+
+    // 1. Hourglass Stream )( onto exact centered letter positions
+    function initParticleSandstorm(donorName, amountText) {
+      const targets = sampleTextPixelTargets(donorName, amountText);
       particles = [];
 
       const spawnX = window.innerWidth / 2;
       const startY = document.body.classList.contains('is-final-minute') ? 165 : 35;
-      const targetYCenter = document.body.classList.contains('is-final-minute') ? 220 : 130;
+      const targetYCenter = document.body.classList.contains('is-final-minute') ? 280 : 220;
 
-      const count = 450; 
-      const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#00ff88'];
+      const count = Math.max(2800, targets.length);
 
       for (let i = 0; i < count; i++) {
+        const target = targets[i % targets.length];
         const side = i % 2 === 0 ? -1 : 1;
 
         particles.push({
-          x: spawnX + (Math.random() - 0.5) * 120,
-          y: startY + (Math.random() - 0.5) * 15,
-          vx: (Math.random() - 0.5) * 2.5,
-          vy: 2.5 + Math.random() * 4,
+          x: spawnX + (Math.random() - 0.5) * 160,
+          y: startY + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 3,
+          vy: 2.8 + Math.random() * 4,
           side: side,
           spreadFactor: 90 + Math.random() * 90,
           startY: startY,
           targetYCenter: targetYCenter,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          size: 2.0 + Math.random() * 3.5,
+          tx: target.tx,
+          ty: target.ty,
+          color: target.color,
+          size: 2.2, // Solid micro-dust particle size
           alpha: 0,
-          delay: Math.random() * 20,
-          decay: 0.015
+          delay: Math.random() * 25,
+          friction: 0.88 + Math.random() * 0.05,
+          springEase: 0.09 + Math.random() * 0.06,
+          disperseVx: (Math.random() - 0.3) * 7,
+          disperseVy: -(Math.random() * 5 + 1)
         });
       }
 
-      particleEnginePhase = 'STREAM';
+      particleEnginePhase = 'HOURGLASS';
       if (!isCanvasAnimating) {
         isCanvasAnimating = true;
         requestAnimationFrame(renderCanvasLoop);
       }
     }
 
-    // 2. 360° Full-Screen Disintegration Explosion
-    function triggerFullExplosion() {
-      particleEnginePhase = 'EXPLODE';
-      
-      const centerX = window.innerWidth / 2;
-      const centerY = document.body.classList.contains('is-final-minute') ? 220 : 130;
-
-      particles = [];
-      const colors = ['#ace600', '#ace600', '#ffea00', '#ffffff', '#ff007f', '#00ff88'];
-
-      for (let i = 0; i < 400; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const blastSpeed = 8 + Math.random() * 26;
-
-        particles.push({
-          x: centerX + (Math.random() - 0.5) * 140,
-          y: centerY + (Math.random() - 0.5) * 40,
-          vx: Math.cos(angle) * blastSpeed,
-          vy: Math.sin(angle) * blastSpeed,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          size: 2.5 + Math.random() * 4.5,
-          alpha: 1,
-          delay: 0,
-          decay: 0.018 + Math.random() * 0.015,
-          friction: 0.985
-        });
-      }
-
-      if (!isCanvasAnimating) {
-        isCanvasAnimating = true;
-        requestAnimationFrame(renderCanvasLoop);
-      }
+    // 2. Disintegration Blast Exit
+    function triggerDisintegration() {
+      particleEnginePhase = 'DISINTEGRATE';
     }
 
     let frameCount = 0;
@@ -413,7 +383,7 @@
 
         if (frameCount < (p.delay || 0)) continue;
 
-        if (particleEnginePhase === 'STREAM') {
+        if (particleEnginePhase === 'HOURGLASS') {
           p.y += p.vy;
           p.alpha = Math.min(1, p.alpha + 0.1);
 
@@ -424,17 +394,31 @@
 
           p.x = (window.innerWidth / 2) + offsetX;
 
-          if (progress >= 1.0) {
-            p.alpha -= p.decay;
+          if (progress >= 0.75) {
+            particleEnginePhase = 'ASSEMBLE';
           }
         } 
-        else if (particleEnginePhase === 'EXPLODE') {
+        else if (particleEnginePhase === 'ASSEMBLE' || particleEnginePhase === 'HOLD') {
+          // Lock onto exact letter target coordinates!
+          const dx = p.tx - p.x;
+          const dy = p.ty - p.y;
+
+          p.vx += dx * p.springEase;
+          p.vy += dy * p.springEase;
+
+          p.vx *= p.friction;
+          p.vy *= p.friction;
+
           p.x += p.vx;
           p.y += p.vy;
-          if (p.gravity) p.vy += p.gravity;
-          p.vx *= (p.friction || 0.985);
-          p.vy *= (p.friction || 0.985);
-          p.alpha -= p.decay;
+          p.alpha = Math.min(1, p.alpha + 0.1);
+        } 
+        else if (particleEnginePhase === 'DISINTEGRATE') {
+          // Dust Disintegration Wind Blast
+          p.x += p.disperseVx;
+          p.y += p.disperseVy;
+          p.disperseVx += (Math.random() - 0.4) * 0.5;
+          p.alpha -= 0.03;
         }
 
         if (p.alpha > 0) {
@@ -653,34 +637,25 @@
       isProcessingAlert = true;
       const nextAlert = alertQueue.shift();
 
-      const banner = document.getElementById('alertBanner');
-      document.getElementById('donorName').innerText = nextAlert.donorName;
-      document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
       document.getElementById('totalDisplay').innerText = `${nextAlert.newTotal} kr`;
 
-      // 1. Spawn Hourglass Sandstorm Stream )(
-      spawnSandstormStream();
+      // 1. Start Particle Sandstorm Stream )(
+      initParticleSandstorm(nextAlert.donorName, `${nextAlert.diffAmount} kr`);
 
       // 2. Play Audio
       const audioPromise = playAlertSound();
 
-      // 3. Crisp Vector Text Fades IN smoothly inside the particle cloud (0.5s delay)
-      setTimeout(() => {
-        banner.classList.add('show-alert');
-      }, 500);
-
-      // 4. Wait for audio to finish
+      // 3. Wait for audio to finish playing while particles hold solid text shape!
       await audioPromise;
 
-      // 5. Crisp Vector Text Fades OUT & Triggers 360° Full-Screen Particle Blast!
-      banner.classList.remove('show-alert');
-      triggerFullExplosion();
+      // 4. Trigger Particle Disintegration Dust Blast!
+      triggerDisintegration();
 
-      // 6. Allow 1.6 seconds for explosion to clear + 5s break pause
+      // 5. Allow 1.2s for disintegration dust to clear + 5s break pause
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
-      }, 1600 + (PAUSE_BETWEEN_ALERTS_SECONDS * 1000));
+      }, 1200 + (PAUSE_BETWEEN_ALERTS_SECONDS * 1000));
     }
 
     // =========================================================
