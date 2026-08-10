@@ -37,7 +37,7 @@
       font-size: 13px;
       color: #00ff88;
       text-transform: uppercase;
-      cursor: move; /* Shows hand cursor for dragging */
+      cursor: move;
       user-select: none;
       display: flex;
       justify-content: space-between;
@@ -123,7 +123,7 @@
     /* 📢 WIDGET 2: DONATION ALERT BANNER */
     .alert-banner {
       position: absolute;
-      top: 40%;
+      top: 38%;
       left: 50%;
       transform: translate(-50%, -50%);
       opacity: 0;
@@ -166,10 +166,10 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Placed above schedule bar) */
     .goal-widget {
       position: absolute;
-      bottom: 30px;
+      bottom: 105px;
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -192,29 +192,29 @@
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 25px;
+      bottom: 105px;
       right: 35px;
       text-align: center;
       z-index: 1000;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px 18px;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 8px 16px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     .sponsor-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       color: #ace600;
       letter-spacing: 1px;
       text-transform: uppercase;
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     .sponsor-logo-container {
-      width: 140px;
-      height: 50px;
+      width: 130px;
+      height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -228,52 +228,127 @@
       opacity: 1;
     }
 
-    /* 📅 WIDGET 5: STREAMER SCHEDULE & GIVEAWAY DISPLAY */
+    /* 📅 WIDGET 5: FULL-WIDTH BOTTOM DAY-BY-DAY SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
-      top: 110px;
-      left: 35px;
-      background: rgba(0, 0, 0, 0.75);
-      border: 2px solid #ace600;
-      border-radius: 12px;
-      padding: 15px 20px;
-      width: 280px;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      background: rgba(0, 0, 0, 0.88);
+      border-top: 2px solid #ace600;
+      padding: 10px 25px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       z-index: 1000;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+      box-shadow: 0 -5px 25px rgba(0,0,0,0.8);
     }
 
-    .schedule-title {
-      font-size: 14px;
+    .schedule-bar-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-around;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1800px;
+      gap: 15px;
+    }
+
+    .schedule-day-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+
+    .schedule-day-title {
+      font-size: 11px;
       font-weight: 900;
       color: #ace600;
+      margin-bottom: 6px;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #444;
-      padding-bottom: 5px;
+      letter-spacing: 1.5px;
     }
 
-    .schedule-item {
-      margin-bottom: 10px;
-      font-size: 12px;
+    .day-events-wrapper {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
     }
 
-    .schedule-time {
-      color: #00ff88;
-      font-weight: 800;
+    /* Event Cards */
+    .schedule-event-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 6px 10px;
+      text-align: center;
+      flex: 1;
+      transition: all 0.4s ease;
+    }
+
+    /* Inactive Events: Smaller crisp white text */
+    .schedule-event-card.inactive {
       font-size: 11px;
+      color: #ffffff;
+      opacity: 0.75;
     }
 
-    .schedule-streamer {
-      font-weight: 900;
-      font-size: 14px;
+    .schedule-event-card.inactive .event-streamer {
+      font-size: 12px;
+      font-weight: 800;
       color: #ffffff;
     }
 
-    .schedule-giveaway {
-      color: #ffea00;
+    .schedule-event-card.inactive .event-time {
+      font-size: 10px;
+      color: #aaa;
+    }
+
+    /* 🔴 ACTIVE LIVE EVENT: #ace600 Lime Green + Larger Font + Neon Glow */
+    .schedule-event-card.active {
+      background: rgba(172, 230, 0, 0.18);
+      border: 2px solid #ace600;
+      box-shadow: 0 0 18px rgba(172, 230, 0, 0.7);
+      transform: scale(1.04);
+      z-index: 10;
+      opacity: 1;
+    }
+
+    .schedule-event-card.active .event-live-tag {
+      display: inline-block;
+      background: #ace600;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .schedule-event-card.active .event-streamer {
+      font-size: 16px; /* Larger font size */
+      font-weight: 900;
+      color: #ace600; /* #ace600 Lime Green */
+      text-shadow: 0 0 12px rgba(172, 230, 0, 0.9);
+    }
+
+    .schedule-event-card.active .event-time {
       font-size: 11px;
       font-weight: 800;
+      color: #ffffff;
+    }
+
+    .schedule-event-card.active .event-giveaway {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffea00;
     }
 
     /* BRB Scene Mode Header */
@@ -314,6 +389,14 @@
     </div>
 
     <div class="panel-section">
+      <b>Live Schema Highlighting Test:</b><br>
+      <button onclick="testLiveHighlight(0)">Testa Live Event 1</button>
+      <button onclick="testLiveHighlight(2)">Testa Live Event 2</button>
+      <button onclick="testLiveHighlight(6)">Testa Slutspurt Event</button>
+      <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
+    </div>
+
+    <div class="panel-section">
       <b>Scenläge förhandsgranskning:</b><br>
       <button onclick="applySceneMode('game')">Spel Scen (?scene=game)</button>
       <button onclick="applySceneMode('starting')">Startar Om (?scene=starting)</button>
@@ -349,10 +432,9 @@
     </div>
   </div>
 
-  <!-- 📅 WIDGET 5: STREAMER SCHEDULE & GIVEAWAYS -->
+  <!-- 📅 WIDGET 5: FULL-WIDTH BOTTOM DAY-BY-DAY SCHEDULE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
-    <div class="schedule-title">📅 SCHEMA & GIVEAWAYS</div>
-    <div id="scheduleContainer"></div>
+    <div class="schedule-bar-container" id="scheduleBarContainer"></div>
   </div>
 
   <!-- BRB Header Text -->
@@ -397,12 +479,29 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // EVENT SCHEDULE CONFIGURATION
+    // 📅 EASY SCHEDULE CONFIGURATION (Edit your times, streamers & giveaways here!)
     const SCHEDULE_DATA = [
-      { time: "12:00 - 14:00", streamer: "Streamer One", giveaway: "🎁 Gamer Headset" },
-      { time: "14:00 - 16:00", streamer: "Streamer Two", giveaway: "🎁 Presentkort 500kr" },
-      { time: "16:00 - 18:00", streamer: "Streamer Three", giveaway: "🎁 Musikhjälpen T-Shirt" },
-      { time: "18:00 - 20:00", streamer: "Slutspurt & Final!", giveaway: "🏆 STORA VINSTEN" }
+      {
+        dayName: "FREDAG 4 DEC",
+        events: [
+          { id: 0, start: "2026-12-04T12:00:00", end: "2026-12-04T15:00:00", timeText: "12:00 - 15:00", streamer: "Streamer One", giveaway: "🎁 Gamer Headset" },
+          { id: 1, start: "2026-12-04T15:00:00", end: "2026-12-04T18:00:00", timeText: "15:00 - 18:00", streamer: "Streamer Two", giveaway: "🎁 Presentkort 500kr" }
+        ]
+      },
+      {
+        dayName: "LÖRDAG 5 DEC",
+        events: [
+          { id: 2, start: "2026-12-05T12:00:00", end: "2026-12-05T15:00:00", timeText: "12:00 - 15:00", streamer: "Streamer Three", giveaway: "🎁 T-Shirt Paket" },
+          { id: 3, start: "2026-12-05T15:00:00", end: "2026-12-05T18:00:00", timeText: "15:00 - 18:00", streamer: "Streamer Four", giveaway: "🎁 VIP Roll" }
+        ]
+      },
+      {
+        dayName: "SÖNDAG 6 DEC",
+        events: [
+          { id: 4, start: "2026-12-06T12:00:00", end: "2026-12-06T16:00:00", timeText: "12:00 - 16:00", streamer: "Streamer Five", giveaway: "🎁 Hemlig Vinst" },
+          { id: 5, start: "2026-12-06T16:00:00", end: "2026-12-06T20:00:00", timeText: "16:00 - 20:00", streamer: "SLUTSPURT & FINAL!", giveaway: "🏆 STORA VINSTEN" }
+        ]
+      }
     ];
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
@@ -410,6 +509,7 @@
     let availableSoundsPool = []; 
     let currentSponsorIndex = 0;
     let currentTotal = 0; 
+    let testForcedEventId = -1; // -1 means automatic clock reading
 
     // =========================================================
     // 🖐️ DRAGGABLE PANEL ENGINE
@@ -461,7 +561,7 @@
       const brbHeader = document.getElementById('brbHeader');
 
       countdownWidget.style.display = 'block';
-      scheduleWidget.style.display = 'block';
+      scheduleWidget.style.display = 'flex';
       sponsorWidget.style.display = 'block';
       goalWidget.style.display = 'block';
       brbHeader.style.display = 'none';
@@ -480,19 +580,55 @@
     }
 
     // =========================================================
-    // 📅 SCHEDULE RENDERER
+    // 📅 DAY-BY-DAY BOTTOM SCHEDULE BAR RENDERER & LIVE HIGHLIGHT
     // =========================================================
     function renderSchedule() {
-      const container = document.getElementById('scheduleContainer');
+      const container = document.getElementById('scheduleBarContainer');
       if (!container) return;
 
-      container.innerHTML = SCHEDULE_DATA.map(item => `
-        <div class="schedule-item">
-          <div class="schedule-time">${item.time}</div>
-          <div class="schedule-streamer">${item.streamer}</div>
-          <div class="schedule-giveaway">${item.giveaway}</div>
-        </div>
-      `).join('');
+      const now = new Date();
+
+      container.innerHTML = SCHEDULE_DATA.map(dayGroup => {
+        const eventsHtml = dayGroup.events.map(ev => {
+          const startTime = new Date(ev.start);
+          const endTime = new Date(ev.end);
+          
+          // Check if this event is live right now or forced by test button
+          const isLiveNow = (testForcedEventId === ev.id) || 
+                            (testForcedEventId === -1 && now >= startTime && now < endTime);
+
+          if (isLiveNow) {
+            return `
+              <div class="schedule-event-card active">
+                <span class="event-live-tag">🔴 JUST NU</span>
+                <div class="event-streamer">${ev.streamer}</div>
+                <div class="event-time">${ev.timeText}</div>
+                <div class="event-giveaway">${ev.giveaway}</div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="schedule-event-card inactive">
+                <div class="event-streamer">${ev.streamer}</div>
+                <div class="event-time">${ev.timeText}</div>
+                <div class="event-giveaway">${ev.giveaway}</div>
+              </div>
+            `;
+          }
+        }).join('');
+
+        return `
+          <div class="schedule-day-group">
+            <div class="schedule-day-title">${dayGroup.dayName}</div>
+            <div class="day-events-wrapper">${eventsHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function testLiveHighlight(eventId) {
+      testForcedEventId = eventId;
+      renderSchedule();
     }
 
     // =========================================================
@@ -813,6 +949,7 @@
     loadSoundsAutomatically();
     fetchMusikhjalpenData();
     setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
+    setInterval(renderSchedule, 10000); // Check live event highlighting every 10s
   </script>
 </body>
 </html>
