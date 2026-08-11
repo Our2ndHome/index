@@ -96,7 +96,7 @@
     }
 
     .countdown-timer {
-      font-size: 34px;
+      font-size: 28px;
       font-weight: 900;
       letter-spacing: 1px;
       color: #ffffff; 
@@ -110,7 +110,7 @@
       margin: 0 3px;
     }
 
-    /* Final 60s Mode */
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 18px;
       color: #ace600;
@@ -192,7 +192,7 @@
     }
 
     .donor-name {
-      color: #ace600;
+      color: #ace600; /* Lime Green */
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -333,7 +333,7 @@
       z-index: 3;
     }
 
-    /* DAY BADGE (Only shows in front of the FIRST event of a new day) */
+    /* DAY BADGE (Shows ONLY when day changes after day 1) */
     .timeline-day-badge {
       background: rgba(172, 230, 0, 0.18);
       border: 1px solid #ace600;
@@ -465,11 +465,11 @@
     </div>
 
     <div class="panel-section">
-      <b>Option A Rolling Queue Test:</b><br>
+      <b>Rolling Queue Highlighting Test:</b><br>
       <button onclick="testLiveHighlight(0)">Testa Slot 1 (Måndag)</button>
       <button onclick="testLiveHighlight(3)">Testa Slot 4 (Sista Måndag)</button>
-      <button onclick="testLiveHighlight(4)">Testa Slot 5 (Första Tisdag)</button>
-      <button onclick="testLiveHighlight(10)">Testa Slot 11 (Slutspurt)</button>
+      <button onclick="testLiveHighlight(4)">Testa Slot 5 (Skifte Tisdag)</button>
+      <button onclick="testLiveHighlight(8)">Testa Slot 9 (Skifte Onsdag)</button>
       <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
     </div>
 
@@ -510,7 +510,7 @@
     </div>
   </div>
 
-  <!-- 📅 WIDGET 5: OPTION A ROLLING 5-EVENT SCHEDULE BAR WITH DAY BADGES -->
+  <!-- 📅 WIDGET 5: ROLLING 5-EVENT TIMELINE SCHEDULE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -563,21 +563,21 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 OPTION A FLAT SCHEDULE LIST (All events across days in chronological order)
+    // 📅 SCHEDULE DATA (Clean Day Names without date numbers)
     const ALL_SCHEDULE_EVENTS = [
-      { id: 0, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
-      { id: 1, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
-      { id: 2, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
-      { id: 3, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Four", giveaway: "" },
+      { id: 0, dayName: "MÅNDAG", start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
+      { id: 1, dayName: "MÅNDAG", start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
+      { id: 2, dayName: "MÅNDAG", start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
+      { id: 3, dayName: "MÅNDAG", start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Four", giveaway: "" },
       
-      { id: 4, dayName: "TISDAG 15 DEC", start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Five", giveaway: "" },
-      { id: 5, dayName: "TISDAG 15 DEC", start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Six", giveaway: "" },
-      { id: 6, dayName: "TISDAG 15 DEC", start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Seven", giveaway: "🎁 GIVEAWAY!" },
-      { id: 7, dayName: "TISDAG 15 DEC", start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Eight", giveaway: "" },
+      { id: 4, dayName: "TISDAG", start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Five", giveaway: "" },
+      { id: 5, dayName: "TISDAG", start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Six", giveaway: "" },
+      { id: 6, dayName: "TISDAG", start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Seven", giveaway: "🎁 GIVEAWAY!" },
+      { id: 7, dayName: "TISDAG", start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Eight", giveaway: "" },
       
-      { id: 8, dayName: "ONSDAG 16 DEC", start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Nine", giveaway: "" },
-      { id: 9, dayName: "ONSDAG 16 DEC", start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", name: "FINAL GIVEAWAY", giveaway: "🏆 GIVEAWAY!" },
-      { id: 10, dayName: "ONSDAG 16 DEC", start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", name: "SLUTSPURT & FINAL!", giveaway: "" }
+      { id: 8, dayName: "ONSDAG", start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Nine", giveaway: "" },
+      { id: 9, dayName: "ONSDAG", start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", name: "FINAL GIVEAWAY", giveaway: "🏆 GIVEAWAY!" },
+      { id: 10, dayName: "ONSDAG", start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", name: "SLUTSPURT & FINAL!", giveaway: "" }
     ];
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
@@ -656,7 +656,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT QUEUE & DAY BADGES
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (Day Badges for Day Transitions)
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -692,12 +692,13 @@
       let visibleEvents = ALL_SCHEDULE_EVENTS.slice(activeIndex, activeIndex + 5);
       if (visibleEvents.length < 5 && ALL_SCHEDULE_EVENTS.length >= 5) {
         const startPad = Math.max(0, ALL_SCHEDULE_EVENTS.length - 5);
-        visibleEvents = ALL_SCHEDULE_EVENTS.slice(startPad, ALL_SCHEDULE_EVENTS.length);
+        slice = ALL_SCHEDULE_EVENTS.slice(startPad, ALL_SCHEDULE_EVENTS.length);
+        visibleEvents = slice;
       }
 
       const totalVisible = visibleEvents.length;
 
-      // 2. Progress fill for the visible 5-event window
+      // 2. Real-time Progress fill for the visible 5-event window
       if (totalVisible > 0) {
         const windowStart = new Date(visibleEvents[0].start).getTime();
         const windowEnd = new Date(visibleEvents[totalVisible - 1].end).getTime();
@@ -714,8 +715,8 @@
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 3. Render 5 Events + Smart Day Badges (only in front of the FIRST event of a new day)
-      let lastSeenDay = "";
+      // 3. Render 5 Events + Day Badges (MÅNDAG is hidden at start, shows only when day changes!)
+      let lastSeenDay = "MÅNDAG"; // Initialized to MÅNDAG so first MÅNDAG badge is hidden!
 
       eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
         const startTime = new Date(ev.start);
@@ -724,6 +725,7 @@
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= startTime && now < endTime);
 
+        // Alignment Rules: First=Left, Middle=Center, Last=Right
         let alignClass = "middle-node";
         if (index === 0) alignClass = "first-node";
         else if (index === totalVisible - 1) alignClass = "last-node";
@@ -734,9 +736,9 @@
         const primaryText = hasGiveaway ? ev.giveaway : ev.name;
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
-        // Day Badge logic: Show badge if day changes!
+        // Day Badge logic: Show ONLY if day changes and it's not the initial Monday start
         let dayBadgeHtml = "";
-        if (ev.dayName !== lastSeenDay) {
+        if (ev.dayName !== lastSeenDay && ev.dayName !== "MÅNDAG") {
           dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
           lastSeenDay = ev.dayName;
         }
@@ -999,18 +1001,14 @@
 
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
-      // 1. Restart Elastic Pop In
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
-      // 2. Play Audio
       await playAlertSound();
 
-      // 3. Fade Out when music ends
       banner.classList.remove('show-alert');
 
-      // 4. Break pause between queued alerts
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
