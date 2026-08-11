@@ -395,18 +395,22 @@
       align-self: center;
     }
 
+    /* 🎯 Left-aligned nodes so tick mark aligns EXACTLY with start of event slot */
     .timeline-node {
       display: flex;
       flex-direction: column;
       position: relative;
       flex: 1;
+      align-items: flex-start;
+      text-align: left;
       transition: all 0.3s ease;
       text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
-    .timeline-node.first-node { align-items: flex-start; text-align: left; }
-    .timeline-node.middle-node { align-items: center; text-align: center; }
-    .timeline-node.last-node { align-items: flex-end; text-align: right; }
+    .timeline-node.last-node {
+      align-items: flex-end;
+      text-align: right;
+    }
 
     .node-tick {
       width: 3px;
@@ -591,20 +595,19 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 REAL LIVE SCHEDULE DATA (Configured for Today: August 11, 2026)
+    // 📅 SCHEDULE DATA (August 11, 2026)
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
       { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is 22:19 CEST)
+      // 🔴 ACTIVE EVENT
       { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
       { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
-      // TOMORROW (ONSDAG)
+      // TOMORROW
       { id: 4, dayName: "ONSDAG", start: "2026-08-12T18:00:00", end: "2026-08-12T20:00:00", timeText: "18:00 - 20:00", name: "Morning Special", giveaway: "" },
       { id: 5, dayName: "ONSDAG", start: "2026-08-12T20:00:00", end: "2026-08-12T22:00:00", timeText: "20:00 - 22:00", name: "Final Boss Stream", giveaway: "🏆 GRAND PRIZE!" }
     ];
 
-    // Helper function to dynamically generate relative events if opened on another day
     function generateRelativeLiveEvents() {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
@@ -613,11 +616,10 @@
       const formatISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
       const formatTime = (d1, d2) => `${pad(d1.getHours())}:${pad(d1.getMinutes())} - ${pad(d2.getHours())}:${pad(d2.getMinutes())}`;
 
-      // Build 6 events around 'now' (-4h, -2h, NOW, +1h, +3h, +20h)
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 20 * 60000); // Started 20 mins ago
-      const t4 = new Date(now.getTime() + 40 * 60000); // Ends in 40 mins
+      const t3 = new Date(now.getTime() - 25 * 60000); // Started 25 mins ago
+      const t4 = new Date(now.getTime() + 35 * 60000); // Ends in 35 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
       const t6 = new Date(now.getTime() + 5 * 3600000);
 
@@ -703,7 +705,7 @@
     }
 
     // =========================================================
-    // 📅 SCHEDULE TIMELINE ENGINE (REAL-TIME PROGRESS FILL)
+    // 📅 SCHEDULE TIMELINE ENGINE
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -766,9 +768,7 @@
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= new Date(ev.start) && now < new Date(ev.end));
 
-        let alignClass = "middle-node";
-        if (index === 0) alignClass = "first-node";
-        else if (index === totalVisible - 1) alignClass = "last-node";
+        let alignClass = index === totalVisible - 1 ? "last-node" : "middle-node";
 
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
         const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
@@ -1100,7 +1100,7 @@
     fetchMusikhjalpenData();
 
     setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
-    setInterval(renderSchedule, 1000); // 1s interval for real-time smooth timeline progression
+    setInterval(renderSchedule, 1000);
   </script>
 </body>
 </html>
