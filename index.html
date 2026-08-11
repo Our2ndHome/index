@@ -164,19 +164,22 @@
       font-weight: 900;
       color: #ffffff;
       text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-      transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
+      transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out;
     }
 
+    /* Reduced gap during SISTA MINUTEN mode (top: 98px) */
     body.is-final-minute .goal-widget {
-      top: 125px;
+      top: 98px;
     }
 
+    /* Pure Crisp White Header Label */
     .goal-label {
       font-size: 12px;
-      color: #e0e0e0;
+      color: #ffffff; /* Pure Crisp White */
       display: block;
       margin-bottom: 2px;
       letter-spacing: 1.5px;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
     }
 
     .amount {
@@ -234,7 +237,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) */
+    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
       bottom: 80px;
@@ -242,9 +245,9 @@
       transform: translateX(-50%);
       text-align: center;
       z-index: 1000;
-      background: transparent; /* No Background */
-      border: none; /* No Border */
-      box-shadow: none; /* No Shadow */
+      background: transparent;
+      border: none;
+      box-shadow: none;
       padding: 0;
       display: flex;
       flex-direction: column;
@@ -279,7 +282,7 @@
       text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
     }
 
-    /* 📅 WIDGET 5: NO-BACKGROUND SLIM TIMELINE SCHEDULE BAR */
+    /* 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -301,7 +304,6 @@
       width: 100%;
     }
 
-    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -313,7 +315,6 @@
       z-index: 1;
     }
 
-    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -352,21 +353,22 @@
       z-index: 3;
     }
 
-    /* DAY BADGE (Inline tag for upcoming day transitions) */
+    /* DAY BADGE (Floats ABOVE the line) */
     .timeline-day-badge {
+      position: absolute;
+      top: -22px;
       background: rgba(172, 230, 0, 0.18);
       border: 1px solid #ace600;
       color: #ace600;
       font-size: 11px;
       font-weight: 900;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 5px;
       letter-spacing: 1px;
       text-transform: uppercase;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      margin-right: 10px;
-      align-self: center;
+      z-index: 10;
     }
 
     .timeline-node {
@@ -522,7 +524,7 @@
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) -->
+  <!-- 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR -->
   <div class="sponsor-widget" id="sponsorWidget">
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -676,7 +678,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (Auto-Hides Passed Day Badges)
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -852,7 +854,7 @@
       const diff = countdownTargetTime - now;
 
       if (diff <= 0) {
-        timerDisplay.innerText = ""; // Empty string so '00' is hidden!
+        timerDisplay.innerText = ""; 
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
