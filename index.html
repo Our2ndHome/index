@@ -92,6 +92,7 @@
       text-transform: uppercase;
       margin-bottom: 2px;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
+      transition: all 0.5s ease-in-out;
     }
 
     .countdown-timer {
@@ -101,6 +102,7 @@
       color: #ffffff; 
       font-variant-numeric: tabular-nums;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      transition: all 0.5s ease-in-out;
     }
 
     .sep-dot {
@@ -108,15 +110,26 @@
       margin: 0 3px;
     }
 
-    /* Final 60s Mode */
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE (Compact & Sleek Sizing) */
     .countdown-widget.final-minute .countdown-label {
-      font-size: 20px;
+      font-size: 18px; /* Was 24px */
       color: #ace600;
+      letter-spacing: 3px;
+      text-shadow: 0 0 15px rgba(172, 230, 0, 0.8);
+      animation: finalSecondPulse 1s infinite alternate;
     }
 
     .countdown-widget.final-minute .countdown-timer {
-      font-size: 80px;
+      font-size: 68px; /* Reduced from 96px for space saving */
       color: #ffffff;
+      text-shadow: 
+        0 0 15px rgba(0, 0, 0, 0.9),
+        0 0 25px rgba(255, 255, 255, 0.9);
+    }
+
+    @keyframes finalSecondPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.08); }
     }
 
     /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (#ace600 Amount) */
@@ -135,6 +148,13 @@
       font-weight: 900;
       color: #ffffff;
       text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+      /* Smooth slide down when final 60s starts */
+      transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
+    }
+
+    /* Automatically shifts down during SISTA MINUTEN so no collision happens! */
+    body.is-final-minute .goal-widget {
+      top: 125px;
     }
 
     .goal-label {
@@ -145,7 +165,7 @@
       letter-spacing: 1.5px;
     }
 
-    /* Only the amount number fades and uses #ace600 Lime Green */
+    /* Only amount number fades and uses #ace600 Lime Green */
     .amount {
       color: #ace600;
       font-size: 42px;
@@ -201,7 +221,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (Directly above timeline) */
+    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
       bottom: 50px;
@@ -371,7 +391,7 @@
       white-space: nowrap;
     }
 
-    /* 🔴 ACTIVE LIVE TIMELINE NODE (Line tick | stays vertical) */
+    /* 🔴 ACTIVE LIVE TIMELINE NODE */
     .timeline-node.active .node-tick {
       width: 4px;
       height: 18px;
@@ -534,7 +554,7 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (Simplified Giveaway Text)
+    // 📅 SCHEDULE DATA
     const SCHEDULE_DATA = [
       {
         dayName: "MÅNDAG 14 DEC",
@@ -542,7 +562,7 @@
         events: [
           { id: 0, start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
           { id: 1, start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
-          { id: 2, start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "", giveaway: "🎁 GIVEAWAY!" },
+          { id: 2, start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
           { id: 3, start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Four", giveaway: "" }
         ]
       },
@@ -790,6 +810,7 @@
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
+        document.body.classList.remove('is-final-minute');
         return;
       }
 
@@ -797,12 +818,14 @@
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
       if (totalSecondsRemaining <= 60) {
+        document.body.classList.add('is-final-minute');
         widget.classList.add('final-minute');
         label.innerText = "SISTA MINUTEN!";
         timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
         return;
       }
 
+      document.body.classList.remove('is-final-minute');
       widget.classList.remove('final-minute');
       label.innerText = "INSAMLINGEN SLUTAR OM";
 
@@ -936,11 +959,6 @@
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    function enqueueAlert(donorName, diffAmount, newTotal) {
-      alertQueue.push({ donorName, diffAmount, newTotal });
-      processQueue();
-    }
-
     // Smooth Fade-Out & Fade-In ONLY for the amount number (#totalDisplay)
     function updateTotalDisplaySmooth(newTotalText) {
       const display = document.getElementById('totalDisplay');
@@ -968,7 +986,7 @@
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
 
-      // Smooth Fade-In/Out update for Total Amount in #ace600
+      // Update Total Amount with smooth fade
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
       // 1. Restart Elastic Pop In
