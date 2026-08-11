@@ -90,7 +90,7 @@
       letter-spacing: 1.5px;
       color: #ace600; 
       text-transform: uppercase;
-      margin-bottom: 6px; /* Balanced 6px gap */
+      margin-bottom: 8px; /* Even 8px Gap */
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
       transition: all 0.5s ease-in-out;
     }
@@ -148,10 +148,10 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH EVEN SPACING */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH EVEN 8px SPACING */
     .goal-widget {
       position: absolute;
-      top: 80px; /* Balanced gap under countdown */
+      top: 84px; /* Even 8px gap under countdown timer */
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -168,14 +168,14 @@
     }
 
     body.is-final-minute .goal-widget {
-      top: 105px; /* Even gap during final minute mode */
+      top: 102px; /* Even 8px gap during 48px final minute mode */
     }
 
     .goal-label {
       font-size: 12px;
       color: #ffffff; /* Pure Crisp White */
       display: block;
-      margin-bottom: 6px; /* Balanced 6px gap */
+      margin-bottom: 8px; /* Even 8px Gap */
       letter-spacing: 1.5px;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
     }
@@ -189,13 +189,12 @@
       display: block;
     }
 
-    /* Target Goal -> #ace600 with 6px even gap above */
     .goal-target {
       font-size: 11px;
       font-weight: 800;
       color: #ace600; /* #ace600 Lime Green */
       display: block;
-      margin-top: 6px; /* Balanced 6px gap */
+      margin-top: 8px; /* Even 8px Gap */
       letter-spacing: 1.2px;
       opacity: 0.9;
       text-shadow: 0 0 10px rgba(172, 230, 0, 0.4);
@@ -284,11 +283,11 @@
     .sponsor-label {
       font-size: 11px;
       font-weight: 900;
-      color: #ace600; /* #ace600 Lime Green */
+      color: #ace600;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       display: block;
-      margin-top: 4px; /* Placed UNDER image */
+      margin-top: 4px;
       text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
     }
 
@@ -314,7 +313,6 @@
       width: 100%;
     }
 
-    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -326,7 +324,6 @@
       z-index: 1;
     }
 
-    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -340,7 +337,6 @@
       transition: width 1s linear;
     }
 
-    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -365,21 +361,21 @@
       z-index: 3;
     }
 
-    /* DAY BADGE (Inline tag for upcoming day transitions) */
     .timeline-day-badge {
+      position: absolute;
+      top: -22px;
       background: rgba(172, 230, 0, 0.18);
       border: 1px solid #ace600;
       color: #ace600;
       font-size: 11px;
       font-weight: 900;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 5px;
       letter-spacing: 1px;
       text-transform: uppercase;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      margin-right: 10px;
-      align-self: center;
+      z-index: 10;
     }
 
     .timeline-node {
@@ -433,7 +429,6 @@
       color: #ffea00;
     }
 
-    /* 🔴 ACTIVE LIVE TIMELINE NODE */
     .timeline-node.active .node-tick {
       width: 4px;
       height: 18px;
@@ -523,7 +518,7 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH TARGET GOAL -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH EVEN 8px SPACING -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
