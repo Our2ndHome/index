@@ -71,7 +71,7 @@
       padding-top: 6px;
     }
 
-    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER (34px) */
+    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
     .countdown-widget {
       position: absolute;
       top: 18px;
@@ -96,7 +96,7 @@
     }
 
     .countdown-timer {
-      font-size: 34px; /* 34px Timer Font Size */
+      font-size: 34px;
       font-weight: 900;
       letter-spacing: 1px;
       color: #ffffff; 
@@ -132,7 +132,7 @@
       100% { transform: scale(1.08); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (34px Amount Matched) */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (#ace600 Amount) */
     .goal-widget {
       position: absolute;
       top: 75px;
@@ -152,7 +152,7 @@
     }
 
     body.is-final-minute .goal-widget {
-      top: 125px; /* Shifted down during SISTA MINUTEN */
+      top: 125px;
     }
 
     .goal-label {
@@ -163,10 +163,9 @@
       letter-spacing: 1.5px;
     }
 
-    /* Amount font size matched to 34px */
     .amount {
       color: #ace600;
-      font-size: 34px; /* Matched 34px with countdown! */
+      font-size: 34px;
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
@@ -193,7 +192,7 @@
     }
 
     .donor-name {
-      color: #ace600; /* Lime Green */
+      color: #ace600;
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -264,7 +263,7 @@
       filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
     }
 
-    /* 📅 WIDGET 5: NO-BACKGROUND SLIM TIMELINE SCHEDULE BAR */
+    /* 📅 WIDGET 5: OPTION A - ROLLING 5-EVENT TIMELINE SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -286,7 +285,6 @@
       width: 100%;
     }
 
-    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -298,7 +296,6 @@
       z-index: 1;
     }
 
-    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -312,7 +309,6 @@
       transition: width 1s linear;
     }
 
-    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -337,7 +333,22 @@
       z-index: 3;
     }
 
-    /* Individual Timeline Nodes */
+    /* DAY BADGE (Only shows in front of the FIRST event of a new day) */
+    .timeline-day-badge {
+      background: rgba(172, 230, 0, 0.18);
+      border: 1px solid #ace600;
+      color: #ace600;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 5px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
+      margin-right: 6px;
+    }
+
     .timeline-node {
       display: flex;
       flex-direction: column;
@@ -362,7 +373,6 @@
       text-align: right;
     }
 
-    /* Vertical Line Tick Marks (|) */
     .node-tick {
       width: 3px;
       height: 12px;
@@ -386,7 +396,6 @@
       white-space: nowrap;
     }
 
-    /* Giveaway text directly on Line 1 gets gold highlight! */
     .node-streamer.is-giveaway-text {
       color: #ffea00;
     }
@@ -456,17 +465,11 @@
     </div>
 
     <div class="panel-section">
-      <b>Välj Dag att Visa:</b><br>
-      <button onclick="switchDayView(0)">Dag 1 (Måndag)</button>
-      <button onclick="switchDayView(1)">Dag 2 (Tisdag)</button>
-      <button onclick="switchDayView(2)">Dag 3 (Onsdag)</button>
-    </div>
-
-    <div class="panel-section">
-      <b>Live Highlighting Test:</b><br>
-      <button onclick="testLiveHighlight(0)">Live Slot 1 (Start)</button>
-      <button onclick="testLiveHighlight(1)">Live Slot 2 (Mitten)</button>
-      <button onclick="testLiveHighlight(2)">Live Giveaway</button>
+      <b>Option A Rolling Queue Test:</b><br>
+      <button onclick="testLiveHighlight(0)">Testa Slot 1 (Måndag)</button>
+      <button onclick="testLiveHighlight(3)">Testa Slot 4 (Sista Måndag)</button>
+      <button onclick="testLiveHighlight(4)">Testa Slot 5 (Första Tisdag)</button>
+      <button onclick="testLiveHighlight(10)">Testa Slot 11 (Slutspurt)</button>
       <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
     </div>
 
@@ -481,13 +484,13 @@
     <div class="sound-status" id="soundStatus">Laddar...</div>
   </div>
 
-  <!-- ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER (34px) -->
+  <!-- ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER -->
   <div class="countdown-widget" id="countdownWidget">
     <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (34px Amount) -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
@@ -507,7 +510,7 @@
     </div>
   </div>
 
-  <!-- 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR WITH BALL CURSOR -->
+  <!-- 📅 WIDGET 5: OPTION A ROLLING 5-EVENT SCHEDULE BAR WITH DAY BADGES -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -560,37 +563,21 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (When giveaway exists, it replaces the streamer name on Line 1)
-    const SCHEDULE_DATA = [
-      {
-        dayName: "MÅNDAG 14 DEC",
-        dateISO: "2026-12-14",
-        events: [
-          { id: 0, start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
-          { id: 1, start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
-          { id: 2, start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
-          { id: 3, start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Four", giveaway: "" }
-        ]
-      },
-      {
-        dayName: "TISDAG 15 DEC",
-        dateISO: "2026-12-15",
-        events: [
-          { id: 4, start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Five", giveaway: "" },
-          { id: 5, start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Six", giveaway: "" },
-          { id: 6, start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Seven", giveaway: "🎁 GIVEAWAY!" },
-          { id: 7, start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Eight", giveaway: "" }
-        ]
-      },
-      {
-        dayName: "ONSDAG 16 DEC",
-        dateISO: "2026-12-16",
-        events: [
-          { id: 8, start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Nine", giveaway: "" },
-          { id: 9, start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", name: "FINAL GIVEAWAY", giveaway: "🏆 GIVEAWAY!" },
-          { id: 10, start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", name: "SLUTSPURT & FINAL!", giveaway: "" }
-        ]
-      }
+    // 📅 OPTION A FLAT SCHEDULE LIST (All events across days in chronological order)
+    const ALL_SCHEDULE_EVENTS = [
+      { id: 0, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
+      { id: 1, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
+      { id: 2, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
+      { id: 3, dayName: "MÅNDAG 14 DEC", start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Four", giveaway: "" },
+      
+      { id: 4, dayName: "TISDAG 15 DEC", start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Five", giveaway: "" },
+      { id: 5, dayName: "TISDAG 15 DEC", start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Six", giveaway: "" },
+      { id: 6, dayName: "TISDAG 15 DEC", start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Seven", giveaway: "🎁 GIVEAWAY!" },
+      { id: 7, dayName: "TISDAG 15 DEC", start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Eight", giveaway: "" },
+      
+      { id: 8, dayName: "ONSDAG 16 DEC", start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Nine", giveaway: "" },
+      { id: 9, dayName: "ONSDAG 16 DEC", start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", name: "FINAL GIVEAWAY", giveaway: "🏆 GIVEAWAY!" },
+      { id: 10, dayName: "ONSDAG 16 DEC", start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", name: "SLUTSPURT & FINAL!", giveaway: "" }
     ];
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
@@ -598,7 +585,6 @@
     let availableSoundsPool = []; 
     let currentSponsorIndex = 0;
     let currentTotal = 0; 
-    let activeDayIndex = 0; 
     let testForcedEventId = -1; 
 
     // =========================================================
@@ -670,16 +656,8 @@
     }
 
     // =========================================================
-    // 📅 NO-BACKGROUND TIMELINE SCHEDULE BAR WITH BALL CURSOR
+    // 📅 OPTION A: ROLLING 5-EVENT QUEUE & DAY BADGES
     // =========================================================
-    function autoDetectToday() {
-      const todayISO = new Date().toISOString().split('T')[0];
-      const foundIdx = SCHEDULE_DATA.findIndex(d => d.dateISO === todayISO);
-      if (foundIdx !== -1) {
-        activeDayIndex = foundIdx;
-      }
-    }
-
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -687,48 +665,84 @@
 
       if (!eventsRowEl) return;
 
-      const activeDayData = SCHEDULE_DATA[activeDayIndex] || SCHEDULE_DATA[0];
       const now = new Date();
-      const totalEvents = activeDayData.events.length;
 
-      // 1. Calculate Real-time Progress Fill Percentage
-      if (totalEvents > 0) {
-        const dayStart = new Date(activeDayData.events[0].start).getTime();
-        const dayEnd = new Date(activeDayData.events[totalEvents - 1].end).getTime();
+      // 1. Find Active Event Index
+      let activeIndex = 0;
+
+      if (testForcedEventId !== -1) {
+        const found = ALL_SCHEDULE_EVENTS.findIndex(ev => ev.id === testForcedEventId);
+        if (found !== -1) activeIndex = found;
+      } else {
+        const found = ALL_SCHEDULE_EVENTS.findIndex(ev => {
+          const start = new Date(ev.start);
+          const end = new Date(ev.end);
+          return now >= start && now < end;
+        });
+
+        if (found !== -1) {
+          activeIndex = found;
+        } else {
+          const upcoming = ALL_SCHEDULE_EVENTS.findIndex(ev => new Date(ev.start) > now);
+          if (upcoming !== -1) activeIndex = upcoming;
+        }
+      }
+
+      // Slice 5 events starting from activeIndex
+      let visibleEvents = ALL_SCHEDULE_EVENTS.slice(activeIndex, activeIndex + 5);
+      if (visibleEvents.length < 5 && ALL_SCHEDULE_EVENTS.length >= 5) {
+        const startPad = Math.max(0, ALL_SCHEDULE_EVENTS.length - 5);
+        visibleEvents = ALL_SCHEDULE_EVENTS.slice(startPad, ALL_SCHEDULE_EVENTS.length);
+      }
+
+      const totalVisible = visibleEvents.length;
+
+      // 2. Progress fill for the visible 5-event window
+      if (totalVisible > 0) {
+        const windowStart = new Date(visibleEvents[0].start).getTime();
+        const windowEnd = new Date(visibleEvents[totalVisible - 1].end).getTime();
         const currentTime = now.getTime();
 
         let progressPct = 0;
-        if (currentTime >= dayEnd) {
+        if (currentTime >= windowEnd) {
           progressPct = 100;
-        } else if (currentTime > dayStart) {
-          progressPct = ((currentTime - dayStart) / (dayEnd - dayStart)) * 100;
+        } else if (currentTime > windowStart) {
+          progressPct = ((currentTime - windowStart) / (windowEnd - windowStart)) * 100;
         }
 
         if (fillLineEl) fillLineEl.style.width = `${progressPct}%`;
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 2. Render Timeline Nodes (Single-line Giveaway Text integration)
-      eventsRowEl.innerHTML = activeDayData.events.map((ev, index) => {
+      // 3. Render 5 Events + Smart Day Badges (only in front of the FIRST event of a new day)
+      let lastSeenDay = "";
+
+      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
         const startTime = new Date(ev.start);
         const endTime = new Date(ev.end);
         
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= startTime && now < endTime);
 
-        // Alignment Rules: First=Left, Middle=Center, Last=Right
         let alignClass = "middle-node";
         if (index === 0) alignClass = "first-node";
-        else if (index === totalEvents - 1) alignClass = "last-node";
+        else if (index === totalVisible - 1) alignClass = "last-node";
 
         const liveClass = isLiveNow ? "active" : "inactive";
 
-        // If giveaway exists, the giveaway text replaces the streamer name on Line 1!
         const hasGiveaway = ev.giveaway && ev.giveaway.trim().length > 0;
         const primaryText = hasGiveaway ? ev.giveaway : ev.name;
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
+        // Day Badge logic: Show badge if day changes!
+        let dayBadgeHtml = "";
+        if (ev.dayName !== lastSeenDay) {
+          dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
+          lastSeenDay = ev.dayName;
+        }
+
         return `
+          ${dayBadgeHtml}
           <div class="timeline-node ${alignClass} ${liveClass}">
             <div class="node-time">${ev.timeText}</div>
             <div class="node-tick"></div>
@@ -736,11 +750,6 @@
           </div>
         `;
       }).join('');
-    }
-
-    function switchDayView(dayIndex) {
-      activeDayIndex = dayIndex;
-      renderSchedule();
     }
 
     function testLiveHighlight(eventId) {
@@ -820,7 +829,6 @@
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
-        document.body.classList.remove('is-final-minute');
         return;
       }
 
@@ -828,14 +836,12 @@
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
       if (totalSecondsRemaining <= 60) {
-        document.body.classList.add('is-final-minute');
         widget.classList.add('final-minute');
         label.innerText = "SISTA MINUTEN!";
         timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
         return;
       }
 
-      document.body.classList.remove('is-final-minute');
       widget.classList.remove('final-minute');
       label.innerText = "INSAMLINGEN SLUTAR OM";
 
@@ -969,19 +975,14 @@
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    // Smooth Fade-Out & Fade-In ONLY for the amount number (#totalDisplay)
     function updateTotalDisplaySmooth(newTotalText) {
       const display = document.getElementById('totalDisplay');
       if (!display) return;
       if (display.innerText === newTotalText) return;
 
-      // 1. Fade OUT only the amount number
       display.style.opacity = '0';
-
-      // 2. Update number in secret
       setTimeout(() => {
         display.innerText = newTotalText;
-        // 3. Fade back IN
         display.style.opacity = '1';
       }, 400);
     }
@@ -996,7 +997,6 @@
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
 
-      // Smooth Fade-In/Out update for Total Amount
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
       // 1. Restart Elastic Pop In
@@ -1075,7 +1075,6 @@
 
     // Initialize All Widgets
     makePanelDraggable();
-    autoDetectToday();
     applySceneMode();
     renderSchedule();
     initCountdown();
