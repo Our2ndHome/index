@@ -395,7 +395,7 @@
       align-self: center;
     }
 
-    /* 🎯 EVENT NODE SPAN BAR (|────────────────| Layout) */
+    /* EVENT NODE SPAN BAR (|────────────────| Layout) */
     .timeline-node {
       display: flex;
       flex-direction: column;
@@ -415,7 +415,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Visual Event Segment Bar: |────────────────| */
     .node-segment-bar {
       position: relative;
       width: 100%;
@@ -434,7 +433,6 @@
       transition: all 0.3s ease;
     }
 
-    /* Left boundary cap | */
     .segment-line::before {
       content: '';
       position: absolute;
@@ -447,7 +445,6 @@
       transition: all 0.3s ease;
     }
 
-    /* Right boundary cap | */
     .segment-line::after {
       content: '';
       position: absolute;
@@ -471,7 +468,6 @@
       color: var(--giveaway-color);
     }
 
-    /* ACTIVE EVENT GLOWING SEGMENT STYLING */
     .timeline-node.active .segment-line {
       background: rgba(172, 230, 0, 0.6);
       height: 3px;
@@ -636,15 +632,15 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (August 11, 2026)
+    // 📅 SCHEDULE DATA (Strict Day System)
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
       { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is ~22:30 CEST)
+      // 🔴 ACTIVE EVENT (Current Time is ~22:35 CEST)
       { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
       { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
-      // TOMORROW
+      // TOMORROW (Midnight Cross triggers [ONSDAG] badge automatically)
       { id: 4, dayName: "ONSDAG", start: "2026-08-12T18:00:00", end: "2026-08-12T20:00:00", timeText: "18:00 - 20:00", name: "Morning Special", giveaway: "" },
       { id: 5, dayName: "ONSDAG", start: "2026-08-12T20:00:00", end: "2026-08-12T22:00:00", timeText: "20:00 - 22:00", name: "Final Boss Stream", giveaway: "🏆 GRAND PRIZE!" }
     ];
@@ -659,17 +655,17 @@
 
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 30 * 60000); // Started 30 mins ago
-      const t4 = new Date(now.getTime() + 30 * 60000); // Ends in 30 mins
+      const t3 = new Date(now.getTime() - 35 * 60000); // Started 35 mins ago
+      const t4 = new Date(now.getTime() + 25 * 60000); // Ends in 25 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
-      const t6 = new Date(now.getTime() + 5 * 3600000);
+      const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
 
       ALL_SCHEDULE_EVENTS = [
         { id: 0, dayName: dayNames[t1.getDay()], start: formatISO(t1), end: formatISO(t2), timeText: formatTime(t1, t2), name: "Tidigare Streamer A", giveaway: "" },
         { id: 1, dayName: dayNames[t2.getDay()], start: formatISO(t2), end: formatISO(t3), timeText: formatTime(t2, t3), name: "Tidigare Streamer B", giveaway: "" },
         { id: 2, dayName: dayNames[t3.getDay()], start: formatISO(t3), end: formatISO(t4), timeText: formatTime(t3, t4), name: "LIVE STREAMER NU", giveaway: "🎁 REALTIDS GIVEAWAY!" },
-        { id: 3, dayName: "NÄSTA", start: formatISO(t4), end: formatISO(t5), timeText: formatTime(t4, t5), name: "Kommande Streamer", giveaway: "" },
-        { id: 4, dayName: "SENARE", start: formatISO(t5), end: formatISO(t6), timeText: formatTime(t5, t6), name: "Kvälls Final", giveaway: "🏆 HOVEDPRIS!" }
+        { id: 3, dayName: dayNames[t4.getDay()], start: formatISO(t4), end: formatISO(t5), timeText: formatTime(t4, t5), name: "Kommande Streamer", giveaway: "" },
+        { id: 4, dayName: dayNames[t6.getDay()], start: formatISO(t5), end: formatISO(t6), timeText: formatTime(t5, t6), name: "Morgondagens Event", giveaway: "🏆 NÄSTA DAGS EVENT" }
       ];
 
       testForcedEventId = -1;
@@ -805,7 +801,7 @@
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
-      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
+      eventsRowEl.innerHTML = visibleEvents.map((ev) => {
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= new Date(ev.start) && now < new Date(ev.end));
 
