@@ -90,7 +90,7 @@
       letter-spacing: 1.5px;
       color: #ace600; 
       text-transform: uppercase;
-      margin-bottom: 8px; /* Increased spacing (was 2px) */
+      margin-bottom: 2px;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
       transition: all 0.5s ease-in-out;
     }
@@ -148,10 +148,10 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH TARGET GOAL */
     .goal-widget {
       position: absolute;
-      top: 84px; /* Shifted down to top: 84px for 12px gap below timer */
+      top: 80px; /* Increased gap by +5px (was 75px) */
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -168,25 +168,34 @@
     }
 
     body.is-final-minute .goal-widget {
-      top: 135px; /* Clearance during final minute */
+      top: 110px; /* Increased gap by +5px in final minute mode */
     }
 
     .goal-label {
       font-size: 12px;
-      color: #ffffff; /* Pure Crisp White */
+      color: #ffffff;
       display: block;
-      margin-bottom: 6px; /* Increased spacing (was 2px) */
+      margin-bottom: 2px;
       letter-spacing: 1.5px;
-      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
     }
 
     .amount {
       color: #ace600;
-      font-size: 34px;
+      font-size: 28px; /* Slightly smaller amount font size */
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
-      display: inline-block;
+      display: block;
+    }
+
+    .goal-target {
+      font-size: 11px; /* Smaller text for 40.000 kr goal target */
+      font-weight: 800;
+      color: #00ff88;
+      display: block;
+      margin-top: 2px;
+      letter-spacing: 1.2px;
+      opacity: 0.9;
     }
 
     /* 📢 WIDGET 2: DONATION ALERT BANNER */
@@ -203,7 +212,7 @@
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
-      z-index: 2000;
+      z-index: 9999;
       transition: opacity 0.4s ease, visibility 0.4s ease;
       text-shadow: 0 3px 15px rgba(0,0,0,0.95);
     }
@@ -272,11 +281,11 @@
     .sponsor-label {
       font-size: 11px;
       font-weight: 900;
-      color: #ace600; /* #ace600 Lime Green */
+      color: #ace600;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       display: block;
-      margin-top: 4px; /* Placed UNDER image */
+      margin-top: 4px;
       text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
     }
 
@@ -326,7 +335,6 @@
       transition: width 1s linear;
     }
 
-    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -351,21 +359,21 @@
       z-index: 3;
     }
 
-    /* DAY BADGE (Shows ONLY for upcoming future day transitions) */
     .timeline-day-badge {
+      position: absolute;
+      top: -22px;
       background: rgba(172, 230, 0, 0.18);
       border: 1px solid #ace600;
       color: #ace600;
       font-size: 11px;
       font-weight: 900;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 5px;
       letter-spacing: 1px;
       text-transform: uppercase;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      margin-right: 10px;
-      align-self: center;
+      z-index: 10;
     }
 
     .timeline-node {
@@ -419,7 +427,6 @@
       color: #ffea00;
     }
 
-    /* 🔴 ACTIVE LIVE TIMELINE NODE */
     .timeline-node.active .node-tick {
       width: 4px;
       height: 18px;
@@ -509,10 +516,11 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH TARGET GOAL -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
+    <span class="goal-target">MÅL: 40 000 KR</span>
   </div>
 
   <!-- 📢 WIDGET 2: DONATION ALERT -->
@@ -675,7 +683,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (No Badges for Current Day)
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -733,7 +741,7 @@
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 3. Render 5 Events (Day Badges ONLY for future upcoming day transitions!)
+      // 3. Render 5 Events
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
@@ -844,7 +852,7 @@
       const diff = countdownTargetTime - now;
 
       if (diff <= 0) {
-        timerDisplay.innerText = ""; // Empty string so '00' is hidden!
+        timerDisplay.innerText = ""; 
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
@@ -954,7 +962,6 @@
       }
     }
 
-    // 100% UN-CRASHABLE AUDIO PLAYER (4s guaranteed display timer!)
     function playAlertSound() {
       return new Promise((resolve) => {
         let isDone = false;
