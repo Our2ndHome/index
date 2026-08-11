@@ -26,7 +26,7 @@
       padding: 12px;
       border-radius: 10px;
       color: white;
-      z-index: 99999;
+      z-index: 999999;
       max-width: 360px;
       font-size: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -214,7 +214,7 @@
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
-      z-index: 9999;
+      z-index: 99999;
       transition: opacity 0.4s ease, visibility 0.4s ease;
       text-shadow: 0 3px 15px rgba(0,0,0,0.95);
     }
@@ -246,7 +246,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR */
+    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) */
     .sponsor-widget {
       position: absolute;
       bottom: 80px;
@@ -254,9 +254,9 @@
       transform: translateX(-50%);
       text-align: center;
       z-index: 1000;
-      background: transparent;
-      border: none;
-      box-shadow: none;
+      background: transparent; /* No Background */
+      border: none; /* No Border */
+      box-shadow: none; /* No Shadow */
       padding: 0;
       display: flex;
       flex-direction: column;
@@ -283,11 +283,11 @@
     .sponsor-label {
       font-size: 11px;
       font-weight: 900;
-      color: #ace600;
+      color: #ace600; /* #ace600 Lime Green */
       letter-spacing: 1.5px;
       text-transform: uppercase;
       display: block;
-      margin-top: 4px;
+      margin-top: 4px; /* Placed UNDER image */
       text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
     }
 
@@ -313,6 +313,7 @@
       width: 100%;
     }
 
+    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -324,6 +325,7 @@
       z-index: 1;
     }
 
+    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -337,6 +339,7 @@
       transition: width 1s linear;
     }
 
+    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -361,21 +364,21 @@
       z-index: 3;
     }
 
+    /* DAY BADGE (Clean inline tag for upcoming future day transitions) */
     .timeline-day-badge {
-      position: absolute;
-      top: -22px;
       background: rgba(172, 230, 0, 0.18);
       border: 1px solid #ace600;
       color: #ace600;
       font-size: 11px;
       font-weight: 900;
-      padding: 2px 7px;
+      padding: 3px 8px;
       border-radius: 5px;
       letter-spacing: 1px;
       text-transform: uppercase;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      z-index: 10;
+      margin-right: 10px;
+      align-self: center;
     }
 
     .timeline-node {
@@ -429,6 +432,7 @@
       color: #ffea00;
     }
 
+    /* 🔴 ACTIVE LIVE TIMELINE NODE */
     .timeline-node.active .node-tick {
       width: 4px;
       height: 18px;
@@ -518,7 +522,7 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH EVEN 8px SPACING -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
@@ -754,9 +758,6 @@
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= startTime && now < endTime);
 
-        const isPastEvent = (testForcedEventId === -1 && now >= endTime) || 
-                            (testForcedEventId !== -1 && ev.id < testForcedEventId);
-
         let alignClass = "middle-node";
         if (index === 0) alignClass = "first-node";
         else if (index === totalVisible - 1) alignClass = "last-node";
@@ -769,11 +770,7 @@
 
         let dayBadgeHtml = "";
         if (ev.dayName !== currentActiveDay && ev.dayName !== lastSeenDay) {
-          if (!isPastEvent) {
-            dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
-          }
-          lastSeenDay = ev.dayName;
-        } else {
+          dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
           lastSeenDay = ev.dayName;
         }
 
