@@ -166,10 +166,10 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Lowered to bottom: 60px) */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
-      bottom: 60px;
+      bottom: 75px;
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -180,7 +180,9 @@
       z-index: 1000;
       font-size: 30px;
       font-weight: 900;
-      text-shadow: 0 0 15px rgba(0,0,0,0.9);
+      text-shadow: 
+        0 0 10px rgba(0, 0, 0, 0.9),
+        0 0 20px rgba(0, 0, 0, 0.9);
     }
 
     .amount {
@@ -189,11 +191,11 @@
       font-weight: 900;
     }
 
-    /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR (Lowered to bottom: 60px) */
+    /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 60px;
-      right: 25px;
+      bottom: 75px;
+      right: 35px;
       text-align: center;
       z-index: 1000;
       background: rgba(0, 0, 0, 0.65);
@@ -228,116 +230,105 @@
       opacity: 1;
     }
 
-    /* 📅 WIDGET 5: ULTRA-SLIM HORIZONTAL TIMELINE SCHEDULE BAR (~45px tall) */
+    /* 📅 WIDGET 5: NO-BACKGROUND SLIM HORIZONTAL TIMELINE BAR */
     .schedule-widget {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100vw;
-      background: rgba(0, 0, 0, 0.88);
-      border-top: 2px solid #ace600;
-      padding: 4px 20px 6px 20px;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96vw; /* Spans full screen width with small edge padding */
+      background: transparent; /* NO BACKGROUND! */
+      padding: 0;
       box-sizing: border-box;
       display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 1000;
-      box-shadow: 0 -3px 15px rgba(0,0,0,0.8);
-      gap: 15px;
-    }
-
-    .timeline-header-bar {
-      display: flex;
       flex-direction: column;
-      align-items: flex-start;
-      min-width: 130px;
-      border-right: 1px solid rgba(255, 255, 255, 0.15);
-      padding-right: 12px;
+      align-items: center;
+      z-index: 1000;
+      pointer-events: none;
     }
 
-    .schedule-day-title {
-      font-size: 13px;
-      font-weight: 900;
-      color: #ace600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      white-space: nowrap;
-    }
-
-    .timeline-subtitle {
-      font-size: 9px;
-      font-weight: 800;
-      color: #00ff88;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    /* Timeline Container & Axis Line */
     .timeline-container {
       position: relative;
       width: 100%;
-      flex: 1;
-      padding: 0;
     }
 
+    /* 100% Width Horizontal Axis Line */
     .timeline-line {
       position: absolute;
       top: 50%;
       left: 0;
       width: 100%;
       height: 2px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.35);
       transform: translateY(-50%);
       z-index: 1;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
     }
 
     .timeline-nodes-row {
       position: relative;
       display: flex;
       flex-direction: row;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
       width: 100%;
       z-index: 2;
     }
 
+    /* Individual Timeline Nodes */
     .timeline-node {
       display: flex;
       flex-direction: column;
-      align-items: center;
       position: relative;
       flex: 1;
+      transition: all 0.3s ease;
+      text-shadow: 
+        0 0 8px rgba(0, 0, 0, 0.9),
+        0 0 16px rgba(0, 0, 0, 0.9);
+    }
+
+    /* ALIGNMENT RULES */
+    .timeline-node.first-node {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .timeline-node.middle-node {
+      align-items: center;
       text-align: center;
     }
 
-    /* Slim Ticks */
+    .timeline-node.last-node {
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    /* Ticks Sitting on the Line */
     .node-tick {
       width: 3px;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.35);
+      height: 12px;
+      background: rgba(255, 255, 255, 0.5);
       margin: 2px 0;
       transition: all 0.3s ease;
       border-radius: 2px;
     }
 
     .node-time {
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 800;
-      color: #aaa;
+      color: #ddd;
       letter-spacing: 0.5px;
     }
 
     .node-streamer {
-      font-size: 11px;
-      font-weight: 800;
+      font-size: 12px;
+      font-weight: 900;
       color: #ffffff;
       white-space: nowrap;
     }
 
     .node-giveaway {
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 800;
       color: #ffea00;
       white-space: nowrap;
@@ -349,18 +340,18 @@
       color: #000000;
       font-size: 8px;
       font-weight: 900;
-      padding: 1px 4px;
+      padding: 1px 5px;
       border-radius: 3px;
-      margin-bottom: 1px;
+      margin-bottom: 2px;
       text-transform: uppercase;
     }
 
-    /* 🔴 ACTIVE LIVE TIMELINE NODE */
+    /* 🔴 ACTIVE LIVE TIMELINE NODE (#ace600 Glowing Pin + Larger Text) */
     .timeline-node.active .node-tick {
-      width: 4px;
-      height: 16px;
+      width: 5px;
+      height: 20px;
       background: #ace600;
-      box-shadow: 0 0 10px #ace600;
+      box-shadow: 0 0 12px #ace600, 0 0 18px #ace600;
     }
 
     .timeline-node.active .node-live-tag {
@@ -368,15 +359,15 @@
     }
 
     .timeline-node.active .node-streamer {
-      font-size: 14px;
+      font-size: 15px; /* Larger font size */
       font-weight: 900;
-      color: #ace600;
-      text-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
+      color: #ace600; /* #ace600 Lime Green */
+      text-shadow: 0 0 12px rgba(172, 230, 0, 0.9);
     }
 
     .timeline-node.active .node-time {
       color: #ffffff;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 900;
     }
 
@@ -426,9 +417,9 @@
 
     <div class="panel-section">
       <b>Live Highlighting Test:</b><br>
-      <button onclick="testLiveHighlight(0)">Live Slot 1</button>
-      <button onclick="testLiveHighlight(1)">Live Slot 2</button>
-      <button onclick="testLiveHighlight(2)">Live Giveaway</button>
+      <button onclick="testLiveHighlight(0)">Live Slot 1 (Start)</button>
+      <button onclick="testLiveHighlight(1)">Live Slot 2 (Mitten)</button>
+      <button onclick="testLiveHighlight(3)">Live Slot 4 (Slut)</button>
       <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
     </div>
 
@@ -468,13 +459,8 @@
     </div>
   </div>
 
-  <!-- 📅 WIDGET 5: ULTRA-SLIM HORIZONTAL TIMELINE SCHEDULE BAR -->
+  <!-- 📅 WIDGET 5: NO-BACKGROUND SLIM HORIZONTAL TIMELINE SCHEDULE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
-    <div class="timeline-header-bar">
-      <div class="schedule-day-title" id="currentDayTitle">MÅNDAG 14 DEC</div>
-      <div class="timeline-subtitle">TIMELINE</div>
-    </div>
-    
     <div class="timeline-container">
       <div class="timeline-line"></div>
       <div class="timeline-nodes-row" id="scheduleEventsRow"></div>
@@ -633,7 +619,7 @@
     }
 
     // =========================================================
-    // 📅 ULTRA-SLIM HORIZONTAL TIMELINE SCHEDULE BAR & LIVE HIGHLIGHT
+    // 📅 NO-BACKGROUND TIMELINE SCHEDULE BAR (Left, Center, Right Alignment)
     // =========================================================
     function autoDetectToday() {
       const todayISO = new Date().toISOString().split('T')[0];
@@ -644,42 +630,36 @@
     }
 
     function renderSchedule() {
-      const dayTitleEl = document.getElementById('currentDayTitle');
       const eventsRowEl = document.getElementById('scheduleEventsRow');
-      if (!dayTitleEl || !eventsRowEl) return;
+      if (!eventsRowEl) return;
 
       const activeDayData = SCHEDULE_DATA[activeDayIndex] || SCHEDULE_DATA[0];
-      dayTitleEl.innerText = activeDayData.dayName;
-
       const now = new Date();
+      const totalEvents = activeDayData.events.length;
 
-      eventsRowEl.innerHTML = activeDayData.events.map(ev => {
+      eventsRowEl.innerHTML = activeDayData.events.map((ev, index) => {
         const startTime = new Date(ev.start);
         const endTime = new Date(ev.end);
         
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= startTime && now < endTime);
 
-        if (isLiveNow) {
-          return `
-            <div class="timeline-node active">
-              <span class="node-live-tag">🔴 JUST NU</span>
-              <div class="node-time">${ev.timeText}</div>
-              <div class="node-tick"></div>
-              <div class="node-streamer">${ev.name}</div>
-              ${ev.giveaway ? `<div class="node-giveaway">${ev.giveaway}</div>` : ''}
-            </div>
-          `;
-        } else {
-          return `
-            <div class="timeline-node inactive">
-              <div class="node-time">${ev.timeText}</div>
-              <div class="node-tick"></div>
-              <div class="node-streamer">${ev.name}</div>
-              ${ev.giveaway ? `<div class="node-giveaway">${ev.giveaway}</div>` : ''}
-            </div>
-          `;
-        }
+        // Alignment Rules: First=Left, Middle=Center, Last=Right
+        let alignClass = "middle-node";
+        if (index === 0) alignClass = "first-node";
+        else if (index === totalEvents - 1) alignClass = "last-node";
+
+        const liveClass = isLiveNow ? "active" : "inactive";
+
+        return `
+          <div class="timeline-node ${alignClass} ${liveClass}">
+            ${isLiveNow ? `<span class="node-live-tag">🔴 JUST NU</span>` : ''}
+            <div class="node-time">${ev.timeText}</div>
+            <div class="node-tick"></div>
+            <div class="node-streamer">${ev.name}</div>
+            ${ev.giveaway ? `<div class="node-giveaway">${ev.giveaway}</div>` : ''}
+          </div>
+        `;
       }).join('');
     }
 
