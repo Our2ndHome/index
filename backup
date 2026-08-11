@@ -337,7 +337,7 @@
       left: 0;
       width: 100%;
       height: 2px;
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.15);
       transform: translateY(-50%);
       z-index: 1;
     }
@@ -359,10 +359,10 @@
       position: absolute;
       top: 50%;
       left: 0%;
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
       background: var(--primary-color);
-      box-shadow: 0 0 6px var(--primary-color), 0 0 12px var(--primary-color);
+      box-shadow: 0 0 8px var(--primary-color), 0 0 14px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
@@ -395,26 +395,17 @@
       align-self: center;
     }
 
+    /* EVENT NODE SPAN BAR (|────────────────| Layout) */
     .timeline-node {
       display: flex;
       flex-direction: column;
       position: relative;
       flex: 1;
+      align-items: center;
+      text-align: center;
+      padding: 0 4px;
       transition: all 0.3s ease;
       text-shadow: 0 2px 6px var(--shadow-dark);
-    }
-
-    .timeline-node.first-node { align-items: flex-start; text-align: left; }
-    .timeline-node.middle-node { align-items: center; text-align: center; }
-    .timeline-node.last-node { align-items: flex-end; text-align: right; }
-
-    .node-tick {
-      width: 3px;
-      height: 12px;
-      background: rgba(255, 255, 255, 0.4);
-      margin: 3px 0;
-      transition: all 0.3s ease;
-      border-radius: 2px;
     }
 
     .node-time {
@@ -422,6 +413,48 @@
       font-weight: 800;
       color: #e0e0e0;
       letter-spacing: 0.5px;
+    }
+
+    .node-segment-bar {
+      position: relative;
+      width: 100%;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 3px 0;
+    }
+
+    .segment-line {
+      position: relative;
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .segment-line::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: -4px;
+      width: 2px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 1px;
+      transition: all 0.3s ease;
+    }
+
+    .segment-line::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: -4px;
+      width: 2px;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 1px;
+      transition: all 0.3s ease;
     }
 
     .node-streamer {
@@ -435,11 +468,19 @@
       color: var(--giveaway-color);
     }
 
-    .timeline-node.active .node-tick {
-      width: 4px;
-      height: 18px;
+    .timeline-node.active .segment-line {
+      background: rgba(172, 230, 0, 0.6);
+      height: 3px;
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+    }
+
+    .timeline-node.active .segment-line::before,
+    .timeline-node.active .segment-line::after {
       background: var(--primary-color);
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
+      height: 14px;
+      top: -5px;
+      width: 3px;
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.9);
     }
 
     .timeline-node.active .node-streamer {
@@ -591,20 +632,19 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 REAL LIVE SCHEDULE DATA (Configured for Today: August 11, 2026)
+    // 📅 SCHEDULE DATA (Strict Day System)
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
       { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is 22:19 CEST)
+      // 🔴 ACTIVE EVENT (Current Time is ~22:35 CEST)
       { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
       { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
-      // TOMORROW (ONSDAG)
+      // TOMORROW (Midnight Cross triggers [ONSDAG] badge automatically)
       { id: 4, dayName: "ONSDAG", start: "2026-08-12T18:00:00", end: "2026-08-12T20:00:00", timeText: "18:00 - 20:00", name: "Morning Special", giveaway: "" },
       { id: 5, dayName: "ONSDAG", start: "2026-08-12T20:00:00", end: "2026-08-12T22:00:00", timeText: "20:00 - 22:00", name: "Final Boss Stream", giveaway: "🏆 GRAND PRIZE!" }
     ];
 
-    // Helper function to dynamically generate relative events if opened on another day
     function generateRelativeLiveEvents() {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
@@ -613,20 +653,19 @@
       const formatISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
       const formatTime = (d1, d2) => `${pad(d1.getHours())}:${pad(d1.getMinutes())} - ${pad(d2.getHours())}:${pad(d2.getMinutes())}`;
 
-      // Build 6 events around 'now' (-4h, -2h, NOW, +1h, +3h, +20h)
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 20 * 60000); // Started 20 mins ago
-      const t4 = new Date(now.getTime() + 40 * 60000); // Ends in 40 mins
+      const t3 = new Date(now.getTime() - 35 * 60000); // Started 35 mins ago
+      const t4 = new Date(now.getTime() + 25 * 60000); // Ends in 25 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
-      const t6 = new Date(now.getTime() + 5 * 3600000);
+      const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
 
       ALL_SCHEDULE_EVENTS = [
         { id: 0, dayName: dayNames[t1.getDay()], start: formatISO(t1), end: formatISO(t2), timeText: formatTime(t1, t2), name: "Tidigare Streamer A", giveaway: "" },
         { id: 1, dayName: dayNames[t2.getDay()], start: formatISO(t2), end: formatISO(t3), timeText: formatTime(t2, t3), name: "Tidigare Streamer B", giveaway: "" },
         { id: 2, dayName: dayNames[t3.getDay()], start: formatISO(t3), end: formatISO(t4), timeText: formatTime(t3, t4), name: "LIVE STREAMER NU", giveaway: "🎁 REALTIDS GIVEAWAY!" },
-        { id: 3, dayName: "NÄSTA", start: formatISO(t4), end: formatISO(t5), timeText: formatTime(t4, t5), name: "Kommande Streamer", giveaway: "" },
-        { id: 4, dayName: "SENARE", start: formatISO(t5), end: formatISO(t6), timeText: formatTime(t5, t6), name: "Kvälls Final", giveaway: "🏆 HOVEDPRIS!" }
+        { id: 3, dayName: dayNames[t4.getDay()], start: formatISO(t4), end: formatISO(t5), timeText: formatTime(t4, t5), name: "Kommande Streamer", giveaway: "" },
+        { id: 4, dayName: dayNames[t6.getDay()], start: formatISO(t5), end: formatISO(t6), timeText: formatTime(t5, t6), name: "Morgondagens Event", giveaway: "🏆 NÄSTA DAGS EVENT" }
       ];
 
       testForcedEventId = -1;
@@ -703,7 +742,7 @@
     }
 
     // =========================================================
-    // 📅 SCHEDULE TIMELINE ENGINE (REAL-TIME PROGRESS FILL)
+    // 📅 SCHEDULE TIMELINE ENGINE
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -762,13 +801,9 @@
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
-      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
+      eventsRowEl.innerHTML = visibleEvents.map((ev) => {
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= new Date(ev.start) && now < new Date(ev.end));
-
-        let alignClass = "middle-node";
-        if (index === 0) alignClass = "first-node";
-        else if (index === totalVisible - 1) alignClass = "last-node";
 
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
         const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
@@ -782,9 +817,11 @@
 
         return `
           ${dayBadgeHtml}
-          <div class="timeline-node ${alignClass} ${isLiveNow ? 'active' : 'inactive'}">
+          <div class="timeline-node ${isLiveNow ? 'active' : 'inactive'}">
             <div class="node-time">${escapeHTML(ev.timeText)}</div>
-            <div class="node-tick"></div>
+            <div class="node-segment-bar">
+              <div class="segment-line"></div>
+            </div>
             <div class="${streamerClass}">${primaryText}</div>
           </div>
         `;
@@ -1100,7 +1137,7 @@
     fetchMusikhjalpenData();
 
     setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
-    setInterval(renderSchedule, 1000); // 1s interval for real-time smooth timeline progression
+    setInterval(renderSchedule, 1000);
   </script>
 </body>
 </html>
