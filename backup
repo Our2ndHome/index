@@ -110,7 +110,7 @@
       letter-spacing: 1.5px;
       color: var(--primary-color); 
       text-transform: uppercase;
-      margin-bottom: 12px; /* Even 12px gap above numbers */
+      margin-bottom: 12px;
       text-shadow: 0 2px 5px var(--shadow-dark);
       transition: all 0.5s ease-in-out;
     }
@@ -171,7 +171,6 @@
     /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
-      /* Top 18px + Label 12px + Gap 12px + Timer 34px + Gap 12px = 88px (perfectly centered!) */
       top: 88px; 
       left: 50%;
       transform: translateX(-50%);
@@ -189,7 +188,6 @@
     }
 
     body.is-final-minute .goal-widget {
-      /* Top 18px + Label 16px + Gap 12px + Timer 48px + Gap 12px = 106px */
       top: 106px;
     }
 
@@ -213,11 +211,10 @@
       display: block;
     }
 
-    /* Target Text set to White */
     .goal-target {
       font-size: 11px;
       font-weight: 800;
-      color: var(--text-white); /* Changed to WHITE */
+      color: var(--text-white);
       display: block;
       margin-top: 8px;
       letter-spacing: 1.2px;
@@ -358,13 +355,12 @@
       transition: width 0.5s linear;
     }
 
-    /* Smaller Green Timeline Cursor Ball */
     .timeline-cursor {
       position: absolute;
       top: 50%;
       left: 0%;
-      width: 8px; /* Reduced from 14px */
-      height: 8px; /* Reduced from 14px */
+      width: 8px;
+      height: 8px;
       background: var(--primary-color);
       box-shadow: 0 0 6px var(--primary-color), 0 0 12px var(--primary-color);
       transform: translate(-50%, -50%);
@@ -489,6 +485,11 @@
     <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
     <button onclick="simulateDonation('Anonym', 100)">+100 kr (Anonym)</button>
     <button onclick="resetTotal()" style="border-color:#ff0055;">Nollställ</button>
+
+    <div class="panel-section">
+      <b>Live Schema Test:</b><br>
+      <button onclick="generateRelativeLiveEvents()" style="background:#ace600; color:#000;">⚡ Generera Relativa Events (Nu)</button>
+    </div>
     
     <div class="panel-section">
       <b>Timer kontroller:</b><br>
@@ -503,10 +504,9 @@
 
     <div class="panel-section">
       <b>Rolling Queue Highlighting Test:</b><br>
-      <button onclick="testLiveHighlight(0)">Testa Slot 1 (Måndag)</button>
-      <button onclick="testLiveHighlight(3)">Testa Slot 4 (Sista Måndag)</button>
-      <button onclick="testLiveHighlight(4)">Testa Slot 5 (Skifte Tisdag)</button>
-      <button onclick="testLiveHighlight(8)">Testa Slot 9 (Skifte Onsdag)</button>
+      <button onclick="testLiveHighlight(0)">Testa Slot 1 (Tidigare Idag)</button>
+      <button onclick="testLiveHighlight(2)">Testa Slot 3 (LIVE NU)</button>
+      <button onclick="testLiveHighlight(4)">Testa Slot 5 (Skifte Onsdag)</button>
       <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
     </div>
 
@@ -591,22 +591,47 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA
-    const ALL_SCHEDULE_EVENTS = [
-      { id: 0, dayName: "MÅNDAG", start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
-      { id: 1, dayName: "MÅNDAG", start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
-      { id: 2, dayName: "MÅNDAG", start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
-      { id: 3, dayName: "MÅNDAG", start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Four", giveaway: "" },
+    // 📅 REAL LIVE SCHEDULE DATA (Configured for Today: August 11, 2026)
+    let ALL_SCHEDULE_EVENTS = [
+      { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
+      { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
+      // 🔴 ACTIVE EVENT (Current Time is 22:19 CEST)
+      { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
+      { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
-      { id: 4, dayName: "TISDAG", start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Five", giveaway: "" },
-      { id: 5, dayName: "TISDAG", start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Six", giveaway: "" },
-      { id: 6, dayName: "TISDAG", start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Seven", giveaway: "🎁 GIVEAWAY!" },
-      { id: 7, dayName: "TISDAG", start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Eight", giveaway: "" },
-      
-      { id: 8, dayName: "ONSDAG", start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Nine", giveaway: "" },
-      { id: 9, dayName: "ONSDAG", start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", name: "FINAL GIVEAWAY", giveaway: "🏆 GIVEAWAY!" },
-      { id: 10, dayName: "ONSDAG", start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", name: "SLUTSPURT & FINAL!", giveaway: "" }
+      // TOMORROW (ONSDAG)
+      { id: 4, dayName: "ONSDAG", start: "2026-08-12T18:00:00", end: "2026-08-12T20:00:00", timeText: "18:00 - 20:00", name: "Morning Special", giveaway: "" },
+      { id: 5, dayName: "ONSDAG", start: "2026-08-12T20:00:00", end: "2026-08-12T22:00:00", timeText: "20:00 - 22:00", name: "Final Boss Stream", giveaway: "🏆 GRAND PRIZE!" }
     ];
+
+    // Helper function to dynamically generate relative events if opened on another day
+    function generateRelativeLiveEvents() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const dayNames = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
+
+      const formatISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+      const formatTime = (d1, d2) => `${pad(d1.getHours())}:${pad(d1.getMinutes())} - ${pad(d2.getHours())}:${pad(d2.getMinutes())}`;
+
+      // Build 6 events around 'now' (-4h, -2h, NOW, +1h, +3h, +20h)
+      const t1 = new Date(now.getTime() - 4 * 3600000);
+      const t2 = new Date(now.getTime() - 2 * 3600000);
+      const t3 = new Date(now.getTime() - 20 * 60000); // Started 20 mins ago
+      const t4 = new Date(now.getTime() + 40 * 60000); // Ends in 40 mins
+      const t5 = new Date(now.getTime() + 2.5 * 3600000);
+      const t6 = new Date(now.getTime() + 5 * 3600000);
+
+      ALL_SCHEDULE_EVENTS = [
+        { id: 0, dayName: dayNames[t1.getDay()], start: formatISO(t1), end: formatISO(t2), timeText: formatTime(t1, t2), name: "Tidigare Streamer A", giveaway: "" },
+        { id: 1, dayName: dayNames[t2.getDay()], start: formatISO(t2), end: formatISO(t3), timeText: formatTime(t2, t3), name: "Tidigare Streamer B", giveaway: "" },
+        { id: 2, dayName: dayNames[t3.getDay()], start: formatISO(t3), end: formatISO(t4), timeText: formatTime(t3, t4), name: "LIVE STREAMER NU", giveaway: "🎁 REALTIDS GIVEAWAY!" },
+        { id: 3, dayName: "NÄSTA", start: formatISO(t4), end: formatISO(t5), timeText: formatTime(t4, t5), name: "Kommande Streamer", giveaway: "" },
+        { id: 4, dayName: "SENARE", start: formatISO(t5), end: formatISO(t6), timeText: formatTime(t5, t6), name: "Kvälls Final", giveaway: "🏆 HOVEDPRIS!" }
+      ];
+
+      testForcedEventId = -1;
+      renderSchedule();
+    }
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
     let sponsorFileList = DEFAULT_SPONSORS;
@@ -616,7 +641,6 @@
     let testForcedEventId = -1; 
     let currentAudioInstance = null;
 
-    // Helper: Escape HTML to prevent injection
     function escapeHTML(str) {
       return str.replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
@@ -679,7 +703,7 @@
     }
 
     // =========================================================
-    // 📅 SCHEDULE TIMELINE ENGINE
+    // 📅 SCHEDULE TIMELINE ENGINE (REAL-TIME PROGRESS FILL)
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -1076,7 +1100,7 @@
     fetchMusikhjalpenData();
 
     setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
-    setInterval(renderSchedule, 5000);
+    setInterval(renderSchedule, 1000); // 1s interval for real-time smooth timeline progression
   </script>
 </body>
 </html>
