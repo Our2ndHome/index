@@ -71,7 +71,7 @@
       padding-top: 6px;
     }
 
-    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER (34px) */
+    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
     .countdown-widget {
       position: absolute;
       top: 18px;
@@ -110,9 +110,9 @@
       margin: 0 3px;
     }
 
-    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE (48px) */
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
     .countdown-widget.final-minute .countdown-label {
-      font-size: 16px;
+      font-size: 18px;
       color: #ace600;
       letter-spacing: 3px;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.8);
@@ -132,7 +132,7 @@
       100% { transform: scale(1.08); }
     }
 
-    /* Timer Finished State - Hides '00' numbers completely! */
+    /* Timer Finished State */
     .timer-finished .countdown-label {
       color: #ace600;
       font-size: 24px;
@@ -148,7 +148,7 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Matched 34px) */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
       top: 75px;
@@ -167,8 +167,9 @@
       transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
     }
 
+    /* Clearance during final minute */
     body.is-final-minute .goal-widget {
-      top: 175px; /* Shifted down to 175px in final minute mode */
+      top: 175px;
     }
 
     .goal-label {
@@ -181,7 +182,7 @@
 
     .amount {
       color: #ace600;
-      font-size: 34px; /* Locked 34px */
+      font-size: 34px;
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
@@ -203,7 +204,7 @@
       white-space: nowrap;
       pointer-events: none;
       z-index: 2000;
-      transition: opacity 0.5s ease, visibility 0.5s ease;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
       text-shadow: 0 3px 15px rgba(0,0,0,0.95);
     }
 
@@ -223,8 +224,8 @@
     }
 
     .show-alert {
-      opacity: 1;
-      visibility: visible;
+      opacity: 1 !important;
+      visibility: visible !important;
       animation: elasticPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
@@ -350,22 +351,6 @@
       align-items: center;
       width: 100%;
       z-index: 3;
-    }
-
-    /* DAY BADGE (Shows ONLY when day changes after day 1) */
-    .timeline-day-badge {
-      background: rgba(172, 230, 0, 0.18);
-      border: 1px solid #ace600;
-      color: #ace600;
-      font-size: 11px;
-      font-weight: 900;
-      padding: 3px 8px;
-      border-radius: 5px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      white-space: nowrap;
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      margin-right: 6px;
     }
 
     .timeline-node {
@@ -509,7 +494,7 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Matched 34px) -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
@@ -733,7 +718,7 @@
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 3. Render 5 Events + Day Badges
+      // 3. Render 5 Events
       let lastSeenDay = "MÅNDAG";
 
       eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
@@ -1007,19 +992,14 @@
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    // Smooth Fade-Out & Fade-In ONLY for the amount number (#totalDisplay)
     function updateTotalDisplaySmooth(newTotalText) {
       const display = document.getElementById('totalDisplay');
       if (!display) return;
       if (display.innerText === newTotalText) return;
 
-      // 1. Fade OUT only the amount number
       display.style.opacity = '0';
-
-      // 2. Update number in secret
       setTimeout(() => {
         display.innerText = newTotalText;
-        // 3. Fade back IN
         display.style.opacity = '1';
       }, 400);
     }
@@ -1034,21 +1014,16 @@
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
 
-      // Update Total Amount with smooth fade
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
-      // 1. Restart Elastic Pop In
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
-      // 2. Play Audio
       await playAlertSound();
 
-      // 3. Fade Out when music ends
       banner.classList.remove('show-alert');
 
-      // 4. Break pause between queued alerts
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
