@@ -71,7 +71,7 @@
       padding-top: 6px;
     }
 
-    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER (34px) */
+    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
     .countdown-widget {
       position: absolute;
       top: 18px;
@@ -96,7 +96,7 @@
     }
 
     .countdown-timer {
-      font-size: 34px; /* 34px Font Size */
+      font-size: 34px;
       font-weight: 900;
       letter-spacing: 1px;
       color: #ffffff; 
@@ -110,9 +110,9 @@
       margin: 0 3px;
     }
 
-    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE (48px Sizing) */
     .countdown-widget.final-minute .countdown-label {
-      font-size: 18px;
+      font-size: 16px;
       color: #ace600;
       letter-spacing: 3px;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.8);
@@ -120,7 +120,7 @@
     }
 
     .countdown-widget.final-minute .countdown-timer {
-      font-size: 96px; /* 96px centered seconds */
+      font-size: 48px; /* Changed from 68px to 48px */
       color: #ffffff;
       text-shadow: 
         0 0 15px rgba(0, 0, 0, 0.9),
@@ -130,6 +130,22 @@
     @keyframes finalSecondPulse {
       0% { transform: scale(1); }
       100% { transform: scale(1.08); }
+    }
+
+    /* Timer Finished State - Hides '00' numbers completely! */
+    .timer-finished .countdown-label {
+      color: #ace600;
+      font-size: 24px;
+      animation: pulseGlow 1.5s infinite alternate;
+    }
+
+    .timer-finished .countdown-timer {
+      display: none !important; /* Hides '00' when event finishes! */
+    }
+
+    @keyframes pulseGlow {
+      0% { text-shadow: 0 0 10px rgba(172, 230, 0, 0.5); }
+      100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
     /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Matched 34px) */
@@ -151,9 +167,8 @@
       transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
     }
 
-    /* 🛡️ Pushed down to top: 175px during SISTA MINUTEN so zero collision happens! */
     body.is-final-minute .goal-widget {
-      top: 175px;
+      top: 105px; /* Compact clearance below 48px timer */
     }
 
     .goal-label {
@@ -164,10 +179,9 @@
       letter-spacing: 1.5px;
     }
 
-    /* Amount font size locked at 34px */
     .amount {
       color: #ace600;
-      font-size: 34px; /* Locked to match countdown 34px */
+      font-size: 34px; /* Locked 34px */
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
@@ -495,7 +509,7 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Matched 34px) -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (#ace600 Amount) -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
@@ -661,7 +675,7 @@
     }
 
     // =========================================================
-    // 📅 ROLLING 5-EVENT TIMELINE SCHEDULE BAR WITH BALL CURSOR
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -801,7 +815,7 @@
     }
 
     // =========================================================
-    // ⏱️ COUNTDOWN TIMER ENGINE
+    // ⏱️ COUNTDOWN TIMER ENGINE (Hides '00' on Event Finish)
     // =========================================================
     let countdownTargetTime = null;
 
@@ -828,8 +842,9 @@
       const now = Date.now();
       const diff = countdownTargetTime - now;
 
+      // Event Finished State
       if (diff <= 0) {
-        timerDisplay.innerText = "00";
+        timerDisplay.innerText = ""; // Empty string so '00' is hidden!
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
@@ -840,8 +855,9 @@
       widget.classList.remove('timer-finished');
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
+      // 🔥 FINAL 60 SECONDS MODE
       if (totalSecondsRemaining <= 60) {
-        document.body.classList.add('is-final-minute');
+        document.body.classList.add('is-final-minute'); // Shifts goal widget down to top: 105px
         widget.classList.add('final-minute');
         label.innerText = "SISTA MINUTEN!";
         timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
@@ -939,14 +955,14 @@
       }
     }
 
-    // Guaranteed Sound Player (At least 3.5s minimum display time)
+    // Guaranteed Sound Player (3.5s minimum display time guarantee!)
     function playAlertSound() {
       return new Promise((resolve) => {
         const startTime = Date.now();
 
         const finish = () => {
           const elapsed = Date.now() - startTime;
-          const minMs = 3500; // 3.5s minimum display time guarantee
+          const minMs = 3500; // 3.5s display guarantee
           if (elapsed < minMs) {
             setTimeout(resolve, minMs - elapsed);
           } else {
@@ -954,7 +970,7 @@
           }
         };
 
-        if (soundFileList.length > 0) {
+        if (soundFileList && soundFileList.length > 0) {
           const nextSoundPath = getNextShuffledSound();
           const audio = new Audio(nextSoundPath);
           audio.volume = SOUND_VOLUME;
@@ -1099,6 +1115,7 @@
 
     // Initialize All Widgets
     makePanelDraggable();
+    autoDetectToday();
     applySceneMode();
     renderSchedule();
     initCountdown();
