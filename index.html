@@ -90,7 +90,7 @@
       letter-spacing: 1.5px;
       color: #ace600; 
       text-transform: uppercase;
-      margin-bottom: 2px;
+      margin-bottom: 8px;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
       transition: all 0.5s ease-in-out;
     }
@@ -151,7 +151,7 @@
     /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH TARGET GOAL */
     .goal-widget {
       position: absolute;
-      top: 80px; /* Increased gap by +5px (was 75px) */
+      top: 80px;
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -168,20 +168,21 @@
     }
 
     body.is-final-minute .goal-widget {
-      top: 110px; /* Increased gap by +5px in final minute mode */
+      top: 110px;
     }
 
     .goal-label {
       font-size: 12px;
-      color: #ffffff;
+      color: #ffffff; /* Crisp White */
       display: block;
-      margin-bottom: 2px;
+      margin-bottom: 6px;
       letter-spacing: 1.5px;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
     }
 
     .amount {
       color: #ace600;
-      font-size: 28px; /* Slightly smaller amount font size */
+      font-size: 28px;
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
@@ -189,7 +190,7 @@
     }
 
     .goal-target {
-      font-size: 11px; /* Smaller text for 40.000 kr goal target */
+      font-size: 11px;
       font-weight: 800;
       color: #00ff88;
       display: block;
@@ -281,11 +282,11 @@
     .sponsor-label {
       font-size: 11px;
       font-weight: 900;
-      color: #ace600;
+      color: #ace600; /* #ace600 Lime Green */
       letter-spacing: 1.5px;
       text-transform: uppercase;
       display: block;
-      margin-top: 4px;
+      margin-top: 4px; /* Placed UNDER image */
       text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
     }
 
@@ -311,6 +312,7 @@
       width: 100%;
     }
 
+    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -322,6 +324,7 @@
       z-index: 1;
     }
 
+    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -335,6 +338,7 @@
       transition: width 1s linear;
     }
 
+    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -359,21 +363,21 @@
       z-index: 3;
     }
 
+    /* DAY BADGE (Clean inline tag for upcoming future day transitions) */
     .timeline-day-badge {
-      position: absolute;
-      top: -22px;
       background: rgba(172, 230, 0, 0.18);
       border: 1px solid #ace600;
       color: #ace600;
       font-size: 11px;
       font-weight: 900;
-      padding: 2px 7px;
+      padding: 3px 8px;
       border-radius: 5px;
       letter-spacing: 1px;
       text-transform: uppercase;
       white-space: nowrap;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      z-index: 10;
+      margin-right: 10px;
+      align-self: center;
     }
 
     .timeline-node {
@@ -427,6 +431,7 @@
       color: #ffea00;
     }
 
+    /* 🔴 ACTIVE LIVE TIMELINE NODE */
     .timeline-node.active .node-tick {
       width: 4px;
       height: 18px;
@@ -683,7 +688,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (No Badges for Current/Past Days)
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -741,7 +746,7 @@
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 3. Render 5 Events
+      // 3. Render 5 Events + Day Badges (NO BADGES FOR CURRENT / PAST DAYS)
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
@@ -751,6 +756,9 @@
         
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= startTime && now < endTime);
+
+        const isPastEvent = (testForcedEventId === -1 && now >= endTime) || 
+                            (testForcedEventId !== -1 && ev.id < testForcedEventId);
 
         let alignClass = "middle-node";
         if (index === 0) alignClass = "first-node";
@@ -762,9 +770,14 @@
         const primaryText = hasGiveaway ? ev.giveaway : ev.name;
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
+        // Day Badge logic: Show ONLY if day changes AND event hasn't already passed!
         let dayBadgeHtml = "";
         if (ev.dayName !== currentActiveDay && ev.dayName !== lastSeenDay) {
-          dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
+          if (!isPastEvent) {
+            dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
+          }
+          lastSeenDay = ev.dayName;
+        } else {
           lastSeenDay = ev.dayName;
         }
 
@@ -852,7 +865,7 @@
       const diff = countdownTargetTime - now;
 
       if (diff <= 0) {
-        timerDisplay.innerText = ""; 
+        timerDisplay.innerText = ""; // Empty string so '00' is hidden!
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
@@ -962,6 +975,7 @@
       }
     }
 
+    // 100% UN-CRASHABLE AUDIO PLAYER (4s guaranteed display timer!)
     function playAlertSound() {
       return new Promise((resolve) => {
         let isDone = false;
