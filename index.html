@@ -10,9 +10,10 @@
       --primary-color: #ace600; /* Lime Green */
       --secondary-color: #00ff88;
       --giveaway-color: #ffea00;
+      --live-red: #ff0055;
       --text-white: #ffffff;
       --bg-dark: rgba(0, 0, 0, 0.92);
-      --shadow-dark: rgba(0, 0, 0, 0.9);
+      --shadow-dark: rgba(0, 0, 0, 0.95);
     }
 
     * {
@@ -271,7 +272,7 @@
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 80px;
+      bottom: 85px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -310,7 +311,7 @@
       text-shadow: 0 0 10px var(--shadow-dark);
     }
 
-    /* 📅 WIDGET 5: TIMELINE SCHEDULE BAR */
+    /* 📅 WIDGET 5: REFINED BROADCAST TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -331,30 +332,33 @@
       width: 100%;
     }
 
+    /* Background Rail */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
       left: 0;
       width: 100%;
       height: 2px;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.12);
       transform: translateY(-50%);
       z-index: 1;
     }
 
+    /* Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
       left: 0;
       height: 3px;
-      background: var(--primary-color);
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+      background: linear-gradient(90deg, rgba(172, 230, 0, 0.4), var(--primary-color));
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
       transition: width 0.5s linear;
     }
 
+    /* 📡 Radar Sonar Cursor Ball */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -362,11 +366,28 @@
       width: 10px;
       height: 10px;
       background: var(--primary-color);
-      box-shadow: 0 0 8px var(--primary-color), 0 0 14px var(--primary-color);
+      box-shadow: 0 0 8px var(--primary-color), 0 0 16px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
       transition: left 0.5s linear;
+    }
+
+    .timeline-cursor::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      border: 1.5px solid var(--primary-color);
+      border-radius: 50%;
+      animation: cursorSonar 1.8s infinite ease-out;
+    }
+
+    @keyframes cursorSonar {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(2.0); opacity: 0; }
     }
 
     .timeline-nodes-row {
@@ -379,23 +400,25 @@
       z-index: 3;
     }
 
+    /* 💎 Glassmorphic Day Badge */
     .timeline-day-badge {
-      background: rgba(172, 230, 0, 0.18);
-      border: 1px solid var(--primary-color);
+      background: rgba(172, 230, 0, 0.12);
+      border: 1px solid rgba(172, 230, 0, 0.7);
+      backdrop-filter: blur(4px);
       color: var(--primary-color);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 900;
-      padding: 3px 8px;
-      border-radius: 5px;
-      letter-spacing: 1px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
       white-space: nowrap;
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      margin-right: 10px;
+      box-shadow: 0 0 12px rgba(172, 230, 0, 0.25);
+      margin-right: 12px;
       align-self: center;
     }
 
-    /* EVENT NODE SPAN BAR (|────────────────| Layout) */
+    /* 🎯 REFINED EVENT NODE SPAN BAR (|────────────────| Layout) */
     .timeline-node {
       display: flex;
       flex-direction: column;
@@ -412,13 +435,36 @@
       font-size: 11px;
       font-weight: 800;
       color: #e0e0e0;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
     }
 
+    /* 🔴 Compact LIVE Pill Badge */
+    .node-live-tag {
+      font-size: 8px;
+      font-weight: 900;
+      background: var(--live-red);
+      color: var(--text-white);
+      padding: 1px 4px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 8px rgba(255, 0, 85, 0.8);
+      animation: livePulse 1.5s infinite alternate;
+    }
+
+    @keyframes livePulse {
+      0% { opacity: 0.75; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1.05); }
+    }
+
+    /* Neon HUD Segment Bar: |────────────────| */
     .node-segment-bar {
       position: relative;
       width: 100%;
-      height: 14px;
+      height: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -429,7 +475,8 @@
       position: relative;
       width: 100%;
       height: 2px;
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 1px;
       transition: all 0.3s ease;
     }
 
@@ -440,7 +487,7 @@
       top: -4px;
       width: 2px;
       height: 10px;
-      background: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
       transition: all 0.3s ease;
     }
@@ -452,7 +499,7 @@
       top: -4px;
       width: 2px;
       height: 10px;
-      background: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
       transition: all 0.3s ease;
     }
@@ -462,23 +509,25 @@
       font-weight: 900;
       color: var(--text-white);
       white-space: nowrap;
+      letter-spacing: 0.3px;
     }
 
     .node-streamer.is-giveaway-text {
       color: var(--giveaway-color);
     }
 
+    /* ✨ ACTIVE EVENT ILLUMINATED STATE */
     .timeline-node.active .segment-line {
-      background: rgba(172, 230, 0, 0.6);
+      background: linear-gradient(90deg, rgba(172, 230, 0, 0.4), var(--primary-color));
       height: 3px;
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
     }
 
     .timeline-node.active .segment-line::before,
     .timeline-node.active .segment-line::after {
       background: var(--primary-color);
-      height: 14px;
-      top: -5px;
+      height: 16px;
+      top: -6px;
       width: 3px;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.9);
     }
@@ -487,13 +536,13 @@
       font-size: 17px;
       font-weight: 900;
       color: var(--primary-color);
-      text-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
+      text-shadow: 0 0 12px rgba(172, 230, 0, 0.8);
     }
 
     .timeline-node.active .node-streamer.is-giveaway-text {
       color: var(--giveaway-color);
       font-size: 17px;
-      text-shadow: 0 0 12px rgba(255, 234, 0, 0.9);
+      text-shadow: 0 0 14px rgba(255, 234, 0, 0.9);
     }
 
     .timeline-node.active .node-time {
@@ -636,7 +685,7 @@
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
       { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is ~22:35 CEST)
+      // 🔴 ACTIVE EVENT (Current Time is ~22:39 CEST)
       { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
       { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
@@ -655,8 +704,8 @@
 
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 35 * 60000); // Started 35 mins ago
-      const t4 = new Date(now.getTime() + 25 * 60000); // Ends in 25 mins
+      const t3 = new Date(now.getTime() - 39 * 60000); // Started 39 mins ago
+      const t4 = new Date(now.getTime() + 21 * 60000); // Ends in 21 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
       const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
 
@@ -815,10 +864,12 @@
           lastSeenDay = ev.dayName;
         }
 
+        const livePillHtml = isLiveNow ? `<span class="node-live-tag">LIVE</span>` : '';
+
         return `
           ${dayBadgeHtml}
           <div class="timeline-node ${isLiveNow ? 'active' : 'inactive'}">
-            <div class="node-time">${escapeHTML(ev.timeText)}</div>
+            <div class="node-time">${escapeHTML(ev.timeText)} ${livePillHtml}</div>
             <div class="node-segment-bar">
               <div class="segment-line"></div>
             </div>
