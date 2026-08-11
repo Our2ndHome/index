@@ -71,7 +71,7 @@
       padding-top: 6px;
     }
 
-    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
+    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER (34px) */
     .countdown-widget {
       position: absolute;
       top: 18px;
@@ -96,7 +96,7 @@
     }
 
     .countdown-timer {
-      font-size: 28px;
+      font-size: 34px; /* 34px Font Size */
       font-weight: 900;
       letter-spacing: 1px;
       color: #ffffff; 
@@ -120,7 +120,7 @@
     }
 
     .countdown-widget.final-minute .countdown-timer {
-      font-size: 68px;
+      font-size: 96px; /* 96px centered seconds */
       color: #ffffff;
       text-shadow: 
         0 0 15px rgba(0, 0, 0, 0.9),
@@ -132,7 +132,7 @@
       100% { transform: scale(1.08); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (#ace600 Amount) */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Matched 34px) */
     .goal-widget {
       position: absolute;
       top: 75px;
@@ -151,8 +151,9 @@
       transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
     }
 
+    /* 🛡️ Pushed down to top: 175px during SISTA MINUTEN so zero collision happens! */
     body.is-final-minute .goal-widget {
-      top: 125px;
+      top: 175px;
     }
 
     .goal-label {
@@ -163,9 +164,10 @@
       letter-spacing: 1.5px;
     }
 
+    /* Amount font size locked at 34px */
     .amount {
       color: #ace600;
-      font-size: 34px;
+      font-size: 34px; /* Locked to match countdown 34px */
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
@@ -263,7 +265,7 @@
       filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
     }
 
-    /* 📅 WIDGET 5: OPTION A - ROLLING 5-EVENT TIMELINE SCHEDULE BAR */
+    /* 📅 WIDGET 5: NO-BACKGROUND SLIM TIMELINE SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -285,6 +287,7 @@
       width: 100%;
     }
 
+    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -296,6 +299,7 @@
       z-index: 1;
     }
 
+    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -309,6 +313,7 @@
       transition: width 1s linear;
     }
 
+    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -490,7 +495,7 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Matched 34px) -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
@@ -510,7 +515,7 @@
     </div>
   </div>
 
-  <!-- 📅 WIDGET 5: ROLLING 5-EVENT TIMELINE SCHEDULE BAR -->
+  <!-- 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -563,7 +568,7 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (Clean Day Names without date numbers)
+    // 📅 SCHEDULE DATA
     const ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "MÅNDAG", start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
       { id: 1, dayName: "MÅNDAG", start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
@@ -656,7 +661,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (Day Badges for Day Transitions)
+    // 📅 ROLLING 5-EVENT TIMELINE SCHEDULE BAR WITH BALL CURSOR
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -692,13 +697,12 @@
       let visibleEvents = ALL_SCHEDULE_EVENTS.slice(activeIndex, activeIndex + 5);
       if (visibleEvents.length < 5 && ALL_SCHEDULE_EVENTS.length >= 5) {
         const startPad = Math.max(0, ALL_SCHEDULE_EVENTS.length - 5);
-        slice = ALL_SCHEDULE_EVENTS.slice(startPad, ALL_SCHEDULE_EVENTS.length);
-        visibleEvents = slice;
+        visibleEvents = ALL_SCHEDULE_EVENTS.slice(startPad, ALL_SCHEDULE_EVENTS.length);
       }
 
       const totalVisible = visibleEvents.length;
 
-      // 2. Real-time Progress fill for the visible 5-event window
+      // 2. Real-time Progress Fill for the visible 5-event window
       if (totalVisible > 0) {
         const windowStart = new Date(visibleEvents[0].start).getTime();
         const windowEnd = new Date(visibleEvents[totalVisible - 1].end).getTime();
@@ -715,8 +719,8 @@
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 3. Render 5 Events + Day Badges (MÅNDAG is hidden at start, shows only when day changes!)
-      let lastSeenDay = "MÅNDAG"; // Initialized to MÅNDAG so first MÅNDAG badge is hidden!
+      // 3. Render 5 Events + Day Badges (MÅNDAG badge hidden at initial start)
+      let lastSeenDay = "MÅNDAG";
 
       eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
         const startTime = new Date(ev.start);
@@ -725,7 +729,6 @@
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= startTime && now < endTime);
 
-        // Alignment Rules: First=Left, Middle=Center, Last=Right
         let alignClass = "middle-node";
         if (index === 0) alignClass = "first-node";
         else if (index === totalVisible - 1) alignClass = "last-node";
@@ -736,7 +739,6 @@
         const primaryText = hasGiveaway ? ev.giveaway : ev.name;
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
-        // Day Badge logic: Show ONLY if day changes and it's not the initial Monday start
         let dayBadgeHtml = "";
         if (ev.dayName !== lastSeenDay && ev.dayName !== "MÅNDAG") {
           dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
@@ -831,6 +833,7 @@
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
+        document.body.classList.remove('is-final-minute');
         return;
       }
 
@@ -838,12 +841,14 @@
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
       if (totalSecondsRemaining <= 60) {
+        document.body.classList.add('is-final-minute');
         widget.classList.add('final-minute');
         label.innerText = "SISTA MINUTEN!";
         timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
         return;
       }
 
+      document.body.classList.remove('is-final-minute');
       widget.classList.remove('final-minute');
       label.innerText = "INSAMLINGEN SLUTAR OM";
 
@@ -934,9 +939,20 @@
       }
     }
 
+    // Guaranteed Sound Player (At least 3.5s minimum display time)
     function playAlertSound() {
       return new Promise((resolve) => {
-        const onEnded = () => { resolve(); };
+        const startTime = Date.now();
+
+        const finish = () => {
+          const elapsed = Date.now() - startTime;
+          const minMs = 3500; // 3.5s minimum display time guarantee
+          if (elapsed < minMs) {
+            setTimeout(resolve, minMs - elapsed);
+          } else {
+            resolve();
+          }
+        };
 
         if (soundFileList.length > 0) {
           const nextSoundPath = getNextShuffledSound();
@@ -944,12 +960,12 @@
           audio.volume = SOUND_VOLUME;
           window.currentAudio = audio;
 
-          audio.addEventListener('ended', onEnded);
-          audio.addEventListener('error', onEnded);
+          audio.addEventListener('ended', finish, { once: true });
+          audio.addEventListener('error', finish, { once: true });
 
           audio.play().catch(err => {
             console.log("Audio play error:", err);
-            onEnded();
+            finish();
           });
         } else {
           // Fallback Synth
@@ -966,7 +982,7 @@
           osc.start();
           osc.stop(audioCtx.currentTime + 0.5);
 
-          setTimeout(resolve, 2500);
+          finish();
         }
       });
     }
@@ -977,14 +993,19 @@
     const alertQueue = [];
     let isProcessingAlert = false;
 
+    // Smooth Fade-Out & Fade-In ONLY for the amount number (#totalDisplay)
     function updateTotalDisplaySmooth(newTotalText) {
       const display = document.getElementById('totalDisplay');
       if (!display) return;
       if (display.innerText === newTotalText) return;
 
+      // 1. Fade OUT only the amount number
       display.style.opacity = '0';
+
+      // 2. Update number in secret
       setTimeout(() => {
         display.innerText = newTotalText;
+        // 3. Fade back IN
         display.style.opacity = '1';
       }, 400);
     }
@@ -999,16 +1020,21 @@
       document.getElementById('donorName').innerText = nextAlert.donorName;
       document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
 
+      // Update Total Amount with smooth fade
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
+      // 1. Restart Elastic Pop In
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
+      // 2. Play Audio & Wait until sound finishes
       await playAlertSound();
 
+      // 3. Smooth Fade Out when music ends
       banner.classList.remove('show-alert');
 
+      // 4. Break pause between queued alerts
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
