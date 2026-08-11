@@ -105,17 +105,19 @@
 
     .countdown-label {
       font-size: 12px;
+      line-height: 1;
       font-weight: 800;
       letter-spacing: 1.5px;
       color: var(--primary-color); 
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 12px; /* Even 12px gap above numbers */
       text-shadow: 0 2px 5px var(--shadow-dark);
       transition: all 0.5s ease-in-out;
     }
 
     .countdown-timer {
       font-size: 34px;
+      line-height: 1;
       font-weight: 900;
       letter-spacing: 1px;
       color: var(--text-white); 
@@ -134,6 +136,7 @@
       font-size: 16px;
       color: var(--primary-color);
       letter-spacing: 3px;
+      margin-bottom: 12px;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.8);
       animation: finalSecondPulse 1s infinite alternate;
     }
@@ -168,7 +171,8 @@
     /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
-      top: 84px;
+      /* Top 18px + Label 12px + Gap 12px + Timer 34px + Gap 12px = 88px (perfectly centered!) */
+      top: 88px; 
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -185,11 +189,13 @@
     }
 
     body.is-final-minute .goal-widget {
-      top: 102px;
+      /* Top 18px + Label 16px + Gap 12px + Timer 48px + Gap 12px = 106px */
+      top: 106px;
     }
 
     .goal-label {
       font-size: 12px;
+      line-height: 1;
       color: var(--text-white);
       display: block;
       margin-bottom: 8px;
@@ -200,21 +206,23 @@
     .amount {
       color: var(--primary-color);
       font-size: 34px;
+      line-height: 1;
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
       display: block;
     }
 
+    /* Target Text set to White */
     .goal-target {
       font-size: 11px;
       font-weight: 800;
-      color: var(--primary-color);
+      color: var(--text-white); /* Changed to WHITE */
       display: block;
       margin-top: 8px;
       letter-spacing: 1.2px;
       opacity: 0.9;
-      text-shadow: 0 0 10px rgba(172, 230, 0, 0.4);
+      text-shadow: 0 2px 5px var(--shadow-dark);
     }
 
     /* 📢 WIDGET 2: DONATION ALERT BANNER */
@@ -350,14 +358,15 @@
       transition: width 0.5s linear;
     }
 
+    /* Smaller Green Timeline Cursor Ball */
     .timeline-cursor {
       position: absolute;
       top: 50%;
       left: 0%;
-      width: 14px;
-      height: 14px;
+      width: 8px; /* Reduced from 14px */
+      height: 8px; /* Reduced from 14px */
       background: var(--primary-color);
-      box-shadow: 0 0 10px var(--primary-color), 0 0 18px var(--primary-color);
+      box-shadow: 0 0 6px var(--primary-color), 0 0 12px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
@@ -670,7 +679,7 @@
     }
 
     // =========================================================
-    // 📅 SCHEDULE TIMELINE ENGINE (FIXED GAP PROGRESS CALCULATION)
+    // 📅 SCHEDULE TIMELINE ENGINE
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -703,7 +712,6 @@
 
       const totalVisible = visibleEvents.length;
 
-      // Fixed Progress Calculation (Prevents Warp Across Multi-Hour Gaps)
       if (totalVisible > 0) {
         let activeLocalIdx = visibleEvents.findIndex(ev => ev.id === (testForcedEventId !== -1 ? testForcedEventId : ALL_SCHEDULE_EVENTS[activeIndex].id));
         if (activeLocalIdx === -1) activeLocalIdx = 0;
@@ -800,12 +808,11 @@
     }
 
     // =========================================================
-    // ⏱️ COUNTDOWN TIMER (FIXED EVENT END DATE)
+    // ⏱️ COUNTDOWN TIMER
     // =========================================================
     let countdownTargetTime = null;
 
     function getEventTargetDate() {
-      // Synchronized with schedule end: Dec 16, 2026 at 23:00:00
       return new Date("2026-12-16T23:00:00").getTime();
     }
 
@@ -962,7 +969,7 @@
     }
 
     // =========================================================
-    // ALERT QUEUE SYSTEM (ADDED MISSING enqueueAlert FUNCTION)
+    // ALERT QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
@@ -996,7 +1003,7 @@
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
       banner.classList.remove('show-alert');
-      void banner.offsetWidth; // Force CSS animation refresh
+      void banner.offsetWidth;
       banner.classList.add('show-alert');
 
       await playAlertSound();
@@ -1055,7 +1062,6 @@
       }
     }
 
-    // Hide control panel if live parameter is set (?live=1)
     if (new URLSearchParams(window.location.search).get('live') === '1') {
       document.getElementById('testPanel').style.display = 'none';
     }
