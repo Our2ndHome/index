@@ -90,7 +90,7 @@
       letter-spacing: 1.5px;
       color: #ace600; 
       text-transform: uppercase;
-      margin-bottom: 2px;
+      margin-bottom: 8px; /* Increased spacing (was 2px) */
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
       transition: all 0.5s ease-in-out;
     }
@@ -151,7 +151,7 @@
     /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
-      top: 75px;
+      top: 84px; /* Shifted down to top: 84px for 12px gap below timer */
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -168,19 +168,20 @@
     }
 
     body.is-final-minute .goal-widget {
-      top: 105px;
+      top: 135px; /* Clearance during final minute */
     }
 
     .goal-label {
       font-size: 12px;
-      color: #ffffff; /* Crisp White */
+      color: #ffffff; /* Pure Crisp White */
       display: block;
-      margin-bottom: 2px;
+      margin-bottom: 6px; /* Increased spacing (was 2px) */
       letter-spacing: 1.5px;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
     }
 
     .amount {
-      color: #ace600; /* Lime Green #ace600 */
+      color: #ace600;
       font-size: 34px;
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
@@ -202,7 +203,7 @@
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
-      z-index: 9999;
+      z-index: 2000;
       transition: opacity 0.4s ease, visibility 0.4s ease;
       text-shadow: 0 3px 15px rgba(0,0,0,0.95);
     }
@@ -234,7 +235,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background) */
+    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
       bottom: 80px;
@@ -301,7 +302,6 @@
       width: 100%;
     }
 
-    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -313,7 +313,6 @@
       z-index: 1;
     }
 
-    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -676,7 +675,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (Auto-Hides Current/Past Day Badges)
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (No Badges for Current Day)
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -734,7 +733,7 @@
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 3. Render 5 Events + Day Badges (NO BADGES FOR CURRENT / PAST DAYS)
+      // 3. Render 5 Events (Day Badges ONLY for future upcoming day transitions!)
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
@@ -755,7 +754,6 @@
         const primaryText = hasGiveaway ? ev.giveaway : ev.name;
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
-        // Day Badge logic: Show ONLY if day changes AND it's a FUTURE day transition!
         let dayBadgeHtml = "";
         if (ev.dayName !== currentActiveDay && ev.dayName !== lastSeenDay) {
           dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
@@ -845,7 +843,6 @@
       const now = Date.now();
       const diff = countdownTargetTime - now;
 
-      // Event Finished State
       if (diff <= 0) {
         timerDisplay.innerText = ""; // Empty string so '00' is hidden!
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
@@ -858,9 +855,8 @@
       widget.classList.remove('timer-finished');
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
-      // 🔥 FINAL 60 SECONDS MODE
       if (totalSecondsRemaining <= 60) {
-        document.body.classList.add('is-final-minute'); // Shifts goal widget down to top: 105px
+        document.body.classList.add('is-final-minute');
         widget.classList.add('final-minute');
         label.innerText = "SISTA MINUTEN!";
         timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
