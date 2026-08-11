@@ -26,7 +26,7 @@
       padding: 12px;
       border-radius: 10px;
       color: white;
-      z-index: 99999;
+      z-index: 999999;
       max-width: 360px;
       font-size: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -80,7 +80,7 @@
       text-align: center;
       white-space: nowrap;
       pointer-events: none;
-      transition: all 0.5s ease-in-out;
+      transition: all 0.4s ease-in-out;
       z-index: 1000;
     }
 
@@ -92,7 +92,7 @@
       text-transform: uppercase;
       margin-bottom: 2px;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
-      transition: all 0.5s ease-in-out;
+      transition: all 0.4s ease-in-out;
     }
 
     .countdown-timer {
@@ -102,7 +102,7 @@
       color: #ffffff; 
       font-variant-numeric: tabular-nums;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
-      transition: all 0.5s ease-in-out;
+      transition: all 0.4s ease-in-out;
     }
 
     .sep-dot {
@@ -164,11 +164,12 @@
       font-weight: 900;
       color: #ffffff;
       text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-      transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
+      transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out;
     }
 
+    /* Positioned perfectly at 125px during SISTA MINUTEN mode */
     body.is-final-minute .goal-widget {
-      top: 160px; /* Clearance during SISTA MINUTEN */
+      top: 125px;
     }
 
     .goal-label {
@@ -181,14 +182,14 @@
 
     .amount {
       color: #ace600;
-      font-size: 34px; /* Locked 34px */
+      font-size: 34px; /* Locked at 34px */
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
       display: inline-block;
     }
 
-    /* 📢 WIDGET 2: DONATION ALERT BANNER */
+    /* 📢 WIDGET 2: DONATION ALERT BANNER (High Z-Index & Guaranteed Display) */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -202,13 +203,13 @@
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
-      z-index: 9999;
+      z-index: 99999;
       transition: opacity 0.4s ease, visibility 0.4s ease;
       text-shadow: 0 3px 15px rgba(0,0,0,0.95);
     }
 
     .donor-name {
-      color: #ace600; /* Lime Green */
+      color: #ace600; /* Lime Green #ace600 */
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -301,7 +302,6 @@
       width: 100%;
     }
 
-    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -313,7 +313,6 @@
       z-index: 1;
     }
 
-    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -352,9 +351,9 @@
       z-index: 3;
     }
 
-    /* DAY BADGE (Clean Inline Badge for Upcoming Future Days) */
+    /* DAY BADGE (Inline tag for upcoming day transitions) */
     .timeline-day-badge {
-      background: rgba(172, 230, 0, 0.2);
+      background: rgba(172, 230, 0, 0.18);
       border: 1px solid #ace600;
       color: #ace600;
       font-size: 11px;
@@ -516,7 +515,7 @@
     <span class="amount" id="totalDisplay">0 kr</span>
   </div>
 
-  <!-- 📢 WIDGET 2: DONATION ALERT -->
+  <!-- 📢 WIDGET 2: DONATION ALERT BANNER -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
@@ -676,7 +675,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (Removes Passed Day Badges)
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -755,7 +754,6 @@
         const primaryText = hasGiveaway ? ev.giveaway : ev.name;
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
-        // Day Badge logic: Show ONLY if day changes AND it's a FUTURE day transition!
         let dayBadgeHtml = "";
         if (ev.dayName !== currentActiveDay && ev.dayName !== lastSeenDay) {
           dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
@@ -845,7 +843,6 @@
       const now = Date.now();
       const diff = countdownTargetTime - now;
 
-      // Event Finished State
       if (diff <= 0) {
         timerDisplay.innerText = ""; // Empty string so '00' is hidden!
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
@@ -858,9 +855,8 @@
       widget.classList.remove('timer-finished');
       const totalSecondsRemaining = Math.floor(diff / 1000);
 
-      // 🔥 FINAL 60 SECONDS MODE
       if (totalSecondsRemaining <= 60) {
-        document.body.classList.add('is-final-minute'); // Shifts goal widget down to top: 160px
+        document.body.classList.add('is-final-minute');
         widget.classList.add('final-minute');
         label.innerText = "SISTA MINUTEN!";
         timerDisplay.innerText = String(totalSecondsRemaining).padStart(2, '0');
@@ -958,7 +954,7 @@
       }
     }
 
-    // 100% UN-CRASHABLE AUDIO PLAYER (Guaranteed 4s display timer!)
+    // 100% UN-CRASHABLE AUDIO PLAYER (4s guaranteed display timer!)
     function playAlertSound() {
       return new Promise((resolve) => {
         let isDone = false;
@@ -970,7 +966,7 @@
           }
         };
 
-        // Hard 4.0s display timer so audio error NEVER blocks visual alerts!
+        // 4.0 second hard safety timeout so audio error NEVER blocks visual alerts!
         const hardTimeout = setTimeout(finish, 4000);
 
         try {
