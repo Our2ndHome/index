@@ -112,7 +112,7 @@
 
     /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
     .countdown-widget.final-minute .countdown-label {
-      font-size: 18px;
+      font-size: 16px;
       color: #ace600;
       letter-spacing: 3px;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.8);
@@ -132,6 +132,7 @@
       100% { transform: scale(1.08); }
     }
 
+    /* Timer Finished State */
     .timer-finished .countdown-label {
       color: #ace600;
       font-size: 24px;
@@ -163,11 +164,12 @@
       font-weight: 900;
       color: #ffffff;
       text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-      transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
+      transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out;
     }
 
+    /* Tightened spacing under 48px timer during SISTA MINUTEN */
     body.is-final-minute .goal-widget {
-      top: 175px;
+      top: 105px;
     }
 
     .goal-label {
@@ -207,7 +209,7 @@
     }
 
     .donor-name {
-      color: #ace600;
+      color: #ace600; /* Lime Green */
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -224,16 +226,16 @@
     .show-alert {
       opacity: 1 !important;
       visibility: visible !important;
-      animation: elasticPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: elasticPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
 
     @keyframes elasticPop {
       0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) */
+    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
       bottom: 80px;
@@ -241,13 +243,24 @@
       transform: translateX(-50%);
       text-align: center;
       z-index: 1000;
-      background: transparent; /* Background Removed */
-      border: none;
-      box-shadow: none;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 8px 18px;
+      border-radius: 12px;
+      border: 2px solid #ace600;
+      box-shadow: 
+        0 0 15px rgba(0, 0, 0, 0.9),
+        0 0 12px rgba(172, 230, 0, 0.35);
+    }
+
+    .sponsor-label {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ace600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.5);
     }
 
     .sponsor-logo-container {
@@ -264,21 +277,10 @@
       object-fit: contain;
       transition: opacity 0.6s ease-in-out;
       opacity: 1;
-      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.9));
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
     }
 
-    .sponsor-label {
-      font-size: 11px;
-      font-weight: 900;
-      color: #ace600; /* #ace600 Lime Green */
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      display: block;
-      margin-top: 4px; /* Placed UNDER the picture */
-      text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
-    }
-
-    /* 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR */
+    /* 📅 WIDGET 5: NO-BACKGROUND SLIM TIMELINE SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -300,6 +302,7 @@
       width: 100%;
     }
 
+    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -311,6 +314,7 @@
       z-index: 1;
     }
 
+    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -324,6 +328,7 @@
       transition: width 1s linear;
     }
 
+    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -348,6 +353,7 @@
       z-index: 3;
     }
 
+    /* DAY BADGE (Floats ABOVE line) */
     .timeline-day-badge {
       position: absolute;
       top: -22px;
@@ -416,6 +422,7 @@
       color: #ffea00;
     }
 
+    /* 🔴 ACTIVE LIVE TIMELINE NODE (No JUST NU tag!) */
     .timeline-node.active .node-tick {
       width: 4px;
       height: 18px;
@@ -480,11 +487,12 @@
     </div>
 
     <div class="panel-section">
-      <b>Tidslinje Test:</b><br>
-      <button onclick="testRealtimeSchedule()">📅 JUST NU (Realtid)</button>
-      <button onclick="testLiveHighlight(0)">Slot 1 (Start)</button>
-      <button onclick="testLiveHighlight(1)">Slot 2 (Mitten)</button>
-      <button onclick="testLiveHighlight(2)">Giveaway</button>
+      <b>Rolling Queue Highlighting Test:</b><br>
+      <button onclick="testLiveHighlight(0)">Testa Slot 1 (Måndag)</button>
+      <button onclick="testLiveHighlight(3)">Testa Slot 4 (Sista Måndag)</button>
+      <button onclick="testLiveHighlight(4)">Testa Slot 5 (Skifte Tisdag)</button>
+      <button onclick="testLiveHighlight(8)">Testa Slot 9 (Skifte Onsdag)</button>
+      <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
     </div>
 
     <div class="panel-section">
@@ -516,12 +524,12 @@
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) -->
+  <!-- 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR -->
   <div class="sponsor-widget" id="sponsorWidget">
+    <span class="sponsor-label">STOLT SPONSOR</span>
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
     </div>
-    <span class="sponsor-label">SPONSORER</span>
   </div>
 
   <!-- 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR -->
@@ -577,29 +585,22 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 REAL-TIME DYNAMIC SCHEDULE GENERATOR (Creates live slots relative to NOW)
-    function createRealtimeScheduleData() {
-      const now = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-
-      const t1 = new Date(now.getTime() - 2 * 3600 * 1000);
-      const t2 = new Date(now.getTime() - 1 * 3600 * 1000);
-      const t3 = new Date(now.getTime() + 1 * 3600 * 1000); // Live event end
-      const t4 = new Date(now.getTime() + 3 * 3600 * 1000);
-      const t5 = new Date(now.getTime() + 5 * 3600 * 1000);
-
-      const fmt = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-
-      return [
-        { id: 0, dayName: "IDAG", start: t1.toISOString(), end: t2.toISOString(), timeText: `${fmt(t1)} - ${fmt(t2)}`, name: "Streamer One", giveaway: "" },
-        { id: 1, dayName: "IDAG", start: t2.toISOString(), end: t3.toISOString(), timeText: `${fmt(t2)} - ${fmt(t3)}`, name: "Streamer Two (LIVE NOW)", giveaway: "" },
-        { id: 2, dayName: "IDAG", start: t3.toISOString(), end: t4.toISOString(), timeText: `${fmt(t3)} - ${fmt(t4)}`, name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
-        { id: 3, dayName: "IDAG", start: t4.toISOString(), end: t5.toISOString(), timeText: `${fmt(t4)} - ${fmt(t5)}`, name: "Streamer Four", giveaway: "" },
-        { id: 4, dayName: "IMORGON", start: new Date(now.getTime() + 24 * 3600 * 1000).toISOString(), end: new Date(now.getTime() + 26 * 3600 * 1000).toISOString(), timeText: "18:00 - 20:00", name: "Streamer Five", giveaway: "" }
-      ];
-    }
-
-    let ALL_SCHEDULE_EVENTS = createRealtimeScheduleData();
+    // 📅 SCHEDULE DATA (No JUST NU tag in rendering!)
+    const ALL_SCHEDULE_EVENTS = [
+      { id: 0, dayName: "MÅNDAG", start: "2026-12-14T18:00:00", end: "2026-12-14T20:00:00", timeText: "18:00 - 20:00", name: "Streamer One", giveaway: "" },
+      { id: 1, dayName: "MÅNDAG", start: "2026-12-14T20:00:00", end: "2026-12-14T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Two", giveaway: "" },
+      { id: 2, dayName: "MÅNDAG", start: "2026-12-14T21:00:00", end: "2026-12-14T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Three", giveaway: "🎁 GIVEAWAY!" },
+      { id: 3, dayName: "MÅNDAG", start: "2026-12-14T21:30:00", end: "2026-12-14T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Four", giveaway: "" },
+      
+      { id: 4, dayName: "TISDAG", start: "2026-12-15T18:00:00", end: "2026-12-15T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Five", giveaway: "" },
+      { id: 5, dayName: "TISDAG", start: "2026-12-15T20:00:00", end: "2026-12-15T21:00:00", timeText: "20:00 - 21:00", name: "Streamer Six", giveaway: "" },
+      { id: 6, dayName: "TISDAG", start: "2026-12-15T21:00:00", end: "2026-12-15T21:30:00", timeText: "21:00 - 21:30", name: "Streamer Seven", giveaway: "🎁 GIVEAWAY!" },
+      { id: 7, dayName: "TISDAG", start: "2026-12-15T21:30:00", end: "2026-12-15T23:00:00", timeText: "21:30 - 23:00", name: "Streamer Eight", giveaway: "" },
+      
+      { id: 8, dayName: "ONSDAG", start: "2026-12-16T18:00:00", end: "2026-12-16T20:00:00", timeText: "18:00 - 20:00", name: "Streamer Nine", giveaway: "" },
+      { id: 9, dayName: "ONSDAG", start: "2026-12-16T20:00:00", end: "2026-12-16T20:30:00", timeText: "20:00 - 20:30", name: "FINAL GIVEAWAY", giveaway: "🏆 GIVEAWAY!" },
+      { id: 10, dayName: "ONSDAG", start: "2026-12-16T20:30:00", end: "2026-12-16T23:00:00", timeText: "20:30 - 23:00", name: "SLUTSPURT & FINAL!", giveaway: "" }
+    ];
 
     let soundFileList = TIKTOK_BACKUP_SOUNDS;
     let sponsorFileList = DEFAULT_SPONSORS;
@@ -607,12 +608,6 @@
     let currentSponsorIndex = 0;
     let currentTotal = 0; 
     let testForcedEventId = -1; 
-
-    function testRealtimeSchedule() {
-      testForcedEventId = -1;
-      ALL_SCHEDULE_EVENTS = createRealtimeScheduleData();
-      renderSchedule();
-    }
 
     // =========================================================
     // 🖐️ DRAGGABLE PANEL ENGINE
@@ -683,7 +678,7 @@
     }
 
     // =========================================================
-    // 📅 ROLLING TIMELINE SCHEDULE BAR WITH LIVE PROGRESS & BALL CURSOR
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (No JUST NU tag!)
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -741,8 +736,8 @@
         if (cursorEl) cursorEl.style.left = `${progressPct}%`;
       }
 
-      // 3. Render 5 Events
-      let lastSeenDay = "IDAG";
+      // 3. Render 5 Events + Day Badges (NO JUST NU TAG!)
+      let lastSeenDay = "MÅNDAG";
 
       eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
         const startTime = new Date(ev.start);
@@ -765,7 +760,7 @@
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
         let dayBadgeHtml = "";
-        if (ev.dayName !== lastSeenDay && ev.dayName !== "IDAG" && ev.dayName !== "MÅNDAG") {
+        if (ev.dayName !== lastSeenDay && ev.dayName !== "MÅNDAG") {
           if (!isPastEvent) {
             dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
           }
@@ -830,7 +825,7 @@
     }
 
     // =========================================================
-    // ⏱️ COUNTDOWN TIMER ENGINE
+    // ⏱️ COUNTDOWN TIMER ENGINE (Hides '00' on Event Finish)
     // =========================================================
     let countdownTargetTime = null;
 
@@ -858,7 +853,7 @@
       const diff = countdownTargetTime - now;
 
       if (diff <= 0) {
-        timerDisplay.innerText = ""; // Hides '00' on finish
+        timerDisplay.innerText = ""; // Empty string so '00' is hidden!
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
@@ -968,7 +963,7 @@
       }
     }
 
-    // BULLETPROOF AUDIO PLAYER (4.5s guaranteed display so test buttons ALWAYS work)
+    // 100% UN-CRASHABLE AUDIO PLAYER (4s guaranteed display timer!)
     function playAlertSound() {
       return new Promise((resolve) => {
         let isDone = false;
@@ -980,24 +975,29 @@
           }
         };
 
-        // 4.5s display timer guarantee
-        const hardTimeout = setTimeout(finish, 4500);
+        // 4.0 second hard safety timeout so audio error NEVER blocks visual alerts!
+        const hardTimeout = setTimeout(finish, 4000);
 
-        if (soundFileList && soundFileList.length > 0) {
-          const nextSoundPath = getNextShuffledSound();
-          const audio = new Audio(nextSoundPath);
-          audio.volume = SOUND_VOLUME;
-          window.currentAudio = audio;
+        try {
+          if (soundFileList && soundFileList.length > 0) {
+            const nextSoundPath = getNextShuffledSound();
+            const audio = new Audio(nextSoundPath);
+            audio.volume = SOUND_VOLUME;
+            window.currentAudio = audio;
 
-          audio.addEventListener('ended', () => { clearTimeout(hardTimeout); finish(); }, { once: true });
-          audio.addEventListener('error', () => { clearTimeout(hardTimeout); finish(); }, { once: true });
+            audio.addEventListener('ended', () => { clearTimeout(hardTimeout); finish(); }, { once: true });
+            audio.addEventListener('error', () => { clearTimeout(hardTimeout); finish(); }, { once: true });
 
-          audio.play().catch(err => {
-            console.log("Audio play caught:", err);
-          });
-        } else {
+            audio.play().catch(err => {
+              console.log("Audio play caught:", err);
+            });
+          } else {
+            clearTimeout(hardTimeout);
+            setTimeout(finish, 2000);
+          }
+        } catch (e) {
           clearTimeout(hardTimeout);
-          setTimeout(finish, 2500);
+          finish();
         }
       });
     }
@@ -1032,15 +1032,15 @@
 
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
-      // 1. Restart Elastic Pop In
+      // 1. Show Alert Banner
       banner.classList.remove('show-alert');
       void banner.offsetWidth; // Force CSS reflow
       banner.classList.add('show-alert');
 
-      // 2. Play Audio & Display for 4.5s
+      // 2. Play Audio in background
       await playAlertSound();
 
-      // 3. Fade Out when music ends
+      // 3. Hide Alert Banner
       banner.classList.remove('show-alert');
 
       // 4. Break pause between queued alerts
