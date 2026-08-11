@@ -10,7 +10,6 @@
       --primary-color: #ace600; /* Lime Green */
       --secondary-color: #00ff88;
       --giveaway-color: #ffea00;
-      --live-red: #ff0055;
       --text-white: #ffffff;
       --bg-dark: rgba(0, 0, 0, 0.92);
       --shadow-dark: rgba(0, 0, 0, 0.95);
@@ -311,7 +310,7 @@
       text-shadow: 0 0 10px var(--shadow-dark);
     }
 
-    /* 📅 WIDGET 5: REFINED BROADCAST TIMELINE BAR */
+    /* 📅 WIDGET 5: PERFECTLY ALIGNED TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -332,25 +331,25 @@
       width: 100%;
     }
 
-    /* Background Rail */
+    /* Single Continuous Central Rail */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
       left: 0;
       width: 100%;
       height: 2px;
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.25);
       transform: translateY(-50%);
       z-index: 1;
     }
 
-    /* Progress Fill Line */
+    /* Single Continuous Progress Fill */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
       left: 0;
       height: 3px;
-      background: linear-gradient(90deg, rgba(172, 230, 0, 0.4), var(--primary-color));
+      background: var(--primary-color);
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
       transform: translateY(-50%);
       z-index: 2;
@@ -358,7 +357,7 @@
       transition: width 0.5s linear;
     }
 
-    /* 📡 Radar Sonar Cursor Ball */
+    /* Radar Sonar Cursor Ball */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -400,7 +399,7 @@
       z-index: 3;
     }
 
-    /* 💎 Glassmorphic Day Badge */
+    /* Glassmorphic Day Badge */
     .timeline-day-badge {
       background: rgba(172, 230, 0, 0.12);
       border: 1px solid rgba(172, 230, 0, 0.7);
@@ -418,7 +417,7 @@
       align-self: center;
     }
 
-    /* 🎯 REFINED EVENT NODE SPAN BAR (|────────────────| Layout) */
+    /* Event Node Container */
     .timeline-node {
       display: flex;
       flex-direction: column;
@@ -426,7 +425,7 @@
       flex: 1;
       align-items: center;
       text-align: center;
-      padding: 0 4px;
+      padding: 0 2px;
       transition: all 0.3s ease;
       text-shadow: 0 2px 6px var(--shadow-dark);
     }
@@ -436,72 +435,46 @@
       font-weight: 800;
       color: #e0e0e0;
       letter-spacing: 0.6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
     }
 
-    /* 🔴 Compact LIVE Pill Badge */
-    .node-live-tag {
-      font-size: 8px;
-      font-weight: 900;
-      background: var(--live-red);
-      color: var(--text-white);
-      padding: 1px 4px;
-      border-radius: 3px;
-      letter-spacing: 0.5px;
-      box-shadow: 0 0 8px rgba(255, 0, 85, 0.8);
-      animation: livePulse 1.5s infinite alternate;
-    }
-
-    @keyframes livePulse {
-      0% { opacity: 0.75; transform: scale(0.95); }
-      100% { opacity: 1; transform: scale(1.05); }
-    }
-
-    /* Neon HUD Segment Bar: |────────────────| */
-    .node-segment-bar {
+    /* Wrapper that aligns tick marks directly on top of main bar */
+    .node-tick-wrapper {
       position: relative;
       width: 100%;
       height: 16px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start; /* Boundary tick sits at left edge of slot */
       margin: 3px 0;
     }
 
-    .segment-line {
-      position: relative;
-      width: 100%;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.25);
-      border-radius: 1px;
-      transition: all 0.3s ease;
-    }
-
-    .segment-line::before {
-      content: '';
+    /* Single Boundary Divider Tick | at start of slot */
+    .node-divider-tick {
       position: absolute;
       left: 0;
-      top: -4px;
+      top: 50%;
+      transform: translateY(-50%);
       width: 2px;
-      height: 10px;
+      height: 12px;
       background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
       transition: all 0.3s ease;
+      z-index: 4;
     }
 
-    .segment-line::after {
+    /* End tick on far right to close the last event slot */
+    .timeline-node.last-node .node-tick-wrapper::after {
       content: '';
       position: absolute;
       right: 0;
-      top: -4px;
+      top: 50%;
+      transform: translateY(-50%);
       width: 2px;
-      height: 10px;
+      height: 12px;
       background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
       transition: all 0.3s ease;
+      z-index: 4;
     }
 
     .node-streamer {
@@ -516,18 +489,10 @@
       color: var(--giveaway-color);
     }
 
-    /* ✨ ACTIVE EVENT ILLUMINATED STATE */
-    .timeline-node.active .segment-line {
-      background: linear-gradient(90deg, rgba(172, 230, 0, 0.4), var(--primary-color));
-      height: 3px;
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
-    }
-
-    .timeline-node.active .segment-line::before,
-    .timeline-node.active .segment-line::after {
+    /* ACTIVE EVENT GLOWING STATE */
+    .timeline-node.active .node-divider-tick {
       background: var(--primary-color);
       height: 16px;
-      top: -6px;
       width: 3px;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.9);
     }
@@ -681,15 +646,15 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (Strict Day System)
+    // 📅 SCHEDULE DATA (August 11, 2026)
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
       { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is ~22:39 CEST)
+      // 🔴 ACTIVE EVENT (Current Time is ~22:43 CEST)
       { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
       { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
-      // TOMORROW (Midnight Cross triggers [ONSDAG] badge automatically)
+      // TOMORROW
       { id: 4, dayName: "ONSDAG", start: "2026-08-12T18:00:00", end: "2026-08-12T20:00:00", timeText: "18:00 - 20:00", name: "Morning Special", giveaway: "" },
       { id: 5, dayName: "ONSDAG", start: "2026-08-12T20:00:00", end: "2026-08-12T22:00:00", timeText: "20:00 - 22:00", name: "Final Boss Stream", giveaway: "🏆 GRAND PRIZE!" }
     ];
@@ -704,8 +669,8 @@
 
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 39 * 60000); // Started 39 mins ago
-      const t4 = new Date(now.getTime() + 21 * 60000); // Ends in 21 mins
+      const t3 = new Date(now.getTime() - 43 * 60000); // Started 43 mins ago
+      const t4 = new Date(now.getTime() + 17 * 60000); // Ends in 17 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
       const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
 
@@ -850,7 +815,7 @@
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
-      eventsRowEl.innerHTML = visibleEvents.map((ev) => {
+      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= new Date(ev.start) && now < new Date(ev.end));
 
@@ -864,14 +829,14 @@
           lastSeenDay = ev.dayName;
         }
 
-        const livePillHtml = isLiveNow ? `<span class="node-live-tag">LIVE</span>` : '';
+        const isLastNode = (index === totalVisible - 1);
 
         return `
           ${dayBadgeHtml}
-          <div class="timeline-node ${isLiveNow ? 'active' : 'inactive'}">
-            <div class="node-time">${escapeHTML(ev.timeText)} ${livePillHtml}</div>
-            <div class="node-segment-bar">
-              <div class="segment-line"></div>
+          <div class="timeline-node ${isLastNode ? 'last-node' : ''} ${isLiveNow ? 'active' : 'inactive'}">
+            <div class="node-time">${escapeHTML(ev.timeText)}</div>
+            <div class="node-tick-wrapper">
+              <div class="node-divider-tick"></div>
             </div>
             <div class="${streamerClass}">${primaryText}</div>
           </div>
