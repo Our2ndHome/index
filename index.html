@@ -26,7 +26,7 @@
       padding: 12px;
       border-radius: 10px;
       color: white;
-      z-index: 999999;
+      z-index: 99999;
       max-width: 360px;
       font-size: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
@@ -71,7 +71,7 @@
       padding-top: 6px;
     }
 
-    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER (34px) */
+    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
     .countdown-widget {
       position: absolute;
       top: 18px;
@@ -80,7 +80,7 @@
       text-align: center;
       white-space: nowrap;
       pointer-events: none;
-      transition: all 0.4s ease-in-out;
+      transition: all 0.5s ease-in-out;
       z-index: 1000;
     }
 
@@ -92,7 +92,7 @@
       text-transform: uppercase;
       margin-bottom: 2px;
       text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
-      transition: all 0.4s ease-in-out;
+      transition: all 0.5s ease-in-out;
     }
 
     .countdown-timer {
@@ -102,7 +102,7 @@
       color: #ffffff; 
       font-variant-numeric: tabular-nums;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
-      transition: all 0.4s ease-in-out;
+      transition: all 0.5s ease-in-out;
     }
 
     .sep-dot {
@@ -110,7 +110,7 @@
       margin: 0 3px;
     }
 
-    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE (48px) */
+    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 16px;
       color: #ace600;
@@ -148,7 +148,7 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER (Matched 34px) */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
       top: 75px;
@@ -164,10 +164,9 @@
       font-weight: 900;
       color: #ffffff;
       text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-      transition: top 0.4s ease-in-out, opacity 0.4s ease-in-out;
+      transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
     }
 
-    /* Positioned perfectly at 125px during SISTA MINUTEN mode */
     body.is-final-minute .goal-widget {
       top: 125px;
     }
@@ -182,14 +181,14 @@
 
     .amount {
       color: #ace600;
-      font-size: 34px; /* Locked at 34px */
+      font-size: 34px;
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       transition: opacity 0.4s ease-in-out;
       display: inline-block;
     }
 
-    /* 📢 WIDGET 2: DONATION ALERT BANNER (High Z-Index & Guaranteed Display) */
+    /* 📢 WIDGET 2: DONATION ALERT BANNER */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -203,13 +202,13 @@
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
-      z-index: 99999;
+      z-index: 2000;
       transition: opacity 0.4s ease, visibility 0.4s ease;
       text-shadow: 0 3px 15px rgba(0,0,0,0.95);
     }
 
     .donor-name {
-      color: #ace600; /* Lime Green #ace600 */
+      color: #ace600; /* Lime Green */
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -235,7 +234,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR */
+    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) */
     .sponsor-widget {
       position: absolute;
       bottom: 80px;
@@ -243,24 +242,13 @@
       transform: translateX(-50%);
       text-align: center;
       z-index: 1000;
-      background: rgba(0, 0, 0, 0.85);
-      padding: 8px 18px;
-      border-radius: 12px;
-      border: 2px solid #ace600;
-      box-shadow: 
-        0 0 15px rgba(0, 0, 0, 0.9),
-        0 0 12px rgba(172, 230, 0, 0.35);
-    }
-
-    .sponsor-label {
-      font-size: 11px;
-      font-weight: 900;
-      color: #ace600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      display: block;
-      margin-bottom: 4px;
-      text-shadow: 0 0 8px rgba(172, 230, 0, 0.5);
+      background: transparent; /* No Background */
+      border: none; /* No Border */
+      box-shadow: none; /* No Shadow */
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .sponsor-logo-container {
@@ -277,7 +265,18 @@
       object-fit: contain;
       transition: opacity 0.6s ease-in-out;
       opacity: 1;
-      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.8));
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.9));
+    }
+
+    .sponsor-label {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ace600; /* #ace600 Lime Green */
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: block;
+      margin-top: 4px; /* Placed UNDER the image */
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
     }
 
     /* 📅 WIDGET 5: NO-BACKGROUND SLIM TIMELINE SCHEDULE BAR */
@@ -302,6 +301,7 @@
       width: 100%;
     }
 
+    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -313,6 +313,7 @@
       z-index: 1;
     }
 
+    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -515,18 +516,18 @@
     <span class="amount" id="totalDisplay">0 kr</span>
   </div>
 
-  <!-- 📢 WIDGET 2: DONATION ALERT BANNER -->
+  <!-- 📢 WIDGET 2: DONATION ALERT -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR -->
+  <!-- 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) -->
   <div class="sponsor-widget" id="sponsorWidget">
-    <span class="sponsor-label">STOLT SPONSOR</span>
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
     </div>
+    <span class="sponsor-label">SPONSORER</span>
   </div>
 
   <!-- 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR -->
@@ -657,7 +658,7 @@
 
       countdownWidget.style.display = 'block';
       scheduleWidget.style.display = 'flex';
-      sponsorWidget.style.display = 'block';
+      sponsorWidget.style.display = 'flex';
       goalWidget.style.display = 'block';
       brbHeader.style.display = 'none';
 
@@ -675,7 +676,7 @@
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE
+    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (Auto-Hides Passed Day Badges)
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
@@ -744,6 +745,9 @@
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= startTime && now < endTime);
 
+        const isPastEvent = (testForcedEventId === -1 && now >= endTime) || 
+                            (testForcedEventId !== -1 && ev.id < testForcedEventId);
+
         let alignClass = "middle-node";
         if (index === 0) alignClass = "first-node";
         else if (index === totalVisible - 1) alignClass = "last-node";
@@ -756,7 +760,11 @@
 
         let dayBadgeHtml = "";
         if (ev.dayName !== currentActiveDay && ev.dayName !== lastSeenDay) {
-          dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
+          if (!isPastEvent) {
+            dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
+          }
+          lastSeenDay = ev.dayName;
+        } else {
           lastSeenDay = ev.dayName;
         }
 
@@ -966,7 +974,6 @@
           }
         };
 
-        // 4.0 second hard safety timeout so audio error NEVER blocks visual alerts!
         const hardTimeout = setTimeout(finish, 4000);
 
         try {
