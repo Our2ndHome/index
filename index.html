@@ -310,7 +310,7 @@
       text-shadow: 0 0 10px var(--shadow-dark);
     }
 
-    /* 📅 WIDGET 5: PERFECTLY ALIGNED TIMELINE BAR */
+    /* 📅 WIDGET 5: PERFECTLY CENTERED TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -331,7 +331,7 @@
       width: 100%;
     }
 
-    /* Single Continuous Central Rail */
+    /* Single Central Rail */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -343,7 +343,7 @@
       z-index: 1;
     }
 
-    /* Single Continuous Progress Fill */
+    /* Single Progress Fill */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -417,7 +417,7 @@
       align-self: center;
     }
 
-    /* Event Node Container */
+    /* Event Node Container with Symmetrical Heights */
     .timeline-node {
       display: flex;
       flex-direction: column;
@@ -430,25 +430,30 @@
       text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
+    /* Top Element: Fixed 22px Height */
     .node-time {
+      height: 22px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
       font-size: 11px;
       font-weight: 800;
       color: #e0e0e0;
       letter-spacing: 0.6px;
+      white-space: nowrap;
     }
 
-    /* Wrapper that aligns tick marks directly on top of main bar */
+    /* Middle Element: Tick Wrapper (Locks Tick to Center) */
     .node-tick-wrapper {
       position: relative;
       width: 100%;
       height: 16px;
       display: flex;
       align-items: center;
-      justify-content: flex-start; /* Boundary tick sits at left edge of slot */
-      margin: 3px 0;
+      justify-content: flex-start;
     }
 
-    /* Single Boundary Divider Tick | at start of slot */
+    /* Single Boundary Divider Tick | */
     .node-divider-tick {
       position: absolute;
       left: 0;
@@ -477,7 +482,12 @@
       z-index: 4;
     }
 
+    /* Bottom Element: Fixed 22px Height */
     .node-streamer {
+      height: 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
       font-size: 14px;
       font-weight: 900;
       color: var(--text-white);
@@ -650,7 +660,7 @@
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
       { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is ~22:43 CEST)
+      // 🔴 ACTIVE EVENT (Current Time is ~22:47 CEST)
       { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
       { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
@@ -669,8 +679,8 @@
 
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 43 * 60000); // Started 43 mins ago
-      const t4 = new Date(now.getTime() + 17 * 60000); // Ends in 17 mins
+      const t3 = new Date(now.getTime() - 47 * 60000); // Started 47 mins ago
+      const t4 = new Date(now.getTime() + 13 * 60000); // Ends in 13 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
       const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
 
