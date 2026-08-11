@@ -2,9 +2,23 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Musikhjälpen Multi-Widget Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary-color: #ace600; /* Lime Green */
+      --secondary-color: #00ff88;
+      --giveaway-color: #ffea00;
+      --text-white: #ffffff;
+      --bg-dark: rgba(0, 0, 0, 0.92);
+      --shadow-dark: rgba(0, 0, 0, 0.9);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 0;
@@ -12,8 +26,7 @@
       font-family: 'Montserrat', Arial, sans-serif;
       height: 100vh;
       overflow: hidden;
-      box-sizing: border-box;
-      color: #ffffff;
+      color: var(--text-white);
     }
 
     /* 🎛️ DRAGGABLE TEST CONTROL PANEL */
@@ -21,11 +34,11 @@
       position: absolute;
       top: 15px;
       left: 15px;
-      background: rgba(0, 0, 0, 0.92);
-      border: 2px solid #00ff88;
+      background: var(--bg-dark);
+      border: 2px solid var(--secondary-color);
       padding: 12px;
       border-radius: 10px;
-      color: white;
+      color: var(--text-white);
       z-index: 999999;
       max-width: 360px;
       font-size: 12px;
@@ -35,7 +48,7 @@
     .test-panel h4 {
       margin: 0 0 8px 0;
       font-size: 13px;
-      color: #00ff88;
+      color: var(--secondary-color);
       text-transform: uppercase;
       cursor: move;
       user-select: none;
@@ -50,8 +63,8 @@
 
     .test-panel button {
       background: #222;
-      color: white;
-      border: 1px solid #00ff88;
+      color: var(--text-white);
+      border: 1px solid var(--secondary-color);
       padding: 5px 8px;
       margin: 2px;
       border-radius: 5px;
@@ -61,7 +74,7 @@
     }
 
     .test-panel button:hover {
-      background: #00ff88;
+      background: var(--secondary-color);
       color: black;
     }
 
@@ -69,6 +82,12 @@
       margin-top: 8px;
       border-top: 1px solid #444;
       padding-top: 6px;
+    }
+
+    .sound-status {
+      margin-top: 8px;
+      font-size: 10px;
+      color: #aaa;
     }
 
     /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
@@ -88,10 +107,10 @@
       font-size: 12px;
       font-weight: 800;
       letter-spacing: 1.5px;
-      color: #ace600; 
+      color: var(--primary-color); 
       text-transform: uppercase;
-      margin-bottom: 8px; /* Even 8px Gap */
-      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
+      margin-bottom: 8px;
+      text-shadow: 0 2px 5px var(--shadow-dark);
       transition: all 0.5s ease-in-out;
     }
 
@@ -99,21 +118,21 @@
       font-size: 34px;
       font-weight: 900;
       letter-spacing: 1px;
-      color: #ffffff; 
+      color: var(--text-white); 
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 8px var(--shadow-dark);
       transition: all 0.5s ease-in-out;
     }
 
     .sep-dot {
-      color: #ace600;
+      color: var(--primary-color);
       margin: 0 3px;
     }
 
     /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 16px;
-      color: #ace600;
+      color: var(--primary-color);
       letter-spacing: 3px;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.8);
       animation: finalSecondPulse 1s infinite alternate;
@@ -121,10 +140,8 @@
 
     .countdown-widget.final-minute .countdown-timer {
       font-size: 48px;
-      color: #ffffff;
-      text-shadow: 
-        0 0 15px rgba(0, 0, 0, 0.9),
-        0 0 25px rgba(255, 255, 255, 0.9);
+      color: var(--text-white);
+      text-shadow: 0 0 15px var(--shadow-dark), 0 0 25px rgba(255, 255, 255, 0.9);
     }
 
     @keyframes finalSecondPulse {
@@ -134,7 +151,7 @@
 
     /* Timer Finished State */
     .timer-finished .countdown-label {
-      color: #ace600;
+      color: var(--primary-color);
       font-size: 24px;
       animation: pulseGlow 1.5s infinite alternate;
     }
@@ -148,10 +165,10 @@
       100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
     }
 
-    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER WITH EVEN 8px SPACING */
+    /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
     .goal-widget {
       position: absolute;
-      top: 84px; /* Even 8px gap under countdown timer */
+      top: 84px;
       left: 50%;
       transform: translateX(-50%);
       background: transparent;
@@ -162,26 +179,26 @@
       z-index: 1000;
       font-size: 22px;
       font-weight: 900;
-      color: #ffffff;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+      color: var(--text-white);
+      text-shadow: 0 2px 10px var(--shadow-dark);
       transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
     }
 
     body.is-final-minute .goal-widget {
-      top: 102px; /* Even 8px gap during 48px final minute mode */
+      top: 102px;
     }
 
     .goal-label {
       font-size: 12px;
-      color: #ffffff; /* Pure Crisp White */
+      color: var(--text-white);
       display: block;
-      margin-bottom: 8px; /* Even 8px Gap */
+      margin-bottom: 8px;
       letter-spacing: 1.5px;
-      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 5px var(--shadow-dark);
     }
 
     .amount {
-      color: #ace600;
+      color: var(--primary-color);
       font-size: 34px;
       font-weight: 900;
       text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
@@ -192,9 +209,9 @@
     .goal-target {
       font-size: 11px;
       font-weight: 800;
-      color: #ace600; /* #ace600 Lime Green */
+      color: var(--primary-color);
       display: block;
-      margin-top: 8px; /* Even 8px Gap */
+      margin-top: 8px;
       letter-spacing: 1.2px;
       opacity: 0.9;
       text-shadow: 0 0 10px rgba(172, 230, 0, 0.4);
@@ -216,11 +233,11 @@
       pointer-events: none;
       z-index: 99999;
       transition: opacity 0.4s ease, visibility 0.4s ease;
-      text-shadow: 0 3px 15px rgba(0,0,0,0.95);
+      text-shadow: 0 3px 15px var(--shadow-dark);
     }
 
     .donor-name {
-      color: #ace600; /* Lime Green */
+      color: var(--primary-color);
       display: block;
       font-size: 56px;
       font-weight: 900;
@@ -229,7 +246,7 @@
     }
 
     .alert-subtext {
-      color: #ffffff;
+      color: var(--text-white);
       font-size: 38px;
       font-weight: 900;
     }
@@ -246,7 +263,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR (No Background, Label Underneath) */
+    /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
       bottom: 80px;
@@ -254,10 +271,7 @@
       transform: translateX(-50%);
       text-align: center;
       z-index: 1000;
-      background: transparent; /* No Background */
-      border: none; /* No Border */
-      box-shadow: none; /* No Shadow */
-      padding: 0;
+      background: transparent;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -277,21 +291,21 @@
       object-fit: contain;
       transition: opacity 0.6s ease-in-out;
       opacity: 1;
-      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.9));
+      filter: drop-shadow(0 2px 8px var(--shadow-dark));
     }
 
     .sponsor-label {
       font-size: 11px;
       font-weight: 900;
-      color: #ace600; /* #ace600 Lime Green */
+      color: var(--primary-color);
       letter-spacing: 1.5px;
       text-transform: uppercase;
       display: block;
-      margin-top: 4px; /* Placed UNDER image */
-      text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
+      margin-top: 4px;
+      text-shadow: 0 0 10px var(--shadow-dark);
     }
 
-    /* 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR */
+    /* 📅 WIDGET 5: TIMELINE SCHEDULE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -300,7 +314,6 @@
       width: 96vw;
       background: transparent;
       padding: 0;
-      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -313,7 +326,6 @@
       width: 100%;
     }
 
-    /* Base Timeline Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -325,33 +337,31 @@
       z-index: 1;
     }
 
-    /* Green Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
       left: 0;
       height: 3px;
-      background: #ace600;
+      background: var(--primary-color);
       box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
-      transition: width 1s linear;
+      transition: width 0.5s linear;
     }
 
-    /* 🟡 REAL-TIME GLOWING BALL CURSOR */
     .timeline-cursor {
       position: absolute;
       top: 50%;
       left: 0%;
       width: 14px;
       height: 14px;
-      background: #ace600;
-      box-shadow: 0 0 10px #ace600, 0 0 18px #ace600;
+      background: var(--primary-color);
+      box-shadow: 0 0 10px var(--primary-color), 0 0 18px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
-      transition: left 1s linear;
+      transition: left 0.5s linear;
     }
 
     .timeline-nodes-row {
@@ -364,11 +374,10 @@
       z-index: 3;
     }
 
-    /* DAY BADGE (Clean inline tag for upcoming future day transitions) */
     .timeline-day-badge {
       background: rgba(172, 230, 0, 0.18);
-      border: 1px solid #ace600;
-      color: #ace600;
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
       font-size: 11px;
       font-weight: 900;
       padding: 3px 8px;
@@ -387,23 +396,12 @@
       position: relative;
       flex: 1;
       transition: all 0.3s ease;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
-    .timeline-node.first-node {
-      align-items: flex-start;
-      text-align: left;
-    }
-
-    .timeline-node.middle-node {
-      align-items: center;
-      text-align: center;
-    }
-
-    .timeline-node.last-node {
-      align-items: flex-end;
-      text-align: right;
-    }
+    .timeline-node.first-node { align-items: flex-start; text-align: left; }
+    .timeline-node.middle-node { align-items: center; text-align: center; }
+    .timeline-node.last-node { align-items: flex-end; text-align: right; }
 
     .node-tick {
       width: 3px;
@@ -424,42 +422,40 @@
     .node-streamer {
       font-size: 14px;
       font-weight: 900;
-      color: #ffffff;
+      color: var(--text-white);
       white-space: nowrap;
     }
 
     .node-streamer.is-giveaway-text {
-      color: #ffea00;
+      color: var(--giveaway-color);
     }
 
-    /* 🔴 ACTIVE LIVE TIMELINE NODE */
     .timeline-node.active .node-tick {
       width: 4px;
       height: 18px;
-      background: #ace600;
+      background: var(--primary-color);
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
     }
 
     .timeline-node.active .node-streamer {
       font-size: 17px;
       font-weight: 900;
-      color: #ace600;
+      color: var(--primary-color);
       text-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
     }
 
     .timeline-node.active .node-streamer.is-giveaway-text {
-      color: #ffea00;
+      color: var(--giveaway-color);
       font-size: 17px;
       text-shadow: 0 0 12px rgba(255, 234, 0, 0.9);
     }
 
     .timeline-node.active .node-time {
-      color: #ffffff;
+      color: var(--text-white);
       font-size: 12px;
       font-weight: 900;
     }
 
-    /* BRB Scene Mode Header */
     .brb-header {
       position: absolute;
       top: 35%;
@@ -467,7 +463,7 @@
       transform: translate(-50%, -50%);
       font-size: 64px;
       font-weight: 900;
-      color: #ace600;
+      color: var(--primary-color);
       text-transform: uppercase;
       text-shadow: 0 0 20px rgba(172, 230, 0, 0.6);
       display: none;
@@ -477,7 +473,7 @@
 </head>
 <body>
 
-  <!-- 🎛️ DRAGGABLE TEST CONTROL PANEL -->
+  <!-- 🎛️ TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">🧪 TESTPANEL <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
@@ -516,13 +512,13 @@
     <div class="sound-status" id="soundStatus">Laddar...</div>
   </div>
 
-  <!-- ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER -->
+  <!-- ⏱️ WIDGET 1: COUNTDOWN TIMER -->
   <div class="countdown-widget" id="countdownWidget">
     <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER -->
+  <!-- 💰 WIDGET 3: GOAL COUNTER -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
@@ -535,7 +531,7 @@
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🖼️ WIDGET 4: CENTERED SPONSORSHIP LOGO ROTATOR -->
+  <!-- 🖼️ WIDGET 4: SPONSOR ROTATOR -->
   <div class="sponsor-widget" id="sponsorWidget">
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -543,7 +539,7 @@
     <span class="sponsor-label">SPONSORER</span>
   </div>
 
-  <!-- 📅 WIDGET 5: NO-BACKGROUND TIMELINE SCHEDULE BAR -->
+  <!-- 📅 WIDGET 5: SCHEDULE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -570,26 +566,16 @@
     const SPONSORS_FOLDER = "sponsors";
     const SOUND_VOLUME = 0.8;
     const SPONSOR_ROTATE_SECONDS = 15;
-
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
     // BACKUP SOUNDS
     const TIKTOK_BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
       'sounds/ssstik.io_1786298991426.mp3',
-      'sounds/ssstik.io_1786299005161.mp3',
-      'sounds/ssstik.io_1786299022792.mp3',
-      'sounds/ssstik.io_1786299034631.mp3',
-      'sounds/ssstik.io_1786299046255.mp3',
-      'sounds/ssstik.io_1786299057737.mp3',
-      'sounds/ssstik.io_1786299068259.mp3',
-      'sounds/ssstik.io_1786299079463.mp3',
-      'sounds/ssstik.io_1786299092634.mp3',
-      'sounds/ssstik.io_1786299206154.mp3',
-      'sounds/ssstik.io_1786299216224.mp3'
+      'sounds/ssstik.io_1786299005161.mp3'
     ];
 
-    // BACKUP SPONSOR LOGOS
+    // BACKUP SPONSORS
     const DEFAULT_SPONSORS = [
       'https://via.placeholder.com/140x50/111/ace600?text=SPONSOR+A',
       'https://via.placeholder.com/140x50/111/00ff88?text=SPONSOR+B',
@@ -619,6 +605,13 @@
     let currentSponsorIndex = 0;
     let currentTotal = 0; 
     let testForcedEventId = -1; 
+    let currentAudioInstance = null;
+
+    // Helper: Escape HTML to prevent injection
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
 
     // =========================================================
     // 🖐️ DRAGGABLE PANEL ENGINE
@@ -629,78 +622,63 @@
       if (!panel || !header) return;
 
       let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-      header.onmousedown = dragMouseDown;
-
-      function dragMouseDown(e) {
+      header.onmousedown = (e) => {
         e.preventDefault();
         pos3 = e.clientX;
         pos4 = e.clientY;
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
-      }
-
-      function elementDrag(e) {
-        e.preventDefault();
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        panel.style.top = (panel.offsetTop - pos2) + "px";
-        panel.style.left = (panel.offsetLeft - pos1) + "px";
-      }
-
-      function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-      }
+        document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+        document.onmousemove = (ev) => {
+          ev.preventDefault();
+          pos1 = pos3 - ev.clientX;
+          pos2 = pos4 - ev.clientY;
+          pos3 = ev.clientX;
+          pos4 = ev.clientY;
+          panel.style.top = (panel.offsetTop - pos2) + "px";
+          panel.style.left = (panel.offsetLeft - pos1) + "px";
+        };
+      };
     }
 
     // =========================================================
-    // 🎛️ SCENE MODE SWITCHER ENGINE (?scene=game / starting / brb)
+    // 🎛️ SCENE MODE SWITCHER
     // =========================================================
     function applySceneMode(forcedMode) {
       const urlParams = new URLSearchParams(window.location.search);
       const scene = forcedMode || urlParams.get('scene') || 'all';
 
-      const countdownWidget = document.getElementById('countdownWidget');
-      const scheduleWidget = document.getElementById('scheduleWidget');
-      const sponsorWidget = document.getElementById('sponsorWidget');
-      const goalWidget = document.getElementById('goalWidget');
-      const brbHeader = document.getElementById('brbHeader');
+      const widgets = {
+        countdown: document.getElementById('countdownWidget'),
+        schedule: document.getElementById('scheduleWidget'),
+        sponsor: document.getElementById('sponsorWidget'),
+        goal: document.getElementById('goalWidget'),
+        brb: document.getElementById('brbHeader')
+      };
 
-      countdownWidget.style.display = 'block';
-      scheduleWidget.style.display = 'flex';
-      sponsorWidget.style.display = 'flex';
-      goalWidget.style.display = 'block';
-      brbHeader.style.display = 'none';
+      widgets.countdown.style.display = 'block';
+      widgets.schedule.style.display = 'flex';
+      widgets.sponsor.style.display = 'flex';
+      widgets.goal.style.display = 'block';
+      widgets.brb.style.display = 'none';
 
       if (scene === 'game' || scene === 'overlay') {
-        countdownWidget.style.display = 'none';
-        scheduleWidget.style.display = 'none';
-      } 
-      else if (scene === 'starting') {
-        // Show Countdown + Schedule + Sponsors + Goal
-      } 
-      else if (scene === 'brb' || scene === 'paus') {
-        countdownWidget.style.display = 'none';
-        brbHeader.style.display = 'block';
+        widgets.countdown.style.display = 'none';
+        widgets.schedule.style.display = 'none';
+      } else if (scene === 'brb' || scene === 'paus') {
+        widgets.countdown.style.display = 'none';
+        widgets.brb.style.display = 'block';
       }
     }
 
     // =========================================================
-    // 📅 OPTION A: ROLLING 5-EVENT TIMELINE (No Badges for Current/Past Days)
+    // 📅 SCHEDULE TIMELINE ENGINE (FIXED GAP PROGRESS CALCULATION)
     // =========================================================
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
       const cursorEl = document.getElementById('timelineCursor');
-
       if (!eventsRowEl) return;
 
       const now = new Date();
-
-      // 1. Find Active Event Index
       let activeIndex = 0;
 
       if (testForcedEventId !== -1) {
@@ -708,11 +686,8 @@
         if (found !== -1) activeIndex = found;
       } else {
         const found = ALL_SCHEDULE_EVENTS.findIndex(ev => {
-          const start = new Date(ev.start);
-          const end = new Date(ev.end);
-          return now >= start && now < end;
+          return now >= new Date(ev.start) && now < new Date(ev.end);
         });
-
         if (found !== -1) {
           activeIndex = found;
         } else {
@@ -721,63 +696,62 @@
         }
       }
 
-      // Slice 5 events starting from activeIndex
       let visibleEvents = ALL_SCHEDULE_EVENTS.slice(activeIndex, activeIndex + 5);
       if (visibleEvents.length < 5 && ALL_SCHEDULE_EVENTS.length >= 5) {
-        const startPad = Math.max(0, ALL_SCHEDULE_EVENTS.length - 5);
-        visibleEvents = ALL_SCHEDULE_EVENTS.slice(startPad, ALL_SCHEDULE_EVENTS.length);
+        visibleEvents = ALL_SCHEDULE_EVENTS.slice(ALL_SCHEDULE_EVENTS.length - 5);
       }
 
       const totalVisible = visibleEvents.length;
 
-      // 2. Real-time Progress Fill for the visible 5-event window
+      // Fixed Progress Calculation (Prevents Warp Across Multi-Hour Gaps)
       if (totalVisible > 0) {
-        const windowStart = new Date(visibleEvents[0].start).getTime();
-        const windowEnd = new Date(visibleEvents[totalVisible - 1].end).getTime();
-        const currentTime = now.getTime();
+        let activeLocalIdx = visibleEvents.findIndex(ev => ev.id === (testForcedEventId !== -1 ? testForcedEventId : ALL_SCHEDULE_EVENTS[activeIndex].id));
+        if (activeLocalIdx === -1) activeLocalIdx = 0;
 
-        let progressPct = 0;
-        if (currentTime >= windowEnd) {
-          progressPct = 100;
-        } else if (currentTime > windowStart) {
-          progressPct = ((currentTime - windowStart) / (windowEnd - windowStart)) * 100;
+        const currentEv = visibleEvents[activeLocalIdx];
+        const startMs = new Date(currentEv.start).getTime();
+        const endMs = new Date(currentEv.end).getTime();
+        const nowMs = now.getTime();
+
+        let currentSlotPct = 0;
+        if (testForcedEventId !== -1 || nowMs >= endMs) {
+          currentSlotPct = 1.0;
+        } else if (nowMs > startMs) {
+          currentSlotPct = (nowMs - startMs) / (endMs - startMs);
         }
 
-        if (fillLineEl) fillLineEl.style.width = `${progressPct}%`;
-        if (cursorEl) cursorEl.style.left = `${progressPct}%`;
+        const slotWidthPct = 100 / totalVisible;
+        const totalProgressPct = Math.min(100, Math.max(0, (activeLocalIdx + currentSlotPct) * slotWidthPct));
+
+        if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
+        if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
       }
 
-      // 3. Render 5 Events + Day Badges (NO BADGES FOR CURRENT / PAST DAYS)
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
       eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
-        const startTime = new Date(ev.start);
-        const endTime = new Date(ev.end);
-        
         const isLiveNow = (testForcedEventId === ev.id) || 
-                          (testForcedEventId === -1 && now >= startTime && now < endTime);
+                          (testForcedEventId === -1 && now >= new Date(ev.start) && now < new Date(ev.end));
 
         let alignClass = "middle-node";
         if (index === 0) alignClass = "first-node";
         else if (index === totalVisible - 1) alignClass = "last-node";
 
-        const liveClass = isLiveNow ? "active" : "inactive";
-
-        const hasGiveaway = ev.giveaway && ev.giveaway.trim().length > 0;
-        const primaryText = hasGiveaway ? ev.giveaway : ev.name;
+        const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
+        const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
         const streamerClass = hasGiveaway ? "node-streamer is-giveaway-text" : "node-streamer";
 
         let dayBadgeHtml = "";
         if (ev.dayName !== currentActiveDay && ev.dayName !== lastSeenDay) {
-          dayBadgeHtml = `<div class="timeline-day-badge">${ev.dayName}</div>`;
+          dayBadgeHtml = `<div class="timeline-day-badge">${escapeHTML(ev.dayName)}</div>`;
           lastSeenDay = ev.dayName;
         }
 
         return `
           ${dayBadgeHtml}
-          <div class="timeline-node ${alignClass} ${liveClass}">
-            <div class="node-time">${ev.timeText}</div>
+          <div class="timeline-node ${alignClass} ${isLiveNow ? 'active' : 'inactive'}">
+            <div class="node-time">${escapeHTML(ev.timeText)}</div>
             <div class="node-tick"></div>
             <div class="${streamerClass}">${primaryText}</div>
           </div>
@@ -791,7 +765,7 @@
     }
 
     // =========================================================
-    // 🖼️ SPONSORSHIP LOGO ROTATOR
+    // 🖼️ SPONSOR ROTATOR
     // =========================================================
     async function loadSponsorsAutomatically() {
       try {
@@ -801,10 +775,7 @@
           const apiSponsors = files
             .filter(f => f.type === 'file' && f.name.match(/\.(png|jpg|jpeg|svg|webp)$/i))
             .map(f => `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
-
-          if (apiSponsors.length > 0) {
-            sponsorFileList = apiSponsors;
-          }
+          if (apiSponsors.length > 0) sponsorFileList = apiSponsors;
         }
       } catch (e) {}
 
@@ -815,7 +786,6 @@
     function updateSponsorLogo() {
       const img = document.getElementById('sponsorLogo');
       if (!img || sponsorFileList.length === 0) return;
-
       img.style.opacity = '0';
       setTimeout(() => {
         img.src = sponsorFileList[currentSponsorIndex];
@@ -830,18 +800,13 @@
     }
 
     // =========================================================
-    // ⏱️ COUNTDOWN TIMER ENGINE (Hides '00' on Event Finish)
+    // ⏱️ COUNTDOWN TIMER (FIXED EVENT END DATE)
     // =========================================================
     let countdownTargetTime = null;
 
     function getEventTargetDate() {
-      const now = new Date();
-      let targetYear = now.getFullYear();
-      let target = new Date(`${targetYear}-12-06T20:00:00`);
-      if (now > target) {
-        target = new Date(`${targetYear + 1}-12-06T20:00:00`);
-      }
-      return target.getTime();
+      // Synchronized with schedule end: Dec 16, 2026 at 23:00:00
+      return new Date("2026-12-16T23:00:00").getTime();
     }
 
     function initCountdown() {
@@ -854,11 +819,10 @@
       const widget = document.getElementById('countdownWidget');
       const label = document.getElementById('countdownLabel');
       const timerDisplay = document.getElementById('countdownTimer');
-      const now = Date.now();
-      const diff = countdownTargetTime - now;
+      const diff = countdownTargetTime - Date.now();
 
       if (diff <= 0) {
-        timerDisplay.innerText = ""; // Empty string so '00' is hidden!
+        timerDisplay.innerText = "";
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
         widget.classList.remove('final-minute');
         widget.classList.add('timer-finished');
@@ -890,11 +854,9 @@
       const mStr = String(minutes).padStart(2, '0');
       const sStr = String(seconds).padStart(2, '0');
 
-      if (days > 0) {
-        timerDisplay.innerHTML = `${days}D <span class="sep-dot">•</span> ${hStr}:${mStr}:${sStr}`;
-      } else {
-        timerDisplay.innerHTML = `${hStr}:${mStr}:${sStr}`;
-      }
+      timerDisplay.innerHTML = days > 0 
+        ? `${days}D <span class="sep-dot">•</span> ${hStr}:${mStr}:${sStr}`
+        : `${hStr}:${mStr}:${sStr}`;
     }
 
     function simulateEndGame() {
@@ -908,15 +870,15 @@
     }
 
     // =========================================================
-    // 📢 SOUND SHUFFLE POOL & ALERT ENGINE
+    // 📢 SOUND & ALERT ENGINE
     // =========================================================
     function shuffleArray(array) {
-      const shuffled = [...array];
-      for (let i = shuffled.length - 1; i > 0; i--) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
-      return shuffled;
+      return arr;
     }
 
     function getNextShuffledSound() {
@@ -935,9 +897,7 @@
         if (txtRes.ok) {
           const text = await txtRes.text();
           const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
-          if (lines.length > 0) {
-            foundSounds = lines.map(file => `sounds/${encodeURIComponent(file)}`);
-          }
+          if (lines.length > 0) foundSounds = lines.map(file => `sounds/${encodeURIComponent(file)}`);
         }
       } catch (e) {}
 
@@ -946,32 +906,27 @@
           const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
           if (response.ok) {
             const files = await response.json();
-            const apiSounds = files
-              .filter(f => f.type === 'file' && f.name.match(/\.(mp3|wav|ogg|m4a)$/i))
-              .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
-
-            if (apiSounds.length > 0) {
-              foundSounds = apiSounds;
-            }
+            const apiSounds = files.filter(f => f.type === 'file' && f.name.match(/\.(mp3|wav|ogg|m4a)$/i))
+                                  .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
+            if (apiSounds.length > 0) foundSounds = apiSounds;
           }
         } catch (e) {}
       }
 
-      if (foundSounds.length === 0) {
-        foundSounds = TIKTOK_BACKUP_SOUNDS;
-      }
-
-      soundFileList = foundSounds;
-
+      soundFileList = foundSounds.length > 0 ? foundSounds : TIKTOK_BACKUP_SOUNDS;
       if (statusElement) {
-        statusElement.innerHTML = `<b>${soundFileList.length} ljud redo!</b><br><span style="color:#00ff88;">Ljudfiler laddade framgångsrikt.</span>`;
+        statusElement.innerHTML = `<b>${soundFileList.length} ljud redo!</b>`;
       }
     }
 
-    // 100% UN-CRASHABLE AUDIO PLAYER (4s guaranteed display timer!)
     function playAlertSound() {
       return new Promise((resolve) => {
         let isDone = false;
+
+        if (currentAudioInstance) {
+          currentAudioInstance.pause();
+          currentAudioInstance = null;
+        }
 
         const finish = () => {
           if (!isDone) {
@@ -980,21 +935,21 @@
           }
         };
 
-        const hardTimeout = setTimeout(finish, 4000);
+        const hardTimeout = setTimeout(() => {
+          if (currentAudioInstance) currentAudioInstance.pause();
+          finish();
+        }, 4000);
 
         try {
-          if (soundFileList && soundFileList.length > 0) {
-            const nextSoundPath = getNextShuffledSound();
-            const audio = new Audio(nextSoundPath);
+          if (soundFileList.length > 0) {
+            const audio = new Audio(getNextShuffledSound());
             audio.volume = SOUND_VOLUME;
-            window.currentAudio = audio;
+            currentAudioInstance = audio;
 
             audio.addEventListener('ended', () => { clearTimeout(hardTimeout); finish(); }, { once: true });
             audio.addEventListener('error', () => { clearTimeout(hardTimeout); finish(); }, { once: true });
 
-            audio.play().catch(err => {
-              console.log("Audio play caught:", err);
-            });
+            audio.play().catch(() => finish());
           } else {
             clearTimeout(hardTimeout);
             setTimeout(finish, 2000);
@@ -1007,15 +962,19 @@
     }
 
     // =========================================================
-    // IN-SYNC ALERT QUEUE SYSTEM
+    // ALERT QUEUE SYSTEM (ADDED MISSING enqueueAlert FUNCTION)
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
 
+    function enqueueAlert(donorName, diffAmount, newTotal) {
+      alertQueue.push({ donorName, diffAmount, newTotal });
+      processQueue();
+    }
+
     function updateTotalDisplaySmooth(newTotalText) {
       const display = document.getElementById('totalDisplay');
-      if (!display) return;
-      if (display.innerText === newTotalText) return;
+      if (!display || display.innerText === newTotalText) return;
 
       display.style.opacity = '0';
       setTimeout(() => {
@@ -1036,18 +995,14 @@
 
       updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
 
-      // 1. Show Alert Banner
       banner.classList.remove('show-alert');
-      void banner.offsetWidth; // Force CSS reflow
+      void banner.offsetWidth; // Force CSS animation refresh
       banner.classList.add('show-alert');
 
-      // 2. Play Audio in background
       await playAlertSound();
 
-      // 3. Hide Alert Banner
       banner.classList.remove('show-alert');
 
-      // 4. Break pause between queued alerts
       setTimeout(() => {
         isProcessingAlert = false;
         processQueue();
@@ -1055,7 +1010,7 @@
     }
 
     // =========================================================
-    // MANUAL TEST BUTTONS
+    // MANUAL CONTROLS & API POLLING
     // =========================================================
     function simulateDonation(name, amount) {
       currentTotal += amount;
@@ -1068,27 +1023,18 @@
       updateTotalDisplaySmooth('0 kr');
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('live') === '1') {
-      document.getElementById('testPanel').style.display = 'none';
-    }
-
-    // =========================================================
-    // LIVE API POLLING WITH ANTI-CACHE
-    // =========================================================
     async function fetchMusikhjalpenData() {
       try {
-        const cacheBusterUrl = FUNDRAISER_API_URL + '&_t=' + Date.now();
-        const response = await fetch(cacheBusterUrl, { cache: 'no-store' });
+        const response = await fetch(`${FUNDRAISER_API_URL}&_t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) return;
 
         const data = await response.json();
-        let amount = Number(data.amount || 0);
+        const amount = Number(data.amount || 0);
 
         let latestDonorName = "En anonym givare"; 
         if (data.donations && data.donations.length > 0) {
           const lastDonation = data.donations[0];
-          if (lastDonation.name && lastDonation.name.trim() !== "") {
+          if (lastDonation.name && lastDonation.name.trim()) {
             latestDonorName = lastDonation.name;
           }
         }
@@ -1104,13 +1050,17 @@
           currentTotal = amount;
           enqueueAlert(latestDonorName, donationDiff, currentTotal);
         }
-
       } catch (err) {
-        console.log("Connecting to Musikhjälpen API...", err);
+        console.warn("Connecting to API...", err);
       }
     }
 
-    // Initialize All Widgets
+    // Hide control panel if live parameter is set (?live=1)
+    if (new URLSearchParams(window.location.search).get('live') === '1') {
+      document.getElementById('testPanel').style.display = 'none';
+    }
+
+    // INITIALIZATION
     makePanelDraggable();
     applySceneMode();
     renderSchedule();
@@ -1118,6 +1068,7 @@
     loadSponsorsAutomatically();
     loadSoundsAutomatically();
     fetchMusikhjalpenData();
+
     setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
     setInterval(renderSchedule, 5000);
   </script>
