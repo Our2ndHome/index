@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.5</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.6</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -304,7 +304,6 @@
       visibility: visible;
     }
 
-    /* Header Container */
     .giveaway-title-container {
       display: flex;
       flex-direction: column;
@@ -334,7 +333,6 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* Start Countdown Badge Positioned Directly Under the Sub-Title */
     .giveaway-timer-badge {
       display: inline-block;
       margin-top: 8px;
@@ -663,9 +661,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.5) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.6) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.5</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.6</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
@@ -789,13 +787,18 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (August 14, 2026)
+    // 📅 REAL DAY 1 SCHEDULE DATA (4 Streamers + 1 Giveaway kl 19:00-20:00)
     let ALL_SCHEDULE_EVENTS = [
-      { id: 0, dayName: "FREDAG", start: "2026-08-14T18:00:00", end: "2026-08-14T19:30:00", timeText: "18:00 - 19:30", name: "Alex & Robin", giveaway: "" },
-      { id: 1, dayName: "FREDAG", start: "2026-08-14T19:30:00", end: "2026-08-14T21:00:00", timeText: "19:30 - 21:00", name: "Our2ndHome Community Stream", giveaway: "🎁 COMMUNITY GIVEAWAY!" },
-      { id: 2, dayName: "FREDAG", start: "2026-08-14T21:00:00", end: "2026-08-14T23:00:00", timeText: "21:00 - 23:00", name: "GamerGirl99", giveaway: "" },
-      { id: 3, dayName: "FREDAG", start: "2026-08-14T23:00:00", end: "2026-08-15T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
-      { id: 4, dayName: "LÖRDAG", start: "2026-08-15T18:00:00", end: "2026-08-15T20:00:00", timeText: "18:00 - 20:00", name: "Weekend Special", giveaway: "🏆 GRAND PRIZE!" }
+      { id: 0, dayName: "LÖRDAG", start: "2026-08-15T15:00:00", end: "2026-08-15T17:00:00", timeText: "15:00 - 17:00", name: "PixelPionjären", giveaway: "" },
+      { id: 1, dayName: "LÖRDAG", start: "2026-08-15T17:00:00", end: "2026-08-15T19:00:00", timeText: "17:00 - 19:00", name: "KaffeKungen", giveaway: "" },
+      // 🔴 DAY 1 GIVEAWAY SLOT (19:00 - 20:00)
+      { id: 2, dayName: "LÖRDAG", start: "2026-08-15T19:00:00", end: "2026-08-15T20:00:00", timeText: "19:00 - 20:00", name: "Kvälls Giveaway", giveaway: "🎁 GIVEAWAY!" },
+      { id: 3, dayName: "LÖRDAG", start: "2026-08-15T20:00:00", end: "2026-08-15T22:00:00", timeText: "20:00 - 22:00", name: "ZeldaMästaren", giveaway: "" },
+      { id: 4, dayName: "LÖRDAG", start: "2026-08-15T22:00:00", end: "2026-08-16T00:00:00", timeText: "22:00 - 00:00", name: "NattUgglan", giveaway: "" },
+
+      // 📅 DAY 2 TRANSITION (Automatically shows [SÖNDAG] badge after midnight)
+      { id: 5, dayName: "SÖNDAG", start: "2026-08-16T12:00:00", end: "2026-08-16T15:00:00", timeText: "12:00 - 15:00", name: "MorgonGänget", giveaway: "" },
+      { id: 6, dayName: "SÖNDAG", start: "2026-08-16T15:00:00", end: "2026-08-16T18:00:00", timeText: "15:00 - 18:00", name: "RetroSpelaren", giveaway: "" }
     ];
 
     function generateRelativeLiveEvents() {
