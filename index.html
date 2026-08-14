@@ -267,14 +267,14 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL */
+    /* 🎁 WIDGET 6: LARGER TRANSPARENT VERTICAL GIVEAWAY REEL */
     .giveaway-widget {
       position: absolute;
       top: 46%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 520px;
-      height: 270px;
+      width: 600px;  /* Larger Width */
+      height: 320px; /* Larger Height */
       background: transparent;
       border: none;
       box-shadow: none;
@@ -295,38 +295,38 @@
     }
 
     .giveaway-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       color: var(--primary-color);
       text-transform: uppercase;
-      margin-top: 10px;
+      margin-top: 8px;
       text-shadow: 0 0 12px rgba(0, 0, 0, 0.95), 0 0 8px rgba(172, 230, 0, 0.8);
     }
 
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: 210px; /* 5 visible items @ 42px each */
+      height: 250px; /* 5 visible items @ 50px each */
       overflow: hidden;
     }
 
-    /* 300px Center Indicator Lines with Side Fades */
+    /* 270px Smooth Gradient Center Lines */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      width: 300px; 
+      width: 270px; /* Reduced by 30px */
       height: 2px;
-      background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20%, var(--primary-color) 80%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, rgba(172, 230, 0, 0.3) 10%, var(--primary-color) 35%, var(--primary-color) 65%, rgba(172, 230, 0, 0.3) 90%, transparent 100%);
       box-shadow: 0 0 10px var(--primary-color);
       z-index: 10;
       pointer-events: none;
     }
 
-    .reel-viewport::before { top: 84px; }  
-    .reel-viewport::after  { top: 126px; } 
+    .reel-viewport::before { top: 100px; }  /* Top edge of 3rd item */
+    .reel-viewport::after  { top: 150px; } /* Bottom edge of 3rd item */
 
     .reel-track {
       position: absolute;
@@ -340,7 +340,7 @@
     }
 
     .reel-item {
-      height: 42px;
+      height: 50px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -621,9 +621,10 @@
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
       <div id="giveawayStats" style="font-size:11px; color:#ace600; margin:4px 0;">Biljetter: 0 | Givare: 0</div>
-      <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare (12s Spin)</button>
+      <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare (Köläggs)</button>
       <button onclick="skipWinner()" style="background:#ffea00; color:#000;">⏭️ Hoppa Över (Skip)</button>
       <button onclick="claimAndDeleteTicket()" style="background:#ff0055; color:#fff;">✅ Ta Emot & Radera Biljett</button>
+      <button onclick="loadFiftyTestNames()" style="background:#00ff88; color:#000;">🎲 Ladda 50+ Testnamn</button>
     </div>
 
     <div class="panel-section">
@@ -780,12 +781,13 @@
     let currentAudioInstance = null;
 
     // =========================================================
-    // 🎁 GIVEAWAY TICKET DATABASE (EXCLUDES ANONYMOUS / MAX 5 TICKETS)
+    // 🎁 GIVEAWAY TICKET DATABASE & 50+ TEST NAMES
     // =========================================================
     const donorTicketsMap = {}; 
     let currentDrawnWinner = null;
     let isSpinningReel = false;
     let reelAnimationTimer = null;
+    let giveawayResolveCallback = null;
 
     function recordDonorDonation(donorName, donationAmount) {
       if (!donorName || !donorName.trim()) return;
@@ -816,6 +818,28 @@
       updateGiveawayStatsUI();
     }
 
+    // Helper: Pre-load 50+ Swedish Gamer/Donor Test Names
+    function loadFiftyTestNames() {
+      const sampleNames = [
+        "GamerGud", "Matilda99", "PixelPappa", "KaffeLoover", "SvenSvensson", "NinjaBullen", 
+        "KattKungen", "KexChoklad", "MidsommarSvensken", "CozyVibes", "RetroSpelaren", "BulleMedMjolk", 
+        "AffeLover", "VinterSnö", "KallesKaviar", "LusseBulle", "ZeldaFan88", "KroppkakorMaster", 
+        "NorrlandsGuld", "PannkaksKungen", "KepsMannen", "SaftOchBulle", "GladaGivaren", "BosseKatten", 
+        "SmaskigTårta", "Snögubben", "FikaMaster", "Räkmackan", "SuperMario_SE", "SkogsRået", 
+        "TacoFredag", "SmörgåsTårta", "KexchokladGänget", "GrillMästaren", "SaltLakrits", "SurStrömming_88", 
+        "KanelBulle", "VåffelÄskaren", "JulBocken", "PrinsessTårta", "HallonSaft", "KaffePaus", 
+        "SöndagsStek", "KladdkakaMaster", "BastuMästaren", "Morgonkaffe", "AftonStjärnan", "SjöJungfrun", 
+        "MånskensKatten", "Solstrålen", "VikingsÅska", "BulleGubben"
+      ];
+
+      sampleNames.forEach(name => {
+        const randomDonation = (Math.floor(Math.random() * 5) + 1) * 200; // 200 kr to 1000 kr
+        recordDonorDonation(name, randomDonation);
+      });
+
+      alert(`50+ testnamn inlagda i potten! Totalt ${getActiveTicketPool().length} biljetter redo.`);
+    }
+
     // Each active ticket = 1 entry row in the pool
     function getActiveTicketPool() {
       const pool = [];
@@ -836,126 +860,139 @@
       statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
     }
 
-    // 12-Second Downward Spin Logic (Computed WebKit Matrix Real-time Interp -> #ace600 Winner Reveal on Stop)
+    // Push Giveaway Event into Queue (Zero Overlap with Donation Alerts)
     function startGiveawaySpin() {
-      if (isSpinningReel) return;
-
       const ticketPool = getActiveTicketPool();
       if (ticketPool.length === 0) {
-        alert("Inga giltiga biljetter i potten ännu! (Anonyma doneringar ger ej biljetter).");
+        alert("Inga giltiga biljetter i potten ännu! (Klicka på 'Ladda 50+ Testnamn' för att testa).");
         return;
       }
 
-      isSpinningReel = true;
-      const giveawayWidget = document.getElementById('giveawayWidget');
-      const reelTrack = document.getElementById('reelTrack');
-      giveawayWidget.classList.add('show');
+      alertQueue.push({ type: 'giveaway' });
+      processQueue();
+    }
 
-      // Pick random winning ticket entry
-      const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
-      const winnerName = ticketPool[winningTicketIndex];
-      currentDrawnWinner = winnerName;
+    // 15-Second Downward Spin Logic
+    function runGiveawaySpinProcess() {
+      return new Promise((resolve) => {
+        giveawayResolveCallback = resolve;
+        const ticketPool = getActiveTicketPool();
+        if (ticketPool.length === 0) {
+          resolve();
+          return;
+        }
 
-      // Build extended 110-item spin list for 12-second smooth deceleration
-      const spinList = [];
-      for (let i = 0; i < 105; i++) {
+        isSpinningReel = true;
+        const giveawayWidget = document.getElementById('giveawayWidget');
+        const reelTrack = document.getElementById('reelTrack');
+        giveawayWidget.classList.add('show');
+
+        // Pick random winning ticket entry
+        const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
+        const winnerName = ticketPool[winningTicketIndex];
+        currentDrawnWinner = winnerName;
+
+        // Build extended 140-item spin list for 15-second smooth deceleration
+        const spinList = [];
+        for (let i = 0; i < 135; i++) {
+          spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+        }
+
+        // Exact target alignment: Place winner at index (TOTAL - 3) so it lands in 3rd center slot
+        spinList.push(winnerName);
         spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-      }
+        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
 
-      // Exact target alignment: Place winner at index (TOTAL - 3) so it lands in 3rd center slot
-      spinList.push(winnerName);
-      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+        // Reset DOM Reel Position
+        reelTrack.style.transition = 'none';
+        reelTrack.style.transform = 'translateY(0px)';
+        reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
 
-      // Reset DOM Reel Position
-      reelTrack.style.transition = 'none';
-      reelTrack.style.transform = 'translateY(0px)';
-      reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+        const itemHeight = 50; // 50px item height
+        const targetIndex = spinList.length - 3; 
+        const targetTranslateY = -(targetIndex - 2) * itemHeight; 
 
-      const itemHeight = 42;
-      const targetIndex = spinList.length - 3; 
-      const targetTranslateY = -(targetIndex - 2) * itemHeight; 
+        // WebKitMatrix Computed Real-time Position Reader
+        function updateOpacities() {
+          let currentY = 0;
+          try {
+            const matrix = new WebKitCSSMatrix(window.getComputedStyle(reelTrack).transform);
+            currentY = Math.abs(matrix.m42); 
+          } catch (e) {
+            const transformMatch = reelTrack.style.transform.match(/translateY\(([^px]+)px\)/);
+            currentY = transformMatch ? Math.abs(parseFloat(transformMatch[1])) : 0;
+          }
 
-      // Frame-by-frame Computed WebKit Matrix Position Reader for 100% Smooth Dynamic Focus Lens
-      function updateOpacities() {
-        let currentY = 0;
-        try {
-          const matrix = new WebKitCSSMatrix(window.getComputedStyle(reelTrack).transform);
-          currentY = Math.abs(matrix.m42); // Real-time Y translation in pixels
-        } catch (e) {
-          const transformMatch = reelTrack.style.transform.match(/translateY\(([^px]+)px\)/);
-          currentY = transformMatch ? Math.abs(parseFloat(transformMatch[1])) : 0;
-        }
+          const centerIndexFloat = (currentY / itemHeight) + 2;
+          const items = reelTrack.children;
 
-        const centerIndexFloat = (currentY / itemHeight) + 2;
-        const items = reelTrack.children;
+          for (let i = 0; i < items.length; i++) {
+            const dist = Math.abs(i - centerIndexFloat);
 
-        for (let i = 0; i < items.length; i++) {
-          const dist = Math.abs(i - centerIndexFloat);
+            if (dist <= 2.2) {
+              const opacity = Math.max(0.15, 1 - (dist * 0.4));
+              const fontSize = Math.max(16, 32 - (dist * 7));
+              
+              items[i].style.opacity = opacity;
+              items[i].style.fontSize = `${fontSize}px`;
+              items[i].style.color = '#ffffff'; 
 
-          if (dist <= 2.2) {
-            const opacity = Math.max(0.15, 1 - (dist * 0.4));
-            const fontSize = Math.max(16, 30 - (dist * 7));
-            
-            items[i].style.opacity = opacity;
-            items[i].style.fontSize = `${fontSize}px`;
-            items[i].style.color = '#ffffff'; // All passing names stay clean white during spin
-
-            if (dist < 0.35) {
-              items[i].style.textShadow = '0 2px 10px rgba(0,0,0,0.95), 0 0 12px rgba(255,255,255,0.7)';
-              items[i].style.fontWeight = '900';
+              if (dist < 0.35) {
+                items[i].style.textShadow = '0 2px 10px rgba(0,0,0,0.95), 0 0 12px rgba(255,255,255,0.7)';
+                items[i].style.fontWeight = '900';
+              } else {
+                items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+                items[i].style.fontWeight = '800';
+              }
             } else {
-              items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
-              items[i].style.fontWeight = '800';
+              items[i].style.opacity = '0.08';
+              items[i].style.fontSize = '14px';
             }
-          } else {
-            items[i].style.opacity = '0.08';
-            items[i].style.fontSize = '14px';
+          }
+
+          if (isSpinningReel) {
+            reelAnimationTimer = requestAnimationFrame(updateOpacities);
           }
         }
 
-        if (isSpinningReel) {
+        // Start 15-Second Downward Spin
+        setTimeout(() => {
+          reelTrack.style.transition = 'transform 15s cubic-bezier(0.05, 0.88, 0.15, 1)';
+          reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
           reelAnimationTimer = requestAnimationFrame(updateOpacities);
-        }
-      }
+        }, 50);
 
-      // Start 12-Second Downward Spin
-      setTimeout(() => {
-        reelTrack.style.transition = 'transform 12s cubic-bezier(0.05, 0.85, 0.15, 1)';
-        reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
-        reelAnimationTimer = requestAnimationFrame(updateOpacities);
-      }, 50);
+        // Finish Spin after 15 seconds: REVEAL #ace600 WINNER GLOW ON DEAD STOP!
+        setTimeout(() => {
+          isSpinningReel = false;
+          cancelAnimationFrame(reelAnimationTimer);
 
-      // Finish Spin after 12 seconds: REVEAL #ace600 WINNER GLOW ON DEAD STOP!
-      setTimeout(() => {
-        isSpinningReel = false;
-        cancelAnimationFrame(reelAnimationTimer);
-
-        // Lock final winner snap styling
-        const items = reelTrack.children;
-        for (let i = 0; i < items.length; i++) {
-          const dist = Math.abs(i - targetIndex);
-          if (dist === 0) {
-            // 🏆 WINNER GLOW REVEAL IN LIME GREEN (#ace600)!
-            items[i].style.opacity = '1.0';
-            items[i].style.fontSize = '34px';
-            items[i].style.fontWeight = '900';
-            items[i].style.color = '#ace600';
-            items[i].style.textShadow = '0 0 20px #ace600, 0 0 35px #ace600, 0 2px 10px rgba(0,0,0,0.95)';
-          } else if (dist === 1) {
-            items[i].style.opacity = '0.6';
-            items[i].style.fontSize = '22px';
-            items[i].style.fontWeight = '800';
-            items[i].style.color = '#ffffff';
-            items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
-          } else {
-            items[i].style.opacity = '0.2';
-            items[i].style.fontSize = '16px';
-            items[i].style.color = '#ffffff';
-            items[i].style.textShadow = 'none';
+          // Lock final winner snap styling
+          const items = reelTrack.children;
+          for (let i = 0; i < items.length; i++) {
+            const dist = Math.abs(i - targetIndex);
+            if (dist === 0) {
+              // 🏆 WINNER GLOW REVEAL IN LIME GREEN (#ace600)!
+              items[i].style.opacity = '1.0';
+              items[i].style.fontSize = '36px';
+              items[i].style.fontWeight = '900';
+              items[i].style.color = '#ace600';
+              items[i].style.textShadow = '0 0 20px #ace600, 0 0 35px #ace600, 0 2px 10px rgba(0,0,0,0.95)';
+            } else if (dist === 1) {
+              items[i].style.opacity = '0.6';
+              items[i].style.fontSize = '24px';
+              items[i].style.fontWeight = '800';
+              items[i].style.color = '#ffffff';
+              items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+            } else {
+              items[i].style.opacity = '0.2';
+              items[i].style.fontSize = '16px';
+              items[i].style.color = '#ffffff';
+              items[i].style.textShadow = 'none';
+            }
           }
-        }
-      }, 12100);
+        }, 15100);
+      });
     }
 
     // SKIP WINNER (Draw new winner without deleting tickets)
@@ -967,19 +1004,21 @@
     // CLAIM & DELETE TICKET
     function claimAndDeleteTicket() {
       if (isSpinningReel) return;
-      if (!currentDrawnWinner || !donorTicketsMap[currentDrawnWinner]) {
-        document.getElementById('giveawayWidget').classList.remove('show');
-        return;
-      }
-
-      const donorObj = donorTicketsMap[currentDrawnWinner];
-      if (donorObj.ticketsActive > 0) {
-        donorObj.ticketsActive -= 1; // Consume 1 ticket
+      if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
+        const donorObj = donorTicketsMap[currentDrawnWinner];
+        if (donorObj.ticketsActive > 0) {
+          donorObj.ticketsActive -= 1; // Consume 1 ticket
+        }
       }
 
       updateGiveawayStatsUI();
       currentDrawnWinner = null;
       document.getElementById('giveawayWidget').classList.remove('show');
+
+      if (giveawayResolveCallback) {
+        giveawayResolveCallback();
+        giveawayResolveCallback = null;
+      }
     }
 
     function escapeHTML(str) {
@@ -1334,13 +1373,13 @@
     }
 
     // =========================================================
-    // ALERT QUEUE SYSTEM
+    // UNIFIED ALERT & GIVEAWAY QUEUE SYSTEM (ZERO OVERLAPS)
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
 
     function enqueueAlert(donorName, diffAmount, newTotal) {
-      alertQueue.push({ donorName, diffAmount, newTotal });
+      alertQueue.push({ type: 'donation', donorName, diffAmount, newTotal });
       processQueue();
     }
 
@@ -1359,21 +1398,27 @@
       if (isProcessingAlert || alertQueue.length === 0) return;
 
       isProcessingAlert = true;
-      const nextAlert = alertQueue.shift();
+      const nextEvent = alertQueue.shift();
 
-      const banner = document.getElementById('alertBanner');
-      document.getElementById('donorName').innerText = nextAlert.donorName;
-      document.getElementById('alertAmount').innerText = `${nextAlert.diffAmount} kr`;
+      if (nextEvent.type === 'giveaway') {
+        // Execute Giveaway Spin Process
+        await runGiveawaySpinProcess();
+      } else {
+        // Execute Standard Donation Alert Banner Process
+        const banner = document.getElementById('alertBanner');
+        document.getElementById('donorName').innerText = nextEvent.donorName;
+        document.getElementById('alertAmount').innerText = `${nextEvent.diffAmount} kr`;
 
-      updateTotalDisplaySmooth(`${nextAlert.newTotal} kr`);
+        updateTotalDisplaySmooth(`${nextEvent.newTotal} kr`);
 
-      banner.classList.remove('show-alert');
-      void banner.offsetWidth;
-      banner.classList.add('show-alert');
+        banner.classList.remove('show-alert');
+        void banner.offsetWidth;
+        banner.classList.add('show-alert');
 
-      await playAlertSound();
+        await playAlertSound();
 
-      banner.classList.remove('show-alert');
+        banner.classList.remove('show-alert');
+      }
 
       setTimeout(() => {
         isProcessingAlert = false;
