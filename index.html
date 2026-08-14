@@ -267,7 +267,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH FOCUS TRANSFORM */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL */
     .giveaway-widget {
       position: absolute;
       top: 46%;
@@ -275,9 +275,9 @@
       transform: translate(-50%, -50%);
       width: 520px;
       height: 270px;
-      background: transparent; /* Transparent Background */
-      border: none;             /* No Border */
-      box-shadow: none;         /* No Box Shadow */
+      background: transparent;
+      border: none;
+      box-shadow: none;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -311,13 +311,13 @@
       overflow: hidden;
     }
 
-    /* Shorter Center Indicator Lines with Side Fades */
+    /* 300px Center Indicator Lines with Side Fades */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      width: 320px; /* Shorter width */
+      width: 300px; 
       height: 2px;
       background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20%, var(--primary-color) 80%, transparent 100%);
       box-shadow: 0 0 10px var(--primary-color);
@@ -325,8 +325,8 @@
       pointer-events: none;
     }
 
-    .reel-viewport::before { top: 84px; }  /* Top boundary of middle item */
-    .reel-viewport::after  { top: 126px; } /* Bottom boundary of middle item */
+    .reel-viewport::before { top: 84px; }  
+    .reel-viewport::after  { top: 126px; } 
 
     .reel-track {
       position: absolute;
@@ -347,7 +347,7 @@
       font-weight: 900;
       text-transform: uppercase;
       white-space: nowrap;
-      will-change: opacity, font-size;
+      will-change: opacity, font-size, color;
     }
 
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
@@ -621,7 +621,7 @@
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
       <div id="giveawayStats" style="font-size:11px; color:#ace600; margin:4px 0;">Biljetter: 0 | Givare: 0</div>
-      <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare (10s Spin)</button>
+      <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare (12s Spin)</button>
       <button onclick="skipWinner()" style="background:#ffea00; color:#000;">⏭️ Hoppa Över (Skip)</button>
       <button onclick="claimAndDeleteTicket()" style="background:#ff0055; color:#fff;">✅ Ta Emot & Radera Biljett</button>
     </div>
@@ -836,7 +836,7 @@
       statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
     }
 
-    // 10-Second Downward Spin Logic with Dynamic Focus Lens Effect
+    // 12-Second Downward Spin Logic (Computed WebKit Matrix Real-time Interp -> #ace600 Winner Reveal on Stop)
     function startGiveawaySpin() {
       if (isSpinningReel) return;
 
@@ -856,9 +856,9 @@
       const winnerName = ticketPool[winningTicketIndex];
       currentDrawnWinner = winnerName;
 
-      // Build extended 90-item spin list for 10-second smooth deceleration
+      // Build extended 110-item spin list for 12-second smooth deceleration
       const spinList = [];
-      for (let i = 0; i < 85; i++) {
+      for (let i = 0; i < 105; i++) {
         spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
       }
 
@@ -876,30 +876,33 @@
       const targetIndex = spinList.length - 3; 
       const targetTranslateY = -(targetIndex - 2) * itemHeight; 
 
-      // Continuous Focus Lens Update: Transforms every passing name into white focus text
+      // Frame-by-frame Computed WebKit Matrix Position Reader for 100% Smooth Dynamic Focus Lens
       function updateOpacities() {
-        const transformMatch = reelTrack.style.transform.match(/translateY\(([^px]+)px\)/);
-        const currentY = transformMatch ? Math.abs(parseFloat(transformMatch[1])) : 0;
-        
-        // Center of the viewport sits at item index = (currentY / 42) + 2
-        const centerIndexFloat = (currentY / itemHeight) + 2;
+        let currentY = 0;
+        try {
+          const matrix = new WebKitCSSMatrix(window.getComputedStyle(reelTrack).transform);
+          currentY = Math.abs(matrix.m42); // Real-time Y translation in pixels
+        } catch (e) {
+          const transformMatch = reelTrack.style.transform.match(/translateY\(([^px]+)px\)/);
+          currentY = transformMatch ? Math.abs(parseFloat(transformMatch[1])) : 0;
+        }
 
+        const centerIndexFloat = (currentY / itemHeight) + 2;
         const items = reelTrack.children;
+
         for (let i = 0; i < items.length; i++) {
           const dist = Math.abs(i - centerIndexFloat);
 
           if (dist <= 2.2) {
-            // Smooth dynamic interpolation based on pixel distance to center line
             const opacity = Math.max(0.15, 1 - (dist * 0.4));
             const fontSize = Math.max(16, 30 - (dist * 7));
             
             items[i].style.opacity = opacity;
             items[i].style.fontSize = `${fontSize}px`;
-            items[i].style.color = '#ffffff';
+            items[i].style.color = '#ffffff'; // All passing names stay clean white during spin
 
             if (dist < 0.35) {
-              // Direct Focus Center Slot
-              items[i].style.textShadow = '0 0 15px var(--primary-color), 0 0 25px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.9)';
+              items[i].style.textShadow = '0 2px 10px rgba(0,0,0,0.95), 0 0 12px rgba(255,255,255,0.7)';
               items[i].style.fontWeight = '900';
             } else {
               items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
@@ -916,14 +919,14 @@
         }
       }
 
-      // Start 10-Second Downward Spin
+      // Start 12-Second Downward Spin
       setTimeout(() => {
-        reelTrack.style.transition = 'transform 10s cubic-bezier(0.08, 0.82, 0.17, 1)';
+        reelTrack.style.transition = 'transform 12s cubic-bezier(0.05, 0.85, 0.15, 1)';
         reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
         reelAnimationTimer = requestAnimationFrame(updateOpacities);
       }, 50);
 
-      // Finish Spin after 10 seconds
+      // Finish Spin after 12 seconds: REVEAL #ace600 WINNER GLOW ON DEAD STOP!
       setTimeout(() => {
         isSpinningReel = false;
         cancelAnimationFrame(reelAnimationTimer);
@@ -933,20 +936,26 @@
         for (let i = 0; i < items.length; i++) {
           const dist = Math.abs(i - targetIndex);
           if (dist === 0) {
+            // 🏆 WINNER GLOW REVEAL IN LIME GREEN (#ace600)!
             items[i].style.opacity = '1.0';
-            items[i].style.fontSize = '30px';
+            items[i].style.fontSize = '34px';
             items[i].style.fontWeight = '900';
-            items[i].style.textShadow = '0 0 15px var(--primary-color), 0 0 25px rgba(255,255,255,0.9)';
+            items[i].style.color = '#ace600';
+            items[i].style.textShadow = '0 0 20px #ace600, 0 0 35px #ace600, 0 2px 10px rgba(0,0,0,0.95)';
           } else if (dist === 1) {
             items[i].style.opacity = '0.6';
             items[i].style.fontSize = '22px';
             items[i].style.fontWeight = '800';
+            items[i].style.color = '#ffffff';
+            items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
           } else {
             items[i].style.opacity = '0.2';
             items[i].style.fontSize = '16px';
+            items[i].style.color = '#ffffff';
+            items[i].style.textShadow = 'none';
           }
         }
-      }, 10100);
+      }, 12100);
     }
 
     // SKIP WINNER (Draw new winner without deleting tickets)
