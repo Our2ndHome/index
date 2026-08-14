@@ -40,7 +40,7 @@
       border-radius: 10px;
       color: var(--text-white);
       z-index: 999999;
-      max-width: 360px;
+      max-width: 380px;
       font-size: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
@@ -152,7 +152,6 @@
       100% { transform: scale(1.08); }
     }
 
-    /* Timer Finished State */
     .timer-finished .countdown-label {
       color: var(--primary-color);
       font-size: 24px;
@@ -268,6 +267,99 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
+    /* 🎁 WIDGET 6: VERTICAL GIVEAWAY REEL (10s DOWNWARD SPIN) */
+    .giveaway-widget {
+      position: absolute;
+      top: 46%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 520px;
+      height: 270px;
+      background: rgba(0, 0, 0, 0.94);
+      border: 2px solid var(--primary-color);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(172, 230, 0, 0.4), 0 10px 40px rgba(0,0,0,0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99990;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+      overflow: hidden;
+    }
+
+    .giveaway-widget.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .giveaway-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--primary-color);
+      text-transform: uppercase;
+      margin-top: 10px;
+      text-shadow: 0 0 10px rgba(172, 230, 0, 0.6);
+    }
+
+    .reel-viewport {
+      position: relative;
+      width: 100%;
+      height: 210px; /* 5 visible items @ 42px each */
+      overflow: hidden;
+    }
+
+    /* Target Indicator Bracket */
+    .reel-viewport::before, .reel-viewport::after {
+      content: '';
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 2px;
+      background: var(--primary-color);
+      box-shadow: 0 0 10px var(--primary-color);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .reel-viewport::before { top: 84px; }  
+    .reel-viewport::after  { top: 126px; } 
+
+    .reel-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      will-change: transform;
+    }
+
+    .reel-item {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transition: opacity 0.2s ease, font-size 0.2s ease, color 0.2s ease;
+    }
+
+    /* 5-Level Vertical Opacity Fade Rules */
+    .reel-item.opacity-20 { opacity: 0.2; font-size: 16px; color: #ffffff; }
+    .reel-item.opacity-60 { opacity: 0.6; font-size: 22px; color: #ffffff; }
+    .reel-item.opacity-100 { 
+      opacity: 1.0; 
+      font-size: 30px; 
+      color: var(--text-white); 
+      text-shadow: 0 0 15px var(--primary-color);
+    }
+
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
@@ -310,7 +402,7 @@
       text-shadow: 0 0 10px var(--shadow-dark);
     }
 
-    /* 📅 WIDGET 5: PERFECTLY CENTERED TIMELINE BAR */
+    /* 📅 WIDGET 5: TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -331,7 +423,6 @@
       width: 100%;
     }
 
-    /* Single Central Rail */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
@@ -343,7 +434,6 @@
       z-index: 1;
     }
 
-    /* Single Progress Fill */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -357,7 +447,6 @@
       transition: width 0.5s linear;
     }
 
-    /* Radar Sonar Cursor Ball */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -399,7 +488,6 @@
       z-index: 3;
     }
 
-    /* Glassmorphic Day Badge */
     .timeline-day-badge {
       background: rgba(172, 230, 0, 0.12);
       border: 1px solid rgba(172, 230, 0, 0.7);
@@ -417,7 +505,6 @@
       align-self: center;
     }
 
-    /* Event Node Container with Symmetrical Heights */
     .timeline-node {
       display: flex;
       flex-direction: column;
@@ -430,7 +517,6 @@
       text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
-    /* Top Element: Fixed 22px Height */
     .node-time {
       height: 22px;
       display: flex;
@@ -443,7 +529,6 @@
       white-space: nowrap;
     }
 
-    /* Middle Element: Tick Wrapper (Locks Tick to Center) */
     .node-tick-wrapper {
       position: relative;
       width: 100%;
@@ -453,7 +538,6 @@
       justify-content: flex-start;
     }
 
-    /* Single Boundary Divider Tick | */
     .node-divider-tick {
       position: absolute;
       left: 0;
@@ -467,7 +551,6 @@
       z-index: 4;
     }
 
-    /* End tick on far right to close the last event slot */
     .timeline-node.last-node .node-tick-wrapper::after {
       content: '';
       position: absolute;
@@ -482,7 +565,6 @@
       z-index: 4;
     }
 
-    /* Bottom Element: Fixed 22px Height */
     .node-streamer {
       height: 22px;
       display: flex;
@@ -499,7 +581,6 @@
       color: var(--giveaway-color);
     }
 
-    /* ACTIVE EVENT GLOWING STATE */
     .timeline-node.active .node-divider-tick {
       background: var(--primary-color);
       height: 16px;
@@ -546,10 +627,23 @@
   <!-- 🎛️ TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">🧪 TESTPANEL <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
-    <button onclick="simulateDonation('Anna', 50)">+50 kr (Anna)</button>
-    <button onclick="simulateDonation('Erik', 200)">+200 kr (Erik)</button>
-    <button onclick="simulateDonation('Anonym', 100)">+100 kr (Anonym)</button>
-    <button onclick="resetTotal()" style="border-color:#ff0055;">Nollställ</button>
+    
+    <div class="panel-section">
+      <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
+      <div id="giveawayStats" style="font-size:11px; color:#ace600; margin:4px 0;">Biljetter: 0 | Givare: 0</div>
+      <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare (10s Spin)</button>
+      <button onclick="skipWinner()" style="background:#ffea00; color:#000;">⏭️ Hoppa Över (Skip)</button>
+      <button onclick="claimAndDeleteTicket()" style="background:#ff0055; color:#fff;">✅ Ta Emot & Radera Biljett</button>
+    </div>
+
+    <div class="panel-section">
+      <b>Test Donationer:</b><br>
+      <button onclick="simulateDonation('Lisa', 250)">+250 kr (Lisa - 1 B)</button>
+      <button onclick="simulateDonation('Lisa', 800)">+800 kr (Lisa = Max 5 B)</button>
+      <button onclick="simulateDonation('Erik', 600)">+600 kr (Erik - 3 B)</button>
+      <button onclick="simulateDonation('Anonym', 500)">+500 kr (Anonym - 0 B)</button>
+      <button onclick="resetTotal()" style="border-color:#ff0055;">Nollställ Doneringar</button>
+    </div>
 
     <div class="panel-section">
       <b>Live Schema Test:</b><br>
@@ -565,22 +659,6 @@
     <div class="panel-section">
       <b>Sponsor kontroller:</b><br>
       <button onclick="nextSponsor()">Nästa Sponsor</button>
-    </div>
-
-    <div class="panel-section">
-      <b>Rolling Queue Highlighting Test:</b><br>
-      <button onclick="testLiveHighlight(0)">Testa Slot 1 (Tidigare Idag)</button>
-      <button onclick="testLiveHighlight(2)">Testa Slot 3 (LIVE NU)</button>
-      <button onclick="testLiveHighlight(4)">Testa Slot 5 (Skifte Onsdag)</button>
-      <button onclick="testLiveHighlight(-1)">Automatisk Klocka</button>
-    </div>
-
-    <div class="panel-section">
-      <b>Scenläge förhandsgranskning:</b><br>
-      <button onclick="applySceneMode('game')">Spel Scen (?scene=game)</button>
-      <button onclick="applySceneMode('starting')">Startar Om (?scene=starting)</button>
-      <button onclick="applySceneMode('brb')">BRB / Paus (?scene=brb)</button>
-      <button onclick="applySceneMode('all')">Visa Alla Widgets</button>
     </div>
 
     <div class="sound-status" id="soundStatus">Laddar...</div>
@@ -603,6 +681,14 @@
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
+  </div>
+
+  <!-- 🎁 WIDGET 6: VERTICAL GIVEAWAY REEL -->
+  <div class="giveaway-widget" id="giveawayWidget">
+    <div class="giveaway-title">🎁 GIVEAWAY DRAGNING</div>
+    <div class="reel-viewport">
+      <div class="reel-track" id="reelTrack"></div>
+    </div>
   </div>
 
   <!-- 🖼️ WIDGET 4: SPONSOR ROTATOR -->
@@ -634,6 +720,8 @@
     const FUNDRAISER_SLUG = "our2ndHome";
     const FUNDRAISER_URL = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`;
     const CHECK_INTERVAL_SECONDS = 5;
+    const TICKET_MILESTONE_KR = 200; // 200 kr = 1 Ticket
+    const MAX_TICKETS_PER_USER = 5;  // Max 5 tickets per unique donor
 
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
@@ -660,12 +748,9 @@
     // 📅 SCHEDULE DATA (August 14, 2026)
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "FREDAG", start: "2026-08-14T18:00:00", end: "2026-08-14T19:30:00", timeText: "18:00 - 19:30", name: "Alex & Robin", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is ~19:39 CEST)
       { id: 1, dayName: "FREDAG", start: "2026-08-14T19:30:00", end: "2026-08-14T21:00:00", timeText: "19:30 - 21:00", name: "Our2ndHome Community Stream", giveaway: "🎁 COMMUNITY GIVEAWAY!" },
       { id: 2, dayName: "FREDAG", start: "2026-08-14T21:00:00", end: "2026-08-14T23:00:00", timeText: "21:00 - 23:00", name: "GamerGirl99", giveaway: "" },
       { id: 3, dayName: "FREDAG", start: "2026-08-14T23:00:00", end: "2026-08-15T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
-      
-      // TOMORROW
       { id: 4, dayName: "LÖRDAG", start: "2026-08-15T18:00:00", end: "2026-08-15T20:00:00", timeText: "18:00 - 20:00", name: "Weekend Special", giveaway: "🏆 GRAND PRIZE!" }
     ];
 
@@ -679,10 +764,10 @@
 
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 10 * 60000); // Started 10 mins ago
-      const t4 = new Date(now.getTime() + 50 * 60000); // Ends in 50 mins
+      const t3 = new Date(now.getTime() - 10 * 60000); 
+      const t4 = new Date(now.getTime() + 50 * 60000); 
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
-      const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
+      const t6 = new Date(now.getTime() + 24 * 3600000); 
 
       ALL_SCHEDULE_EVENTS = [
         { id: 0, dayName: dayNames[t1.getDay()], start: formatISO(t1), end: formatISO(t2), timeText: formatTime(t1, t2), name: "Tidigare Streamer A", giveaway: "" },
@@ -703,6 +788,171 @@
     let currentTotal = 0; 
     let testForcedEventId = -1; 
     let currentAudioInstance = null;
+
+    // =========================================================
+    // 🎁 GIVEAWAY TICKET DATABASE (EXCLUDES ANONYMOUS / MAX 5 TICKETS)
+    // =========================================================
+    const donorTicketsMap = {}; 
+    let currentDrawnWinner = null;
+    let isSpinningReel = false;
+    let reelAnimationTimer = null;
+
+    function recordDonorDonation(donorName, donationAmount) {
+      if (!donorName || !donorName.trim()) return;
+
+      const cleanName = donorName.trim();
+
+      // Rule 1: Exclude Anonymous Donors from giveaway tickets
+      if (/anonym/i.test(cleanName)) return;
+
+      if (!donorTicketsMap[cleanName]) {
+        donorTicketsMap[cleanName] = { totalAmount: 0, ticketsEarned: 0, ticketsActive: 0 };
+      }
+
+      const donorObj = donorTicketsMap[cleanName];
+      donorObj.totalAmount += donationAmount;
+
+      // Rule 2: 200 kr = 1 Ticket (Capped at MAX 5 Tickets per donor)
+      const rawCalculatedTickets = Math.floor(donorObj.totalAmount / TICKET_MILESTONE_KR);
+      const cappedTotalTickets = Math.min(MAX_TICKETS_PER_USER, rawCalculatedTickets);
+
+      const addedTickets = cappedTotalTickets - donorObj.ticketsEarned;
+
+      if (addedTickets > 0) {
+        donorObj.ticketsEarned += addedTickets;
+        donorObj.ticketsActive += addedTickets;
+      }
+
+      updateGiveawayStatsUI();
+    }
+
+    // Each active ticket = 1 entry row in the pool
+    function getActiveTicketPool() {
+      const pool = [];
+      for (const [name, donor] of Object.entries(donorTicketsMap)) {
+        for (let i = 0; i < donor.ticketsActive; i++) {
+          pool.push(name);
+        }
+      }
+      return pool;
+    }
+
+    function updateGiveawayStatsUI() {
+      const statsEl = document.getElementById('giveawayStats');
+      if (!statsEl) return;
+
+      const pool = getActiveTicketPool();
+      const uniqueDonorsCount = Object.keys(donorTicketsMap).length;
+      statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
+    }
+
+    // 10-Second Downward Spin Logic
+    function startGiveawaySpin() {
+      if (isSpinningReel) return;
+
+      const ticketPool = getActiveTicketPool();
+      if (ticketPool.length === 0) {
+        alert("Inga giltiga biljetter i potten ännu! (Anonyma doneringar ger ej biljetter).");
+        return;
+      }
+
+      isSpinningReel = true;
+      const giveawayWidget = document.getElementById('giveawayWidget');
+      const reelTrack = document.getElementById('reelTrack');
+      giveawayWidget.classList.add('show');
+
+      // Pick random winning ticket entry
+      const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
+      const winnerName = ticketPool[winningTicketIndex];
+      currentDrawnWinner = winnerName;
+
+      // Build extended 90-item spin list for 10-second smooth deceleration
+      const spinList = [];
+      for (let i = 0; i < 85; i++) {
+        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+      }
+
+      // Exact target alignment: Place winner at index (TOTAL - 3) so it lands in 3rd center slot
+      spinList.push(winnerName);
+      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+
+      // Reset DOM Reel Position
+      reelTrack.style.transition = 'none';
+      reelTrack.style.transform = 'translateY(0px)';
+      reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item opacity-20">${escapeHTML(name)}</div>`).join('');
+
+      const itemHeight = 42;
+      const targetIndex = spinList.length - 3; 
+      const targetTranslateY = -(targetIndex - 2) * itemHeight; 
+
+      // Real-time 5-Level Opacity Updates during spin
+      function updateOpacities() {
+        const currentY = Math.abs(parseFloat(reelTrack.style.transform.replace('translateY(', '').replace('px)', '')) || 0);
+        const centerIndex = Math.round(currentY / itemHeight) + 2;
+
+        const items = reelTrack.children;
+        for (let i = 0; i < items.length; i++) {
+          const dist = Math.abs(i - centerIndex);
+          items[i].className = 'reel-item';
+
+          if (dist === 0) items[i].classList.add('opacity-100'); // Full White Winner
+          else if (dist === 1) items[i].classList.add('opacity-60');  // 40% Faded
+          else items[i].classList.add('opacity-20');  // 80% Faded
+        }
+
+        if (isSpinningReel) {
+          reelAnimationTimer = requestAnimationFrame(updateOpacities);
+        }
+      }
+
+      // Start 10-Second Downward Spin
+      setTimeout(() => {
+        reelTrack.style.transition = 'transform 10s cubic-bezier(0.08, 0.82, 0.17, 1)';
+        reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
+        reelAnimationTimer = requestAnimationFrame(updateOpacities);
+      }, 50);
+
+      // Finish Spin after 10 seconds
+      setTimeout(() => {
+        isSpinningReel = false;
+        cancelAnimationFrame(reelAnimationTimer);
+
+        // Snap final opacities
+        const items = reelTrack.children;
+        for (let i = 0; i < items.length; i++) {
+          const dist = Math.abs(i - targetIndex);
+          items[i].className = 'reel-item';
+          if (dist === 0) items[i].classList.add('opacity-100');
+          else if (dist === 1) items[i].classList.add('opacity-60');
+          else items[i].classList.add('opacity-20');
+        }
+      }, 10100);
+    }
+
+    // SKIP WINNER (Draw new winner without deleting tickets)
+    function skipWinner() {
+      if (isSpinningReel) return;
+      startGiveawaySpin();
+    }
+
+    // CLAIM & DELETE TICKET
+    function claimAndDeleteTicket() {
+      if (isSpinningReel) return;
+      if (!currentDrawnWinner || !donorTicketsMap[currentDrawnWinner]) {
+        document.getElementById('giveawayWidget').classList.remove('show');
+        return;
+      }
+
+      const donorObj = donorTicketsMap[currentDrawnWinner];
+      if (donorObj.ticketsActive > 0) {
+        donorObj.ticketsActive -= 1; // Consume 1 ticket
+      }
+
+      updateGiveawayStatsUI();
+      currentDrawnWinner = null;
+      document.getElementById('giveawayWidget').classList.remove('show');
+    }
 
     function escapeHTML(str) {
       return str.replace(/[&<>'"]/g, 
@@ -1108,6 +1358,7 @@
     // =========================================================
     function simulateDonation(name, amount) {
       currentTotal += amount;
+      recordDonorDonation(name, amount);
       enqueueAlert(name, amount, currentTotal);
     }
 
@@ -1118,7 +1369,6 @@
     }
 
     async function fetchMusikhjalpenData() {
-      // Endpoints to fetch directly from bossan.musikhjalpen.se/our2ndhome with fallback proxies
       const endpoints = [
         `https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
         `https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
@@ -1134,12 +1384,19 @@
           const data = await response.json();
           const amount = Number(data.amount || data.raised || 0);
 
-          let latestDonorName = "En anonym givare"; 
+          let latestDonorName = "Anonym Givare"; 
           if (data.donations && data.donations.length > 0) {
             const lastDonation = data.donations[0];
             if (lastDonation.name && lastDonation.name.trim()) {
               latestDonorName = lastDonation.name;
             }
+
+            // Sync donations into ticket database
+            data.donations.forEach(d => {
+              if (d.amount && d.name) {
+                recordDonorDonation(d.name, Number(d.amount));
+              }
+            });
           }
 
           if (currentTotal === 0 && amount > 0) {
@@ -1154,9 +1411,9 @@
             enqueueAlert(latestDonorName, donationDiff, currentTotal);
           }
 
-          return; // Success!
+          return; // Success
         } catch (err) {
-          // Fall through to next endpoint fallback
+          // Fallback
         }
       }
     }
