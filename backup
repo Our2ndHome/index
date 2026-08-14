@@ -12,7 +12,7 @@
       --giveaway-color: #ffea00;
       --text-white: #ffffff;
       --bg-dark: rgba(0, 0, 0, 0.92);
-      --shadow-dark: rgba(0, 0, 0, 0.9);
+      --shadow-dark: rgba(0, 0, 0, 0.95);
     }
 
     * {
@@ -271,7 +271,7 @@
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 80px;
+      bottom: 85px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -310,7 +310,7 @@
       text-shadow: 0 0 10px var(--shadow-dark);
     }
 
-    /* 📅 WIDGET 5: TIMELINE SCHEDULE BAR */
+    /* 📅 WIDGET 5: PERFECTLY CENTERED TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -331,30 +331,33 @@
       width: 100%;
     }
 
+    /* Single Central Rail */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
       left: 0;
       width: 100%;
       height: 2px;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.25);
       transform: translateY(-50%);
       z-index: 1;
     }
 
+    /* Single Progress Fill */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
       left: 0;
       height: 3px;
       background: var(--primary-color);
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
       transition: width 0.5s linear;
     }
 
+    /* Radar Sonar Cursor Ball */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -362,11 +365,28 @@
       width: 10px;
       height: 10px;
       background: var(--primary-color);
-      box-shadow: 0 0 8px var(--primary-color), 0 0 14px var(--primary-color);
+      box-shadow: 0 0 8px var(--primary-color), 0 0 16px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
       transition: left 0.5s linear;
+    }
+
+    .timeline-cursor::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      border: 1.5px solid var(--primary-color);
+      border-radius: 50%;
+      animation: cursorSonar 1.8s infinite ease-out;
+    }
+
+    @keyframes cursorSonar {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(2.0); opacity: 0; }
     }
 
     .timeline-nodes-row {
@@ -379,23 +399,25 @@
       z-index: 3;
     }
 
+    /* Glassmorphic Day Badge */
     .timeline-day-badge {
-      background: rgba(172, 230, 0, 0.18);
-      border: 1px solid var(--primary-color);
+      background: rgba(172, 230, 0, 0.12);
+      border: 1px solid rgba(172, 230, 0, 0.7);
+      backdrop-filter: blur(4px);
       color: var(--primary-color);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 900;
-      padding: 3px 8px;
-      border-radius: 5px;
-      letter-spacing: 1px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
       white-space: nowrap;
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.3);
-      margin-right: 10px;
+      box-shadow: 0 0 12px rgba(172, 230, 0, 0.25);
+      margin-right: 12px;
       align-self: center;
     }
 
-    /* EVENT NODE SPAN BAR (|────────────────| Layout) */
+    /* Event Node Container with Symmetrical Heights */
     .timeline-node {
       display: flex;
       flex-direction: column;
@@ -403,82 +425,84 @@
       flex: 1;
       align-items: center;
       text-align: center;
-      padding: 0 4px;
+      padding: 0 2px;
       transition: all 0.3s ease;
       text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
+    /* Top Element: Fixed 22px Height */
     .node-time {
+      height: 22px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
       font-size: 11px;
       font-weight: 800;
       color: #e0e0e0;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
+      white-space: nowrap;
     }
 
-    .node-segment-bar {
+    /* Middle Element: Tick Wrapper (Locks Tick to Center) */
+    .node-tick-wrapper {
       position: relative;
       width: 100%;
-      height: 14px;
+      height: 16px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      margin: 3px 0;
+      justify-content: flex-start;
     }
 
-    .segment-line {
-      position: relative;
-      width: 100%;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.3);
-      transition: all 0.3s ease;
-    }
-
-    .segment-line::before {
-      content: '';
+    /* Single Boundary Divider Tick | */
+    .node-divider-tick {
       position: absolute;
       left: 0;
-      top: -4px;
+      top: 50%;
+      transform: translateY(-50%);
       width: 2px;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.5);
+      height: 12px;
+      background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
       transition: all 0.3s ease;
+      z-index: 4;
     }
 
-    .segment-line::after {
+    /* End tick on far right to close the last event slot */
+    .timeline-node.last-node .node-tick-wrapper::after {
       content: '';
       position: absolute;
       right: 0;
-      top: -4px;
+      top: 50%;
+      transform: translateY(-50%);
       width: 2px;
-      height: 10px;
-      background: rgba(255, 255, 255, 0.5);
+      height: 12px;
+      background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
       transition: all 0.3s ease;
+      z-index: 4;
     }
 
+    /* Bottom Element: Fixed 22px Height */
     .node-streamer {
+      height: 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
       font-size: 14px;
       font-weight: 900;
       color: var(--text-white);
       white-space: nowrap;
+      letter-spacing: 0.3px;
     }
 
     .node-streamer.is-giveaway-text {
       color: var(--giveaway-color);
     }
 
-    .timeline-node.active .segment-line {
-      background: rgba(172, 230, 0, 0.6);
-      height: 3px;
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
-    }
-
-    .timeline-node.active .segment-line::before,
-    .timeline-node.active .segment-line::after {
+    /* ACTIVE EVENT GLOWING STATE */
+    .timeline-node.active .node-divider-tick {
       background: var(--primary-color);
-      height: 14px;
-      top: -5px;
+      height: 16px;
       width: 3px;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.9);
     }
@@ -487,13 +511,13 @@
       font-size: 17px;
       font-weight: 900;
       color: var(--primary-color);
-      text-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
+      text-shadow: 0 0 12px rgba(172, 230, 0, 0.8);
     }
 
     .timeline-node.active .node-streamer.is-giveaway-text {
       color: var(--giveaway-color);
       font-size: 17px;
-      text-shadow: 0 0 12px rgba(255, 234, 0, 0.9);
+      text-shadow: 0 0 14px rgba(255, 234, 0, 0.9);
     }
 
     .timeline-node.active .node-time {
@@ -632,15 +656,15 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (Strict Day System)
+    // 📅 SCHEDULE DATA (August 11, 2026)
     let ALL_SCHEDULE_EVENTS = [
       { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
       { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is ~22:35 CEST)
+      // 🔴 ACTIVE EVENT (Current Time is ~22:47 CEST)
       { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
       { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
-      // TOMORROW (Midnight Cross triggers [ONSDAG] badge automatically)
+      // TOMORROW
       { id: 4, dayName: "ONSDAG", start: "2026-08-12T18:00:00", end: "2026-08-12T20:00:00", timeText: "18:00 - 20:00", name: "Morning Special", giveaway: "" },
       { id: 5, dayName: "ONSDAG", start: "2026-08-12T20:00:00", end: "2026-08-12T22:00:00", timeText: "20:00 - 22:00", name: "Final Boss Stream", giveaway: "🏆 GRAND PRIZE!" }
     ];
@@ -655,8 +679,8 @@
 
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 35 * 60000); // Started 35 mins ago
-      const t4 = new Date(now.getTime() + 25 * 60000); // Ends in 25 mins
+      const t3 = new Date(now.getTime() - 47 * 60000); // Started 47 mins ago
+      const t4 = new Date(now.getTime() + 13 * 60000); // Ends in 13 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
       const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
 
@@ -801,7 +825,7 @@
       const currentActiveDay = visibleEvents[0] ? visibleEvents[0].dayName : "";
       let lastSeenDay = currentActiveDay;
 
-      eventsRowEl.innerHTML = visibleEvents.map((ev) => {
+      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
         const isLiveNow = (testForcedEventId === ev.id) || 
                           (testForcedEventId === -1 && now >= new Date(ev.start) && now < new Date(ev.end));
 
@@ -815,12 +839,14 @@
           lastSeenDay = ev.dayName;
         }
 
+        const isLastNode = (index === totalVisible - 1);
+
         return `
           ${dayBadgeHtml}
-          <div class="timeline-node ${isLiveNow ? 'active' : 'inactive'}">
+          <div class="timeline-node ${isLastNode ? 'last-node' : ''} ${isLiveNow ? 'active' : 'inactive'}">
             <div class="node-time">${escapeHTML(ev.timeText)}</div>
-            <div class="node-segment-bar">
-              <div class="segment-line"></div>
+            <div class="node-tick-wrapper">
+              <div class="node-divider-tick"></div>
             </div>
             <div class="${streamerClass}">${primaryText}</div>
           </div>
