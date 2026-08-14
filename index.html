@@ -267,7 +267,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: VERTICAL GIVEAWAY REEL (10s DOWNWARD SPIN) */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH FOCUS TRANSFORM */
     .giveaway-widget {
       position: absolute;
       top: 46%;
@@ -275,10 +275,9 @@
       transform: translate(-50%, -50%);
       width: 520px;
       height: 270px;
-      background: rgba(0, 0, 0, 0.94);
-      border: 2px solid var(--primary-color);
-      border-radius: 16px;
-      box-shadow: 0 0 30px rgba(172, 230, 0, 0.4), 0 10px 40px rgba(0,0,0,0.9);
+      background: transparent; /* Transparent Background */
+      border: none;             /* No Border */
+      box-shadow: none;         /* No Box Shadow */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -302,7 +301,7 @@
       color: var(--primary-color);
       text-transform: uppercase;
       margin-top: 10px;
-      text-shadow: 0 0 10px rgba(172, 230, 0, 0.6);
+      text-shadow: 0 0 12px rgba(0, 0, 0, 0.95), 0 0 8px rgba(172, 230, 0, 0.8);
     }
 
     .reel-viewport {
@@ -312,21 +311,22 @@
       overflow: hidden;
     }
 
-    /* Target Indicator Bracket */
+    /* Shorter Center Indicator Lines with Side Fades */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
-      left: 20px;
-      right: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 320px; /* Shorter width */
       height: 2px;
-      background: var(--primary-color);
+      background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20%, var(--primary-color) 80%, transparent 100%);
       box-shadow: 0 0 10px var(--primary-color);
       z-index: 10;
       pointer-events: none;
     }
 
-    .reel-viewport::before { top: 84px; }  
-    .reel-viewport::after  { top: 126px; } 
+    .reel-viewport::before { top: 84px; }  /* Top boundary of middle item */
+    .reel-viewport::after  { top: 126px; } /* Bottom boundary of middle item */
 
     .reel-track {
       position: absolute;
@@ -347,17 +347,7 @@
       font-weight: 900;
       text-transform: uppercase;
       white-space: nowrap;
-      transition: opacity 0.2s ease, font-size 0.2s ease, color 0.2s ease;
-    }
-
-    /* 5-Level Vertical Opacity Fade Rules */
-    .reel-item.opacity-20 { opacity: 0.2; font-size: 16px; color: #ffffff; }
-    .reel-item.opacity-60 { opacity: 0.6; font-size: 22px; color: #ffffff; }
-    .reel-item.opacity-100 { 
-      opacity: 1.0; 
-      font-size: 30px; 
-      color: var(--text-white); 
-      text-shadow: 0 0 15px var(--primary-color);
+      will-change: opacity, font-size;
     }
 
     /* 🖼️ WIDGET 4: SPONSORSHIP LOGO ROTATOR */
@@ -683,7 +673,7 @@
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🎁 WIDGET 6: VERTICAL GIVEAWAY REEL -->
+  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL -->
   <div class="giveaway-widget" id="giveawayWidget">
     <div class="giveaway-title">🎁 GIVEAWAY DRAGNING</div>
     <div class="reel-viewport">
@@ -802,7 +792,7 @@
 
       const cleanName = donorName.trim();
 
-      // Rule 1: Exclude Anonymous Donors from giveaway tickets
+      // Exclude Anonymous Donors from giveaway tickets
       if (/anonym/i.test(cleanName)) return;
 
       if (!donorTicketsMap[cleanName]) {
@@ -812,7 +802,7 @@
       const donorObj = donorTicketsMap[cleanName];
       donorObj.totalAmount += donationAmount;
 
-      // Rule 2: 200 kr = 1 Ticket (Capped at MAX 5 Tickets per donor)
+      // 200 kr = 1 Ticket (Capped at MAX 5 Tickets per donor)
       const rawCalculatedTickets = Math.floor(donorObj.totalAmount / TICKET_MILESTONE_KR);
       const cappedTotalTickets = Math.min(MAX_TICKETS_PER_USER, rawCalculatedTickets);
 
@@ -846,7 +836,7 @@
       statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
     }
 
-    // 10-Second Downward Spin Logic
+    // 10-Second Downward Spin Logic with Dynamic Focus Lens Effect
     function startGiveawaySpin() {
       if (isSpinningReel) return;
 
@@ -880,25 +870,45 @@
       // Reset DOM Reel Position
       reelTrack.style.transition = 'none';
       reelTrack.style.transform = 'translateY(0px)';
-      reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item opacity-20">${escapeHTML(name)}</div>`).join('');
+      reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
 
       const itemHeight = 42;
       const targetIndex = spinList.length - 3; 
       const targetTranslateY = -(targetIndex - 2) * itemHeight; 
 
-      // Real-time 5-Level Opacity Updates during spin
+      // Continuous Focus Lens Update: Transforms every passing name into white focus text
       function updateOpacities() {
-        const currentY = Math.abs(parseFloat(reelTrack.style.transform.replace('translateY(', '').replace('px)', '')) || 0);
-        const centerIndex = Math.round(currentY / itemHeight) + 2;
+        const transformMatch = reelTrack.style.transform.match(/translateY\(([^px]+)px\)/);
+        const currentY = transformMatch ? Math.abs(parseFloat(transformMatch[1])) : 0;
+        
+        // Center of the viewport sits at item index = (currentY / 42) + 2
+        const centerIndexFloat = (currentY / itemHeight) + 2;
 
         const items = reelTrack.children;
         for (let i = 0; i < items.length; i++) {
-          const dist = Math.abs(i - centerIndex);
-          items[i].className = 'reel-item';
+          const dist = Math.abs(i - centerIndexFloat);
 
-          if (dist === 0) items[i].classList.add('opacity-100'); // Full White Winner
-          else if (dist === 1) items[i].classList.add('opacity-60');  // 40% Faded
-          else items[i].classList.add('opacity-20');  // 80% Faded
+          if (dist <= 2.2) {
+            // Smooth dynamic interpolation based on pixel distance to center line
+            const opacity = Math.max(0.15, 1 - (dist * 0.4));
+            const fontSize = Math.max(16, 30 - (dist * 7));
+            
+            items[i].style.opacity = opacity;
+            items[i].style.fontSize = `${fontSize}px`;
+            items[i].style.color = '#ffffff';
+
+            if (dist < 0.35) {
+              // Direct Focus Center Slot
+              items[i].style.textShadow = '0 0 15px var(--primary-color), 0 0 25px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.9)';
+              items[i].style.fontWeight = '900';
+            } else {
+              items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+              items[i].style.fontWeight = '800';
+            }
+          } else {
+            items[i].style.opacity = '0.08';
+            items[i].style.fontSize = '14px';
+          }
         }
 
         if (isSpinningReel) {
@@ -918,14 +928,23 @@
         isSpinningReel = false;
         cancelAnimationFrame(reelAnimationTimer);
 
-        // Snap final opacities
+        // Lock final winner snap styling
         const items = reelTrack.children;
         for (let i = 0; i < items.length; i++) {
           const dist = Math.abs(i - targetIndex);
-          items[i].className = 'reel-item';
-          if (dist === 0) items[i].classList.add('opacity-100');
-          else if (dist === 1) items[i].classList.add('opacity-60');
-          else items[i].classList.add('opacity-20');
+          if (dist === 0) {
+            items[i].style.opacity = '1.0';
+            items[i].style.fontSize = '30px';
+            items[i].style.fontWeight = '900';
+            items[i].style.textShadow = '0 0 15px var(--primary-color), 0 0 25px rgba(255,255,255,0.9)';
+          } else if (dist === 1) {
+            items[i].style.opacity = '0.6';
+            items[i].style.fontSize = '22px';
+            items[i].style.fontWeight = '800';
+          } else {
+            items[i].style.opacity = '0.2';
+            items[i].style.fontSize = '16px';
+          }
         }
       }, 10100);
     }
