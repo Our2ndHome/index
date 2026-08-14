@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.6</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.7</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -304,6 +304,7 @@
       visibility: visible;
     }
 
+    /* Header Container */
     .giveaway-title-container {
       display: flex;
       flex-direction: column;
@@ -333,6 +334,7 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
+    /* Start Countdown Badge Positioned Directly Under the Sub-Title */
     .giveaway-timer-badge {
       display: inline-block;
       margin-top: 8px;
@@ -661,9 +663,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.6) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.7) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.6</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.7</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
@@ -787,43 +789,47 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 REAL DAY 1 SCHEDULE DATA (4 Streamers + 1 Giveaway kl 19:00-20:00)
-    let ALL_SCHEDULE_EVENTS = [
-      { id: 0, dayName: "LÖRDAG", start: "2026-08-15T15:00:00", end: "2026-08-15T17:00:00", timeText: "15:00 - 17:00", name: "PixelPionjären", giveaway: "" },
-      { id: 1, dayName: "LÖRDAG", start: "2026-08-15T17:00:00", end: "2026-08-15T19:00:00", timeText: "17:00 - 19:00", name: "KaffeKungen", giveaway: "" },
-      // 🔴 DAY 1 GIVEAWAY SLOT (19:00 - 20:00)
-      { id: 2, dayName: "LÖRDAG", start: "2026-08-15T19:00:00", end: "2026-08-15T20:00:00", timeText: "19:00 - 20:00", name: "Kvälls Giveaway", giveaway: "🎁 GIVEAWAY!" },
-      { id: 3, dayName: "LÖRDAG", start: "2026-08-15T20:00:00", end: "2026-08-15T22:00:00", timeText: "20:00 - 22:00", name: "ZeldaMästaren", giveaway: "" },
-      { id: 4, dayName: "LÖRDAG", start: "2026-08-15T22:00:00", end: "2026-08-16T00:00:00", timeText: "22:00 - 00:00", name: "NattUgglan", giveaway: "" },
-
-      // 📅 DAY 2 TRANSITION (Automatically shows [SÖNDAG] badge after midnight)
-      { id: 5, dayName: "SÖNDAG", start: "2026-08-16T12:00:00", end: "2026-08-16T15:00:00", timeText: "12:00 - 15:00", name: "MorgonGänget", giveaway: "" },
-      { id: 6, dayName: "SÖNDAG", start: "2026-08-16T15:00:00", end: "2026-08-16T18:00:00", timeText: "15:00 - 18:00", name: "RetroSpelaren", giveaway: "" }
-    ];
-
-    function generateRelativeLiveEvents() {
+    // 📅 DYNAMIC DYNAMIC SCHEDULE BUILDER (Always Relative to 'now')
+    function buildDynamicLiveSchedule() {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const dayNames = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
 
-      const formatISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
-      const formatTime = (d1, d2) => `${pad(d1.getHours())}:${pad(d1.getMinutes())} - ${pad(d2.getHours())}:${pad(d2.getMinutes())}`;
+      const today = new Date(now);
+      const tomorrow = new Date(now.getTime() + 24 * 3600000);
 
-      const t1 = new Date(now.getTime() - 4 * 3600000);
-      const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 10 * 60000); 
-      const t4 = new Date(now.getTime() + 50 * 60000); 
-      const t5 = new Date(now.getTime() + 2.5 * 3600000);
-      const t6 = new Date(now.getTime() + 24 * 3600000); 
+      const getISO = (d, timeStr) => {
+        const year = d.getFullYear();
+        const month = pad(d.getMonth() + 1);
+        const day = pad(d.getDate());
+        return `${year}-${month}-${day}T${timeStr}:00`;
+      };
 
-      ALL_SCHEDULE_EVENTS = [
-        { id: 0, dayName: dayNames[t1.getDay()], start: formatISO(t1), end: formatISO(t2), timeText: formatTime(t1, t2), name: "Tidigare Streamer A", giveaway: "" },
-        { id: 1, dayName: dayNames[t2.getDay()], start: formatISO(t2), end: formatISO(t3), timeText: formatTime(t2, t3), name: "Tidigare Streamer B", giveaway: "" },
-        { id: 2, dayName: dayNames[t3.getDay()], start: formatISO(t3), end: formatISO(t4), timeText: formatTime(t3, t4), name: "LIVE STREAMER NU", giveaway: "🎁 REALTIDS GIVEAWAY!" },
-        { id: 3, dayName: dayNames[t4.getDay()], start: formatISO(t4), end: formatISO(t5), timeText: formatTime(t4, t5), name: "Kommande Streamer", giveaway: "" },
-        { id: 4, dayName: dayNames[t6.getDay()], start: formatISO(t5), end: formatISO(t6), timeText: formatTime(t5, t6), name: "Morgondagens Event", giveaway: "🏆 NÄSTA DAGS EVENT" }
+      const todayName = dayNames[today.getDay()];
+      const tomorrowName = dayNames[tomorrow.getDay()];
+
+      return [
+        // TODAY's SCHEDULE (5 Streamers + 1 Giveaway kl 19:00-20:00)
+        { id: 0, dayName: todayName, start: getISO(today, "12:00"), end: getISO(today, "15:00"), timeText: "12:00 - 15:00", name: "MorgonSolen", giveaway: "" },
+        { id: 1, dayName: todayName, start: getISO(today, "15:00"), end: getISO(today, "17:00"), timeText: "15:00 - 17:00", name: "PixelPionjären", giveaway: "" },
+        { id: 2, dayName: todayName, start: getISO(today, "17:00"), end: getISO(today, "19:00"), timeText: "17:00 - 19:00", name: "KaffeKungen", giveaway: "" },
+        // 🔴 GIVEAWAY SLOT AT 19:00 - 20:00
+        { id: 3, dayName: todayName, start: getISO(today, "19:00"), end: getISO(today, "20:00"), timeText: "19:00 - 20:00", name: "Kvälls Giveaway", giveaway: "🎁 STOR GIVEAWAY!" },
+        { id: 4, dayName: todayName, start: getISO(today, "20:00"), end: getISO(today, "22:00"), timeText: "20:00 - 22:00", name: "ZeldaMästaren", giveaway: "" },
+        { id: 5, dayName: todayName, start: getISO(today, "22:00"), end: getISO(tomorrow, "00:00"), timeText: "22:00 - 00:00", name: "NattUgglan", giveaway: "" },
+
+        // TOMORROW's SCHEDULE (Triggers Day Badge automatically)
+        { id: 6, dayName: tomorrowName, start: getISO(tomorrow, "12:00"), end: getISO(tomorrow, "15:00"), timeText: "12:00 - 15:00", name: "RetroSpelaren", giveaway: "" },
+        { id: 7, dayName: tomorrowName, start: getISO(tomorrow, "15:00"), end: getISO(tomorrow, "18:00"), timeText: "15:00 - 18:00", name: "SpelExperten", giveaway: "" },
+        { id: 8, dayName: tomorrowName, start: getISO(tomorrow, "18:00"), end: getISO(tomorrow, "20:00"), timeText: "18:00 - 20:00", name: "HelgGänget", giveaway: "" },
+        { id: 9, dayName: tomorrowName, start: getISO(tomorrow, "20:00"), end: getISO(tomorrow, "23:00"), timeText: "20:00 - 23:00", name: "Slutspurt Squad", giveaway: "🏆 FINAL DRAGNING!" }
       ];
+    }
 
+    let ALL_SCHEDULE_EVENTS = buildDynamicLiveSchedule();
+
+    function generateRelativeLiveEvents() {
+      ALL_SCHEDULE_EVENTS = buildDynamicLiveSchedule();
       testForcedEventId = -1;
       renderSchedule();
     }
