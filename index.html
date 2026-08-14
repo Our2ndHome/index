@@ -12,7 +12,7 @@
       --giveaway-color: #ffea00;
       --text-white: #ffffff;
       --bg-dark: rgba(0, 0, 0, 0.92);
-      --shadow-dark: rgba(0, 0, 0, 0.95);
+      --shadow-dark: rgba(0, 0, 0, 0.85);
     }
 
     * {
@@ -111,7 +111,7 @@
       color: var(--primary-color); 
       text-transform: uppercase;
       margin-bottom: 12px;
-      text-shadow: 0 2px 5px var(--shadow-dark);
+      text-shadow: 0 2px 4px var(--shadow-dark);
       transition: all 0.5s ease-in-out;
     }
 
@@ -122,7 +122,7 @@
       letter-spacing: 1px;
       color: var(--text-white); 
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 8px var(--shadow-dark);
+      text-shadow: 0 2px 6px var(--shadow-dark);
       transition: all 0.5s ease-in-out;
     }
 
@@ -131,25 +131,25 @@
       margin: 0 3px;
     }
 
-    /* 🔥 FINAL 60 SECONDS DRAMATIC STATE */
+    /* 🔥 FINAL 60 SECONDS STATE (EASY ON THE EYES) */
     .countdown-widget.final-minute .countdown-label {
       font-size: 16px;
       color: var(--primary-color);
       letter-spacing: 3px;
       margin-bottom: 12px;
-      text-shadow: 0 0 15px rgba(172, 230, 0, 0.8);
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.5);
       animation: finalSecondPulse 1s infinite alternate;
     }
 
     .countdown-widget.final-minute .countdown-timer {
       font-size: 48px;
       color: var(--text-white);
-      text-shadow: 0 0 15px var(--shadow-dark), 0 0 25px rgba(255, 255, 255, 0.9);
+      text-shadow: 0 2px 8px var(--shadow-dark);
     }
 
     @keyframes finalSecondPulse {
       0% { transform: scale(1); }
-      100% { transform: scale(1.08); }
+      100% { transform: scale(1.05); }
     }
 
     .timer-finished .countdown-label {
@@ -163,8 +163,8 @@
     }
 
     @keyframes pulseGlow {
-      0% { text-shadow: 0 0 10px rgba(172, 230, 0, 0.5); }
-      100% { text-shadow: 0 0 25px rgba(172, 230, 0, 1); }
+      0% { text-shadow: 0 0 6px rgba(172, 230, 0, 0.4); }
+      100% { text-shadow: 0 0 12px rgba(172, 230, 0, 0.7); }
     }
 
     /* 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER */
@@ -182,7 +182,7 @@
       font-size: 22px;
       font-weight: 900;
       color: var(--text-white);
-      text-shadow: 0 2px 10px var(--shadow-dark);
+      text-shadow: 0 2px 8px var(--shadow-dark);
       transition: top 0.5s ease-in-out, opacity 0.4s ease-in-out;
     }
 
@@ -197,7 +197,7 @@
       display: block;
       margin-bottom: 8px;
       letter-spacing: 1.5px;
-      text-shadow: 0 2px 5px var(--shadow-dark);
+      text-shadow: 0 2px 4px var(--shadow-dark);
     }
 
     .amount {
@@ -205,7 +205,7 @@
       font-size: 34px;
       line-height: 1;
       font-weight: 900;
-      text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
+      text-shadow: 0 2px 8px var(--shadow-dark);
       transition: opacity 0.4s ease-in-out;
       display: block;
     }
@@ -218,7 +218,7 @@
       margin-top: 8px;
       letter-spacing: 1.2px;
       opacity: 0.9;
-      text-shadow: 0 2px 5px var(--shadow-dark);
+      text-shadow: 0 2px 4px var(--shadow-dark);
     }
 
     /* 📢 WIDGET 2: DONATION ALERT BANNER */
@@ -237,7 +237,7 @@
       pointer-events: none;
       z-index: 99999;
       transition: opacity 0.4s ease, visibility 0.4s ease;
-      text-shadow: 0 3px 15px var(--shadow-dark);
+      text-shadow: 0 3px 12px var(--shadow-dark);
     }
 
     .donor-name {
@@ -246,7 +246,7 @@
       font-size: 56px;
       font-weight: 900;
       margin-bottom: 5px;
-      text-shadow: 0 0 12px rgba(172, 230, 0, 0.5);
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.4);
     }
 
     .alert-subtext {
@@ -263,18 +263,18 @@
 
     @keyframes elasticPop {
       0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: LARGER TRANSPARENT VERTICAL GIVEAWAY REEL */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL */
     .giveaway-widget {
       position: absolute;
       top: 46%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 600px;  /* Larger Width */
-      height: 320px; /* Larger Height */
+      width: 600px;
+      height: 320px;
       background: transparent;
       border: none;
       box-shadow: none;
@@ -295,13 +295,13 @@
     }
 
     .giveaway-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
-      letter-spacing: 2.5px;
+      letter-spacing: 2px;
       color: var(--primary-color);
       text-transform: uppercase;
       margin-top: 8px;
-      text-shadow: 0 0 12px rgba(0, 0, 0, 0.95), 0 0 8px rgba(172, 230, 0, 0.8);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
     }
 
     .reel-viewport {
@@ -311,22 +311,22 @@
       overflow: hidden;
     }
 
-    /* 270px Smooth Gradient Center Lines */
+    /* Exact 2px Green Indicator Lines with Soft Gradient Fade */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      width: 270px; /* Reduced by 30px */
-      height: 2px;
-      background: linear-gradient(90deg, transparent 0%, rgba(172, 230, 0, 0.3) 10%, var(--primary-color) 35%, var(--primary-color) 65%, rgba(172, 230, 0, 0.3) 90%, transparent 100%);
-      box-shadow: 0 0 10px var(--primary-color);
+      width: 270px; 
+      height: 2px; /* Exact 2px height */
+      background: linear-gradient(90deg, transparent 0%, rgba(172, 230, 0, 0.4) 20%, var(--primary-color) 50%, rgba(172, 230, 0, 0.4) 80%, transparent 100%);
+      box-shadow: 0 0 5px rgba(172, 230, 0, 0.5);
       z-index: 10;
       pointer-events: none;
     }
 
-    .reel-viewport::before { top: 100px; }  /* Top edge of 3rd item */
-    .reel-viewport::after  { top: 150px; } /* Bottom edge of 3rd item */
+    .reel-viewport::before { top: 100px; }  /* Top boundary of 3rd item */
+    .reel-viewport::after  { top: 150px; } /* Bottom boundary of 3rd item */
 
     .reel-track {
       position: absolute;
@@ -378,7 +378,7 @@
       object-fit: contain;
       transition: opacity 0.6s ease-in-out;
       opacity: 1;
-      filter: drop-shadow(0 2px 8px var(--shadow-dark));
+      filter: drop-shadow(0 2px 5px var(--shadow-dark));
     }
 
     .sponsor-label {
@@ -389,7 +389,7 @@
       text-transform: uppercase;
       display: block;
       margin-top: 4px;
-      text-shadow: 0 0 10px var(--shadow-dark);
+      text-shadow: 0 2px 5px var(--shadow-dark);
     }
 
     /* 📅 WIDGET 5: TIMELINE BAR */
@@ -430,7 +430,7 @@
       left: 0;
       height: 3px;
       background: var(--primary-color);
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.5);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
@@ -444,7 +444,7 @@
       width: 10px;
       height: 10px;
       background: var(--primary-color);
-      box-shadow: 0 0 8px var(--primary-color), 0 0 16px var(--primary-color);
+      box-shadow: 0 0 6px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
@@ -454,18 +454,18 @@
     .timeline-cursor::after {
       content: '';
       position: absolute;
-      top: -5px;
-      left: -5px;
-      right: -5px;
-      bottom: -5px;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
       border: 1.5px solid var(--primary-color);
       border-radius: 50%;
       animation: cursorSonar 1.8s infinite ease-out;
     }
 
     @keyframes cursorSonar {
-      0% { transform: scale(0.5); opacity: 1; }
-      100% { transform: scale(2.0); opacity: 0; }
+      0% { transform: scale(0.5); opacity: 0.8; }
+      100% { transform: scale(1.8); opacity: 0; }
     }
 
     .timeline-nodes-row {
@@ -480,7 +480,7 @@
 
     .timeline-day-badge {
       background: rgba(172, 230, 0, 0.12);
-      border: 1px solid rgba(172, 230, 0, 0.7);
+      border: 1px solid rgba(172, 230, 0, 0.6);
       backdrop-filter: blur(4px);
       color: var(--primary-color);
       font-size: 10px;
@@ -490,7 +490,7 @@
       letter-spacing: 1.2px;
       text-transform: uppercase;
       white-space: nowrap;
-      box-shadow: 0 0 12px rgba(172, 230, 0, 0.25);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
       margin-right: 12px;
       align-self: center;
     }
@@ -575,20 +575,20 @@
       background: var(--primary-color);
       height: 16px;
       width: 3px;
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.9);
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
     }
 
     .timeline-node.active .node-streamer {
       font-size: 17px;
       font-weight: 900;
       color: var(--primary-color);
-      text-shadow: 0 0 12px rgba(172, 230, 0, 0.8);
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.5);
     }
 
     .timeline-node.active .node-streamer.is-giveaway-text {
       color: var(--giveaway-color);
       font-size: 17px;
-      text-shadow: 0 0 14px rgba(255, 234, 0, 0.9);
+      text-shadow: 0 0 8px rgba(255, 234, 0, 0.6);
     }
 
     .timeline-node.active .node-time {
@@ -606,7 +606,7 @@
       font-weight: 900;
       color: var(--primary-color);
       text-transform: uppercase;
-      text-shadow: 0 0 20px rgba(172, 230, 0, 0.6);
+      text-shadow: 0 0 15px rgba(172, 230, 0, 0.5);
       display: none;
       z-index: 1000;
     }
@@ -818,7 +818,7 @@
       updateGiveawayStatsUI();
     }
 
-    // Helper: Pre-load 50+ Swedish Gamer/Donor Test Names
+    // Pre-load 50+ Swedish Gamer/Donor Test Names
     function loadFiftyTestNames() {
       const sampleNames = [
         "GamerGud", "Matilda99", "PixelPappa", "KaffeLoover", "SvenSvensson", "NinjaBullen", 
@@ -860,8 +860,14 @@
       statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
     }
 
-    // Push Giveaway Event into Queue (Zero Overlap with Donation Alerts)
+    // Enqueue Giveaway Event so it never overlaps donation alerts
     function startGiveawaySpin() {
+      if (isSpinningReel) {
+        // If already spinning on active overlay, trigger a new spin directly!
+        executeReelSpinAnimation();
+        return;
+      }
+
       const ticketPool = getActiveTicketPool();
       if (ticketPool.length === 0) {
         alert("Inga giltiga biljetter i potten ännu! (Klicka på 'Ladda 50+ Testnamn' för att testa).");
@@ -872,136 +878,137 @@
       processQueue();
     }
 
-    // 15-Second Downward Spin Logic
+    // Core 12-Second Slow Downward Spin Logic
     function runGiveawaySpinProcess() {
       return new Promise((resolve) => {
         giveawayResolveCallback = resolve;
-        const ticketPool = getActiveTicketPool();
-        if (ticketPool.length === 0) {
-          resolve();
-          return;
-        }
-
-        isSpinningReel = true;
-        const giveawayWidget = document.getElementById('giveawayWidget');
-        const reelTrack = document.getElementById('reelTrack');
-        giveawayWidget.classList.add('show');
-
-        // Pick random winning ticket entry
-        const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
-        const winnerName = ticketPool[winningTicketIndex];
-        currentDrawnWinner = winnerName;
-
-        // Build extended 140-item spin list for 15-second smooth deceleration
-        const spinList = [];
-        for (let i = 0; i < 135; i++) {
-          spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-        }
-
-        // Exact target alignment: Place winner at index (TOTAL - 3) so it lands in 3rd center slot
-        spinList.push(winnerName);
-        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-
-        // Reset DOM Reel Position
-        reelTrack.style.transition = 'none';
-        reelTrack.style.transform = 'translateY(0px)';
-        reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-
-        const itemHeight = 50; // 50px item height
-        const targetIndex = spinList.length - 3; 
-        const targetTranslateY = -(targetIndex - 2) * itemHeight; 
-
-        // WebKitMatrix Computed Real-time Position Reader
-        function updateOpacities() {
-          let currentY = 0;
-          try {
-            const matrix = new WebKitCSSMatrix(window.getComputedStyle(reelTrack).transform);
-            currentY = Math.abs(matrix.m42); 
-          } catch (e) {
-            const transformMatch = reelTrack.style.transform.match(/translateY\(([^px]+)px\)/);
-            currentY = transformMatch ? Math.abs(parseFloat(transformMatch[1])) : 0;
-          }
-
-          const centerIndexFloat = (currentY / itemHeight) + 2;
-          const items = reelTrack.children;
-
-          for (let i = 0; i < items.length; i++) {
-            const dist = Math.abs(i - centerIndexFloat);
-
-            if (dist <= 2.2) {
-              const opacity = Math.max(0.15, 1 - (dist * 0.4));
-              const fontSize = Math.max(16, 32 - (dist * 7));
-              
-              items[i].style.opacity = opacity;
-              items[i].style.fontSize = `${fontSize}px`;
-              items[i].style.color = '#ffffff'; 
-
-              if (dist < 0.35) {
-                items[i].style.textShadow = '0 2px 10px rgba(0,0,0,0.95), 0 0 12px rgba(255,255,255,0.7)';
-                items[i].style.fontWeight = '900';
-              } else {
-                items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
-                items[i].style.fontWeight = '800';
-              }
-            } else {
-              items[i].style.opacity = '0.08';
-              items[i].style.fontSize = '14px';
-            }
-          }
-
-          if (isSpinningReel) {
-            reelAnimationTimer = requestAnimationFrame(updateOpacities);
-          }
-        }
-
-        // Start 15-Second Downward Spin
-        setTimeout(() => {
-          reelTrack.style.transition = 'transform 15s cubic-bezier(0.05, 0.88, 0.15, 1)';
-          reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
-          reelAnimationTimer = requestAnimationFrame(updateOpacities);
-        }, 50);
-
-        // Finish Spin after 15 seconds: REVEAL #ace600 WINNER GLOW ON DEAD STOP!
-        setTimeout(() => {
-          isSpinningReel = false;
-          cancelAnimationFrame(reelAnimationTimer);
-
-          // Lock final winner snap styling
-          const items = reelTrack.children;
-          for (let i = 0; i < items.length; i++) {
-            const dist = Math.abs(i - targetIndex);
-            if (dist === 0) {
-              // 🏆 WINNER GLOW REVEAL IN LIME GREEN (#ace600)!
-              items[i].style.opacity = '1.0';
-              items[i].style.fontSize = '36px';
-              items[i].style.fontWeight = '900';
-              items[i].style.color = '#ace600';
-              items[i].style.textShadow = '0 0 20px #ace600, 0 0 35px #ace600, 0 2px 10px rgba(0,0,0,0.95)';
-            } else if (dist === 1) {
-              items[i].style.opacity = '0.6';
-              items[i].style.fontSize = '24px';
-              items[i].style.fontWeight = '800';
-              items[i].style.color = '#ffffff';
-              items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
-            } else {
-              items[i].style.opacity = '0.2';
-              items[i].style.fontSize = '16px';
-              items[i].style.color = '#ffffff';
-              items[i].style.textShadow = 'none';
-            }
-          }
-        }, 15100);
+        document.getElementById('giveawayWidget').classList.add('show');
+        executeReelSpinAnimation();
       });
+    }
+
+    function executeReelSpinAnimation() {
+      const ticketPool = getActiveTicketPool();
+      if (ticketPool.length === 0) return;
+
+      isSpinningReel = true;
+      const reelTrack = document.getElementById('reelTrack');
+
+      // Pick random winning ticket entry
+      const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
+      const winnerName = ticketPool[winningTicketIndex];
+      currentDrawnWinner = winnerName;
+
+      // Build 28-item spin list for slow, readable 12-second downward scroll (~2 names/sec)
+      const spinList = [];
+      for (let i = 0; i < 25; i++) {
+        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+      }
+
+      // Exact target alignment: Place winner at index (TOTAL - 3) so it lands in 3rd center slot
+      spinList.push(winnerName);
+      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+
+      // Reset DOM Reel Position
+      reelTrack.style.transition = 'none';
+      reelTrack.style.transform = 'translateY(0px)';
+      reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+
+      const itemHeight = 50; // 50px item height
+      const targetIndex = spinList.length - 3; 
+      const targetTranslateY = -(targetIndex - 2) * itemHeight; 
+
+      // Frame-by-frame Computed WebKit Matrix Position Reader (5-Level Fade Hierarchy During Spin)
+      function updateOpacities() {
+        let currentY = 0;
+        try {
+          const matrix = new WebKitCSSMatrix(window.getComputedStyle(reelTrack).transform);
+          currentY = Math.abs(matrix.m42); 
+        } catch (e) {
+          const transformMatch = reelTrack.style.transform.match(/translateY\(([^px]+)px\)/);
+          currentY = transformMatch ? Math.abs(parseFloat(transformMatch[1])) : 0;
+        }
+
+        const centerIndexFloat = (currentY / itemHeight) + 2;
+        const items = reelTrack.children;
+
+        for (let i = 0; i < items.length; i++) {
+          const dist = Math.abs(i - centerIndexFloat);
+
+          if (dist <= 2.2) {
+            const opacity = Math.max(0.2, 1 - (dist * 0.4));
+            const fontSize = Math.max(18, 30 - (dist * 6));
+            
+            items[i].style.opacity = opacity;
+            items[i].style.fontSize = `${fontSize}px`;
+            items[i].style.color = '#ffffff'; // Always Full White while passing middle during spin
+
+            if (dist < 0.35) {
+              items[i].style.textShadow = '0 2px 8px rgba(0,0,0,0.9)';
+              items[i].style.fontWeight = '900';
+            } else {
+              items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+              items[i].style.fontWeight = '800';
+            }
+          } else {
+            items[i].style.opacity = '0.1';
+            items[i].style.fontSize = '14px';
+            items[i].style.color = '#ffffff';
+          }
+        }
+
+        if (isSpinningReel) {
+          reelAnimationTimer = requestAnimationFrame(updateOpacities);
+        }
+      }
+
+      // Start 12-Second Slow Downward Spin
+      setTimeout(() => {
+        reelTrack.style.transition = 'transform 12s cubic-bezier(0.1, 0.75, 0.25, 1)';
+        reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
+        reelAnimationTimer = requestAnimationFrame(updateOpacities);
+      }, 50);
+
+      // Finish Spin after 12 seconds: REVEAL #ace600 WINNER COLOR ON DEAD STOP!
+      setTimeout(() => {
+        isSpinningReel = false;
+        cancelAnimationFrame(reelAnimationTimer);
+
+        // Snap final winner styling
+        const items = reelTrack.children;
+        for (let i = 0; i < items.length; i++) {
+          const dist = Math.abs(i - targetIndex);
+          if (dist === 0) {
+            // 🏆 WINNER GLOW REVEAL IN LIME GREEN (#ace600)!
+            items[i].style.opacity = '1.0';
+            items[i].style.fontSize = '32px';
+            items[i].style.fontWeight = '900';
+            items[i].style.color = '#ace600';
+            items[i].style.textShadow = '0 0 10px rgba(172, 230, 0, 0.6), 0 2px 8px rgba(0,0,0,0.9)';
+          } else if (dist === 1) {
+            items[i].style.opacity = '0.6';
+            items[i].style.fontSize = '22px';
+            items[i].style.fontWeight = '800';
+            items[i].style.color = '#ffffff';
+            items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+          } else {
+            items[i].style.opacity = '0.2';
+            items[i].style.fontSize = '16px';
+            items[i].style.color = '#ffffff';
+            items[i].style.textShadow = 'none';
+          }
+        }
+      }, 12100);
     }
 
     // SKIP WINNER (Draw new winner without deleting tickets)
     function skipWinner() {
       if (isSpinningReel) return;
-      startGiveawaySpin();
+      executeReelSpinAnimation();
     }
 
-    // CLAIM & DELETE TICKET
+    // CLAIM & DELETE TICKET (Closes overlay & resumes alert queue)
     function claimAndDeleteTicket() {
       if (isSpinningReel) return;
       if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
