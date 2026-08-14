@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.1</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -29,7 +29,7 @@
       color: var(--text-white);
     }
 
-    /* 🎛️ DRAGGABLE TEST CONTROL PANEL */
+    /* 🎛️ DRAGGABLE TEST CONTROL PANEL WITH VERSION TAG */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -59,6 +59,16 @@
       padding: 5px 8px;
       border-radius: 5px;
       border: 1px dashed rgba(0, 255, 136, 0.4);
+    }
+
+    .version-badge {
+      background: var(--secondary-color);
+      color: #000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
     }
 
     .test-panel button {
@@ -131,7 +141,7 @@
       margin: 0 3px;
     }
 
-    /* 🔥 FINAL 60 SECONDS STATE (EASY ON THE EYES) */
+    /* 🔥 FINAL 60 SECONDS STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 16px;
       color: var(--primary-color);
@@ -267,14 +277,14 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH 2-LINE HEADER */
     .giveaway-widget {
       position: absolute;
       top: 46%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 600px;
-      height: 320px;
+      height: 300px;
       background: transparent;
       border: none;
       box-shadow: none;
@@ -294,24 +304,41 @@
       visibility: visible;
     }
 
-    .giveaway-title {
-      font-size: 13px;
+    /* 2-Line Header Container */
+    .giveaway-title-container {
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 6px;
+    }
+
+    .giveaway-head-title {
+      font-size: 14px;
       font-weight: 900;
       letter-spacing: 2px;
       color: var(--primary-color);
       text-transform: uppercase;
-      margin-top: 8px;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+    }
+
+    .giveaway-sub-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: var(--text-white);
+      opacity: 0.85;
+      text-transform: uppercase;
+      margin-top: 2px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: 250px; /* 5 visible items @ 50px each */
+      height: 215px; /* 5 visible items @ 43px each for tighter spacing */
       overflow: hidden;
     }
 
-    /* Exact 2px Green Indicator Lines with Soft Gradient Fade */
+    /* Image-Matched Green Line Fade (Solid line fading softly at 20px tips) */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
@@ -319,14 +346,14 @@
       transform: translateX(-50%);
       width: 270px; 
       height: 2px; /* Exact 2px height */
-      background: linear-gradient(90deg, transparent 0%, rgba(172, 230, 0, 0.4) 20%, var(--primary-color) 50%, rgba(172, 230, 0, 0.4) 80%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20px, var(--primary-color) calc(100% - 20px), transparent 100%);
       box-shadow: 0 0 5px rgba(172, 230, 0, 0.5);
       z-index: 10;
       pointer-events: none;
     }
 
-    .reel-viewport::before { top: 100px; }  /* Top boundary of 3rd item */
-    .reel-viewport::after  { top: 150px; } /* Bottom boundary of 3rd item */
+    .reel-viewport::before { top: 86px; }  /* Top boundary of 3rd item */
+    .reel-viewport::after  { top: 129px; } /* Bottom boundary of 3rd item */
 
     .reel-track {
       position: absolute;
@@ -340,7 +367,7 @@
     }
 
     .reel-item {
-      height: 50px;
+      height: 43px; /* Tighter 43px vertical slot spacing */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -614,9 +641,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.1) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.1</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
@@ -674,9 +701,12 @@
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL -->
+  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL (2-LINE HEADER) -->
   <div class="giveaway-widget" id="giveawayWidget">
-    <div class="giveaway-title">🎁 GIVEAWAY DRAGNING</div>
+    <div class="giveaway-title-container">
+      <div class="giveaway-head-title">🎁 GIVEAWAY DRAGNING</div>
+      <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 BILJETTER I POTTEN</div>
+    </div>
     <div class="reel-viewport">
       <div class="reel-track" id="reelTrack"></div>
     </div>
@@ -833,14 +863,13 @@
       ];
 
       sampleNames.forEach(name => {
-        const randomDonation = (Math.floor(Math.random() * 5) + 1) * 200; // 200 kr to 1000 kr
+        const randomDonation = (Math.floor(Math.random() * 5) + 1) * 200; 
         recordDonorDonation(name, randomDonation);
       });
 
       alert(`50+ testnamn inlagda i potten! Totalt ${getActiveTicketPool().length} biljetter redo.`);
     }
 
-    // Each active ticket = 1 entry row in the pool
     function getActiveTicketPool() {
       const pool = [];
       for (const [name, donor] of Object.entries(donorTicketsMap)) {
@@ -852,18 +881,24 @@
     }
 
     function updateGiveawayStatsUI() {
-      const statsEl = document.getElementById('giveawayStats');
-      if (!statsEl) return;
-
       const pool = getActiveTicketPool();
       const uniqueDonorsCount = Object.keys(donorTicketsMap).length;
-      statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
+
+      const statsEl = document.getElementById('giveawayStats');
+      if (statsEl) {
+        statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
+      }
+
+      // Update 2-Line Sub-Title Header on Widget
+      const subTitleEl = document.getElementById('giveawaySubTitle');
+      if (subTitleEl) {
+        subTitleEl.innerText = `TOTALT ${pool.length} BILJETTER I POTTEN`;
+      }
     }
 
     // Enqueue Giveaway Event so it never overlaps donation alerts
     function startGiveawaySpin() {
       if (isSpinningReel) {
-        // If already spinning on active overlay, trigger a new spin directly!
         executeReelSpinAnimation();
         return;
       }
@@ -878,11 +913,12 @@
       processQueue();
     }
 
-    // Core 12-Second Slow Downward Spin Logic
+    // Core Giveaway Reel Runner
     function runGiveawaySpinProcess() {
       return new Promise((resolve) => {
         giveawayResolveCallback = resolve;
         document.getElementById('giveawayWidget').classList.add('show');
+        updateGiveawayStatsUI();
         executeReelSpinAnimation();
       });
     }
@@ -915,7 +951,7 @@
       reelTrack.style.transform = 'translateY(0px)';
       reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
 
-      const itemHeight = 50; // 50px item height
+      const itemHeight = 43; // 43px tighter item height
       const targetIndex = spinList.length - 3; 
       const targetTranslateY = -(targetIndex - 2) * itemHeight; 
 
@@ -937,8 +973,8 @@
           const dist = Math.abs(i - centerIndexFloat);
 
           if (dist <= 2.2) {
-            const opacity = Math.max(0.2, 1 - (dist * 0.4));
-            const fontSize = Math.max(18, 30 - (dist * 6));
+            const opacity = Math.max(0.2, 1 - (dist * 0.4)); // 1.0 (Middle), 0.6 (Upper/Lower), 0.2 (Top/Bottom)
+            const fontSize = Math.max(16, 30 - (dist * 6));
             
             items[i].style.opacity = opacity;
             items[i].style.fontSize = `${fontSize}px`;
