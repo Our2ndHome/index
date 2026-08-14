@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -629,9 +629,10 @@
 
   <script>
     // =========================================================
-    // CONFIGURATION
+    // CONFIGURATION & BÖSSA API CONNECTIONS
     // =========================================================
-    const FUNDRAISER_API_URL = "https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/6ScUK7SzaLDgMSesIjAYA8?fields%5B%5D=amount&fields%5B%5D=donations";
+    const FUNDRAISER_SLUG = "our2ndHome";
+    const FUNDRAISER_URL = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`;
     const CHECK_INTERVAL_SECONDS = 5;
 
     const GITHUB_USERNAME = "Our2ndHome";
@@ -656,17 +657,16 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 SCHEDULE DATA (August 11, 2026)
+    // 📅 SCHEDULE DATA (August 14, 2026)
     let ALL_SCHEDULE_EVENTS = [
-      { id: 0, dayName: "TISDAG", start: "2026-08-11T18:00:00", end: "2026-08-11T20:00:00", timeText: "18:00 - 20:00", name: "Alex & Robin", giveaway: "" },
-      { id: 1, dayName: "TISDAG", start: "2026-08-11T20:00:00", end: "2026-08-11T22:00:00", timeText: "20:00 - 22:00", name: "GamerGirl99", giveaway: "" },
-      // 🔴 ACTIVE EVENT (Current Time is ~22:47 CEST)
-      { id: 2, dayName: "TISDAG", start: "2026-08-11T22:00:00", end: "2026-08-11T23:00:00", timeText: "22:00 - 23:00", name: "Live Streamer Now", giveaway: "🎁 LIVE GIVEAWAY!" },
-      { id: 3, dayName: "TISDAG", start: "2026-08-11T23:00:00", end: "2026-08-12T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
+      { id: 0, dayName: "FREDAG", start: "2026-08-14T18:00:00", end: "2026-08-14T19:30:00", timeText: "18:00 - 19:30", name: "Alex & Robin", giveaway: "" },
+      // 🔴 ACTIVE EVENT (Current Time is ~19:39 CEST)
+      { id: 1, dayName: "FREDAG", start: "2026-08-14T19:30:00", end: "2026-08-14T21:00:00", timeText: "19:30 - 21:00", name: "Our2ndHome Community Stream", giveaway: "🎁 COMMUNITY GIVEAWAY!" },
+      { id: 2, dayName: "FREDAG", start: "2026-08-14T21:00:00", end: "2026-08-14T23:00:00", timeText: "21:00 - 23:00", name: "GamerGirl99", giveaway: "" },
+      { id: 3, dayName: "FREDAG", start: "2026-08-14T23:00:00", end: "2026-08-15T01:00:00", timeText: "23:00 - 01:00", name: "Night Shift Crew", giveaway: "" },
       
       // TOMORROW
-      { id: 4, dayName: "ONSDAG", start: "2026-08-12T18:00:00", end: "2026-08-12T20:00:00", timeText: "18:00 - 20:00", name: "Morning Special", giveaway: "" },
-      { id: 5, dayName: "ONSDAG", start: "2026-08-12T20:00:00", end: "2026-08-12T22:00:00", timeText: "20:00 - 22:00", name: "Final Boss Stream", giveaway: "🏆 GRAND PRIZE!" }
+      { id: 4, dayName: "LÖRDAG", start: "2026-08-15T18:00:00", end: "2026-08-15T20:00:00", timeText: "18:00 - 20:00", name: "Weekend Special", giveaway: "🏆 GRAND PRIZE!" }
     ];
 
     function generateRelativeLiveEvents() {
@@ -679,8 +679,8 @@
 
       const t1 = new Date(now.getTime() - 4 * 3600000);
       const t2 = new Date(now.getTime() - 2 * 3600000);
-      const t3 = new Date(now.getTime() - 47 * 60000); // Started 47 mins ago
-      const t4 = new Date(now.getTime() + 13 * 60000); // Ends in 13 mins
+      const t3 = new Date(now.getTime() - 10 * 60000); // Started 10 mins ago
+      const t4 = new Date(now.getTime() + 50 * 60000); // Ends in 50 mins
       const t5 = new Date(now.getTime() + 2.5 * 3600000);
       const t6 = new Date(now.getTime() + 24 * 3600000); // Tomorrow (+24 hours)
 
@@ -1104,7 +1104,7 @@
     }
 
     // =========================================================
-    // MANUAL CONTROLS & API POLLING
+    // MANUAL CONTROLS & REAL BÖSSA LIVE API POLLING
     // =========================================================
     function simulateDonation(name, amount) {
       currentTotal += amount;
@@ -1118,34 +1118,46 @@
     }
 
     async function fetchMusikhjalpenData() {
-      try {
-        const response = await fetch(`${FUNDRAISER_API_URL}&_t=${Date.now()}`, { cache: 'no-store' });
-        if (!response.ok) return;
+      // Endpoints to fetch directly from bossan.musikhjalpen.se/our2ndhome with fallback proxies
+      const endpoints = [
+        `https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
+        `https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`)}`
+      ];
 
-        const data = await response.json();
-        const amount = Number(data.amount || 0);
+      for (const url of endpoints) {
+        try {
+          const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+          const response = await fetch(cacheBusterUrl, { cache: 'no-store' });
+          if (!response.ok) continue;
 
-        let latestDonorName = "En anonym givare"; 
-        if (data.donations && data.donations.length > 0) {
-          const lastDonation = data.donations[0];
-          if (lastDonation.name && lastDonation.name.trim()) {
-            latestDonorName = lastDonation.name;
+          const data = await response.json();
+          const amount = Number(data.amount || data.raised || 0);
+
+          let latestDonorName = "En anonym givare"; 
+          if (data.donations && data.donations.length > 0) {
+            const lastDonation = data.donations[0];
+            if (lastDonation.name && lastDonation.name.trim()) {
+              latestDonorName = lastDonation.name;
+            }
           }
-        }
 
-        if (currentTotal === 0 && amount > 0) {
-          currentTotal = amount;
-          updateTotalDisplaySmooth(`${currentTotal} kr`);
-          return;
-        }
+          if (currentTotal === 0 && amount > 0) {
+            currentTotal = amount;
+            updateTotalDisplaySmooth(`${currentTotal} kr`);
+            return;
+          }
 
-        if (amount > currentTotal) {
-          const donationDiff = amount - currentTotal;
-          currentTotal = amount;
-          enqueueAlert(latestDonorName, donationDiff, currentTotal);
+          if (amount > currentTotal) {
+            const donationDiff = amount - currentTotal;
+            currentTotal = amount;
+            enqueueAlert(latestDonorName, donationDiff, currentTotal);
+          }
+
+          return; // Success!
+        } catch (err) {
+          // Fall through to next endpoint fallback
         }
-      } catch (err) {
-        console.warn("Connecting to API...", err);
       }
     }
 
