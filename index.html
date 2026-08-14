@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.4</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.5</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -277,14 +277,14 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH RIGHT COUNTDOWN BADGE */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH UNDER-TITLE COUNTDOWN BADGE */
     .giveaway-widget {
       position: absolute;
       top: 46%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 600px;
-      height: 350px;
+      height: 360px;
       background: transparent;
       border: none;
       box-shadow: none;
@@ -304,13 +304,14 @@
       visibility: visible;
     }
 
-    /* 2-Line Header Container with Right Countdown Badge */
+    /* Header Container */
     .giveaway-title-container {
-      position: relative;
-      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
       margin-top: 4px;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }
 
     .giveaway-head-title {
@@ -333,24 +334,23 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* Right Side Header Countdown Badge */
+    /* Start Countdown Badge Positioned Directly Under the Sub-Title */
     .giveaway-timer-badge {
-      position: absolute;
-      right: 40px;
-      top: 50%;
-      transform: translateY(-50%);
+      display: inline-block;
+      margin-top: 8px;
       background: rgba(172, 230, 0, 0.15);
       border: 1px solid var(--primary-color);
       color: var(--primary-color);
       font-size: 11px;
       font-weight: 900;
-      padding: 3px 9px;
+      padding: 3px 10px;
       border-radius: 5px;
       letter-spacing: 1px;
       font-variant-numeric: tabular-nums;
       text-shadow: 0 0 6px rgba(172, 230, 0, 0.5);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
       white-space: nowrap;
+      text-transform: uppercase;
     }
 
     .reel-viewport {
@@ -360,7 +360,7 @@
       overflow: hidden;
     }
 
-    /* Image-Matched Green Line Fade */
+    /* Green Indicator Line Fade */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
@@ -663,9 +663,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.4) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.5) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.4</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.5</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
@@ -723,12 +723,12 @@
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL (WITH HEADER COUNTDOWN BADGE) -->
+  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL (WITH UNDER-TITLE COUNTDOWN BADGE) -->
   <div class="giveaway-widget" id="giveawayWidget">
     <div class="giveaway-title-container">
       <div class="giveaway-head-title">🎁 GIVEAWAY</div>
-      <div class="giveaway-timer-badge" id="giveawayHeaderTimer">10S</div>
       <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 TICKETS</div>
+      <div class="giveaway-timer-badge" id="giveawayHeaderTimer">STARTAR OM 10S</div>
     </div>
     <div class="reel-viewport">
       <div class="reel-track" id="reelTrack"></div>
@@ -834,7 +834,7 @@
     let currentAudioInstance = null;
 
     // =========================================================
-    // 🎁 GIVEAWAY TICKET DATABASE & HEADER COUNTDOWN
+    // 🎁 GIVEAWAY TICKET DATABASE & START COUNTDOWN BADGE
     // =========================================================
     const donorTicketsMap = {}; 
     let currentDrawnWinner = null;
@@ -921,19 +921,21 @@
       }
     }
 
-    // Helper: Header Countdown Timer Badge
-    function startHeaderCountdownTimer(seconds, prefixText = "") {
+    // Helper: Start Countdown Timer Badge Under Title
+    function startHeaderCountdownTimer(seconds, prefixText = "STARTAR OM ") {
       if (headerCountdownInterval) clearInterval(headerCountdownInterval);
 
       const timerBadgeEl = document.getElementById('giveawayHeaderTimer');
+      if (!timerBadgeEl) return;
+
       let currentSeconds = seconds;
+      timerBadgeEl.style.display = 'inline-block';
 
       const updateBadge = () => {
-        if (!timerBadgeEl) return;
         if (currentSeconds > 0) {
           timerBadgeEl.innerText = `${prefixText}${currentSeconds}S`;
         } else {
-          timerBadgeEl.innerText = prefixText ? `${prefixText}0S` : "VINNARE!";
+          timerBadgeEl.innerText = `${prefixText}0S`;
         }
       };
 
@@ -984,6 +986,7 @@
 
       isSpinningReel = true;
       const reelTrack = document.getElementById('reelTrack');
+      const timerBadgeEl = document.getElementById('giveawayHeaderTimer');
 
       // Pick random winning ticket entry
       const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
@@ -992,7 +995,6 @@
 
       // Check if this is a fresh open vs continuous skip roll
       const isFreshOpen = (reelTrack.children.length === 0 || holdDelayMs > 2000);
-
       const itemHeight = 43; // 43px item height
 
       if (isFreshOpen) {
@@ -1050,9 +1052,9 @@
       const targetIndex = totalItems - 3;
       const targetTranslateY = -(targetIndex - 2) * itemHeight;
 
-      // Start Header Hold Countdown
+      // Start 10-Second Hold Countdown (Displayed under title)
       const holdSeconds = Math.round(holdDelayMs / 1000);
-      startHeaderCountdownTimer(holdSeconds, holdDelayMs > 2000 ? "STARTAR " : "OMSTART ");
+      startHeaderCountdownTimer(holdSeconds, "STARTAR OM ");
 
       // Frame-by-frame Computed WebKit Matrix Position Reader
       function updateOpacities() {
@@ -1102,7 +1104,9 @@
       giveawayHoldTimeout = setTimeout(() => {
         if (!document.getElementById('giveawayWidget').classList.contains('show')) return;
 
-        startHeaderCountdownTimer(12, ""); // 12s Spin Countdown
+        // Hide Start Countdown Badge as soon as spin begins!
+        if (headerCountdownInterval) clearInterval(headerCountdownInterval);
+        if (timerBadgeEl) timerBadgeEl.style.display = 'none';
 
         reelTrack.style.transition = 'transform 12s cubic-bezier(0.1, 0.75, 0.25, 1)';
         reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
@@ -1112,9 +1116,6 @@
         setTimeout(() => {
           isSpinningReel = false;
           cancelAnimationFrame(reelAnimationTimer);
-
-          const timerBadgeEl = document.getElementById('giveawayHeaderTimer');
-          if (timerBadgeEl) timerBadgeEl.innerText = "VINNARE!";
 
           // Snap final winner styling in Lime Green (#ace600)!
           const items = reelTrack.children;
