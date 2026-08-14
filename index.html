@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.2</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.3</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -277,14 +277,14 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH ENLARGED 2-LINE HEADER */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH 2-LINE HEADER */
     .giveaway-widget {
       position: absolute;
       top: 46%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 600px;
-      height: 350px; /* Slightly taller container for bigger title + extra spacing */
+      height: 350px;
       background: transparent;
       border: none;
       box-shadow: none;
@@ -304,15 +304,15 @@
       visibility: visible;
     }
 
-    /* 2-Line Header Container with Extra Spacing Below */
+    /* 2-Line Header Container */
     .giveaway-title-container {
       text-align: center;
       margin-top: 4px;
-      margin-bottom: 22px; /* Extra space between title and spinning wheel list */
+      margin-bottom: 22px;
     }
 
     .giveaway-head-title {
-      font-size: 20px; /* Bigger Head Title */
+      font-size: 20px;
       font-weight: 900;
       letter-spacing: 2.5px;
       color: var(--primary-color);
@@ -321,7 +321,7 @@
     }
 
     .giveaway-sub-title {
-      font-size: 13px; /* Bigger Sub Title */
+      font-size: 13px;
       font-weight: 800;
       letter-spacing: 1.5px;
       color: var(--text-white);
@@ -334,26 +334,26 @@
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: 215px; /* 5 visible items @ 43px each for tighter spacing */
+      height: 215px; /* 5 visible items @ 43px each */
       overflow: hidden;
     }
 
-    /* Image-Matched Green Line Fade (Solid line fading softly at 20px tips) */
+    /* Image-Matched Green Line Fade */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
       width: 270px; 
-      height: 2px; /* Exact 2px height */
+      height: 2px;
       background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20px, var(--primary-color) calc(100% - 20px), transparent 100%);
       box-shadow: 0 0 5px rgba(172, 230, 0, 0.5);
       z-index: 10;
       pointer-events: none;
     }
 
-    .reel-viewport::before { top: 86px; }  /* Top boundary of 3rd item */
-    .reel-viewport::after  { top: 129px; } /* Bottom boundary of 3rd item */
+    .reel-viewport::before { top: 86px; }  
+    .reel-viewport::after  { top: 129px; } 
 
     .reel-track {
       position: absolute;
@@ -367,7 +367,7 @@
     }
 
     .reel-item {
-      height: 43px; /* Tighter 43px vertical slot spacing */
+      height: 43px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -641,9 +641,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.2) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.3) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.2</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.3</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
@@ -811,13 +811,14 @@
     let currentAudioInstance = null;
 
     // =========================================================
-    // 🎁 GIVEAWAY TICKET DATABASE & 50+ TEST NAMES
+    // 🎁 GIVEAWAY TICKET DATABASE & 10s DISPLAY HOLD DELAY
     // =========================================================
     const donorTicketsMap = {}; 
     let currentDrawnWinner = null;
     let isSpinningReel = false;
     let reelAnimationTimer = null;
     let giveawayResolveCallback = null;
+    let giveawayHoldTimeout = null;
 
     function recordDonorDonation(donorName, donationAmount) {
       if (!donorName || !donorName.trim()) return;
@@ -896,10 +897,10 @@
       }
     }
 
-    // Enqueue Giveaway Event so it never overlaps donation alerts
+    // Enqueue Giveaway Event into Queue
     function startGiveawaySpin() {
       if (isSpinningReel) {
-        executeReelSpinAnimation();
+        executeReelSpinAnimation(1500); // Quick 1.5s delay on active Skip
         return;
       }
 
@@ -913,19 +914,21 @@
       processQueue();
     }
 
-    // Core Giveaway Reel Runner
+    // Core Giveaway Reel Runner with 10s Initial Display Hold Delay
     function runGiveawaySpinProcess() {
       return new Promise((resolve) => {
         giveawayResolveCallback = resolve;
         document.getElementById('giveawayWidget').classList.add('show');
         updateGiveawayStatsUI();
-        executeReelSpinAnimation();
+        executeReelSpinAnimation(10000); // 10-Second Display Hold Delay on fresh open
       });
     }
 
-    function executeReelSpinAnimation() {
+    function executeReelSpinAnimation(holdDelayMs = 10000) {
       const ticketPool = getActiveTicketPool();
       if (ticketPool.length === 0) return;
+
+      if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
 
       isSpinningReel = true;
       const reelTrack = document.getElementById('reelTrack');
@@ -946,7 +949,7 @@
       spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
       spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
 
-      // Reset DOM Reel Position
+      // Reset DOM Reel Position & render initial static view during 10s hold
       reelTrack.style.transition = 'none';
       reelTrack.style.transform = 'translateY(0px)';
       reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
@@ -955,7 +958,30 @@
       const targetIndex = spinList.length - 3; 
       const targetTranslateY = -(targetIndex - 2) * itemHeight; 
 
-      // Frame-by-frame Computed WebKit Matrix Position Reader (5-Level Fade Hierarchy During Spin)
+      // Set initial static opacities during the 10-second display hold
+      const initialItems = reelTrack.children;
+      for (let i = 0; i < Math.min(5, initialItems.length); i++) {
+        if (i === 2) {
+          initialItems[i].style.opacity = '1.0';
+          initialItems[i].style.fontSize = '30px';
+          initialItems[i].style.fontWeight = '900';
+          initialItems[i].style.color = '#ffffff';
+          initialItems[i].style.textShadow = '0 2px 8px rgba(0,0,0,0.9)';
+        } else if (i === 1 || i === 3) {
+          initialItems[i].style.opacity = '0.6';
+          initialItems[i].style.fontSize = '22px';
+          initialItems[i].style.fontWeight = '800';
+          initialItems[i].style.color = '#ffffff';
+          initialItems[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+        } else {
+          initialItems[i].style.opacity = '0.2';
+          initialItems[i].style.fontSize = '16px';
+          initialItems[i].style.color = '#ffffff';
+          initialItems[i].style.textShadow = 'none';
+        }
+      }
+
+      // Frame-by-frame Computed WebKit Matrix Position Reader
       function updateOpacities() {
         let currentY = 0;
         try {
@@ -999,54 +1025,58 @@
         }
       }
 
-      // Start 12-Second Slow Downward Spin
-      setTimeout(() => {
+      // ⏱️ Hold Static for 10 Seconds BEFORE Starting Downward Spin
+      giveawayHoldTimeout = setTimeout(() => {
+        if (!document.getElementById('giveawayWidget').classList.contains('show')) return;
+
         reelTrack.style.transition = 'transform 12s cubic-bezier(0.1, 0.75, 0.25, 1)';
         reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
         reelAnimationTimer = requestAnimationFrame(updateOpacities);
-      }, 50);
 
-      // Finish Spin after 12 seconds: REVEAL #ace600 WINNER COLOR ON DEAD STOP!
-      setTimeout(() => {
-        isSpinningReel = false;
-        cancelAnimationFrame(reelAnimationTimer);
+        // Finish Spin after 12 seconds: REVEAL #ace600 WINNER COLOR ON DEAD STOP!
+        setTimeout(() => {
+          isSpinningReel = false;
+          cancelAnimationFrame(reelAnimationTimer);
 
-        // Snap final winner styling
-        const items = reelTrack.children;
-        for (let i = 0; i < items.length; i++) {
-          const dist = Math.abs(i - targetIndex);
-          if (dist === 0) {
-            // 🏆 WINNER GLOW REVEAL IN LIME GREEN (#ace600)!
-            items[i].style.opacity = '1.0';
-            items[i].style.fontSize = '32px';
-            items[i].style.fontWeight = '900';
-            items[i].style.color = '#ace600';
-            items[i].style.textShadow = '0 0 10px rgba(172, 230, 0, 0.6), 0 2px 8px rgba(0,0,0,0.9)';
-          } else if (dist === 1) {
-            items[i].style.opacity = '0.6';
-            items[i].style.fontSize = '22px';
-            items[i].style.fontWeight = '800';
-            items[i].style.color = '#ffffff';
-            items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
-          } else {
-            items[i].style.opacity = '0.2';
-            items[i].style.fontSize = '16px';
-            items[i].style.color = '#ffffff';
-            items[i].style.textShadow = 'none';
+          // Snap final winner styling in Lime Green (#ace600)!
+          const items = reelTrack.children;
+          for (let i = 0; i < items.length; i++) {
+            const dist = Math.abs(i - targetIndex);
+            if (dist === 0) {
+              items[i].style.opacity = '1.0';
+              items[i].style.fontSize = '32px';
+              items[i].style.fontWeight = '900';
+              items[i].style.color = '#ace600';
+              items[i].style.textShadow = '0 0 10px rgba(172, 230, 0, 0.6), 0 2px 8px rgba(0,0,0,0.9)';
+            } else if (dist === 1) {
+              items[i].style.opacity = '0.6';
+              items[i].style.fontSize = '22px';
+              items[i].style.fontWeight = '800';
+              items[i].style.color = '#ffffff';
+              items[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+            } else {
+              items[i].style.opacity = '0.2';
+              items[i].style.fontSize = '16px';
+              items[i].style.color = '#ffffff';
+              items[i].style.textShadow = 'none';
+            }
           }
-        }
-      }, 12100);
+        }, 12100);
+
+      }, holdDelayMs);
     }
 
-    // SKIP WINNER (Draw new winner without deleting tickets)
+    // SKIP WINNER (Short 1.5s pause on Skip command)
     function skipWinner() {
       if (isSpinningReel) return;
-      executeReelSpinAnimation();
+      executeReelSpinAnimation(1500);
     }
 
     // CLAIM & DELETE TICKET (Closes overlay & resumes alert queue)
     function claimAndDeleteTicket() {
       if (isSpinningReel) return;
+      if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
+
       if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
         const donorObj = donorTicketsMap[currentDrawnWinner];
         if (donorObj.ticketsActive > 0) {
