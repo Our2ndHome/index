@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.3</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.4</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -277,7 +277,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH 2-LINE HEADER */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH RIGHT COUNTDOWN BADGE */
     .giveaway-widget {
       position: absolute;
       top: 46%;
@@ -304,8 +304,10 @@
       visibility: visible;
     }
 
-    /* 2-Line Header Container */
+    /* 2-Line Header Container with Right Countdown Badge */
     .giveaway-title-container {
+      position: relative;
+      width: 100%;
       text-align: center;
       margin-top: 4px;
       margin-bottom: 22px;
@@ -329,6 +331,26 @@
       text-transform: uppercase;
       margin-top: 4px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+    }
+
+    /* Right Side Header Countdown Badge */
+    .giveaway-timer-badge {
+      position: absolute;
+      right: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(172, 230, 0, 0.15);
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      font-size: 11px;
+      font-weight: 900;
+      padding: 3px 9px;
+      border-radius: 5px;
+      letter-spacing: 1px;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 6px rgba(172, 230, 0, 0.5);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      white-space: nowrap;
     }
 
     .reel-viewport {
@@ -641,9 +663,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.3) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.4) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.3</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.4</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
@@ -701,10 +723,11 @@
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL (2-LINE HEADER) -->
+  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL (WITH HEADER COUNTDOWN BADGE) -->
   <div class="giveaway-widget" id="giveawayWidget">
     <div class="giveaway-title-container">
       <div class="giveaway-head-title">🎁 GIVEAWAY</div>
+      <div class="giveaway-timer-badge" id="giveawayHeaderTimer">10S</div>
       <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 TICKETS</div>
     </div>
     <div class="reel-viewport">
@@ -811,7 +834,7 @@
     let currentAudioInstance = null;
 
     // =========================================================
-    // 🎁 GIVEAWAY TICKET DATABASE & 10s DISPLAY HOLD DELAY
+    // 🎁 GIVEAWAY TICKET DATABASE & HEADER COUNTDOWN
     // =========================================================
     const donorTicketsMap = {}; 
     let currentDrawnWinner = null;
@@ -819,6 +842,7 @@
     let reelAnimationTimer = null;
     let giveawayResolveCallback = null;
     let giveawayHoldTimeout = null;
+    let headerCountdownInterval = null;
 
     function recordDonorDonation(donorName, donationAmount) {
       if (!donorName || !donorName.trim()) return;
@@ -897,7 +921,34 @@
       }
     }
 
-    // Enqueue Giveaway Event into Queue
+    // Helper: Header Countdown Timer Badge
+    function startHeaderCountdownTimer(seconds, prefixText = "") {
+      if (headerCountdownInterval) clearInterval(headerCountdownInterval);
+
+      const timerBadgeEl = document.getElementById('giveawayHeaderTimer');
+      let currentSeconds = seconds;
+
+      const updateBadge = () => {
+        if (!timerBadgeEl) return;
+        if (currentSeconds > 0) {
+          timerBadgeEl.innerText = `${prefixText}${currentSeconds}S`;
+        } else {
+          timerBadgeEl.innerText = prefixText ? `${prefixText}0S` : "VINNARE!";
+        }
+      };
+
+      updateBadge();
+
+      headerCountdownInterval = setInterval(() => {
+        currentSeconds--;
+        updateBadge();
+        if (currentSeconds <= 0) {
+          clearInterval(headerCountdownInterval);
+        }
+      }, 1000);
+    }
+
+    // Enqueue Giveaway Event so it never overlaps donation alerts
     function startGiveawaySpin() {
       if (isSpinningReel) {
         executeReelSpinAnimation(1500); // Quick 1.5s delay on active Skip
@@ -929,6 +980,7 @@
       if (ticketPool.length === 0) return;
 
       if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
+      if (headerCountdownInterval) clearInterval(headerCountdownInterval);
 
       isSpinningReel = true;
       const reelTrack = document.getElementById('reelTrack');
@@ -938,48 +990,69 @@
       const winnerName = ticketPool[winningTicketIndex];
       currentDrawnWinner = winnerName;
 
-      // Build 28-item spin list for slow, readable 12-second downward scroll (~2 names/sec)
-      const spinList = [];
-      for (let i = 0; i < 25; i++) {
-        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-      }
+      // Check if this is a fresh open vs continuous skip roll
+      const isFreshOpen = (reelTrack.children.length === 0 || holdDelayMs > 2000);
 
-      // Exact target alignment: Place winner at index (TOTAL - 3) so it lands in 3rd center slot
-      spinList.push(winnerName);
-      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-      spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+      const itemHeight = 43; // 43px item height
 
-      // Reset DOM Reel Position & render initial static view during 10s hold
-      reelTrack.style.transition = 'none';
-      reelTrack.style.transform = 'translateY(0px)';
-      reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-
-      const itemHeight = 43; // 43px tighter item height
-      const targetIndex = spinList.length - 3; 
-      const targetTranslateY = -(targetIndex - 2) * itemHeight; 
-
-      // Set initial static opacities during the 10-second display hold
-      const initialItems = reelTrack.children;
-      for (let i = 0; i < Math.min(5, initialItems.length); i++) {
-        if (i === 2) {
-          initialItems[i].style.opacity = '1.0';
-          initialItems[i].style.fontSize = '30px';
-          initialItems[i].style.fontWeight = '900';
-          initialItems[i].style.color = '#ffffff';
-          initialItems[i].style.textShadow = '0 2px 8px rgba(0,0,0,0.9)';
-        } else if (i === 1 || i === 3) {
-          initialItems[i].style.opacity = '0.6';
-          initialItems[i].style.fontSize = '22px';
-          initialItems[i].style.fontWeight = '800';
-          initialItems[i].style.color = '#ffffff';
-          initialItems[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
-        } else {
-          initialItems[i].style.opacity = '0.2';
-          initialItems[i].style.fontSize = '16px';
-          initialItems[i].style.color = '#ffffff';
-          initialItems[i].style.textShadow = 'none';
+      if (isFreshOpen) {
+        // Fresh Open: Render initial 28 items starting at Y=0
+        const spinList = [];
+        for (let i = 0; i < 25; i++) {
+          spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
         }
+        spinList.push(winnerName);
+        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+        spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+
+        reelTrack.style.transition = 'none';
+        reelTrack.style.transform = 'translateY(0px)';
+        reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+
+        // Initial static opacities during the 10-second hold
+        const initialItems = reelTrack.children;
+        for (let i = 0; i < Math.min(5, initialItems.length); i++) {
+          if (i === 2) {
+            initialItems[i].style.opacity = '1.0';
+            initialItems[i].style.fontSize = '30px';
+            initialItems[i].style.fontWeight = '900';
+            initialItems[i].style.color = '#ffffff';
+            initialItems[i].style.textShadow = '0 2px 8px rgba(0,0,0,0.9)';
+          } else if (i === 1 || i === 3) {
+            initialItems[i].style.opacity = '0.6';
+            initialItems[i].style.fontSize = '22px';
+            initialItems[i].style.fontWeight = '800';
+            initialItems[i].style.color = '#ffffff';
+            initialItems[i].style.textShadow = '0 2px 6px rgba(0,0,0,0.9)';
+          } else {
+            initialItems[i].style.opacity = '0.2';
+            initialItems[i].style.fontSize = '16px';
+            initialItems[i].style.color = '#ffffff';
+            initialItems[i].style.textShadow = 'none';
+          }
+        }
+      } else {
+        // Continuous Skip Roll: Append 25 new items to current DOM without resetting Y position!
+        const additionalList = [];
+        for (let i = 0; i < 25; i++) {
+          additionalList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+        }
+        additionalList.push(winnerName);
+        additionalList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+        additionalList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+
+        const additionalHtml = additionalList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+        reelTrack.insertAdjacentHTML('beforeend', additionalHtml);
       }
+
+      // Calculate Target Translate Y
+      const totalItems = reelTrack.children.length;
+      const targetIndex = totalItems - 3;
+      const targetTranslateY = -(targetIndex - 2) * itemHeight;
+
+      // Start Header Hold Countdown
+      const holdSeconds = Math.round(holdDelayMs / 1000);
+      startHeaderCountdownTimer(holdSeconds, holdDelayMs > 2000 ? "STARTAR " : "OMSTART ");
 
       // Frame-by-frame Computed WebKit Matrix Position Reader
       function updateOpacities() {
@@ -999,12 +1072,12 @@
           const dist = Math.abs(i - centerIndexFloat);
 
           if (dist <= 2.2) {
-            const opacity = Math.max(0.2, 1 - (dist * 0.4)); // 1.0 (Middle), 0.6 (Upper/Lower), 0.2 (Top/Bottom)
+            const opacity = Math.max(0.2, 1 - (dist * 0.4)); 
             const fontSize = Math.max(16, 30 - (dist * 6));
             
             items[i].style.opacity = opacity;
             items[i].style.fontSize = `${fontSize}px`;
-            items[i].style.color = '#ffffff'; // Always Full White while passing middle during spin
+            items[i].style.color = '#ffffff'; 
 
             if (dist < 0.35) {
               items[i].style.textShadow = '0 2px 8px rgba(0,0,0,0.9)';
@@ -1025,9 +1098,11 @@
         }
       }
 
-      // ⏱️ Hold Static for 10 Seconds BEFORE Starting Downward Spin
+      // ⏱️ Hold Static BEFORE Starting Downward Spin
       giveawayHoldTimeout = setTimeout(() => {
         if (!document.getElementById('giveawayWidget').classList.contains('show')) return;
+
+        startHeaderCountdownTimer(12, ""); // 12s Spin Countdown
 
         reelTrack.style.transition = 'transform 12s cubic-bezier(0.1, 0.75, 0.25, 1)';
         reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
@@ -1037,6 +1112,9 @@
         setTimeout(() => {
           isSpinningReel = false;
           cancelAnimationFrame(reelAnimationTimer);
+
+          const timerBadgeEl = document.getElementById('giveawayHeaderTimer');
+          if (timerBadgeEl) timerBadgeEl.innerText = "VINNARE!";
 
           // Snap final winner styling in Lime Green (#ace600)!
           const items = reelTrack.children;
@@ -1066,7 +1144,7 @@
       }, holdDelayMs);
     }
 
-    // SKIP WINNER (Short 1.5s pause on Skip command)
+    // SKIP WINNER (Seamless continuous roll with short 1.5s pause)
     function skipWinner() {
       if (isSpinningReel) return;
       executeReelSpinAnimation(1500);
@@ -1076,6 +1154,7 @@
     function claimAndDeleteTicket() {
       if (isSpinningReel) return;
       if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
+      if (headerCountdownInterval) clearInterval(headerCountdownInterval);
 
       if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
         const donorObj = donorTicketsMap[currentDrawnWinner];
@@ -1086,6 +1165,7 @@
 
       updateGiveawayStatsUI();
       currentDrawnWinner = null;
+      document.getElementById('reelTrack').innerHTML = ''; // Reset DOM track
       document.getElementById('giveawayWidget').classList.remove('show');
 
       if (giveawayResolveCallback) {
