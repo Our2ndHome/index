@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.1</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.2</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -277,14 +277,14 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH 2-LINE HEADER */
+    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH ENLARGED 2-LINE HEADER */
     .giveaway-widget {
       position: absolute;
       top: 46%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 600px;
-      height: 300px;
+      height: 350px; /* Slightly taller container for bigger title + extra spacing */
       background: transparent;
       border: none;
       box-shadow: none;
@@ -304,31 +304,31 @@
       visibility: visible;
     }
 
-    /* 2-Line Header Container */
+    /* 2-Line Header Container with Extra Spacing Below */
     .giveaway-title-container {
       text-align: center;
       margin-top: 4px;
-      margin-bottom: 6px;
+      margin-bottom: 22px; /* Extra space between title and spinning wheel list */
     }
 
     .giveaway-head-title {
-      font-size: 14px;
+      font-size: 20px; /* Bigger Head Title */
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       color: var(--primary-color);
       text-transform: uppercase;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
     }
 
     .giveaway-sub-title {
-      font-size: 11px;
+      font-size: 13px; /* Bigger Sub Title */
       font-weight: 800;
-      letter-spacing: 1.2px;
+      letter-spacing: 1.5px;
       color: var(--text-white);
       opacity: 0.85;
       text-transform: uppercase;
-      margin-top: 2px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+      margin-top: 4px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
     .reel-viewport {
@@ -641,9 +641,9 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.1) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.2) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.1</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.2</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
@@ -704,8 +704,8 @@
   <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL (2-LINE HEADER) -->
   <div class="giveaway-widget" id="giveawayWidget">
     <div class="giveaway-title-container">
-      <div class="giveaway-head-title">🎁 GIVEAWAY DRAGNING</div>
-      <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 BILJETTER I POTTEN</div>
+      <div class="giveaway-head-title">🎁 GIVEAWAY</div>
+      <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 TICKETS</div>
     </div>
     <div class="reel-viewport">
       <div class="reel-track" id="reelTrack"></div>
@@ -892,7 +892,7 @@
       // Update 2-Line Sub-Title Header on Widget
       const subTitleEl = document.getElementById('giveawaySubTitle');
       if (subTitleEl) {
-        subTitleEl.innerText = `TOTALT ${pool.length} BILJETTER I POTTEN`;
+        subTitleEl.innerText = `TOTALT ${pool.length} TICKETS`;
       }
     }
 
