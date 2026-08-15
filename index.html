@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v3.2 Persistent</title>
+  <title>Musikhjälpen Multi-Widget Overlay - v3.3 Self-Propelled</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -288,7 +288,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH UNDER-TITLE COUNTDOWN BADGE */
+    /* 🎁 WIDGET 6: GIVEAWAY REEL */
     .giveaway-widget {
       position: absolute;
       top: 46%;
@@ -365,7 +365,7 @@
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: 215px; /* 5 visible items @ 43px each */
+      height: 215px;
       overflow: hidden;
     }
 
@@ -671,10 +671,16 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v3.2 Persistent) -->
+  <!-- 🎛️ TEST CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v3.2</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v3.3</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
+    <div class="panel-section">
+      <b>🚀 Självdrivande Motor (Auto-Drive):</b><br>
+      <button id="autoDriveBtn" onclick="toggleAutoDrive()" style="background:#00ff88; color:#000; font-weight:900;">🚀 Auto-Drive: PÅ</button>
+      <div id="autoDriveStatus" style="font-size:11px; color:#ace600; margin:4px 0;">Självdrivande läge AKTIVT</div>
+    </div>
+
     <div class="panel-section">
       <b>Bössa Sync Status / Sök Bössan:</b><br>
       <input type="text" id="bossaSlugInput" value="our2ndHome" placeholder="Bössa namn/slug">
@@ -699,17 +705,12 @@
     </div>
 
     <div class="panel-section">
-      <b>Test Donationer & Sparat Tillstånd:</b><br>
+      <b>Test & Rensa Tillstånd:</b><br>
       <button onclick="simulateDonation('Lisa', 250)">+250 kr (Lisa)</button>
       <button onclick="simulateDonation('Erik', 600)">+600 kr (Erik)</button>
       <button onclick="resetTotal()" style="border-color:#ff0055;">Rensa Sparat Tillstånd</button>
     </div>
 
-    <div class="panel-section">
-      <b>Live Schema Test:</b><br>
-      <button onclick="generateRelativeLiveEvents()" style="background:#ace600; color:#000;">⚡ Generera Relativa Events</button>
-    </div>
-    
     <div class="panel-section">
       <b>Timer & Sponsor Kontroller:</b><br>
       <button onclick="simulateEndGame()">Sista Minuten (60s)</button>
@@ -733,7 +734,7 @@
     <span class="goal-target">MÅL: 40 000 KR</span>
   </div>
 
-  <!-- 📢 WIDGET 2: DONATION ALERT -->
+  <!-- 📢 WIDGET 2: DONATION ALERT BANNER -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
@@ -806,7 +807,7 @@
     ];
 
     // =========================================================
-    // LOCALSTORAGE PERSISTENCE SYSTEM (OBS CLOSURE PROOF)
+    // LOCALSTORAGE PERSISTENCE SYSTEM
     // =========================================================
     const donorTicketsMap = {}; 
     let currentTotal = 0; 
@@ -843,6 +844,52 @@
           updateGiveawayStatsUI();
         }
       } catch(e) {}
+    }
+
+    // =========================================================
+    // 🚀 SELF-PROPELLED AUTO-DRIVE ENGINE
+    // =========================================================
+    let autoDriveEnabled = true;
+    let autoDriveTimer = null;
+
+    function toggleAutoDrive() {
+      autoDriveEnabled = !autoDriveEnabled;
+      const btn = document.getElementById('autoDriveBtn');
+      const statusEl = document.getElementById('autoDriveStatus');
+
+      if (autoDriveEnabled) {
+        if (btn) { btn.style.background = "#00ff88"; btn.style.color = "#000"; btn.innerText = "🚀 Auto-Drive: PÅ"; }
+        if (statusEl) statusEl.innerHTML = "<span style='color:#00ff88;'>Självdrivande läge AKTIVT</span>";
+        scheduleNextAutoDriveDonation();
+      } else {
+        if (btn) { btn.style.background = "#222"; btn.style.color = "#fff"; btn.innerText = "🚀 Auto-Drive: AV"; }
+        if (statusEl) statusEl.innerHTML = "<span style='color:#aaa;'>Självdrivande läge inaktivt</span>";
+        if (autoDriveTimer) clearTimeout(autoDriveTimer);
+      }
+    }
+
+    function scheduleNextAutoDriveDonation() {
+      if (!autoDriveEnabled) return;
+      const delayMs = (Math.floor(Math.random() * 25) + 20) * 1000;
+      autoDriveTimer = setTimeout(() => {
+        if (autoDriveEnabled) {
+          triggerAutoDriveDonation();
+          scheduleNextAutoDriveDonation();
+        }
+      }, delayMs);
+    }
+
+    function triggerAutoDriveDonation() {
+      const sampleDonors = ["Sofia", "Marcus", "Elin", "Oscar", "Emma", "Viktor", "Lina", "Filip", "Agnes", "Lucas", "Ebba", "Kalle", "Maja"];
+      const sampleAmounts = [50, 100, 150, 200, 250, 300, 500];
+
+      const donor = sampleDonors[Math.floor(Math.random() * sampleDonors.length)];
+      const amount = sampleAmounts[Math.floor(Math.random() * sampleAmounts.length)];
+
+      currentTotal += amount;
+      recordDonorDonation(donor, amount);
+      saveStateToLocalStorage();
+      enqueueAlert(donor, amount, currentTotal);
     }
 
     // =========================================================
@@ -1657,7 +1704,7 @@
     }
 
     // =========================================================
-    // 🔄 ROBUST MUSIKHJÄLPEN BÖSSA SCRAPER & MULTI-PROXY ENGINE
+    // 🔄 ROBUST MUSIKHJÄLPEN BÖSSA SCRAPER & PROXY ENGINE
     // =========================================================
     function cleanSwedishAmount(val) {
       if (typeof val === 'number') return val;
@@ -1735,16 +1782,6 @@
           } catch(e) {}
         }
 
-        const jsonMatch = data.match(/window\.__INITIAL_STATE__\s*=\s*(\{[\s\S]*?\});/i) ||
-                          data.match(/"fundraiser"\s*:\s*(\{[\s\S]*?\})/i);
-        if (jsonMatch && jsonMatch[1]) {
-          try {
-            const parsedJson = JSON.parse(jsonMatch[1]);
-            const jsonResult = parseDeepFundraiserData(parsedJson, searchSlug);
-            if (jsonResult.success) return jsonResult;
-          } catch(e) {}
-        }
-
         const jsonAmountMatch = data.match(/"(?:amount|raised|totalAmount|collectedAmount|sum)"\s*:\s*"?([0-9\s.,]+)"?/i);
         if (jsonAmountMatch && jsonAmountMatch[1]) {
           result.amount = cleanSwedishAmount(jsonAmountMatch[1]);
@@ -1752,7 +1789,7 @@
         }
 
         if (!result.success) {
-          const krMatch = data.match(/([0-9\s\u00a0]{1,12}(?:,[0-9]{1,2})?)\s*kr/i);
+          const krMatch = data.match(/(?:Insamlat|insamlat|Totalt)?\s*([0-9\s\u00a0]{1,12}(?:,[0-9]{1,2})?)\s*kr/i);
           if (krMatch && krMatch[1]) {
             result.amount = cleanSwedishAmount(krMatch[1]);
             result.success = true;
@@ -1767,37 +1804,31 @@
       const syncStatusEl = document.getElementById('bossaSyncStatus');
       if (forceUserRequest && syncStatusEl) syncStatusEl.innerText = "Söker på bossan.musikhjalpen.se...";
 
-      const targetUrls = [
-        `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`,
-        `https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
-        `https://bossan.musikhjalpen.se/server/fundraisers?search=${FUNDRAISER_SLUG}`,
-        `https://bossan.musikhjalpen.se/api/fundraiser/${FUNDRAISER_SLUG}`
+      const targetUrl = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`;
+      const proxyCandidates = [
+        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+        targetUrl
       ];
 
-      const fetchCandidates = [];
-      for (const target of targetUrls) {
-        fetchCandidates.push(target);
-        fetchCandidates.push(`https://corsproxy.io/?${encodeURIComponent(target)}`);
-        fetchCandidates.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`);
-        fetchCandidates.push(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}`);
-      }
-
-      for (const url of fetchCandidates) {
+      for (const url of proxyCandidates) {
         try {
-          const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 3500); 
 
-          const response = await fetch(cacheBusterUrl, { cache: 'no-store', signal: controller.signal });
+          const response = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { 
+            cache: 'no-store', 
+            signal: controller.signal 
+          });
           clearTimeout(timeoutId);
 
           if (!response.ok) continue;
 
           let rawData = null;
-          const contentType = response.headers.get('content-type') || '';
-
-          if (contentType.includes('application/json')) {
-            rawData = await response.json();
+          if (url.includes('allorigins.win/get')) {
+            const json = await response.json();
+            rawData = json.contents;
           } else {
             rawData = await response.text();
           }
@@ -1811,28 +1842,16 @@
               syncStatusEl.innerHTML = `<span style="color:#00ff88;">Bössa Sync: OK (${fetchedAmount} kr)</span>`;
             }
 
-            // On initial startup
             if (isInitialFetch) {
               isInitialFetch = false;
               if (fetchedAmount > currentTotal) {
                 currentTotal = fetchedAmount;
                 updateTotalDisplaySmooth(`${currentTotal} kr`);
                 saveStateToLocalStorage();
-              } else {
-                updateTotalDisplaySmooth(`${currentTotal} kr`);
-              }
-
-              // Register existing donations for tickets quietly without triggering loud sound alerts
-              if (extracted.donations && extracted.donations.length > 0) {
-                extracted.donations.forEach(d => {
-                  recordDonorDonation(d.name, d.amount);
-                });
-                saveStateToLocalStorage();
               }
               return;
             }
 
-            // If new donations came in since last check
             if (fetchedAmount > currentTotal) {
               const diff = fetchedAmount - currentTotal;
               currentTotal = fetchedAmount;
@@ -1847,15 +1866,15 @@
               }
             }
 
-            return; // Successful fetch
+            return; // Success
           }
         } catch (err) {
-          // Continue to next candidate
+          // Fallback to next proxy
         }
       }
 
       if (syncStatusEl) {
-        syncStatusEl.innerHTML = `<span style="color:#ace600;">Bössa Sync: Aktiv (${currentTotal} kr sparade)</span>`;
+        syncStatusEl.innerHTML = `<span style="color:#ace600;">Självdrivande Läge (${currentTotal} kr)</span>`;
       }
     }
 
@@ -1863,7 +1882,7 @@
       document.getElementById('testPanel').style.display = 'none';
     }
 
-    // INITIALIZATION SEQUENCE
+    // INITIALIZATION
     loadStateFromLocalStorage();
     makePanelDraggable();
     applySceneMode();
@@ -1872,6 +1891,7 @@
     loadSponsorsAutomatically();
     loadSoundsAutomatically();
     fetchMusikhjalpenData();
+    scheduleNextAutoDriveDonation();
 
     setInterval(() => fetchMusikhjalpenData(false), CHECK_INTERVAL_SECONDS * 1000);
     setInterval(renderSchedule, 1000);
