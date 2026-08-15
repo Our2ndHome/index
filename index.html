@@ -1912,4 +1912,16 @@
     // INITIALIZATION SEQUENCE
     loadStateFromLocalStorage();
     makePanelDraggable();
-    applySce
+    applySceneMode();
+    renderSchedule();
+    initCountdown();
+    loadSponsorsAutomatically();
+    loadSoundsAutomatically();
+    fetchMusikhjalpenData();
+    scheduleNextAutoDriveDonation();
+
+    setInterval(() => fetchMusikhjalpenData(false), CHECK_INTERVAL_SECONDS * 1000);
+    setInterval(renderSchedule, 1000);
+  </script>
+</body>
+</html>
