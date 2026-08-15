@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.7</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.8</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -304,7 +304,6 @@
       visibility: visible;
     }
 
-    /* Header Container */
     .giveaway-title-container {
       display: flex;
       flex-direction: column;
@@ -334,7 +333,6 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* Start Countdown Badge Positioned Directly Under the Sub-Title */
     .giveaway-timer-badge {
       display: inline-block;
       margin-top: 8px;
@@ -663,10 +661,16 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.7) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v2.8) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.7</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.8</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
+    <div class="panel-section">
+      <b>Bössa Sync Status:</b><br>
+      <div id="bossaSyncStatus" style="font-size:11px; color:#ace600; margin:3px 0;">Ansluter till our2ndHome...</div>
+      <button onclick="fetchMusikhjalpenData(true)" style="background:#00ff88; color:#000;">🔄 Hämta Från Bössa</button>
+    </div>
+
     <div class="panel-section">
       <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
       <div id="giveawayStats" style="font-size:11px; color:#ace600; margin:4px 0;">Biljetter: 0 | Givare: 0</div>
@@ -1604,12 +1608,47 @@
       updateTotalDisplaySmooth('0 kr');
     }
 
-    async function fetchMusikhjalpenData() {
+    async function fetchMusikhjalpenData(forceUserRequest = false) {
+      const syncStatusEl = document.getElementById('bossaSyncStatus');
+      if (forceUserRequest && syncStatusEl) syncStatusEl.innerText = "Söker på bossan.musikhjalpen.se...";
+
       const endpoints = [
         `https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
-        `https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`)}`
+        `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`)}`
       ];
+
+      // Helper to parse numbers from strings like "1 250 kr" or JSON
+      const parseAmountFromDataOrObject = (data) => {
+        if (!data) return 0;
+
+        if (typeof data === 'object') {
+          let raw = data.amount ?? data.raised ?? data.totalAmount ?? data.total ?? data.sum ?? (data.fundraiser && data.fundraiser.amount);
+          if (typeof raw === 'object' && raw !== null) raw = raw.value ?? raw.amount;
+          if (typeof raw === 'number') return raw;
+          if (typeof raw === 'string') {
+            const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
+            if (!isNaN(num)) return num;
+          }
+        }
+
+        if (typeof data === 'string') {
+          const jsonMatch = data.match(/"(?:amount|raised|totalAmount|sum)"\s*:\s*"?([0-9\s.,]+)"?/i);
+          if (jsonMatch && jsonMatch[1]) {
+            const num = parseFloat(jsonMatch[1].replace(/[^0-9.]/g, ''));
+            if (!isNaN(num) && num > 0) return num;
+          }
+
+          const krMatch = data.match(/([0-9\s]{1,10})\s*kr/i);
+          if (krMatch && krMatch[1]) {
+            const num = parseFloat(krMatch[1].replace(/[^0-9.]/g, ''));
+            if (!isNaN(num) && num > 0) return num;
+          }
+        }
+
+        return 0;
+      };
 
       for (const url of endpoints) {
         try {
@@ -1617,41 +1656,63 @@
           const response = await fetch(cacheBusterUrl, { cache: 'no-store' });
           if (!response.ok) continue;
 
-          const data = await response.json();
-          const amount = Number(data.amount || data.raised || 0);
+          let rawData = null;
+          const contentType = response.headers.get('content-type') || '';
+
+          if (contentType.includes('application/json')) {
+            rawData = await response.json();
+          } else {
+            rawData = await response.text();
+          }
+
+          const amount = parseAmountFromDataOrObject(rawData);
 
           let latestDonorName = "Anonym Givare"; 
-          if (data.donations && data.donations.length > 0) {
-            const lastDonation = data.donations[0];
-            if (lastDonation.name && lastDonation.name.trim()) {
-              latestDonorName = lastDonation.name;
+          if (typeof rawData === 'object' && rawData !== null && dataHasDonations(rawData)) {
+            const donations = rawData.donations || (rawData.fundraiser && rawData.fundraiser.donations);
+            if (donations && donations.length > 0) {
+              const lastDonation = donations[0];
+              if (lastDonation.name && lastDonation.name.trim()) {
+                latestDonorName = lastDonation.name;
+              }
+
+              donations.forEach(d => {
+                if (d.amount && d.name) {
+                  recordDonorDonation(d.name, parseAmountFromDataOrObject(d.amount));
+                }
+              });
+            }
+          }
+
+          if (amount > 0) {
+            if (syncStatusEl) syncStatusEl.innerHTML = `<span style="color:#00ff88;">Bössa Sync: OK (${amount} kr)</span>`;
+
+            if (currentTotal === 0) {
+              currentTotal = amount;
+              updateTotalDisplaySmooth(`${currentTotal} kr`);
+              return;
             }
 
-            // Sync donations into ticket database
-            data.donations.forEach(d => {
-              if (d.amount && d.name) {
-                recordDonorDonation(d.name, Number(d.amount));
-              }
-            });
-          }
+            if (amount > currentTotal) {
+              const donationDiff = amount - currentTotal;
+              currentTotal = amount;
+              enqueueAlert(latestDonorName, donationDiff, currentTotal);
+            }
 
-          if (currentTotal === 0 && amount > 0) {
-            currentTotal = amount;
-            updateTotalDisplaySmooth(`${currentTotal} kr`);
-            return;
+            return; // Success!
           }
-
-          if (amount > currentTotal) {
-            const donationDiff = amount - currentTotal;
-            currentTotal = amount;
-            enqueueAlert(latestDonorName, donationDiff, currentTotal);
-          }
-
-          return; // Success
         } catch (err) {
-          // Fallback
+          // Try next endpoint fallback
         }
       }
+
+      if (syncStatusEl && forceUserRequest) {
+        syncStatusEl.innerHTML = `<span style="color:#ff0055;">Bössa Sync: Väntar på live insamling...</span>`;
+      }
+    }
+
+    function dataHasDonations(obj) {
+      return Boolean(obj && (Array.isArray(obj.donations) || (obj.fundraiser && Array.isArray(obj.fundraiser.donations))));
     }
 
     if (new URLSearchParams(window.location.search).get('live') === '1') {
@@ -1667,7 +1728,7 @@
     loadSoundsAutomatically();
     fetchMusikhjalpenData();
 
-    setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
+    setInterval(() => fetchMusikhjalpenData(false), CHECK_INTERVAL_SECONDS * 1000);
     setInterval(renderSchedule, 1000);
   </script>
 </body>
