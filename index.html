@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - v3.3 Self-Propelled</title>
+  <title>Musikhjälpen Multi-Widget Overlay - v3.4 Guaranteed Sync</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -29,7 +29,7 @@
       color: var(--text-white);
     }
 
-    /* 🎛️ DRAGGABLE TEST CONTROL PANEL WITH VERSION TAG */
+    /* 🎛️ DRAGGABLE CONTROL PANEL */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -95,7 +95,7 @@
       padding: 4px 6px;
       border-radius: 4px;
       font-size: 11px;
-      width: 130px;
+      width: 120px;
       margin-right: 4px;
     }
 
@@ -111,7 +111,7 @@
       color: #aaa;
     }
 
-    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
+    /* ⏱️ WIDGET 1: COUNTDOWN TIMER */
     .countdown-widget {
       position: absolute;
       top: 18px;
@@ -152,7 +152,6 @@
       margin: 0 3px;
     }
 
-    /* 🔥 FINAL 60 SECONDS STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 16px;
       color: var(--primary-color);
@@ -671,10 +670,16 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL -->
+  <!-- 🎛️ CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v3.3</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 KONTROLLPANEL <span class="version-badge">v3.4</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
+    <div class="panel-section" style="background: rgba(172, 230, 0, 0.1); padding: 8px; border-radius: 6px;">
+      <b>⚡ Direkt Tvingat Belopp (Nödändra belopp):</b><br>
+      <input type="number" id="manualTotalInput" value="400" placeholder="Belopp (t.ex. 400)">
+      <button onclick="setTotalAmountDirectly()" style="background:#ace600; color:#000;">💾 Sätt Belopp</button>
+    </div>
+
     <div class="panel-section">
       <b>🚀 Självdrivande Motor (Auto-Drive):</b><br>
       <button id="autoDriveBtn" onclick="toggleAutoDrive()" style="background:#00ff88; color:#000; font-weight:900;">🚀 Auto-Drive: PÅ</button>
@@ -689,7 +694,7 @@
     </div>
 
     <div class="panel-section">
-      <b>🎮 Manuell Nöd-Donation:</b><br>
+      <b>🎮 Manuell Donation:</b><br>
       <input type="text" id="manualNameInput" placeholder="Givarnamn" value="Lisa">
       <input type="number" id="manualAmountInput" placeholder="Belopp" value="250" style="width:60px;">
       <button onclick="submitManualDonation()" style="background:#ace600; color:#000;">+ Skicka</button>
@@ -705,7 +710,7 @@
     </div>
 
     <div class="panel-section">
-      <b>Test & Rensa Tillstånd:</b><br>
+      <b>Test & Rensa Sparat Tillstånd:</b><br>
       <button onclick="simulateDonation('Lisa', 250)">+250 kr (Lisa)</button>
       <button onclick="simulateDonation('Erik', 600)">+600 kr (Erik)</button>
       <button onclick="resetTotal()" style="border-color:#ff0055;">Rensa Sparat Tillstånd</button>
@@ -835,7 +840,7 @@
 
         if (savedTotal !== null && !isNaN(parseFloat(savedTotal))) {
           currentTotal = parseFloat(savedTotal);
-          updateTotalDisplaySmooth(`${currentTotal} kr`);
+          updateTotalDisplayDirect(`${currentTotal} kr`);
         }
 
         if (savedDonors) {
@@ -844,6 +849,23 @@
           updateGiveawayStatsUI();
         }
       } catch(e) {}
+    }
+
+    function setTotalAmountDirectly() {
+      const input = document.getElementById('manualTotalInput');
+      if (!input) return;
+
+      const newAmount = parseFloat(input.value);
+      if (isNaN(newAmount)) return;
+
+      currentTotal = newAmount;
+      updateTotalDisplaySmooth(`${currentTotal} kr`);
+      saveStateToLocalStorage();
+
+      const syncStatusEl = document.getElementById('bossaSyncStatus');
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = `<span style="color:#00ff88;">Låst Belopp: ${currentTotal} kr</span>`;
+      }
     }
 
     // =========================================================
@@ -1636,7 +1658,7 @@
     }
 
     // =========================================================
-    // UNIFIED ALERT & GIVEAWAY QUEUE SYSTEM
+    // UNIFIED ALERT & QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
@@ -1644,6 +1666,11 @@
     function enqueueAlert(donorName, diffAmount, newTotal) {
       alertQueue.push({ type: 'donation', donorName, diffAmount, newTotal });
       processQueue();
+    }
+
+    function updateTotalDisplayDirect(newTotalText) {
+      const display = document.getElementById('totalDisplay');
+      if (display) display.innerText = newTotalText;
     }
 
     function updateTotalDisplaySmooth(newTotalText) {
@@ -1698,7 +1725,7 @@
       currentTotal = 0;
       alertQueue.length = 0;
       for (const key in donorTicketsMap) delete donorTicketsMap[key];
-      updateTotalDisplaySmooth('0 kr');
+      updateTotalDisplayDirect('0 kr');
       updateGiveawayStatsUI();
       try { localStorage.clear(); } catch(e) {}
     }
@@ -1869,7 +1896,7 @@
             return; // Success
           }
         } catch (err) {
-          // Fallback to next proxy
+          // Fallback
         }
       }
 
@@ -1882,19 +1909,7 @@
       document.getElementById('testPanel').style.display = 'none';
     }
 
-    // INITIALIZATION
+    // INITIALIZATION SEQUENCE
     loadStateFromLocalStorage();
     makePanelDraggable();
-    applySceneMode();
-    renderSchedule();
-    initCountdown();
-    loadSponsorsAutomatically();
-    loadSoundsAutomatically();
-    fetchMusikhjalpenData();
-    scheduleNextAutoDriveDonation();
-
-    setInterval(() => fetchMusikhjalpenData(false), CHECK_INTERVAL_SECONDS * 1000);
-    setInterval(renderSchedule, 1000);
-  </script>
-</body>
-</html>
+    applySce
