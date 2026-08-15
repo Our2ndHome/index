@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.8</title>
+  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v3.1</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -86,6 +86,17 @@
     .test-panel button:hover {
       background: var(--secondary-color);
       color: black;
+    }
+
+    .test-panel input {
+      background: #111;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      width: 130px;
+      margin-right: 4px;
     }
 
     .panel-section {
@@ -661,14 +672,22 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.8) -->
+  <!-- 🎛️ TEST CONTROL PANEL (v3.1) -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.8</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v3.1</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section">
-      <b>Bössa Sync Status:</b><br>
-      <div id="bossaSyncStatus" style="font-size:11px; color:#ace600; margin:3px 0;">Ansluter till our2ndHome...</div>
-      <button onclick="fetchMusikhjalpenData(true)" style="background:#00ff88; color:#000;">🔄 Hämta Från Bössa</button>
+      <b>Bössa Sync Status / Sök Bössan:</b><br>
+      <input type="text" id="bossaSlugInput" value="our2ndHome" placeholder="Bössa namn/slug">
+      <button onclick="updateFundraiserSlugAndFetch()" style="background:#00ff88; color:#000;">🔄 Hämta Från Bössa</button>
+      <div id="bossaSyncStatus" style="font-size:11px; color:#ace600; margin:4px 0;">Söker på bossan.musikhjalpen.se...</div>
+    </div>
+
+    <div class="panel-section">
+      <b>🎮 Manuell Nöd-Donation (100% Garanterad):</b><br>
+      <input type="text" id="manualNameInput" placeholder="Givarnamn" value="Lisa">
+      <input type="number" id="manualAmountInput" placeholder="Belopp" value="250" style="width:60px;">
+      <button onclick="submitManualDonation()" style="background:#ace600; color:#000;">+ Skicka</button>
     </div>
 
     <div class="panel-section">
@@ -765,8 +784,7 @@
     // =========================================================
     // CONFIGURATION & BÖSSA API CONNECTIONS
     // =========================================================
-    const FUNDRAISER_SLUG = "our2ndHome";
-    const FUNDRAISER_URL = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`;
+    let FUNDRAISER_SLUG = "our2ndHome";
     const CHECK_INTERVAL_SECONDS = 5;
     const TICKET_MILESTONE_KR = 200; // 200 kr = 1 Ticket
     const MAX_TICKETS_PER_USER = 5;  // Max 5 tickets per unique donor
@@ -1185,6 +1203,25 @@
       if (giveawayResolveCallback) {
         giveawayResolveCallback();
         giveawayResolveCallback = null;
+      }
+    }
+
+    function submitManualDonation() {
+      const nameInput = document.getElementById('manualNameInput');
+      const amountInput = document.getElementById('manualAmountInput');
+      if (!nameInput || !amountInput) return;
+
+      const name = nameInput.value.trim() || "Lisa";
+      const amount = Number(amountInput.value) || 250;
+
+      simulateDonation(name, amount);
+    }
+
+    function updateFundraiserSlugAndFetch() {
+      const slugInput = document.getElementById('bossaSlugInput');
+      if (slugInput && slugInput.value.trim()) {
+        FUNDRAISER_SLUG = slugInput.value.trim();
+        fetchMusikhjalpenData(true);
       }
     }
 
@@ -1615,39 +1652,83 @@
       const endpoints = [
         `https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
         `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`,
+        `https://bossan.musikhjalpen.se/server/fundraisers?search=${FUNDRAISER_SLUG}`,
         `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/server/fundraisers?search=${FUNDRAISER_SLUG}`)}`,
         `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`)}`
       ];
 
-      // Helper to parse numbers from strings like "1 250 kr" or JSON
-      const parseAmountFromDataOrObject = (data) => {
-        if (!data) return 0;
+      // Deep data parser for arrays, objects, JSON, and scraped HTML
+      const parseDeepFundraiserData = (data, searchSlug) => {
+        let result = { amount: 0, latestDonorName: "Anonym Givare", matchedName: "" };
 
+        if (!data) return result;
+
+        const cleanNum = (val) => {
+          if (typeof val === 'number') return val;
+          if (typeof val === 'string') {
+            const num = parseFloat(val.replace(/[^0-9.]/g, ''));
+            return isNaN(num) ? 0 : num;
+          }
+          return 0;
+        };
+
+        // 1. Array of search results
+        if (Array.isArray(data)) {
+          const match = data.find(item => {
+            const name = (item.name || item.title || item.slug || '').toLowerCase();
+            return name.includes(searchSlug.toLowerCase());
+          }) || data[0];
+
+          if (match) {
+            result.amount = cleanNum(match.amount ?? match.raised ?? match.totalAmount ?? match.total);
+            result.matchedName = match.name || match.title || match.slug || '';
+            if (Array.isArray(match.donations) && match.donations.length > 0) {
+              result.latestDonorName = match.donations[0].name || "Anonym Givare";
+              match.donations.forEach(d => {
+                if (d.name && d.amount) recordDonorDonation(d.name, cleanNum(d.amount));
+              });
+            }
+          }
+          return result;
+        }
+
+        // 2. Single Object
         if (typeof data === 'object') {
-          let raw = data.amount ?? data.raised ?? data.totalAmount ?? data.total ?? data.sum ?? (data.fundraiser && data.fundraiser.amount);
-          if (typeof raw === 'object' && raw !== null) raw = raw.value ?? raw.amount;
-          if (typeof raw === 'number') return raw;
-          if (typeof raw === 'string') {
-            const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
-            if (!isNaN(num)) return num;
+          if (Array.isArray(data.fundraisers) || Array.isArray(data.data)) {
+            return parseDeepFundraiserData(data.fundraisers || data.data, searchSlug);
           }
+
+          result.amount = cleanNum(data.amount ?? data.raised ?? data.totalAmount ?? data.total ?? data.sum ?? (data.fundraiser && data.fundraiser.amount));
+          result.matchedName = data.name || data.title || data.slug || '';
+
+          const donations = data.donations || (data.fundraiser && data.fundraiser.donations);
+          if (Array.isArray(donations) && donations.length > 0) {
+            result.latestDonorName = donations[0].name || "Anonym Givare";
+            donations.forEach(d => {
+              if (d.name && d.amount) recordDonorDonation(d.name, cleanNum(d.amount));
+            });
+          }
+
+          return result;
         }
 
+        // 3. HTML String Parser
         if (typeof data === 'string') {
-          const jsonMatch = data.match(/"(?:amount|raised|totalAmount|sum)"\s*:\s*"?([0-9\s.,]+)"?/i);
-          if (jsonMatch && jsonMatch[1]) {
-            const num = parseFloat(jsonMatch[1].replace(/[^0-9.]/g, ''));
-            if (!isNaN(num) && num > 0) return num;
+          const jsonAmountMatch = data.match(/"(?:amount|raised|totalAmount|sum)"\s*:\s*"?([0-9\s.,]+)"?/i);
+          if (jsonAmountMatch && jsonAmountMatch[1]) {
+            result.amount = cleanNum(jsonAmountMatch[1]);
           }
 
-          const krMatch = data.match(/([0-9\s]{1,10})\s*kr/i);
-          if (krMatch && krMatch[1]) {
-            const num = parseFloat(krMatch[1].replace(/[^0-9.]/g, ''));
-            if (!isNaN(num) && num > 0) return num;
+          if (result.amount === 0) {
+            const krMatch = data.match(/([0-9\s]{1,10})\s*kr/i);
+            if (krMatch && krMatch[1]) {
+              result.amount = cleanNum(krMatch[1]);
+            }
           }
         }
 
-        return 0;
+        return result;
       };
 
       for (const url of endpoints) {
@@ -1665,27 +1746,14 @@
             rawData = await response.text();
           }
 
-          const amount = parseAmountFromDataOrObject(rawData);
-
-          let latestDonorName = "Anonym Givare"; 
-          if (typeof rawData === 'object' && rawData !== null && dataHasDonations(rawData)) {
-            const donations = rawData.donations || (rawData.fundraiser && rawData.fundraiser.donations);
-            if (donations && donations.length > 0) {
-              const lastDonation = donations[0];
-              if (lastDonation.name && lastDonation.name.trim()) {
-                latestDonorName = lastDonation.name;
-              }
-
-              donations.forEach(d => {
-                if (d.amount && d.name) {
-                  recordDonorDonation(d.name, parseAmountFromDataOrObject(d.amount));
-                }
-              });
-            }
-          }
+          const extracted = parseDeepFundraiserData(rawData, FUNDRAISER_SLUG);
+          const amount = extracted.amount;
+          const latestDonorName = extracted.latestDonorName || "Anonym Givare";
 
           if (amount > 0) {
-            if (syncStatusEl) syncStatusEl.innerHTML = `<span style="color:#00ff88;">Bössa Sync: OK (${amount} kr)</span>`;
+            if (syncStatusEl) {
+              syncStatusEl.innerHTML = `<span style="color:#00ff88;">Bössa Sync: OK (${amount} kr)</span>`;
+            }
 
             if (currentTotal === 0) {
               currentTotal = amount;
@@ -1702,17 +1770,13 @@
             return; // Success!
           }
         } catch (err) {
-          // Try next endpoint fallback
+          // Fallback
         }
       }
 
-      if (syncStatusEl && forceUserRequest) {
-        syncStatusEl.innerHTML = `<span style="color:#ff0055;">Bössa Sync: Väntar på live insamling...</span>`;
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = `<span style="color:#ace600;">Bössa Sync: Redo för december! (Radiohjälpens API öppnar under MH-veckan)</span>`;
       }
-    }
-
-    function dataHasDonations(obj) {
-      return Boolean(obj && (Array.isArray(obj.donations) || (obj.fundraiser && Array.isArray(obj.fundraiser.donations))));
     }
 
     if (new URLSearchParams(window.location.search).get('live') === '1') {
