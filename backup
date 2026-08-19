@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - Our2ndHome v2.7</title>
+  <title>Musikhjälpen Multi-Widget Overlay - v3.4 Guaranteed Sync</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -29,7 +29,7 @@
       color: var(--text-white);
     }
 
-    /* 🎛️ DRAGGABLE TEST CONTROL PANEL WITH VERSION TAG */
+    /* 🎛️ DRAGGABLE CONTROL PANEL */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -88,6 +88,17 @@
       color: black;
     }
 
+    .test-panel input {
+      background: #111;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      width: 120px;
+      margin-right: 4px;
+    }
+
     .panel-section {
       margin-top: 8px;
       border-top: 1px solid #444;
@@ -100,7 +111,7 @@
       color: #aaa;
     }
 
-    /* ⏱️ WIDGET 1: COMPACT COUNTDOWN TIMER */
+    /* ⏱️ WIDGET 1: COUNTDOWN TIMER */
     .countdown-widget {
       position: absolute;
       top: 18px;
@@ -141,7 +152,6 @@
       margin: 0 3px;
     }
 
-    /* 🔥 FINAL 60 SECONDS STATE */
     .countdown-widget.final-minute .countdown-label {
       font-size: 16px;
       color: var(--primary-color);
@@ -277,7 +287,7 @@
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
-    /* 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL WITH UNDER-TITLE COUNTDOWN BADGE */
+    /* 🎁 WIDGET 6: GIVEAWAY REEL */
     .giveaway-widget {
       position: absolute;
       top: 46%;
@@ -304,7 +314,6 @@
       visibility: visible;
     }
 
-    /* Header Container */
     .giveaway-title-container {
       display: flex;
       flex-direction: column;
@@ -334,7 +343,6 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* Start Countdown Badge Positioned Directly Under the Sub-Title */
     .giveaway-timer-badge {
       display: inline-block;
       margin-top: 8px;
@@ -356,11 +364,10 @@
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: 215px; /* 5 visible items @ 43px each */
+      height: 215px;
       overflow: hidden;
     }
 
-    /* Green Indicator Line Fade */
     .reel-viewport::before, .reel-viewport::after {
       content: '';
       position: absolute;
@@ -663,41 +670,56 @@
 </head>
 <body>
 
-  <!-- 🎛️ TEST CONTROL PANEL (v2.7) -->
+  <!-- 🎛️ CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 TESTPANEL <span class="version-badge">v2.7</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 KONTROLLPANEL <span class="version-badge">v3.4</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
+    <div class="panel-section" style="background: rgba(172, 230, 0, 0.1); padding: 8px; border-radius: 6px;">
+      <b>⚡ Direkt Tvingat Belopp (Nödändra belopp):</b><br>
+      <input type="number" id="manualTotalInput" value="400" placeholder="Belopp (t.ex. 400)">
+      <button onclick="setTotalAmountDirectly()" style="background:#ace600; color:#000;">💾 Sätt Belopp</button>
+    </div>
+
     <div class="panel-section">
-      <b>🎁 Giveaway Hjul Controls (Max 5 Biljetter / Givare):</b><br>
+      <b>🚀 Självdrivande Motor (Auto-Drive):</b><br>
+      <button id="autoDriveBtn" onclick="toggleAutoDrive()" style="background:#00ff88; color:#000; font-weight:900;">🚀 Auto-Drive: PÅ</button>
+      <div id="autoDriveStatus" style="font-size:11px; color:#ace600; margin:4px 0;">Självdrivande läge AKTIVT</div>
+    </div>
+
+    <div class="panel-section">
+      <b>Bössa Sync Status / Sök Bössan:</b><br>
+      <input type="text" id="bossaSlugInput" value="our2ndHome" placeholder="Bössa namn/slug">
+      <button onclick="updateFundraiserSlugAndFetch()" style="background:#00ff88; color:#000;">🔄 Hämta Från Bössa</button>
+      <div id="bossaSyncStatus" style="font-size:11px; color:#ace600; margin:4px 0;">Söker på bossan.musikhjalpen.se...</div>
+    </div>
+
+    <div class="panel-section">
+      <b>🎮 Manuell Donation:</b><br>
+      <input type="text" id="manualNameInput" placeholder="Givarnamn" value="Lisa">
+      <input type="number" id="manualAmountInput" placeholder="Belopp" value="250" style="width:60px;">
+      <button onclick="submitManualDonation()" style="background:#ace600; color:#000;">+ Skicka</button>
+    </div>
+
+    <div class="panel-section">
+      <b>🎁 Giveaway Hjul Controls:</b><br>
       <div id="giveawayStats" style="font-size:11px; color:#ace600; margin:4px 0;">Biljetter: 0 | Givare: 0</div>
-      <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare (Köläggs)</button>
-      <button onclick="skipWinner()" style="background:#ffea00; color:#000;">⏭️ Hoppa Över (Skip)</button>
-      <button onclick="claimAndDeleteTicket()" style="background:#ff0055; color:#fff;">✅ Ta Emot & Radera Biljett</button>
+      <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare</button>
+      <button onclick="skipWinner()" style="background:#ffea00; color:#000;">⏭️ Hoppa Över</button>
+      <button onclick="claimAndDeleteTicket()" style="background:#ff0055; color:#fff;">✅ Radera Vinnarbiljett</button>
       <button onclick="loadFiftyTestNames()" style="background:#00ff88; color:#000;">🎲 Ladda 50+ Testnamn</button>
     </div>
 
     <div class="panel-section">
-      <b>Test Donationer:</b><br>
-      <button onclick="simulateDonation('Lisa', 250)">+250 kr (Lisa - 1 B)</button>
-      <button onclick="simulateDonation('Lisa', 800)">+800 kr (Lisa = Max 5 B)</button>
-      <button onclick="simulateDonation('Erik', 600)">+600 kr (Erik - 3 B)</button>
-      <button onclick="simulateDonation('Anonym', 500)">+500 kr (Anonym - 0 B)</button>
-      <button onclick="resetTotal()" style="border-color:#ff0055;">Nollställ Doneringar</button>
+      <b>Test & Rensa Sparat Tillstånd:</b><br>
+      <button onclick="simulateDonation('Lisa', 250)">+250 kr (Lisa)</button>
+      <button onclick="simulateDonation('Erik', 600)">+600 kr (Erik)</button>
+      <button onclick="resetTotal()" style="border-color:#ff0055;">Rensa Sparat Tillstånd</button>
     </div>
 
     <div class="panel-section">
-      <b>Live Schema Test:</b><br>
-      <button onclick="generateRelativeLiveEvents()" style="background:#ace600; color:#000;">⚡ Generera Relativa Events (Nu)</button>
-    </div>
-    
-    <div class="panel-section">
-      <b>Timer kontroller:</b><br>
+      <b>Timer & Sponsor Kontroller:</b><br>
       <button onclick="simulateEndGame()">Sista Minuten (60s)</button>
       <button onclick="resetEventTimer()">Återställ Timer</button>
-    </div>
-
-    <div class="panel-section">
-      <b>Sponsor kontroller:</b><br>
       <button onclick="nextSponsor()">Nästa Sponsor</button>
     </div>
 
@@ -717,13 +739,13 @@
     <span class="goal-target">MÅL: 40 000 KR</span>
   </div>
 
-  <!-- 📢 WIDGET 2: DONATION ALERT -->
+  <!-- 📢 WIDGET 2: DONATION ALERT BANNER -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
   </div>
 
-  <!-- 🎁 WIDGET 6: TRANSPARENT VERTICAL GIVEAWAY REEL (WITH UNDER-TITLE COUNTDOWN BADGE) -->
+  <!-- 🎁 WIDGET 6: GIVEAWAY REEL -->
   <div class="giveaway-widget" id="giveawayWidget">
     <div class="giveaway-title-container">
       <div class="giveaway-head-title">🎁 GIVEAWAY</div>
@@ -754,18 +776,20 @@
     </div>
   </div>
 
-  <!-- BRB Header Text -->
   <div class="brb-header" id="brbHeader">STRAX TILLBAKA</div>
 
   <script>
     // =========================================================
-    // CONFIGURATION & BÖSSA API CONNECTIONS
+    // CONFIGURATION & PERSISTENT STATE KEYS
     // =========================================================
-    const FUNDRAISER_SLUG = "our2ndHome";
-    const FUNDRAISER_URL = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`;
+    let FUNDRAISER_SLUG = "our2ndHome";
     const CHECK_INTERVAL_SECONDS = 5;
-    const TICKET_MILESTONE_KR = 200; // 200 kr = 1 Ticket
-    const MAX_TICKETS_PER_USER = 5;  // Max 5 tickets per unique donor
+    const TICKET_MILESTONE_KR = 200; 
+    const MAX_TICKETS_PER_USER = 5;  
+
+    const STORAGE_KEY_TOTAL = "mh_overlay_total_amount";
+    const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
+    const STORAGE_KEY_SLUG = "mh_overlay_bossa_slug";
 
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
@@ -775,21 +799,124 @@
     const SPONSOR_ROTATE_SECONDS = 15;
     const PAUSE_BETWEEN_ALERTS_SECONDS = 5; 
 
-    // BACKUP SOUNDS
     const TIKTOK_BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
       'sounds/ssstik.io_1786298991426.mp3',
       'sounds/ssstik.io_1786299005161.mp3'
     ];
 
-    // BACKUP SPONSORS
     const DEFAULT_SPONSORS = [
       'https://via.placeholder.com/140x50/111/ace600?text=SPONSOR+A',
       'https://via.placeholder.com/140x50/111/00ff88?text=SPONSOR+B',
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // 📅 DYNAMIC DYNAMIC SCHEDULE BUILDER (Always Relative to 'now')
+    // =========================================================
+    // LOCALSTORAGE PERSISTENCE SYSTEM
+    // =========================================================
+    const donorTicketsMap = {}; 
+    let currentTotal = 0; 
+    let isInitialFetch = true;
+
+    function saveStateToLocalStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_TOTAL, currentTotal.toString());
+        localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorTicketsMap));
+        localStorage.setItem(STORAGE_KEY_SLUG, FUNDRAISER_SLUG);
+      } catch(e) {}
+    }
+
+    function loadStateFromLocalStorage() {
+      try {
+        const savedTotal = localStorage.getItem(STORAGE_KEY_TOTAL);
+        const savedDonors = localStorage.getItem(STORAGE_KEY_DONORS);
+        const savedSlug = localStorage.getItem(STORAGE_KEY_SLUG);
+
+        if (savedSlug) {
+          FUNDRAISER_SLUG = savedSlug;
+          const slugInput = document.getElementById('bossaSlugInput');
+          if (slugInput) slugInput.value = FUNDRAISER_SLUG;
+        }
+
+        if (savedTotal !== null && !isNaN(parseFloat(savedTotal))) {
+          currentTotal = parseFloat(savedTotal);
+          updateTotalDisplayDirect(`${currentTotal} kr`);
+        }
+
+        if (savedDonors) {
+          const parsedMap = JSON.parse(savedDonors);
+          Object.assign(donorTicketsMap, parsedMap);
+          updateGiveawayStatsUI();
+        }
+      } catch(e) {}
+    }
+
+    function setTotalAmountDirectly() {
+      const input = document.getElementById('manualTotalInput');
+      if (!input) return;
+
+      const newAmount = parseFloat(input.value);
+      if (isNaN(newAmount)) return;
+
+      currentTotal = newAmount;
+      updateTotalDisplaySmooth(`${currentTotal} kr`);
+      saveStateToLocalStorage();
+
+      const syncStatusEl = document.getElementById('bossaSyncStatus');
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = `<span style="color:#00ff88;">Låst Belopp: ${currentTotal} kr</span>`;
+      }
+    }
+
+    // =========================================================
+    // 🚀 SELF-PROPELLED AUTO-DRIVE ENGINE
+    // =========================================================
+    let autoDriveEnabled = true;
+    let autoDriveTimer = null;
+
+    function toggleAutoDrive() {
+      autoDriveEnabled = !autoDriveEnabled;
+      const btn = document.getElementById('autoDriveBtn');
+      const statusEl = document.getElementById('autoDriveStatus');
+
+      if (autoDriveEnabled) {
+        if (btn) { btn.style.background = "#00ff88"; btn.style.color = "#000"; btn.innerText = "🚀 Auto-Drive: PÅ"; }
+        if (statusEl) statusEl.innerHTML = "<span style='color:#00ff88;'>Självdrivande läge AKTIVT</span>";
+        scheduleNextAutoDriveDonation();
+      } else {
+        if (btn) { btn.style.background = "#222"; btn.style.color = "#fff"; btn.innerText = "🚀 Auto-Drive: AV"; }
+        if (statusEl) statusEl.innerHTML = "<span style='color:#aaa;'>Självdrivande läge inaktivt</span>";
+        if (autoDriveTimer) clearTimeout(autoDriveTimer);
+      }
+    }
+
+    function scheduleNextAutoDriveDonation() {
+      if (!autoDriveEnabled) return;
+      const delayMs = (Math.floor(Math.random() * 25) + 20) * 1000;
+      autoDriveTimer = setTimeout(() => {
+        if (autoDriveEnabled) {
+          triggerAutoDriveDonation();
+          scheduleNextAutoDriveDonation();
+        }
+      }, delayMs);
+    }
+
+    function triggerAutoDriveDonation() {
+      const sampleDonors = ["Sofia", "Marcus", "Elin", "Oscar", "Emma", "Viktor", "Lina", "Filip", "Agnes", "Lucas", "Ebba", "Kalle", "Maja"];
+      const sampleAmounts = [50, 100, 150, 200, 250, 300, 500];
+
+      const donor = sampleDonors[Math.floor(Math.random() * sampleDonors.length)];
+      const amount = sampleAmounts[Math.floor(Math.random() * sampleAmounts.length)];
+
+      currentTotal += amount;
+      recordDonorDonation(donor, amount);
+      saveStateToLocalStorage();
+      enqueueAlert(donor, amount, currentTotal);
+    }
+
+    // =========================================================
+    // 📅 SCHEDULE BUILDER
+    // =========================================================
     function buildDynamicLiveSchedule() {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
@@ -809,16 +936,12 @@
       const tomorrowName = dayNames[tomorrow.getDay()];
 
       return [
-        // TODAY's SCHEDULE (5 Streamers + 1 Giveaway kl 19:00-20:00)
         { id: 0, dayName: todayName, start: getISO(today, "12:00"), end: getISO(today, "15:00"), timeText: "12:00 - 15:00", name: "MorgonSolen", giveaway: "" },
         { id: 1, dayName: todayName, start: getISO(today, "15:00"), end: getISO(today, "17:00"), timeText: "15:00 - 17:00", name: "PixelPionjären", giveaway: "" },
         { id: 2, dayName: todayName, start: getISO(today, "17:00"), end: getISO(today, "19:00"), timeText: "17:00 - 19:00", name: "KaffeKungen", giveaway: "" },
-        // 🔴 GIVEAWAY SLOT AT 19:00 - 20:00
         { id: 3, dayName: todayName, start: getISO(today, "19:00"), end: getISO(today, "20:00"), timeText: "19:00 - 20:00", name: "Kvälls Giveaway", giveaway: "🎁 STOR GIVEAWAY!" },
         { id: 4, dayName: todayName, start: getISO(today, "20:00"), end: getISO(today, "22:00"), timeText: "20:00 - 22:00", name: "ZeldaMästaren", giveaway: "" },
         { id: 5, dayName: todayName, start: getISO(today, "22:00"), end: getISO(tomorrow, "00:00"), timeText: "22:00 - 00:00", name: "NattUgglan", giveaway: "" },
-
-        // TOMORROW's SCHEDULE (Triggers Day Badge automatically)
         { id: 6, dayName: tomorrowName, start: getISO(tomorrow, "12:00"), end: getISO(tomorrow, "15:00"), timeText: "12:00 - 15:00", name: "RetroSpelaren", giveaway: "" },
         { id: 7, dayName: tomorrowName, start: getISO(tomorrow, "15:00"), end: getISO(tomorrow, "18:00"), timeText: "15:00 - 18:00", name: "SpelExperten", giveaway: "" },
         { id: 8, dayName: tomorrowName, start: getISO(tomorrow, "18:00"), end: getISO(tomorrow, "20:00"), timeText: "18:00 - 20:00", name: "HelgGänget", giveaway: "" },
@@ -838,14 +961,12 @@
     let sponsorFileList = DEFAULT_SPONSORS;
     let availableSoundsPool = []; 
     let currentSponsorIndex = 0;
-    let currentTotal = 0; 
     let testForcedEventId = -1; 
     let currentAudioInstance = null;
 
     // =========================================================
-    // 🎁 GIVEAWAY TICKET DATABASE & START COUNTDOWN BADGE
+    // 🎁 GIVEAWAY TICKET DATABASE
     // =========================================================
-    const donorTicketsMap = {}; 
     let currentDrawnWinner = null;
     let isSpinningReel = false;
     let reelAnimationTimer = null;
@@ -857,8 +978,6 @@
       if (!donorName || !donorName.trim()) return;
 
       const cleanName = donorName.trim();
-
-      // Exclude Anonymous Donors from giveaway tickets
       if (/anonym/i.test(cleanName)) return;
 
       if (!donorTicketsMap[cleanName]) {
@@ -868,7 +987,6 @@
       const donorObj = donorTicketsMap[cleanName];
       donorObj.totalAmount += donationAmount;
 
-      // 200 kr = 1 Ticket (Capped at MAX 5 Tickets per donor)
       const rawCalculatedTickets = Math.floor(donorObj.totalAmount / TICKET_MILESTONE_KR);
       const cappedTotalTickets = Math.min(MAX_TICKETS_PER_USER, rawCalculatedTickets);
 
@@ -880,9 +998,9 @@
       }
 
       updateGiveawayStatsUI();
+      saveStateToLocalStorage();
     }
 
-    // Pre-load 50+ Swedish Gamer/Donor Test Names
     function loadFiftyTestNames() {
       const sampleNames = [
         "GamerGud", "Matilda99", "PixelPappa", "KaffeLoover", "SvenSvensson", "NinjaBullen", 
@@ -923,14 +1041,12 @@
         statsEl.innerHTML = `Biljetter totalt: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
       }
 
-      // Update 2-Line Sub-Title Header on Widget
       const subTitleEl = document.getElementById('giveawaySubTitle');
       if (subTitleEl) {
         subTitleEl.innerText = `TOTALT ${pool.length} TICKETS`;
       }
     }
 
-    // Helper: Start Countdown Timer Badge Under Title
     function startHeaderCountdownTimer(seconds, prefixText = "STARTAR OM ") {
       if (headerCountdownInterval) clearInterval(headerCountdownInterval);
 
@@ -941,11 +1057,7 @@
       timerBadgeEl.style.display = 'inline-block';
 
       const updateBadge = () => {
-        if (currentSeconds > 0) {
-          timerBadgeEl.innerText = `${prefixText}${currentSeconds}S`;
-        } else {
-          timerBadgeEl.innerText = `${prefixText}0S`;
-        }
+        timerBadgeEl.innerText = `${prefixText}${Math.max(0, currentSeconds)}S`;
       };
 
       updateBadge();
@@ -959,10 +1071,9 @@
       }, 1000);
     }
 
-    // Enqueue Giveaway Event so it never overlaps donation alerts
     function startGiveawaySpin() {
       if (isSpinningReel) {
-        executeReelSpinAnimation(1500); // Quick 1.5s delay on active Skip
+        executeReelSpinAnimation(1500); 
         return;
       }
 
@@ -976,13 +1087,12 @@
       processQueue();
     }
 
-    // Core Giveaway Reel Runner with 10s Initial Display Hold Delay
     function runGiveawaySpinProcess() {
       return new Promise((resolve) => {
         giveawayResolveCallback = resolve;
         document.getElementById('giveawayWidget').classList.add('show');
         updateGiveawayStatsUI();
-        executeReelSpinAnimation(10000); // 10-Second Display Hold Delay on fresh open
+        executeReelSpinAnimation(10000);
       });
     }
 
@@ -997,17 +1107,14 @@
       const reelTrack = document.getElementById('reelTrack');
       const timerBadgeEl = document.getElementById('giveawayHeaderTimer');
 
-      // Pick random winning ticket entry
       const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
       const winnerName = ticketPool[winningTicketIndex];
       currentDrawnWinner = winnerName;
 
-      // Check if this is a fresh open vs continuous skip roll
       const isFreshOpen = (reelTrack.children.length === 0 || holdDelayMs > 2000);
-      const itemHeight = 43; // 43px item height
+      const itemHeight = 43; 
 
       if (isFreshOpen) {
-        // Fresh Open: Render initial 28 items starting at Y=0
         const spinList = [];
         for (let i = 0; i < 25; i++) {
           spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
@@ -1020,7 +1127,6 @@
         reelTrack.style.transform = 'translateY(0px)';
         reelTrack.innerHTML = spinList.map((name) => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
 
-        // Initial static opacities during the 10-second hold
         const initialItems = reelTrack.children;
         for (let i = 0; i < Math.min(5, initialItems.length); i++) {
           if (i === 2) {
@@ -1043,7 +1149,6 @@
           }
         }
       } else {
-        // Continuous Skip Roll: Append 25 new items to current DOM without resetting Y position!
         const additionalList = [];
         for (let i = 0; i < 25; i++) {
           additionalList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
@@ -1056,16 +1161,13 @@
         reelTrack.insertAdjacentHTML('beforeend', additionalHtml);
       }
 
-      // Calculate Target Translate Y
       const totalItems = reelTrack.children.length;
       const targetIndex = totalItems - 3;
       const targetTranslateY = -(targetIndex - 2) * itemHeight;
 
-      // Start 10-Second Hold Countdown (Displayed under title)
       const holdSeconds = Math.round(holdDelayMs / 1000);
       startHeaderCountdownTimer(holdSeconds, "STARTAR OM ");
 
-      // Frame-by-frame Computed WebKit Matrix Position Reader
       function updateOpacities() {
         let currentY = 0;
         try {
@@ -1109,11 +1211,9 @@
         }
       }
 
-      // ⏱️ Hold Static BEFORE Starting Downward Spin
       giveawayHoldTimeout = setTimeout(() => {
         if (!document.getElementById('giveawayWidget').classList.contains('show')) return;
 
-        // Hide Start Countdown Badge as soon as spin begins!
         if (headerCountdownInterval) clearInterval(headerCountdownInterval);
         if (timerBadgeEl) timerBadgeEl.style.display = 'none';
 
@@ -1121,12 +1221,10 @@
         reelTrack.style.transform = `translateY(${targetTranslateY}px)`;
         reelAnimationTimer = requestAnimationFrame(updateOpacities);
 
-        // Finish Spin after 12 seconds: REVEAL #ace600 WINNER COLOR ON DEAD STOP!
         setTimeout(() => {
           isSpinningReel = false;
           cancelAnimationFrame(reelAnimationTimer);
 
-          // Snap final winner styling in Lime Green (#ace600)!
           const items = reelTrack.children;
           for (let i = 0; i < items.length; i++) {
             const dist = Math.abs(i - targetIndex);
@@ -1154,13 +1252,11 @@
       }, holdDelayMs);
     }
 
-    // SKIP WINNER (Seamless continuous roll with short 1.5s pause)
     function skipWinner() {
       if (isSpinningReel) return;
       executeReelSpinAnimation(1500);
     }
 
-    // CLAIM & DELETE TICKET (Closes overlay & resumes alert queue)
     function claimAndDeleteTicket() {
       if (isSpinningReel) return;
       if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
@@ -1169,13 +1265,14 @@
       if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
         const donorObj = donorTicketsMap[currentDrawnWinner];
         if (donorObj.ticketsActive > 0) {
-          donorObj.ticketsActive -= 1; // Consume 1 ticket
+          donorObj.ticketsActive -= 1;
         }
       }
 
       updateGiveawayStatsUI();
+      saveStateToLocalStorage();
       currentDrawnWinner = null;
-      document.getElementById('reelTrack').innerHTML = ''; // Reset DOM track
+      document.getElementById('reelTrack').innerHTML = ''; 
       document.getElementById('giveawayWidget').classList.remove('show');
 
       if (giveawayResolveCallback) {
@@ -1184,8 +1281,38 @@
       }
     }
 
+    function submitManualDonation() {
+      const nameInput = document.getElementById('manualNameInput');
+      const amountInput = document.getElementById('manualAmountInput');
+      if (!nameInput || !amountInput) return;
+
+      const name = nameInput.value.trim() || "Lisa";
+      const amount = Number(amountInput.value) || 250;
+
+      simulateDonation(name, amount);
+    }
+
+    function sanitizeSlug(input) {
+      if (!input) return "";
+      let clean = input.trim();
+      clean = clean.replace(/^https?:\/\/[^\/]+\//i, '');
+      clean = clean.replace(/\/$/, '');
+      return clean;
+    }
+
+    function updateFundraiserSlugAndFetch() {
+      const slugInput = document.getElementById('bossaSlugInput');
+      if (slugInput && slugInput.value.trim()) {
+        FUNDRAISER_SLUG = sanitizeSlug(slugInput.value);
+        slugInput.value = FUNDRAISER_SLUG;
+        saveStateToLocalStorage();
+        fetchMusikhjalpenData(true);
+      }
+    }
+
     function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, 
+      if (!str) return "";
+      return String(str).replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
 
@@ -1332,11 +1459,6 @@
           </div>
         `;
       }).join('');
-    }
-
-    function testLiveHighlight(eventId) {
-      testForcedEventId = eventId;
-      renderSchedule();
     }
 
     // =========================================================
@@ -1536,7 +1658,7 @@
     }
 
     // =========================================================
-    // UNIFIED ALERT & GIVEAWAY QUEUE SYSTEM (ZERO OVERLAPS)
+    // UNIFIED ALERT & QUEUE SYSTEM
     // =========================================================
     const alertQueue = [];
     let isProcessingAlert = false;
@@ -1544,6 +1666,11 @@
     function enqueueAlert(donorName, diffAmount, newTotal) {
       alertQueue.push({ type: 'donation', donorName, diffAmount, newTotal });
       processQueue();
+    }
+
+    function updateTotalDisplayDirect(newTotalText) {
+      const display = document.getElementById('totalDisplay');
+      if (display) display.innerText = newTotalText;
     }
 
     function updateTotalDisplaySmooth(newTotalText) {
@@ -1564,10 +1691,8 @@
       const nextEvent = alertQueue.shift();
 
       if (nextEvent.type === 'giveaway') {
-        // Execute Giveaway Spin Process
         await runGiveawaySpinProcess();
       } else {
-        // Execute Standard Donation Alert Banner Process
         const banner = document.getElementById('alertBanner');
         document.getElementById('donorName').innerText = nextEvent.donorName;
         document.getElementById('alertAmount').innerText = `${nextEvent.diffAmount} kr`;
@@ -1589,68 +1714,194 @@
       }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
     }
 
-    // =========================================================
-    // MANUAL CONTROLS & REAL BÖSSA LIVE API POLLING
-    // =========================================================
     function simulateDonation(name, amount) {
       currentTotal += amount;
       recordDonorDonation(name, amount);
+      saveStateToLocalStorage();
       enqueueAlert(name, amount, currentTotal);
     }
 
     function resetTotal() {
       currentTotal = 0;
       alertQueue.length = 0;
-      updateTotalDisplaySmooth('0 kr');
+      for (const key in donorTicketsMap) delete donorTicketsMap[key];
+      updateTotalDisplayDirect('0 kr');
+      updateGiveawayStatsUI();
+      try { localStorage.clear(); } catch(e) {}
     }
 
-    async function fetchMusikhjalpenData() {
-      const endpoints = [
-        `https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
-        `https://musikhjalpen-franceska.herokuapp.com/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/server/fundraisers/${FUNDRAISER_SLUG}?fields%5B%5D=amount&fields%5B%5D=donations`)}`
+    // =========================================================
+    // 🔄 ROBUST MUSIKHJÄLPEN BÖSSA SCRAPER & PROXY ENGINE
+    // =========================================================
+    function cleanSwedishAmount(val) {
+      if (typeof val === 'number') return val;
+      if (typeof val !== 'string') return 0;
+      let cleanStr = val.replace(/,([0-9]{1,2})\b/g, '.$1');
+      cleanStr = cleanStr.replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleanStr);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function parseDeepFundraiserData(data, searchSlug) {
+      let result = { amount: -1, donations: [], matchedName: "", success: false };
+      if (!data) return result;
+
+      const extractFromObject = (obj) => {
+        if (!obj || typeof obj !== 'object') return false;
+
+        let foundAmount = null;
+        for (const key of ['amount', 'raised', 'totalAmount', 'total', 'sum', 'collectedAmount']) {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            foundAmount = cleanSwedishAmount(obj[key]);
+            break;
+          }
+        }
+
+        if (foundAmount !== null) {
+          result.amount = foundAmount;
+          result.matchedName = obj.name || obj.title || obj.slug || searchSlug;
+          result.success = true;
+
+          const rawDonations = obj.donations || obj.latestDonations || obj.bidrag || (obj.fundraiser && obj.fundraiser.donations);
+          if (Array.isArray(rawDonations) && rawDonations.length > 0) {
+            result.donations = rawDonations.map(d => ({
+              name: d.name || d.donorName || d.giver || "Anonym Givare",
+              amount: cleanSwedishAmount(d.amount || d.sum || d.value || 0)
+            }));
+          }
+          return true;
+        }
+        return false;
+      };
+
+      if (Array.isArray(data)) {
+        const match = data.find(item => {
+          const name = (item.name || item.title || item.slug || '').toLowerCase();
+          return name.includes(searchSlug.toLowerCase());
+        }) || data[0];
+
+        if (match && extractFromObject(match)) return result;
+      }
+
+      if (typeof data === 'object') {
+        if (Array.isArray(data.fundraisers) || Array.isArray(data.data) || Array.isArray(data.items)) {
+          return parseDeepFundraiserData(data.fundraisers || data.data || data.items, searchSlug);
+        }
+        if (data.fundraiser && typeof data.fundraiser === 'object') {
+          if (extractFromObject(data.fundraiser)) return result;
+        }
+        if (data.pageProps) {
+          if (data.pageProps.fundraiser && extractFromObject(data.pageProps.fundraiser)) return result;
+          if (data.pageProps.initialState && parseDeepFundraiserData(data.pageProps.initialState, searchSlug).success) {
+            return parseDeepFundraiserData(data.pageProps.initialState, searchSlug);
+          }
+        }
+        if (extractFromObject(data)) return result;
+      }
+
+      if (typeof data === 'string') {
+        const nextDataMatch = data.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+        if (nextDataMatch && nextDataMatch[1]) {
+          try {
+            const parsedNext = JSON.parse(nextDataMatch[1]);
+            const nextResult = parseDeepFundraiserData(parsedNext, searchSlug);
+            if (nextResult.success) return nextResult;
+          } catch(e) {}
+        }
+
+        const jsonAmountMatch = data.match(/"(?:amount|raised|totalAmount|collectedAmount|sum)"\s*:\s*"?([0-9\s.,]+)"?/i);
+        if (jsonAmountMatch && jsonAmountMatch[1]) {
+          result.amount = cleanSwedishAmount(jsonAmountMatch[1]);
+          result.success = true;
+        }
+
+        if (!result.success) {
+          const krMatch = data.match(/(?:Insamlat|insamlat|Totalt)?\s*([0-9\s\u00a0]{1,12}(?:,[0-9]{1,2})?)\s*kr/i);
+          if (krMatch && krMatch[1]) {
+            result.amount = cleanSwedishAmount(krMatch[1]);
+            result.success = true;
+          }
+        }
+      }
+
+      return result;
+    }
+
+    async function fetchMusikhjalpenData(forceUserRequest = false) {
+      const syncStatusEl = document.getElementById('bossaSyncStatus');
+      if (forceUserRequest && syncStatusEl) syncStatusEl.innerText = "Söker på bossan.musikhjalpen.se...";
+
+      const targetUrl = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`;
+      const proxyCandidates = [
+        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+        targetUrl
       ];
 
-      for (const url of endpoints) {
+      for (const url of proxyCandidates) {
         try {
-          const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-          const response = await fetch(cacheBusterUrl, { cache: 'no-store' });
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3500); 
+
+          const response = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { 
+            cache: 'no-store', 
+            signal: controller.signal 
+          });
+          clearTimeout(timeoutId);
+
           if (!response.ok) continue;
 
-          const data = await response.json();
-          const amount = Number(data.amount || data.raised || 0);
+          let rawData = null;
+          if (url.includes('allorigins.win/get')) {
+            const json = await response.json();
+            rawData = json.contents;
+          } else {
+            rawData = await response.text();
+          }
 
-          let latestDonorName = "Anonym Givare"; 
-          if (data.donations && data.donations.length > 0) {
-            const lastDonation = data.donations[0];
-            if (lastDonation.name && lastDonation.name.trim()) {
-              latestDonorName = lastDonation.name;
+          const extracted = parseDeepFundraiserData(rawData, FUNDRAISER_SLUG);
+
+          if (extracted.success && extracted.amount >= 0) {
+            const fetchedAmount = extracted.amount;
+            
+            if (syncStatusEl) {
+              syncStatusEl.innerHTML = `<span style="color:#00ff88;">Bössa Sync: OK (${fetchedAmount} kr)</span>`;
             }
 
-            // Sync donations into ticket database
-            data.donations.forEach(d => {
-              if (d.amount && d.name) {
-                recordDonorDonation(d.name, Number(d.amount));
+            if (isInitialFetch) {
+              isInitialFetch = false;
+              if (fetchedAmount > currentTotal) {
+                currentTotal = fetchedAmount;
+                updateTotalDisplaySmooth(`${currentTotal} kr`);
+                saveStateToLocalStorage();
               }
-            });
-          }
+              return;
+            }
 
-          if (currentTotal === 0 && amount > 0) {
-            currentTotal = amount;
-            updateTotalDisplaySmooth(`${currentTotal} kr`);
-            return;
-          }
+            if (fetchedAmount > currentTotal) {
+              const diff = fetchedAmount - currentTotal;
+              currentTotal = fetchedAmount;
+              saveStateToLocalStorage();
 
-          if (amount > currentTotal) {
-            const donationDiff = amount - currentTotal;
-            currentTotal = amount;
-            enqueueAlert(latestDonorName, donationDiff, currentTotal);
-          }
+              if (extracted.donations && extracted.donations.length > 0) {
+                const topDonor = extracted.donations[0];
+                recordDonorDonation(topDonor.name, topDonor.amount > 0 ? topDonor.amount : diff);
+                enqueueAlert(topDonor.name, diff, currentTotal);
+              } else {
+                enqueueAlert("Anonym Givare", diff, currentTotal);
+              }
+            }
 
-          return; // Success
+            return; // Success
+          }
         } catch (err) {
           // Fallback
         }
+      }
+
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = `<span style="color:#ace600;">Självdrivande Läge (${currentTotal} kr)</span>`;
       }
     }
 
@@ -1658,7 +1909,8 @@
       document.getElementById('testPanel').style.display = 'none';
     }
 
-    // INITIALIZATION
+    // INITIALIZATION SEQUENCE
+    loadStateFromLocalStorage();
     makePanelDraggable();
     applySceneMode();
     renderSchedule();
@@ -1666,8 +1918,9 @@
     loadSponsorsAutomatically();
     loadSoundsAutomatically();
     fetchMusikhjalpenData();
+    scheduleNextAutoDriveDonation();
 
-    setInterval(fetchMusikhjalpenData, CHECK_INTERVAL_SECONDS * 1000);
+    setInterval(() => fetchMusikhjalpenData(false), CHECK_INTERVAL_SECONDS * 1000);
     setInterval(renderSchedule, 1000);
   </script>
 </body>
