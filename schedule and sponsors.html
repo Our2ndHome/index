@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Schedule & Sponsors Overlay</title>
+  <title>Musikhjälpen Overlay - Schedule & Sponsors v4.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #ace600; /* Lime Green */
-      --secondary-color: #00ff88;
-      --giveaway-color: #ffea00;
+      --primary-color: #ace600;  /* Lime Green */
+      --secondary-color: #00ff88;/* Bright Mint */
+      --giveaway-color: #ffea00; /* Yellow */
       --text-white: #ffffff;
+      --text-muted: #d0d0d0;
       --bg-dark: rgba(0, 0, 0, 0.92);
-      --shadow-dark: rgba(0, 0, 0, 0.85);
+      --shadow-dark: rgba(0, 0, 0, 0.95);
     }
 
     * { box-sizing: border-box; }
@@ -27,7 +28,7 @@
       color: var(--text-white);
     }
 
-    /* 🎛️ CONTROL PANEL */
+    /* 🎛️ DRAGGABLE CONTROL PANEL (v4.0) */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -38,41 +39,65 @@
       border-radius: 10px;
       color: var(--text-white);
       z-index: 999999;
-      max-width: 320px;
+      width: 330px;
       font-size: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.85);
     }
 
     .test-panel h4 {
       margin: 0 0 8px 0;
-      font-size: 13px;
+      font-size: 12px;
       color: var(--secondary-color);
       text-transform: uppercase;
       cursor: move;
       user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       background: rgba(0, 255, 136, 0.1);
-      padding: 5px 8px;
+      padding: 6px 8px;
       border-radius: 5px;
+      border: 1px dashed rgba(0, 255, 136, 0.4);
+    }
+
+    .version-badge {
+      background: var(--secondary-color);
+      color: #000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 3px;
     }
 
     .test-panel button {
       background: #222;
       color: var(--text-white);
       border: 1px solid var(--secondary-color);
-      padding: 5px 8px;
+      padding: 6px 10px;
       margin: 2px;
       border-radius: 5px;
       cursor: pointer;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 800;
+      transition: all 0.2s ease;
     }
 
-    .test-panel button:hover { background: var(--secondary-color); color: black; }
+    .test-panel button:hover {
+      background: var(--secondary-color);
+      color: #000;
+    }
 
-    /* 🖼️ SPONSOR ROTATOR */
+    .panel-clock {
+      font-size: 11px;
+      color: var(--primary-color);
+      font-weight: 800;
+      margin-top: 6px;
+    }
+
+    /* 🖼️ SPONSOR ROTATOR WIDGET */
     .sponsor-widget {
       position: absolute;
-      bottom: 85px;
+      bottom: 95px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -83,8 +108,8 @@
     }
 
     .sponsor-logo-container {
-      width: 140px;
-      height: 40px;
+      width: 150px;
+      height: 45px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -94,18 +119,17 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      transition: opacity 0.6s ease-in-out;
+      transition: opacity 0.5s ease-in-out;
       opacity: 1;
-      filter: drop-shadow(0 2px 5px var(--shadow-dark));
+      filter: drop-shadow(0 3px 6px var(--shadow-dark));
     }
 
     .sponsor-label {
       font-size: 11px;
       font-weight: 900;
       color: var(--primary-color);
-      letter-spacing: 1.5px;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      display: block;
       margin-top: 4px;
       text-shadow: 0 2px 5px var(--shadow-dark);
     }
@@ -113,7 +137,7 @@
     /* 📅 SCHEDULE TIMELINE BAR */
     .schedule-widget {
       position: absolute;
-      bottom: 12px;
+      bottom: 15px;
       left: 50%;
       transform: translateX(-50%);
       width: 96vw;
@@ -124,95 +148,102 @@
       pointer-events: none;
     }
 
-    .timeline-container { position: relative; width: 100%; }
+    .timeline-container {
+      position: relative;
+      width: 100%;
+    }
 
+    /* Track Background Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
       left: 0;
       width: 100%;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.25);
+      height: 3px;
+      background: rgba(255, 255, 255, 0.2);
       transform: translateY(-50%);
       z-index: 1;
+      border-radius: 2px;
     }
 
+    /* Live Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
       left: 0;
-      height: 3px;
+      height: 4px;
       background: var(--primary-color);
-      box-shadow: 0 0 6px rgba(172, 230, 0, 0.5);
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
-      transition: width 0.5s linear;
+      border-radius: 2px;
+      transition: width 0.2s linear;
     }
 
+    /* Realtime Sonar Cursor Dot */
     .timeline-cursor {
       position: absolute;
       top: 50%;
       left: 0%;
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       background: var(--primary-color);
-      box-shadow: 0 0 6px var(--primary-color);
+      box-shadow: 0 0 10px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
-      transition: left 0.5s linear;
+      transition: left 0.2s linear;
     }
 
     .timeline-cursor::after {
       content: '';
       position: absolute;
-      top: -4px; left: -4px; right: -4px; bottom: -4px;
-      border: 1.5px solid var(--primary-color);
+      top: -5px; left: -5px; right: -5px; bottom: -5px;
+      border: 2px solid var(--primary-color);
       border-radius: 50%;
       animation: cursorSonar 1.8s infinite ease-out;
     }
 
     @keyframes cursorSonar {
-      0% { transform: scale(0.5); opacity: 0.8; }
-      100% { transform: scale(1.8); opacity: 0; }
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
     }
 
+    /* Ticks & Events Row */
     .timeline-nodes-row {
       position: relative;
       display: flex;
       flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
       width: 100%;
       z-index: 3;
     }
 
+    /* Day Badge */
     .timeline-day-badge {
-      background: rgba(172, 230, 0, 0.12);
-      border: 1px solid rgba(172, 230, 0, 0.6);
-      backdrop-filter: blur(4px);
+      background: rgba(172, 230, 0, 0.15);
+      border: 1px solid var(--primary-color);
       color: var(--primary-color);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 900;
-      padding: 2px 7px;
+      padding: 3px 8px;
       border-radius: 4px;
-      letter-spacing: 1.2px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
       white-space: nowrap;
-      margin-right: 12px;
+      margin-right: 14px;
       align-self: center;
+      box-shadow: 0 2px 8px var(--shadow-dark);
     }
 
+    /* Individual Event Node */
     .timeline-node {
       display: flex;
       flex-direction: column;
       position: relative;
-      flex: 1;
       align-items: center;
       text-align: center;
-      padding: 0 2px;
-      text-shadow: 0 2px 6px var(--shadow-dark);
+      transition: all 0.3s ease;
     }
 
     .node-time {
@@ -222,17 +253,18 @@
       justify-content: center;
       font-size: 11px;
       font-weight: 800;
-      color: #e0e0e0;
+      color: var(--text-muted);
       white-space: nowrap;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px var(--shadow-dark);
     }
 
     .node-tick-wrapper {
       position: relative;
       width: 100%;
-      height: 16px;
+      height: 18px;
       display: flex;
       align-items: center;
-      justify-content: flex-start;
     }
 
     .node-divider-tick {
@@ -242,12 +274,26 @@
       transform: translateY(-50%);
       width: 2px;
       height: 12px;
-      background: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.35);
       z-index: 4;
+      border-radius: 1px;
+    }
+
+    .timeline-node:last-child .node-tick-wrapper::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.35);
+      z-index: 4;
+      border-radius: 1px;
     }
 
     .node-streamer {
-      height: 22px;
+      height: 24px;
       display: flex;
       align-items: flex-start;
       justify-content: center;
@@ -255,34 +301,56 @@
       font-weight: 900;
       color: var(--text-white);
       white-space: nowrap;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
-    .node-streamer.is-giveaway-text { color: var(--giveaway-color); }
+    .node-streamer.is-giveaway-text {
+      color: var(--giveaway-color);
+      text-shadow: 0 0 8px rgba(255, 234, 0, 0.5), 0 2px 6px var(--shadow-dark);
+    }
 
+    /* Active Live Event State */
     .timeline-node.active .node-divider-tick {
       background: var(--primary-color);
       height: 16px;
       width: 3px;
+      box-shadow: 0 0 8px var(--primary-color);
+    }
+
+    .timeline-node.active .node-time {
+      color: var(--text-white);
+      font-size: 12px;
+      font-weight: 900;
     }
 
     .timeline-node.active .node-streamer {
       font-size: 17px;
       color: var(--primary-color);
+      text-shadow: 0 0 10px rgba(172, 230, 0, 0.7), 0 2px 8px var(--shadow-dark);
+    }
+
+    .timeline-node.active .node-streamer.is-giveaway-text {
+      color: var(--giveaway-color);
+      font-size: 17px;
+      text-shadow: 0 0 10px rgba(255, 234, 0, 0.8), 0 2px 8px var(--shadow-dark);
     }
   </style>
 </head>
 <body>
 
-  <!-- CONTROL PANEL -->
+  <!-- 🎛️ CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">📅 SCHEMA & SPONSOR PANEL</h4>
+    <h4 id="panelDragHeader">📅 SCHEMA & SPONSOR <span class="version-badge">v4.0</span></h4>
     <div>
       <button onclick="nextSponsor()">Nästa Sponsor</button>
-      <button onclick="generateRelativeLiveEvents()">Generera Live Schema</button>
+      <button onclick="switchTestDay('IDAG')">Idag</button>
+      <button onclick="switchTestDay('IMORGON')">Imorgon</button>
     </div>
+    <div class="panel-clock" id="panelClock">Klockan: --:--:--</div>
   </div>
 
-  <!-- SPONSOR ROTATOR -->
+  <!-- 🖼️ SPONSOR ROTATOR WIDGET -->
   <div class="sponsor-widget" id="sponsorWidget">
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -290,7 +358,7 @@
     <span class="sponsor-label">SPONSORER</span>
   </div>
 
-  <!-- SCHEDULE TIMELINE BAR -->
+  <!-- 📅 SCHEDULE TIMELINE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -301,97 +369,116 @@
   </div>
 
   <script>
+    // =========================================================
+    // ✏️ EASY SCHEDULE CONFIGURATION (EDIT YOUR EVENTS HERE)
+    // =========================================================
+    const SCHEDULE_DATA = [
+      // TODAY'S EVENTS
+      { dayGroup: "IDAG", start: "12:00", end: "15:00", name: "MorgonSolen" },
+      { dayGroup: "IDAG", start: "15:00", end: "17:00", name: "PixelPionjären" },
+      { dayGroup: "IDAG", start: "17:00", end: "19:00", name: "KaffeKungen" },
+      { dayGroup: "IDAG", start: "19:00", end: "20:00", name: "Kvälls Giveaway", giveaway: "🎁 STOR GIVEAWAY!" },
+      { dayGroup: "IDAG", start: "20:00", end: "22:00", name: "ZeldaMästaren" },
+      { dayGroup: "IDAG", start: "22:00", end: "00:00", name: "NattUgglan" },
+
+      // TOMORROW'S EVENTS
+      { dayGroup: "IMORGON", start: "12:00", end: "16:00", name: "RetroSpelaren" },
+      { dayGroup: "IMORGON", start: "16:00", end: "20:00", name: "SpelExperten" },
+      { dayGroup: "IMORGON", start: "20:00", end: "00:00", name: "Slutspurt Squad", giveaway: "🏆 FINAL DRAGNING!" }
+    ];
+
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
 
     const DEFAULT_SPONSORS = [
-      'https://via.placeholder.com/140x50/111/ace600?text=SPONSOR+A',
-      'https://via.placeholder.com/140x50/111/00ff88?text=SPONSOR+B',
-      'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
+      'https://via.placeholder.com/150x45/111/ace600?text=SPONSOR+A',
+      'https://via.placeholder.com/150x45/111/00ff88?text=SPONSOR+B',
+      'https://via.placeholder.com/150x45/111/ffea00?text=SPONSOR+C'
     ];
 
     let sponsorFileList = DEFAULT_SPONSORS;
     let currentSponsorIndex = 0;
-    let testForcedEventId = -1;
+    let activeDayGroup = "IDAG";
 
-    // DYNAMIC SCHEDULE BUILDER
-    function buildDynamicLiveSchedule() {
-      const now = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-      const dayNames = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
-
-      const today = new Date(now);
-      const tomorrow = new Date(now.getTime() + 24 * 3600000);
-
-      const getISO = (d, timeStr) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${timeStr}:00`;
-
-      const todayName = dayNames[today.getDay()];
-      const tomorrowName = dayNames[tomorrow.getDay()];
-
-      return [
-        { id: 0, dayName: todayName, start: getISO(today, "12:00"), end: getISO(today, "15:00"), timeText: "12:00 - 15:00", name: "MorgonSolen", giveaway: "" },
-        { id: 1, dayName: todayName, start: getISO(today, "15:00"), end: getISO(today, "17:00"), timeText: "15:00 - 17:00", name: "PixelPionjären", giveaway: "" },
-        { id: 2, dayName: todayName, start: getISO(today, "17:00"), end: getISO(today, "19:00"), timeText: "17:00 - 19:00", name: "KaffeKungen", giveaway: "" },
-        { id: 3, dayName: todayName, start: getISO(today, "19:00"), end: getISO(today, "20:00"), timeText: "19:00 - 20:00", name: "Kvälls Giveaway", giveaway: "🎁 STOR GIVEAWAY!" },
-        { id: 4, dayName: todayName, start: getISO(today, "20:00"), end: getISO(today, "22:00"), timeText: "20:00 - 22:00", name: "ZeldaMästaren", giveaway: "" },
-        { id: 5, dayName: todayName, start: getISO(today, "22:00"), end: getISO(tomorrow, "00:00"), timeText: "22:00 - 00:00", name: "NattUgglan", giveaway: "" },
-        { id: 6, dayName: tomorrowName, start: getISO(tomorrow, "12:00"), end: getISO(tomorrow, "15:00"), timeText: "12:00 - 15:00", name: "RetroSpelaren", giveaway: "" },
-        { id: 7, dayName: tomorrowName, start: getISO(tomorrow, "15:00"), end: getISO(tomorrow, "18:00"), timeText: "15:00 - 18:00", name: "SpelExperten", giveaway: "" }
-      ];
+    // Helper: Convert "14:30" string to minutes from midnight
+    function timeStrToMinutes(timeStr) {
+      if (timeStr === "00:00" || timeStr === "24:00") return 24 * 60; // Midnight end
+      const [h, m] = timeStr.split(':').map(Number);
+      return (h * 60) + m;
     }
 
-    let ALL_SCHEDULE_EVENTS = buildDynamicLiveSchedule();
-
-    function generateRelativeLiveEvents() {
-      ALL_SCHEDULE_EVENTS = buildDynamicLiveSchedule();
-      testForcedEventId = -1;
-      renderSchedule();
-    }
-
+    // RENDER TIMELINE & CALCULATE REALTIME POSITIONS
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
       const cursorEl = document.getElementById('timelineCursor');
+      const clockEl = document.getElementById('panelClock');
       if (!eventsRowEl) return;
 
       const now = new Date();
-      let activeIndex = ALL_SCHEDULE_EVENTS.findIndex(ev => now >= new Date(ev.start) && now < new Date(ev.end));
-      if (activeIndex === -1) activeIndex = 0;
+      const nowMinutes = (now.getHours() * 60) + now.getMinutes() + (now.getSeconds() / 60);
+      const timeStr = now.toLocaleTimeString('sv-SE');
+      if (clockEl) clockEl.innerText = `Klockan: ${timeStr}`;
 
-      let visibleEvents = ALL_SCHEDULE_EVENTS.slice(activeIndex, activeIndex + 5);
-      const totalVisible = visibleEvents.length;
+      // Get events for current day group
+      const dayEvents = SCHEDULE_DATA.filter(ev => ev.dayGroup === activeDayGroup);
+      if (dayEvents.length === 0) return;
 
-      if (totalVisible > 0) {
-        const currentEv = visibleEvents[0];
-        const startMs = new Date(currentEv.start).getTime();
-        const endMs = new Date(currentEv.end).getTime();
-        const nowMs = now.getTime();
+      const dayStartMin = timeStrToMinutes(dayEvents[0].start);
+      const dayEndMin = timeStrToMinutes(dayEvents[dayEvents.length - 1].end);
+      const totalDayDurationMin = dayEndMin - dayStartMin;
 
-        let currentSlotPct = (nowMs > startMs && nowMs < endMs) ? (nowMs - startMs) / (endMs - startMs) : 0;
-        const totalProgressPct = Math.min(100, Math.max(0, (0 + currentSlotPct) * (100 / totalVisible)));
-
-        if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
-        if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
+      // 🎯 Calculate 100% Exact Realtime Progress Percentage
+      let progressPct = 0;
+      if (nowMinutes >= dayEndMin) {
+        progressPct = 100;
+      } else if (nowMinutes > dayStartMin) {
+        progressPct = ((nowMinutes - dayStartMin) / totalDayDurationMin) * 100;
       }
 
-      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
-        const isLiveNow = now >= new Date(ev.start) && now < new Date(ev.end);
+      if (fillLineEl) fillLineEl.style.width = `${progressPct}%`;
+      if (cursorEl) cursorEl.style.left = `${progressPct}%`;
+
+      // Get Sweden Day Name
+      const dayNames = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
+      const displayDayName = activeDayGroup === "IDAG" ? dayNames[now.getDay()] : dayNames[(now.getDay() + 1) % 7];
+
+      // Build balanced nodes layout
+      let html = `<div class="timeline-day-badge">${escapeHTML(displayDayName)}</div>`;
+
+      html += dayEvents.map(ev => {
+        const evStartMin = timeStrToMinutes(ev.start);
+        const evEndMin = timeStrToMinutes(ev.end);
+        const evDuration = evEndMin - evStartMin;
+
+        // Proportional width for perfect balance
+        const widthPct = (evDuration / totalDayDurationMin) * 100;
+        const isLive = nowMinutes >= evStartMin && nowMinutes < evEndMin;
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
         const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
 
         return `
-          <div class="timeline-node ${isLiveNow ? 'active' : ''}">
-            <div class="node-time">${escapeHTML(ev.timeText)}</div>
-            <div class="node-tick-wrapper"><div class="node-divider-tick"></div></div>
+          <div class="timeline-node ${isLive ? 'active' : ''}" style="width: ${widthPct}%;">
+            <div class="node-time">${escapeHTML(ev.start)}</div>
+            <div class="node-tick-wrapper">
+              <div class="node-divider-tick"></div>
+            </div>
             <div class="node-streamer ${hasGiveaway ? 'is-giveaway-text' : ''}">${primaryText}</div>
           </div>
         `;
       }).join('');
+
+      eventsRowEl.innerHTML = html;
     }
 
-    // SPONSORS
+    function switchTestDay(dayGroup) {
+      activeDayGroup = dayGroup;
+      renderSchedule();
+    }
+
+    // SPONSOR ROTATOR
     async function loadSponsorsAutomatically() {
       try {
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}`);
@@ -414,7 +501,7 @@
       setTimeout(() => {
         img.src = sponsorFileList[currentSponsorIndex];
         img.style.opacity = '1';
-      }, 600);
+      }, 500);
     }
 
     function nextSponsor() {
@@ -446,10 +533,11 @@
       return String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
 
+    // INIT
     makePanelDraggable();
     loadSponsorsAutomatically();
     renderSchedule();
-    setInterval(renderSchedule, 1000);
+    setInterval(renderSchedule, 1000); // 100% Realtime Clock Tick
   </script>
 </body>
 </html>
