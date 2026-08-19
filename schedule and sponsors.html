@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Overlay - Schedule & Sponsors</title>
+  <title>Musikhjälpen Schedule & Sponsors Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -38,25 +38,24 @@
       border-radius: 10px;
       color: var(--text-white);
       z-index: 999999;
-      max-width: 360px;
+      max-width: 340px;
       font-size: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
     .test-panel h4 {
       margin: 0 0 8px 0;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--secondary-color);
       text-transform: uppercase;
       cursor: move;
       user-select: none;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       background: rgba(0, 255, 136, 0.1);
       padding: 5px 8px;
       border-radius: 5px;
-      border: 1px dashed rgba(0, 255, 136, 0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .version-badge {
@@ -82,18 +81,7 @@
 
     .test-panel button:hover { background: var(--secondary-color); color: black; }
 
-    .refresh-btn {
-      background: #ffea00 !important;
-      color: #000 !important;
-      font-weight: 900 !important;
-      border-color: #ffea00 !important;
-      margin-top: 6px !important;
-      width: 100%;
-    }
-
-    .panel-section { margin-top: 6px; border-top: 1px solid #444; padding-top: 6px; }
-
-    /* 🖼️ SPONSOR ROTATOR (ORIGINAL LAYOUT) */
+    /* 🖼️ SPONSOR ROTATOR */
     .sponsor-widget {
       position: absolute;
       bottom: 85px;
@@ -134,7 +122,7 @@
       text-shadow: 0 2px 5px var(--shadow-dark);
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR (ORIGINAL LAYOUT) */
+    /* 📅 SCHEDULE TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -148,10 +136,7 @@
       pointer-events: none;
     }
 
-    .timeline-container {
-      position: relative;
-      width: 100%;
-    }
+    .timeline-container { position: relative; width: 100%; }
 
     .timeline-line-bg {
       position: absolute;
@@ -229,7 +214,6 @@
       white-space: nowrap;
       margin-right: 12px;
       align-self: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
 
     .timeline-node {
@@ -240,7 +224,6 @@
       align-items: center;
       text-align: center;
       padding: 0 2px;
-      transition: all 0.3s ease;
       text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
@@ -252,7 +235,6 @@
       font-size: 11px;
       font-weight: 800;
       color: #e0e0e0;
-      letter-spacing: 0.6px;
       white-space: nowrap;
     }
 
@@ -273,8 +255,6 @@
       width: 2px;
       height: 12px;
       background: rgba(255, 255, 255, 0.4);
-      border-radius: 1px;
-      transition: all 0.3s ease;
       z-index: 4;
     }
 
@@ -287,8 +267,6 @@
       width: 2px;
       height: 12px;
       background: rgba(255, 255, 255, 0.4);
-      border-radius: 1px;
-      transition: all 0.3s ease;
       z-index: 4;
     }
 
@@ -301,52 +279,32 @@
       font-weight: 900;
       color: var(--text-white);
       white-space: nowrap;
-      letter-spacing: 0.3px;
     }
 
-    .node-streamer.is-giveaway-text {
-      color: var(--giveaway-color);
-    }
+    .node-streamer.is-giveaway-text { color: var(--giveaway-color); }
 
     .timeline-node.active .node-divider-tick {
       background: var(--primary-color);
       height: 16px;
       width: 3px;
-      box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
     }
 
     .timeline-node.active .node-streamer {
       font-size: 17px;
-      font-weight: 900;
       color: var(--primary-color);
-      text-shadow: 0 0 8px rgba(172, 230, 0, 0.5);
-    }
-
-    .timeline-node.active .node-streamer.is-giveaway-text {
-      color: var(--giveaway-color);
-      font-size: 17px;
-      text-shadow: 0 0 8px rgba(255, 234, 0, 0.6);
-    }
-
-    .timeline-node.active .node-time {
-      color: var(--text-white);
-      font-size: 12px;
-      font-weight: 900;
     }
   </style>
 </head>
 <body>
 
-  <!-- 🎛️ CONTROL PANEL -->
+  <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">📅 SCHEMA & SPONSOR <span class="version-badge">v4.0</span></h4>
-    
+    <h4 id="panelDragHeader">📅 SCHEMA & SPONSOR PANEL <span class="version-badge">v4.0</span></h4>
     <div>
       <button onclick="nextSponsor()">Nästa Sponsor</button>
       <button onclick="switchTestDate('AUTO')">⚡ Auto (Nu)</button>
     </div>
-
-    <div class="panel-section">
+    <div style="margin-top:6px; border-top:1px solid #444; padding-top:6px;">
       <b>Testa Dag (30 Nov – 6 Dec):</b><br>
       <button onclick="switchTestDate('2026-11-30')">Mån 30 Nov</button>
       <button onclick="switchTestDate('2026-12-01')">Tis 1 Dec</button>
@@ -356,11 +314,9 @@
       <button onclick="switchTestDate('2026-12-05')">Lör 5 Dec</button>
       <button onclick="switchTestDate('2026-12-06')">Sön 6 Dec</button>
     </div>
-
-    <button class="refresh-btn" onclick="location.reload()">🔄 Refresh Overlay</button>
   </div>
 
-  <!-- 🖼️ SPONSOR ROTATOR -->
+  <!-- SPONSOR ROTATOR -->
   <div class="sponsor-widget" id="sponsorWidget">
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -368,7 +324,7 @@
     <span class="sponsor-label">SPONSORER</span>
   </div>
 
-  <!-- 📅 SCHEDULE TIMELINE BAR -->
+  <!-- SCHEDULE TIMELINE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -383,7 +339,7 @@
     // 📅 MUSIKHJÄLPEN 24/7 EVENT WEEK SCHEDULE (30 NOV - 6 DEC 2026)
     // Edit streamer names, time ranges (timeText), and giveaways here!
     // =========================================================
-    const EVENT_WEEK_SCHEDULE = [
+    const SCHEDULE_DATA = [
       // 🗓️ MÅNDAG 30 NOV 2026
       { date: "2026-11-30", dayName: "MÅNDAG 30 NOV", timeText: "12:00 - 15:00", start: "2026-11-30T12:00:00", end: "2026-11-30T15:00:00", name: "MorgonSolen" },
       { date: "2026-11-30", dayName: "MÅNDAG 30 NOV", timeText: "15:00 - 18:00", start: "2026-11-30T15:00:00", end: "2026-11-30T18:00:00", name: "PixelPionjären" },
@@ -432,9 +388,9 @@
     const SPONSOR_ROTATE_SECONDS = 15;
 
     const DEFAULT_SPONSORS = [
-      'https://via.placeholder.com/140x40/111/ace600?text=SPONSOR+A',
-      'https://via.placeholder.com/140x40/111/00ff88?text=SPONSOR+B',
-      'https://via.placeholder.com/140x40/111/ffea00?text=SPONSOR+C'
+      'https://via.placeholder.com/140x50/111/ace600?text=SPONSOR+A',
+      'https://via.placeholder.com/140x50/111/00ff88?text=SPONSOR+B',
+      'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
     let sponsorFileList = DEFAULT_SPONSORS;
@@ -446,7 +402,7 @@
       renderSchedule();
     }
 
-    // RENDER BALANCED SCHEDULE WITH ORIGINAL TURN 9 LAYOUT & REALTIME CURSOR
+    // RENDER BALANCED SCHEDULE WITH ORIGINAL LAYOUT & REALTIME CURSOR
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -460,11 +416,11 @@
       let activeDate = forcedTestDate === "AUTO" ? todayDateStr : forcedTestDate;
 
       // Filter events for the selected date
-      let dayEvents = EVENT_WEEK_SCHEDULE.filter(ev => ev.date === activeDate);
+      let dayEvents = SCHEDULE_DATA.filter(ev => ev.date === activeDate);
       if (dayEvents.length === 0) {
         // Fallback to first day (30 Nov) if outside event week
         activeDate = "2026-11-30";
-        dayEvents = EVENT_WEEK_SCHEDULE.filter(ev => ev.date === activeDate);
+        dayEvents = SCHEDULE_DATA.filter(ev => ev.date === activeDate);
       }
 
       const totalNodes = dayEvents.length;
@@ -519,7 +475,7 @@
       eventsRowEl.innerHTML = html;
     }
 
-    // SPONSOR ROTATOR
+    // SPONSORS
     async function loadSponsorsAutomatically() {
       try {
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}`);
