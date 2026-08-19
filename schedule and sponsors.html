@@ -27,7 +27,7 @@
       color: var(--text-white);
     }
 
-    /* 🎛️ CONTROL PANEL */
+    /* 🎛️ CONTROL PANEL & VERSION BADGE */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -38,48 +38,63 @@
       border-radius: 10px;
       color: var(--text-white);
       z-index: 999999;
-      max-width: 320px;
+      max-width: 340px;
       font-size: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
-    .test-panel h4 {
-      margin: 0 0 8px 0;
-      font-size: 13px;
-      color: var(--secondary-color);
-      text-transform: uppercase;
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 255, 136, 0.1);
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
       cursor: move;
       user-select: none;
-      background: rgba(0, 255, 136, 0.1);
-      padding: 5px 8px;
-      border-radius: 5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    }
+
+    .panel-header h4 {
+      margin: 0;
+      font-size: 12px;
+      color: var(--secondary-color);
+      text-transform: uppercase;
     }
 
     .version-badge {
-      background: var(--secondary-color);
+      background: var(--primary-color);
       color: #000;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 900;
-      padding: 1px 5px;
-      border-radius: 3px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      letter-spacing: 0.5px;
     }
 
     .test-panel button {
       background: #222;
       color: var(--text-white);
       border: 1px solid var(--secondary-color);
-      padding: 5px 8px;
+      padding: 6px 10px;
       margin: 2px;
       border-radius: 5px;
       cursor: pointer;
       font-size: 11px;
       font-weight: bold;
+      transition: all 0.2s ease;
     }
 
-    .test-panel button:hover { background: var(--secondary-color); color: black; }
+    .test-panel button:hover {
+      background: var(--secondary-color);
+      color: #000;
+    }
+
+    .test-panel button.active {
+      background: var(--primary-color);
+      color: #000;
+      border-color: var(--primary-color);
+    }
 
     /* 🖼️ SPONSOR ROTATOR */
     .sponsor-widget {
@@ -136,7 +151,10 @@
       pointer-events: none;
     }
 
-    .timeline-container { position: relative; width: 100%; }
+    .timeline-container {
+      position: relative;
+      width: 100%;
+    }
 
     .timeline-line-bg {
       position: absolute;
@@ -155,25 +173,26 @@
       left: 0;
       height: 3px;
       background: var(--primary-color);
-      box-shadow: 0 0 6px rgba(172, 230, 0, 0.5);
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
-      transition: width 0.5s linear;
+      transition: width 0.2s linear;
     }
 
+    /* 🎯 100% ACCURATE PROGRESS DOT */
     .timeline-cursor {
       position: absolute;
       top: 50%;
       left: 0%;
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       background: var(--primary-color);
-      box-shadow: 0 0 6px var(--primary-color);
+      box-shadow: 0 0 8px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
-      transition: left 0.5s linear;
+      transition: left 0.2s linear;
     }
 
     .timeline-cursor::after {
@@ -186,8 +205,8 @@
     }
 
     @keyframes cursorSonar {
-      0% { transform: scale(0.5); opacity: 0.8; }
-      100% { transform: scale(1.8); opacity: 0; }
+      0% { transform: scale(0.5); opacity: 0.9; }
+      100% { transform: scale(2.0); opacity: 0; }
     }
 
     .timeline-nodes-row {
@@ -198,22 +217,6 @@
       align-items: center;
       width: 100%;
       z-index: 3;
-    }
-
-    .timeline-day-badge {
-      background: rgba(172, 230, 0, 0.12);
-      border: 1px solid rgba(172, 230, 0, 0.6);
-      backdrop-filter: blur(4px);
-      color: var(--primary-color);
-      font-size: 10px;
-      font-weight: 900;
-      padding: 2px 7px;
-      border-radius: 4px;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      white-space: nowrap;
-      margin-right: 12px;
-      align-self: center;
     }
 
     .timeline-node {
@@ -258,18 +261,6 @@
       z-index: 4;
     }
 
-    .timeline-node.last-node .node-tick-wrapper::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 2px;
-      height: 12px;
-      background: rgba(255, 255, 255, 0.4);
-      z-index: 4;
-    }
-
     .node-streamer {
       height: 22px;
       display: flex;
@@ -290,33 +281,27 @@
     }
 
     .timeline-node.active .node-streamer {
-      font-size: 17px;
+      font-size: 16px;
       color: var(--primary-color);
     }
   </style>
 </head>
 <body>
 
-  <!-- CONTROL PANEL -->
+  <!-- 🎛️ CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">📅 SCHEMA & SPONSOR PANEL <span class="version-badge">v4.0</span></h4>
-    <div>
-      <button onclick="nextSponsor()">Nästa Sponsor</button>
-      <button onclick="switchTestDate('AUTO')">⚡ Auto (Nu)</button>
+    <div class="panel-header" id="panelDragHeader">
+      <h4>📅 SCHEMA & SPONSOR PANEL</h4>
+      <span class="version-badge">v2.0.0</span>
     </div>
-    <div style="margin-top:6px; border-top:1px solid #444; padding-top:6px;">
-      <b>Testa Dag (30 Nov – 6 Dec):</b><br>
-      <button onclick="switchTestDate('2026-11-30')">Mån 30 Nov</button>
-      <button onclick="switchTestDate('2026-12-01')">Tis 1 Dec</button>
-      <button onclick="switchTestDate('2026-12-02')">Ons 2 Dec</button>
-      <button onclick="switchTestDate('2026-12-03')">Tor 3 Dec</button>
-      <button onclick="switchTestDate('2026-12-04')">Fre 4 Dec</button>
-      <button onclick="switchTestDate('2026-12-05')">Lör 5 Dec</button>
-      <button onclick="switchTestDate('2026-12-06')">Sön 6 Dec</button>
+    <div>
+      <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
+      <button id="btnTest" onclick="setMode('test')">⚡ TEST (Realtid)</button>
+      <button onclick="nextSponsor()">Nästa Sponsor</button>
     </div>
   </div>
 
-  <!-- SPONSOR ROTATOR -->
+  <!-- 🖼️ SPONSOR ROTATOR -->
   <div class="sponsor-widget" id="sponsorWidget">
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -324,7 +309,7 @@
     <span class="sponsor-label">SPONSORER</span>
   </div>
 
-  <!-- SCHEDULE TIMELINE BAR -->
+  <!-- 📅 SCHEDULE TIMELINE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -335,6 +320,60 @@
   </div>
 
   <script>
+    // ==========================================
+    // ✏️ 2. SUPER SIMPLE SCHEDULE EDITING
+    // Edit schedule here easily: "YYYY-MM-DD HH:MM"
+    // ==========================================
+    const SKARPT_EVENT_SCHEDULE = [
+      // MÅNDAG 30 NOV
+      { start: "2026-11-30 12:00", end: "2026-11-30 15:00", name: "Invigning & Morgongänget", giveaway: "" },
+      { start: "2026-11-30 15:00", end: "2026-11-30 18:00", name: "PixelPionjärerna", giveaway: "" },
+      { start: "2026-11-30 18:00", end: "2026-11-30 21:00", name: "KaffeKungen", giveaway: "🎁 GIVEAWAY: Gaming Mus" },
+      { start: "2026-11-30 21:00", end: "2026-12-01 00:00", name: "Nattstreamers", giveaway: "" },
+
+      // TISDAG 1 DEC
+      { start: "2026-12-01 00:00", end: "2026-12-01 06:00", name: "Nattpatrullen", giveaway: "" },
+      { start: "2026-12-01 06:00", end: "2026-12-01 12:00", name: "Morgonsolen", giveaway: "" },
+      { start: "2026-12-01 12:00", end: "2026-12-01 16:00", name: "ZeldaMästaren", giveaway: "" },
+      { start: "2026-12-01 16:00", end: "2026-12-01 20:00", name: "RetroSpelaren", giveaway: "🎁 GIVEAWAY: Headset" },
+      { start: "2026-12-01 20:00", end: "2026-12-02 00:00", name: "KvällsShowen", giveaway: "" },
+
+      // ONSDAG 2 DEC
+      { start: "2026-12-02 00:00", end: "2026-12-02 08:00", name: "NattUggan", giveaway: "" },
+      { start: "2026-12-02 08:00", end: "2026-12-02 14:00", name: "Förmiddagsmys", giveaway: "" },
+      { start: "2026-12-02 14:00", end: "2026-12-02 18:00", name: "Speedrunners", giveaway: "" },
+      { start: "2026-12-02 18:00", end: "2026-12-02 22:00", name: "Svenska Eliten", giveaway: "🎁 GIVEAWAY: Tangentbord" },
+      { start: "2026-12-02 22:00", end: "2026-12-03 00:00", name: "Nattchatt & Musik", giveaway: "" },
+
+      // TORSDAG 3 DEC
+      { start: "2026-12-03 00:00", end: "2026-12-03 08:00", name: "Nattladdningen", giveaway: "" },
+      { start: "2026-12-03 08:00", end: "2026-12-03 14:00", name: "MH-Special Live", giveaway: "" },
+      { start: "2026-12-03 14:00", end: "2026-12-03 19:00", name: "Gäster & Turnering", giveaway: "" },
+      { start: "2026-12-03 19:00", end: "2026-12-03 23:00", name: "Stora Samlingen", giveaway: "🎁 MEGA GIVEAWAY!" },
+      { start: "2026-12-03 23:00", end: "2026-12-04 00:00", name: "Late Night Gaming", giveaway: "" },
+
+      // FREDAG 4 DEC
+      { start: "2026-12-04 00:00", end: "2026-12-04 09:00", name: "Fredagsnatt", giveaway: "" },
+      { start: "2026-12-04 09:00", end: "2026-12-04 15:00", name: "Helgstarten", giveaway: "" },
+      { start: "2026-12-04 15:00", end: "2026-12-04 20:00", name: "Fredagsmys & Esport", giveaway: "" },
+      { start: "2026-12-04 20:00", end: "2026-12-05 00:00", name: "FredagsGalan", giveaway: "🎁 GIVEAWAY: Konsol" },
+
+      // LÖRDAG 5 DEC
+      { start: "2026-12-05 00:00", end: "2026-12-05 10:00", name: "Lördagsnatt", giveaway: "" },
+      { start: "2026-12-05 10:00", end: "2026-12-05 16:00", name: "LördagsSatsningen", giveaway: "" },
+      { start: "2026-12-05 16:00", end: "2026-12-05 21:00", name: "Kändisduellen", giveaway: "🎁 VIP GIVEAWAY!" },
+      { start: "2026-12-05 21:00", end: "2026-12-06 00:00", name: "Lördagsparty", giveaway: "" },
+
+      // SÖNDAG 6 DEC
+      { start: "2026-12-06 00:00", end: "2026-12-06 10:00", name: "Sista Natten", giveaway: "" },
+      { start: "2026-12-06 10:00", end: "2026-12-06 15:00", name: "Spurt-Inlägget", giveaway: "" },
+      { start: "2026-12-06 15:00", end: "2026-12-06 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
+      { start: "2026-12-06 20:00", end: "2026-12-06 23:59", name: "Avslutning & Tack!", giveaway: "" }
+    ];
+
+    // ==========================================
+    // CONFIGURATION & SPONSORS
+    // ==========================================
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SPONSORS_FOLDER = "sponsors";
@@ -346,130 +385,125 @@
       'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
     ];
 
-    // =========================================================
-    // 📅 EASY SCHEDULE CONFIGURATION (30 NOV - 6 DEC 2026)
-    // =========================================================
-    const SCHEDULE_DATA = [
-      // MÅNDAG 30 NOV 2026
-      { date: "2026-11-30", dayName: "MÅNDAG 30 NOV", timeText: "12:00 - 15:00", start: "2026-11-30T12:00:00", end: "2026-11-30T15:00:00", name: "MorgonSolen" },
-      { date: "2026-11-30", dayName: "MÅNDAG 30 NOV", timeText: "15:00 - 18:00", start: "2026-11-30T15:00:00", end: "2026-11-30T18:00:00", name: "PixelPionjären" },
-      { date: "2026-11-30", dayName: "MÅNDAG 30 NOV", timeText: "18:00 - 21:00", start: "2026-11-30T18:00:00", end: "2026-11-30T21:00:00", name: "KaffeKungen" },
-      { date: "2026-11-30", dayName: "MÅNDAG 30 NOV", timeText: "21:00 - 00:00", start: "2026-11-30T21:00:00", end: "2026-12-01T00:00:00", name: "NattUgglan", giveaway: "🎁 PREMIÄR GIVEAWAY!" },
-
-      // TISDAG 1 DEC 2026
-      { date: "2026-12-01", dayName: "TISDAG 1 DEC", timeText: "00:00 - 06:00", start: "2026-12-01T00:00:00", end: "2026-12-01T06:00:00", name: "NattLiret" },
-      { date: "2026-12-01", dayName: "TISDAG 1 DEC", timeText: "06:00 - 12:00", start: "2026-12-01T06:00:00", end: "2026-12-01T12:00:00", name: "MorgonGänget" },
-      { date: "2026-12-01", dayName: "TISDAG 1 DEC", timeText: "12:00 - 18:00", start: "2026-12-01T12:00:00", end: "2026-12-01T18:00:00", name: "RetroSpelaren" },
-      { date: "2026-12-01", dayName: "TISDAG 1 DEC", timeText: "18:00 - 00:00", start: "2026-12-01T18:00:00", end: "2026-12-02T00:00:00", name: "KvällsGänget" },
-
-      // ONSDAG 2 DEC 2026
-      { date: "2026-12-02", dayName: "ONSDAG 2 DEC", timeText: "00:00 - 08:00", start: "2026-12-02T00:00:00", end: "2026-12-02T08:00:00", name: "NattUgglan" },
-      { date: "2026-12-02", dayName: "ONSDAG 2 DEC", timeText: "08:00 - 16:00", start: "2026-12-02T08:00:00", end: "2026-12-02T16:00:00", name: "Dagspass Squad" },
-      { date: "2026-12-02", dayName: "ONSDAG 2 DEC", timeText: "16:00 - 20:00", start: "2026-12-02T16:00:00", end: "2026-12-02T20:00:00", name: "ZeldaMästaren" },
-      { date: "2026-12-02", dayName: "ONSDAG 2 DEC", timeText: "20:00 - 00:00", start: "2026-12-02T20:00:00", end: "2026-12-03T00:00:00", name: "Midweek Special", giveaway: "🎁 MIDVECKAGIVEAWAY!" },
-
-      // TORSDAG 3 DEC 2026
-      { date: "2026-12-03", dayName: "TORSDAG 3 DEC", timeText: "00:00 - 08:00", start: "2026-12-03T00:00:00", end: "2026-12-03T08:00:00", name: "Nattskiftet" },
-      { date: "2026-12-03", dayName: "TORSDAG 3 DEC", timeText: "08:00 - 16:00", start: "2026-12-03T08:00:00", end: "2026-12-03T16:00:00", name: "FikaGänget" },
-      { date: "2026-12-03", dayName: "TORSDAG 3 DEC", timeText: "16:00 - 00:00", start: "2026-12-03T16:00:00", end: "2026-12-04T00:00:00", name: "SpelExperten" },
-
-      // FREDAG 4 DEC 2026
-      { date: "2026-12-04", dayName: "FREDAG 4 DEC", timeText: "00:00 - 08:00", start: "2026-12-04T00:00:00", end: "2026-12-04T08:00:00", name: "NattSpelarna" },
-      { date: "2026-12-04", dayName: "FREDAG 4 DEC", timeText: "08:00 - 14:00", start: "2026-12-04T08:00:00", end: "2026-12-04T14:00:00", name: "FredagsMorgon" },
-      { date: "2026-12-04", dayName: "FREDAG 4 DEC", timeText: "14:00 - 19:00", start: "2026-12-04T14:00:00", end: "2026-12-04T19:00:00", name: "HelgLaddningen" },
-      { date: "2026-12-04", dayName: "FREDAG 4 DEC", timeText: "19:00 - 00:00", start: "2026-12-04T19:00:00", end: "2026-12-05T00:00:00", name: "FredagsMys", giveaway: "🎁 HELGGIVEAWAY!" },
-
-      // LÖRDAG 5 DEC 2026
-      { date: "2026-12-05", dayName: "LÖRDAG 5 DEC", timeText: "00:00 - 08:00", start: "2026-12-05T00:00:00", end: "2026-12-05T08:00:00", name: "HelgNatt" },
-      { date: "2026-12-05", dayName: "LÖRDAG 5 DEC", timeText: "08:00 - 14:00", start: "2026-12-05T08:00:00", end: "2026-12-05T14:00:00", name: "LördagsGänget" },
-      { date: "2026-12-05", dayName: "LÖRDAG 5 DEC", timeText: "14:00 - 20:00", start: "2026-12-05T14:00:00", end: "2026-12-05T20:00:00", name: "CozyStreamers" },
-      { date: "2026-12-05", dayName: "LÖRDAG 5 DEC", timeText: "20:00 - 00:00", start: "2026-12-05T20:00:00", end: "2026-12-06T00:00:00", name: "LördagsShowen", giveaway: "🏆 STOR LÖRDAGSGIVEAWAY!" },
-
-      // SÖNDAG 6 DEC 2026
-      { date: "2026-12-06", dayName: "SÖNDAG 6 DEC", timeText: "00:00 - 08:00", start: "2026-12-06T00:00:00", end: "2026-12-06T08:00:00", name: "Sista Natten" },
-      { date: "2026-12-06", dayName: "SÖNDAG 6 DEC", timeText: "08:00 - 14:00", start: "2026-12-06T08:00:00", end: "2026-12-06T14:00:00", name: "SöndagsSpurten" },
-      { date: "2026-12-06", dayName: "SÖNDAG 6 DEC", timeText: "14:00 - 19:00", start: "2026-12-06T14:00:00", end: "2026-12-06T19:00:00", name: "Slutspurt Squad" },
-      { date: "2026-12-06", dayName: "SÖNDAG 6 DEC", timeText: "19:00 - 23:00", start: "2026-12-06T19:00:00", end: "2026-12-06T23:00:00", name: "GRANDE FINALE", giveaway: "🏆 FINAL DRAGNING!" }
-    ];
-
     let sponsorFileList = DEFAULT_SPONSORS;
     let currentSponsorIndex = 0;
-    let forcedTestDate = "AUTO";
+    let scheduleMode = 'real'; // 'real' or 'test'
 
-    function switchTestDate(dateStr) {
-      forcedTestDate = dateStr;
-      renderSchedule();
+    // Parse simple string date ("YYYY-MM-DD HH:MM")
+    function parseDate(dateStr) {
+      if (dateStr instanceof Date) return dateStr;
+      return new Date(dateStr.replace(' ', 'T') + ':00');
     }
 
+    // Format HH:MM from Date
+    function formatTime(date) {
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    // Get Swedish Day Name
+    function getDayName(date) {
+      const days = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
+      return days[date.getDay()];
+    }
+
+    // ⚡ 4. REAL-TIME DYNAMIC TEST SCHEDULE GENERATOR
+    function generateTestSchedule() {
+      const now = new Date();
+      const events = [];
+      
+      // Build relative slots relative to right now so test is always live
+      for (let i = -1; i < 7; i++) {
+        const start = new Date(now.getTime() + i * 2 * 3600000);
+        const end = new Date(now.getTime() + (i + 1) * 2 * 3600000);
+        events.push({
+          start: start,
+          end: end,
+          name: i === 0 ? "LIVE JUST NU!" : `Streamer #${i + 2}`,
+          giveaway: i === 1 ? "🎁 GIVEAWAY TEST" : ""
+        });
+      }
+      return events;
+    }
+
+    function getActiveSchedule() {
+      if (scheduleMode === 'test') {
+        return generateTestSchedule();
+      }
+      return SKARPT_EVENT_SCHEDULE.map(ev => ({
+        ...ev,
+        start: parseDate(ev.start),
+        end: parseDate(ev.end)
+      }));
+    }
+
+    // 🎯 3. 100% ACCURATE REAL-TIME PROGRESS CALCULATION & RENDER
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
       const cursorEl = document.getElementById('timelineCursor');
       if (!eventsRowEl) return;
 
+      const schedule = getActiveSchedule();
       const now = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-      const todayDateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
-      let activeDate = forcedTestDate === "AUTO" ? todayDateStr : forcedTestDate;
-
-      // Filter events for active date
-      let dayEvents = SCHEDULE_DATA.filter(ev => ev.date === activeDate);
-      if (dayEvents.length === 0) {
-        activeDate = "2026-11-30"; // Default fallback
-        dayEvents = SCHEDULE_DATA.filter(ev => ev.date === activeDate);
+      // Find current active event or next upcoming event
+      let activeIndex = schedule.findIndex(ev => now >= ev.start && now < ev.end);
+      if (activeIndex === -1) {
+        activeIndex = schedule.findIndex(ev => ev.start > now);
+        if (activeIndex === -1) activeIndex = 0;
       }
 
-      const totalNodes = dayEvents.length;
-      const nowMs = now.getTime();
+      // Display 5 visible node slots
+      const visibleCount = 5;
+      const visibleEvents = schedule.slice(activeIndex, activeIndex + visibleCount);
+      const totalVisible = visibleEvents.length;
 
-      // Find active live event index
-      let activeIndex = dayEvents.findIndex(ev => {
-        return nowMs >= new Date(ev.start).getTime() && nowMs < new Date(ev.end).getTime();
-      });
+      if (totalVisible > 0) {
+        const currentEv = visibleEvents[0];
+        const startMs = currentEv.start.getTime();
+        const endMs = currentEv.end.getTime();
+        const nowMs = now.getTime();
 
-      if (activeIndex === -1) activeIndex = 0;
+        // Fraction elapsed inside current active event (0.0 to 1.0)
+        let slotFraction = 0;
+        if (nowMs >= startMs && nowMs < endMs) {
+          slotFraction = (nowMs - startMs) / (endMs - startMs);
+        } else if (nowMs >= endMs) {
+          slotFraction = 1;
+        }
 
-      // Calculate exact progress percentage for sonar cursor and fill line
-      const currentEv = dayEvents[activeIndex];
-      const startMs = new Date(currentEv.start).getTime();
-      const endMs = new Date(currentEv.end).getTime();
+        // Exact timeline progress percentage calculation across total visible slots
+        // Each node takes exactly (100 / totalVisible) percentage width
+        const totalProgressPct = Math.min(100, Math.max(0, (slotFraction / totalVisible) * 100));
 
-      let slotProgress = 0;
-      if (nowMs >= endMs) {
-        slotProgress = 1.0;
-      } else if (nowMs > startMs) {
-        slotProgress = (nowMs - startMs) / (endMs - startMs);
+        if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
+        if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
       }
 
-      const totalProgressPct = Math.min(100, Math.max(0, ((activeIndex + slotProgress) / totalNodes) * 100));
-
-      if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
-      if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
-
-      const dayBadgeText = dayEvents[0] ? dayEvents[0].dayName : "MUSIKHJÄLPEN";
-
-      // Build Day Badge + Balanced Event Nodes
-      let html = `<div class="timeline-day-badge">${escapeHTML(dayBadgeText)}</div>`;
-
-      html += dayEvents.map((ev, index) => {
-        const isLiveNow = (index === activeIndex) && (nowMs >= startMs && nowMs < endMs);
+      // Render timeline HTML nodes
+      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
+        const isLiveNow = now >= ev.start && now < ev.end;
+        const timeText = `${formatTime(ev.start)} - ${formatTime(ev.end)}`;
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
         const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
-        const isLastNode = (index === totalNodes - 1);
 
         return `
-          <div class="timeline-node ${isLastNode ? 'last-node' : ''} ${isLiveNow ? 'active' : ''}">
-            <div class="node-time">${escapeHTML(ev.timeText)}</div>
-            <div class="node-tick-wrapper">
-              <div class="node-divider-tick"></div>
-            </div>
+          <div class="timeline-node ${isLiveNow ? 'active' : ''}">
+            <div class="node-time">${timeText}</div>
+            <div class="node-tick-wrapper"><div class="node-divider-tick"></div></div>
             <div class="node-streamer ${hasGiveaway ? 'is-giveaway-text' : ''}">${primaryText}</div>
           </div>
         `;
       }).join('');
+    }
 
-      eventsRowEl.innerHTML = html;
+    // MODE TOGGLING
+    function setMode(mode) {
+      scheduleMode = mode;
+      document.getElementById('btnReal').classList.toggle('active', mode === 'real');
+      document.getElementById('btnTest').classList.toggle('active', mode === 'test');
+      renderSchedule();
     }
 
     // SPONSOR ROTATOR
@@ -503,6 +537,7 @@
       updateSponsorLogo();
     }
 
+    // DRAGGABLE PANEL
     function makePanelDraggable() {
       const panel = document.getElementById('testPanel');
       const header = document.getElementById('panelDragHeader');
@@ -524,9 +559,12 @@
     }
 
     function escapeHTML(str) {
-      return String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+      return String(str || '').replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
     }
 
+    // INIT
     makePanelDraggable();
     loadSponsorsAutomatically();
     renderSchedule();
