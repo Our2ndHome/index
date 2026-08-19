@@ -292,7 +292,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v2.2.0</span>
+      <span class="version-badge">v2.3.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -301,7 +301,7 @@
     </div>
   </div>
 
-  <!-- framed SPONSOR ROTATOR -->
+  <!-- 🖼️ SPONSOR ROTATOR -->
   <div class="sponsor-widget" id="sponsorWidget">
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -322,7 +322,6 @@
   <script>
     // ==========================================
     // ✏️ SKARPT EVENT SCHEDULE (30 NOV - 6 DEC)
-    // Fixed dates & times. Edit easily here!
     // ==========================================
     const SKARPT_EVENT_SCHEDULE = [
       // MÅNDAG 30 NOV
@@ -394,14 +393,37 @@
       return new Date(dateStr.replace(' ', 'T') + ':00');
     }
 
+    // Convert time text like "20:00 - 22:00" into actual Date objects for today
+    function parseTimeTextToDates(timeText, dateRef) {
+      const parts = timeText.split(' - ').map(s => s.trim());
+      const [sh, sm] = parts[0].split(':').map(Number);
+      const [eh, em] = parts[1].split(':').map(Number);
+
+      const start = new Date(dateRef);
+      start.setHours(sh, sm, 0, 0);
+
+      const end = new Date(dateRef);
+      if (eh < sh || (eh === 0 && em === 0)) {
+        end.setDate(end.getDate() + 1);
+        end.setHours(eh, em, 0, 0);
+      } else {
+        end.setHours(eh, em, 0, 0);
+      }
+
+      if (start > end) {
+        start.setDate(start.getDate() - 1);
+      }
+
+      return { start, end };
+    }
+
     // ⚡ REAL-TIME DYNAMIC TEST SCHEDULE
-    // Dynamically centers on current clock time so slot 0 is live right now!
+    // Creates 2-hour slots anchored strictly to current even hours (e.g., 20:00 - 22:00)
     function generateTestSchedule() {
       const now = new Date();
-      const slotDurationMs = 2 * 3600000; // 2 hour slots
-      // Base start: 45 minutes ago so slot 0 is currently active
-      const baseStart = new Date(now.getTime() - 45 * 60000);
-      
+      const currentEvenHour = Math.floor(now.getHours() / 2) * 2;
+      const baseStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), currentEvenHour, 0, 0);
+
       const testNames = [
         "Morgonsolen (Test)", "PixelPionjären (Test)", "KaffeKungen (Test)", 
         "ZeldaMästaren (Test)", "RetroSpelaren (Test)", "SpelExperten (Test)", 
@@ -409,13 +431,16 @@
       ];
 
       return testNames.map((name, i) => {
-        const start = new Date(baseStart.getTime() + i * slotDurationMs);
-        const end = new Date(start.getTime() + slotDurationMs);
-        const formatH = d => String(d.getHours()).padStart(2, '0') + ":00";
+        const start = new Date(baseStart.getTime() + i * 2 * 3600000);
+        const end = new Date(start.getTime() + 2 * 3600000);
+        
+        const pad = n => String(n).padStart(2, '0');
+        const timeText = `${pad(start.getHours())}:00 - ${pad(end.getHours())}:00`;
+
         return {
           start: start,
           end: end,
-          timeText: `${formatH(start)} - ${formatH(end)}`, // Fixed display text for test slot
+          timeText: timeText,
           name: name,
           giveaway: i === 1 ? "🎁 TEST GIVEAWAY!" : ""
         };
@@ -427,15 +452,23 @@
         return generateTestSchedule();
       }
 
-      // SKARPT MODE (30 Nov - 6 Dec) - Unmodified real schedule
-      return SKARPT_EVENT_SCHEDULE.map(ev => ({
-        ...ev,
-        start: parseDate(ev.start),
-        end: parseDate(ev.end)
-      }));
+      const now = new Date();
+      const firstEvStart = parseDate(SKARPT_EVENT_SCHEDULE[0].start);
+      const lastEvEnd = parseDate(SKARPT_EVENT_SCHEDULE[SKARPT_EVENT_SCHEDULE.length - 1].end);
+
+      // If outside actual Nov 30 - Dec 6 dates (previewing today), map exact start/end dates to today so progress dot works
+      const isOutsideDates = now < firstEvStart || now > lastEvEnd;
+
+      return SKARPT_EVENT_SCHEDULE.map(ev => {
+        if (isOutsideDates) {
+          const parsed = parseTimeTextToDates(ev.timeText, now);
+          return { ...ev, start: parsed.start, end: parsed.end };
+        }
+        return { ...ev, start: parseDate(ev.start), end: parseDate(ev.end) };
+      });
     }
 
-    // 🎯 ACCURATE REAL-TIME PROGRESS CALCULATION & RENDER
+    // 🎯 ACCURATE REAL-TIME PROGRESS CALCULATION
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -445,7 +478,6 @@
       const schedule = getActiveSchedule();
       const now = new Date();
 
-      // Find active event or default to index 0
       let activeIndex = schedule.findIndex(ev => now >= ev.start && now < ev.end);
       if (activeIndex === -1) activeIndex = 0;
 
@@ -459,7 +491,6 @@
         const endMs = currentEv.end.getTime();
         const nowMs = now.getTime();
 
-        // Sub-second progress fraction inside active slot
         let slotFraction = 0;
         if (nowMs >= startMs && nowMs < endMs) {
           slotFraction = (nowMs - startMs) / (endMs - startMs);
