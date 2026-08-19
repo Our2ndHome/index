@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Multi-Widget Overlay - v3.4 Guaranteed Sync</title>
+  <title>Musikhjälpen Multi-Widget Overlay - v3.5 Realtime Next.js Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -241,7 +241,7 @@
       text-shadow: 0 2px 4px var(--shadow-dark);
     }
 
-    /* 📢 WIDGET 2: DONATION ALERT BANNER */
+    /* 📢 WIDGET 2: DONATION ALERT BANNER WITH COMMENT */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -250,29 +250,44 @@
       opacity: 0;
       visibility: hidden;
       text-align: center;
-      background: transparent;
-      padding: 10px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid var(--primary-color);
+      border-radius: 16px;
+      padding: 20px 32px;
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
       z-index: 99999;
       transition: opacity 0.4s ease, visibility 0.4s ease;
       text-shadow: 0 3px 12px var(--shadow-dark);
+      box-shadow: 0 0 25px rgba(172, 230, 0, 0.3);
     }
 
     .donor-name {
       color: var(--primary-color);
       display: block;
-      font-size: 56px;
+      font-size: 52px;
       font-weight: 900;
-      margin-bottom: 5px;
+      margin-bottom: 2px;
       text-shadow: 0 0 8px rgba(172, 230, 0, 0.4);
     }
 
     .alert-subtext {
       color: var(--text-white);
-      font-size: 38px;
+      font-size: 34px;
       font-weight: 900;
+    }
+
+    .alert-comment {
+      color: var(--giveaway-color);
+      font-size: 22px;
+      font-weight: 800;
+      font-style: italic;
+      margin-top: 6px;
+      text-transform: none;
+      white-space: normal;
+      max-width: 500px;
+      text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
     .show-alert {
@@ -283,7 +298,7 @@
 
     @keyframes elasticPop {
       0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      60% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
       100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     }
 
@@ -672,7 +687,7 @@
 
   <!-- 🎛️ CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">🧪 KONTROLLPANEL <span class="version-badge">v3.4</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
+    <h4 id="panelDragHeader">🧪 KONTROLLPANEL <span class="version-badge">v3.5</span> <span style="font-size:10px; opacity:0.8;">✋ DRA FÖR ATT FLYTTA</span></h4>
     
     <div class="panel-section" style="background: rgba(172, 230, 0, 0.1); padding: 8px; border-radius: 6px;">
       <b>⚡ Direkt Tvingat Belopp (Nödändra belopp):</b><br>
@@ -711,8 +726,8 @@
 
     <div class="panel-section">
       <b>Test & Rensa Sparat Tillstånd:</b><br>
-      <button onclick="simulateDonation('Lisa', 250)">+250 kr (Lisa)</button>
-      <button onclick="simulateDonation('Erik', 600)">+600 kr (Erik)</button>
+      <button onclick="simulateDonation('Lisa', 250, 'Kämpa på!')">+250 kr (Lisa)</button>
+      <button onclick="simulateDonation('Erik', 600, 'Grymt initiativ!')">+600 kr (Erik)</button>
       <button onclick="resetTotal()" style="border-color:#ff0055;">Rensa Sparat Tillstånd</button>
     </div>
 
@@ -732,17 +747,18 @@
     <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
   </div>
 
-  <!-- 💰 WIDGET 3: GOAL COUNTER -->
+  <!-- 💰 WIDGET 3: TOTAL RAISED GOAL COUNTER -->
   <div class="goal-widget" id="goalWidget">
     <span class="goal-label">TOTALT INSAMLAT</span>
     <span class="amount" id="totalDisplay">0 kr</span>
     <span class="goal-target">MÅL: 40 000 KR</span>
   </div>
 
-  <!-- 📢 WIDGET 2: DONATION ALERT BANNER -->
+  <!-- 📢 WIDGET 2: DONATION ALERT BANNER WITH COMMENT -->
   <div class="alert-banner" id="alertBanner">
     <span class="donor-name" id="donorName">JOHAN</span> 
     <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
+    <div class="alert-comment" id="alertComment"></div>
   </div>
 
   <!-- 🎁 WIDGET 6: GIVEAWAY REEL -->
@@ -765,7 +781,7 @@
     <span class="sponsor-label">SPONSORER</span>
   </div>
 
-  <!-- 📅 WIDGET 5: SCHEDULE BAR -->
+  <!-- 📅 WIDGET 5: TIMELINE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
     <div class="timeline-container">
       <div class="timeline-line-bg"></div>
@@ -790,6 +806,7 @@
     const STORAGE_KEY_TOTAL = "mh_overlay_total_amount";
     const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
     const STORAGE_KEY_SLUG = "mh_overlay_bossa_slug";
+    const STORAGE_KEY_KNOWN_IDS = "mh_overlay_known_ids";
 
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
@@ -815,6 +832,7 @@
     // LOCALSTORAGE PERSISTENCE SYSTEM
     // =========================================================
     const donorTicketsMap = {}; 
+    let knownDonationIds = new Set();
     let currentTotal = 0; 
     let isInitialFetch = true;
 
@@ -823,6 +841,7 @@
         localStorage.setItem(STORAGE_KEY_TOTAL, currentTotal.toString());
         localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorTicketsMap));
         localStorage.setItem(STORAGE_KEY_SLUG, FUNDRAISER_SLUG);
+        localStorage.setItem(STORAGE_KEY_KNOWN_IDS, JSON.stringify(Array.from(knownDonationIds)));
       } catch(e) {}
     }
 
@@ -831,6 +850,7 @@
         const savedTotal = localStorage.getItem(STORAGE_KEY_TOTAL);
         const savedDonors = localStorage.getItem(STORAGE_KEY_DONORS);
         const savedSlug = localStorage.getItem(STORAGE_KEY_SLUG);
+        const savedIds = localStorage.getItem(STORAGE_KEY_KNOWN_IDS);
 
         if (savedSlug) {
           FUNDRAISER_SLUG = savedSlug;
@@ -847,6 +867,13 @@
           const parsedMap = JSON.parse(savedDonors);
           Object.assign(donorTicketsMap, parsedMap);
           updateGiveawayStatsUI();
+        }
+
+        if (savedIds) {
+          const parsedIds = JSON.parse(savedIds);
+          if (Array.isArray(parsedIds)) {
+            knownDonationIds = new Set(parsedIds);
+          }
         }
       } catch(e) {}
     }
@@ -904,14 +931,16 @@
     function triggerAutoDriveDonation() {
       const sampleDonors = ["Sofia", "Marcus", "Elin", "Oscar", "Emma", "Viktor", "Lina", "Filip", "Agnes", "Lucas", "Ebba", "Kalle", "Maja"];
       const sampleAmounts = [50, 100, 150, 200, 250, 300, 500];
+      const sampleComments = ["Kämpa på!", "Grymt initiativ ❤️", "För musikhjälpen!", "Heja er!", ""];
 
       const donor = sampleDonors[Math.floor(Math.random() * sampleDonors.length)];
       const amount = sampleAmounts[Math.floor(Math.random() * sampleAmounts.length)];
+      const comment = sampleComments[Math.floor(Math.random() * sampleComments.length)];
 
       currentTotal += amount;
       recordDonorDonation(donor, amount);
       saveStateToLocalStorage();
-      enqueueAlert(donor, amount, currentTotal);
+      enqueueAlert(donor, amount, currentTotal, comment);
     }
 
     // =========================================================
@@ -1289,7 +1318,7 @@
       const name = nameInput.value.trim() || "Lisa";
       const amount = Number(amountInput.value) || 250;
 
-      simulateDonation(name, amount);
+      simulateDonation(name, amount, "Manuell donation");
     }
 
     function sanitizeSlug(input) {
@@ -1663,8 +1692,8 @@
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    function enqueueAlert(donorName, diffAmount, newTotal) {
-      alertQueue.push({ type: 'donation', donorName, diffAmount, newTotal });
+    function enqueueAlert(donorName, diffAmount, newTotal, comment = "") {
+      alertQueue.push({ type: 'donation', donorName, diffAmount, newTotal, comment });
       processQueue();
     }
 
@@ -1696,6 +1725,11 @@
         const banner = document.getElementById('alertBanner');
         document.getElementById('donorName').innerText = nextEvent.donorName;
         document.getElementById('alertAmount').innerText = `${nextEvent.diffAmount} kr`;
+        
+        const commentEl = document.getElementById('alertComment');
+        if (commentEl) {
+          commentEl.innerText = nextEvent.comment ? `"${nextEvent.comment}"` : "";
+        }
 
         updateTotalDisplaySmooth(`${nextEvent.newTotal} kr`);
 
@@ -1714,16 +1748,17 @@
       }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
     }
 
-    function simulateDonation(name, amount) {
+    function simulateDonation(name, amount, comment = "") {
       currentTotal += amount;
       recordDonorDonation(name, amount);
       saveStateToLocalStorage();
-      enqueueAlert(name, amount, currentTotal);
+      enqueueAlert(name, amount, currentTotal, comment);
     }
 
     function resetTotal() {
       currentTotal = 0;
       alertQueue.length = 0;
+      knownDonationIds.clear();
       for (const key in donorTicketsMap) delete donorTicketsMap[key];
       updateTotalDisplayDirect('0 kr');
       updateGiveawayStatsUI();
@@ -1731,7 +1766,7 @@
     }
 
     // =========================================================
-    // 🔄 ROBUST MUSIKHJÄLPEN BÖSSA SCRAPER & PROXY ENGINE
+    // 🔄 REALTIME NEXT.JS PAYLOAD PARSER & SCRAPER
     // =========================================================
     function cleanSwedishAmount(val) {
       if (typeof val === 'number') return val;
@@ -1742,96 +1777,70 @@
       return isNaN(num) ? 0 : num;
     }
 
-    function parseDeepFundraiserData(data, searchSlug) {
-      let result = { amount: -1, donations: [], matchedName: "", success: false };
-      if (!data) return result;
+    function parseFundraiserPayload(rawData, searchSlug) {
+      let amount = -1;
+      let donations = [];
+      let success = false;
 
-      const extractFromObject = (obj) => {
-        if (!obj || typeof obj !== 'object') return false;
+      if (!rawData) return { amount, donations, success };
+
+      // 1. Unpack Next.js script tag if HTML string
+      if (typeof rawData === 'string') {
+        const nextDataMatch = rawData.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+        if (nextDataMatch && nextDataMatch[1]) {
+          try {
+            rawData = JSON.parse(nextDataMatch[1]);
+          } catch(e) {}
+        }
+      }
+
+      // 2. Extract from JSON object structure
+      if (typeof rawData === 'object' && rawData !== null) {
+        const pageProps = rawData.props?.pageProps || rawData.pageProps || rawData;
+        const fundraiser = pageProps.fundraiser || pageProps.initialState?.fundraiser || pageProps;
 
         let foundAmount = null;
         for (const key of ['amount', 'raised', 'totalAmount', 'total', 'sum', 'collectedAmount']) {
-          if (obj[key] !== undefined && obj[key] !== null) {
-            foundAmount = cleanSwedishAmount(obj[key]);
+          if (fundraiser[key] !== undefined && fundraiser[key] !== null) {
+            foundAmount = cleanSwedishAmount(fundraiser[key]);
             break;
           }
         }
 
         if (foundAmount !== null) {
-          result.amount = foundAmount;
-          result.matchedName = obj.name || obj.title || obj.slug || searchSlug;
-          result.success = true;
+          amount = foundAmount;
+          success = true;
 
-          const rawDonations = obj.donations || obj.latestDonations || obj.bidrag || (obj.fundraiser && obj.fundraiser.donations);
-          if (Array.isArray(rawDonations) && rawDonations.length > 0) {
-            result.donations = rawDonations.map(d => ({
-              name: d.name || d.donorName || d.giver || "Anonym Givare",
-              amount: cleanSwedishAmount(d.amount || d.sum || d.value || 0)
+          const rawList = fundraiser.donations || fundraiser.latestDonations || pageProps.donations || [];
+          if (Array.isArray(rawList)) {
+            donations = rawList.map(d => ({
+              id: d.id || `${d.name || d.donorName || 'anon'}_${d.amount || d.sum || 0}_${d.createdAt || d.timestamp || Math.random()}`,
+              donor: d.name || d.donorName || d.giver || "Anonym Givare",
+              amount: cleanSwedishAmount(d.amount || d.sum || d.value || 0),
+              comment: d.comment || d.message || d.text || "",
+              timestamp: d.createdAt || d.timestamp || new Date().toISOString()
             }));
           }
-          return true;
-        }
-        return false;
-      };
-
-      if (Array.isArray(data)) {
-        const match = data.find(item => {
-          const name = (item.name || item.title || item.slug || '').toLowerCase();
-          return name.includes(searchSlug.toLowerCase());
-        }) || data[0];
-
-        if (match && extractFromObject(match)) return result;
-      }
-
-      if (typeof data === 'object') {
-        if (Array.isArray(data.fundraisers) || Array.isArray(data.data) || Array.isArray(data.items)) {
-          return parseDeepFundraiserData(data.fundraisers || data.data || data.items, searchSlug);
-        }
-        if (data.fundraiser && typeof data.fundraiser === 'object') {
-          if (extractFromObject(data.fundraiser)) return result;
-        }
-        if (data.pageProps) {
-          if (data.pageProps.fundraiser && extractFromObject(data.pageProps.fundraiser)) return result;
-          if (data.pageProps.initialState && parseDeepFundraiserData(data.pageProps.initialState, searchSlug).success) {
-            return parseDeepFundraiserData(data.pageProps.initialState, searchSlug);
-          }
-        }
-        if (extractFromObject(data)) return result;
-      }
-
-      if (typeof data === 'string') {
-        const nextDataMatch = data.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
-        if (nextDataMatch && nextDataMatch[1]) {
-          try {
-            const parsedNext = JSON.parse(nextDataMatch[1]);
-            const nextResult = parseDeepFundraiserData(parsedNext, searchSlug);
-            if (nextResult.success) return nextResult;
-          } catch(e) {}
-        }
-
-        const jsonAmountMatch = data.match(/"(?:amount|raised|totalAmount|collectedAmount|sum)"\s*:\s*"?([0-9\s.,]+)"?/i);
-        if (jsonAmountMatch && jsonAmountMatch[1]) {
-          result.amount = cleanSwedishAmount(jsonAmountMatch[1]);
-          result.success = true;
-        }
-
-        if (!result.success) {
-          const krMatch = data.match(/(?:Insamlat|insamlat|Totalt)?\s*([0-9\s\u00a0]{1,12}(?:,[0-9]{1,2})?)\s*kr/i);
-          if (krMatch && krMatch[1]) {
-            result.amount = cleanSwedishAmount(krMatch[1]);
-            result.success = true;
-          }
         }
       }
 
-      return result;
+      // 3. Fallback HTML Regex parser
+      if (!success && typeof rawData === 'string') {
+        const krMatch = rawData.match(/(?:Insamlat|insamlat|Totalt)?\s*([0-9\s\u00a0]{1,12}(?:,[0-9]{1,2})?)\s*kr/i);
+        if (krMatch && krMatch[1]) {
+          amount = cleanSwedishAmount(krMatch[1]);
+          success = true;
+        }
+      }
+
+      return { amount, donations, success };
     }
 
     async function fetchMusikhjalpenData(forceUserRequest = false) {
       const syncStatusEl = document.getElementById('bossaSyncStatus');
       if (forceUserRequest && syncStatusEl) syncStatusEl.innerText = "Söker på bossan.musikhjalpen.se...";
 
-      const targetUrl = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}`;
+      const targetUrl = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}/`;
       const proxyCandidates = [
         `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
         `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
@@ -1856,52 +1865,73 @@
           if (url.includes('allorigins.win/get')) {
             const json = await response.json();
             rawData = json.contents;
+          } else if (response.headers.get('content-type')?.includes('application/json')) {
+            rawData = await response.json();
           } else {
             rawData = await response.text();
           }
 
-          const extracted = parseDeepFundraiserData(rawData, FUNDRAISER_SLUG);
+          const extracted = parseFundraiserPayload(rawData, FUNDRAISER_SLUG);
 
           if (extracted.success && extracted.amount >= 0) {
             const fetchedAmount = extracted.amount;
-            
+            const timeStr = new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
             if (syncStatusEl) {
-              syncStatusEl.innerHTML = `<span style="color:#00ff88;">Bössa Sync: OK (${fetchedAmount} kr)</span>`;
+              syncStatusEl.innerHTML = `<span style="color:#00ff88;">Bössa Sync: OK (${fetchedAmount} kr) • ${timeStr}</span>`;
             }
 
+            // On initial OBS / page startup
             if (isInitialFetch) {
               isInitialFetch = false;
               if (fetchedAmount > currentTotal) {
                 currentTotal = fetchedAmount;
                 updateTotalDisplaySmooth(`${currentTotal} kr`);
-                saveStateToLocalStorage();
+              } else {
+                updateTotalDisplayDirect(`${currentTotal} kr`);
               }
+
+              // Silently register existing donation IDs without popping sound alerts
+              if (extracted.donations && extracted.donations.length > 0) {
+                extracted.donations.forEach(d => {
+                  knownDonationIds.add(d.id);
+                  recordDonorDonation(d.donor, d.amount);
+                });
+              }
+              saveStateToLocalStorage();
               return;
             }
 
+            // On live updates: trigger alerts for NEW donations
             if (fetchedAmount > currentTotal) {
               const diff = fetchedAmount - currentTotal;
               currentTotal = fetchedAmount;
-              saveStateToLocalStorage();
 
-              if (extracted.donations && extracted.donations.length > 0) {
-                const topDonor = extracted.donations[0];
-                recordDonorDonation(topDonor.name, topDonor.amount > 0 ? topDonor.amount : diff);
-                enqueueAlert(topDonor.name, diff, currentTotal);
+              const newDonations = extracted.donations.filter(d => !knownDonationIds.has(d.id));
+
+              if (newDonations.length > 0) {
+                newDonations.forEach(d => {
+                  knownDonationIds.add(d.id);
+                  recordDonorDonation(d.donor, d.amount);
+                  enqueueAlert(d.donor, d.amount > 0 ? d.amount : diff, currentTotal, d.comment);
+                });
               } else {
-                enqueueAlert("Anonym Givare", diff, currentTotal);
+                enqueueAlert("Anonym Givare", diff, currentTotal, "");
               }
+
+              saveStateToLocalStorage();
             }
 
             return; // Success
           }
         } catch (err) {
-          // Fallback
+          // Fallback to next proxy candidate
         }
       }
 
       if (syncStatusEl) {
-        syncStatusEl.innerHTML = `<span style="color:#ace600;">Självdrivande Läge (${currentTotal} kr)</span>`;
+        const timeStr = new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+        syncStatusEl.innerHTML = `<span style="color:#ace600;">Självdrivande Läge (${currentTotal} kr) • ${timeStr}</span>`;
       }
     }
 
