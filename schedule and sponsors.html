@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Schedule & Sponsors Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #ace600; /* Lime Green */
+      --secondary-color: #00ff88;
+      --giveaway-color: #ffea00;
+      --text-white: #ffffff;
+      --bg-dark: rgba(0, 0, 0, 0.92);
+      --shadow-dark: rgba(0, 0, 0, 0.85);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      color: var(--text-white);
+    }
+
+    /* 🎛️ CONTROL PANEL */
+    .test-panel {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: var(--bg-dark);
+      border: 2px solid var(--secondary-color);
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-white);
+      z-index: 999999;
+      max-width: 320px;
+      font-size: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+
+    .test-panel h4 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: var(--secondary-color);
+      text-transform: uppercase;
+      cursor: move;
+      user-select: none;
+      background: rgba(0, 255, 136, 0.1);
+      padding: 5px 8px;
+      border-radius: 5px;
+    }
+
+    .test-panel button {
+      background: #222;
+      color: var(--text-white);
+      border: 1px solid var(--secondary-color);
+      padding: 5px 8px;
+      margin: 2px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .test-panel button:hover { background: var(--secondary-color); color: black; }
+
+    /* 🖼️ SPONSOR ROTATOR */
+    .sponsor-widget {
+      position: absolute;
+      bottom: 85px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sponsor-logo-container {
+      width: 140px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sponsor-logo {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: opacity 0.6s ease-in-out;
+      opacity: 1;
+      filter: drop-shadow(0 2px 5px var(--shadow-dark));
+    }
+
+    .sponsor-label {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--primary-color);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: block;
+      margin-top: 4px;
+      text-shadow: 0 2px 5px var(--shadow-dark);
+    }
+
+    /* 📅 SCHEDULE TIMELINE BAR */
+    .schedule-widget {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .timeline-container { position: relative; width: 100%; }
+
+    .timeline-line-bg {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-50%);
+      z-index: 1;
+    }
+
+    .timeline-line-fill {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      height: 3px;
+      background: var(--primary-color);
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.5);
+      transform: translateY(-50%);
+      z-index: 2;
+      width: 0%;
+      transition: width 0.5s linear;
+    }
+
+    .timeline-cursor {
+      position: absolute;
+      top: 50%;
+      left: 0%;
+      width: 10px;
+      height: 10px;
+      background: var(--primary-color);
+      box-shadow: 0 0 6px var(--primary-color);
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      border-radius: 50%;
+      transition: left 0.5s linear;
+    }
+
+    .timeline-cursor::after {
+      content: '';
+      position: absolute;
+      top: -4px; left: -4px; right: -4px; bottom: -4px;
+      border: 1.5px solid var(--primary-color);
+      border-radius: 50%;
+      animation: cursorSonar 1.8s infinite ease-out;
+    }
+
+    @keyframes cursorSonar {
+      0% { transform: scale(0.5); opacity: 0.8; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    .timeline-nodes-row {
+      position: relative;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      z-index: 3;
+    }
+
+    .timeline-day-badge {
+      background: rgba(172, 230, 0, 0.12);
+      border: 1px solid rgba(172, 230, 0, 0.6);
+      backdrop-filter: blur(4px);
+      color: var(--primary-color);
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-right: 12px;
+      align-self: center;
+    }
+
+    .timeline-node {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      flex: 1;
+      align-items: center;
+      text-align: center;
+      padding: 0 2px;
+      text-shadow: 0 2px 6px var(--shadow-dark);
+    }
+
+    .node-time {
+      height: 22px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #e0e0e0;
+      white-space: nowrap;
+    }
+
+    .node-tick-wrapper {
+      position: relative;
+      width: 100%;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .node-divider-tick {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.4);
+      z-index: 4;
+    }
+
+    .node-streamer {
+      height: 22px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--text-white);
+      white-space: nowrap;
+    }
+
+    .node-streamer.is-giveaway-text { color: var(--giveaway-color); }
+
+    .timeline-node.active .node-divider-tick {
+      background: var(--primary-color);
+      height: 16px;
+      width: 3px;
+    }
+
+    .timeline-node.active .node-streamer {
+      font-size: 17px;
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CONTROL PANEL -->
+  <div class="test-panel" id="testPanel">
+    <h4 id="panelDragHeader">📅 SCHEMA & SPONSOR PANEL</h4>
+    <div>
+      <button onclick="nextSponsor()">Nästa Sponsor</button>
+      <button onclick="generateRelativeLiveEvents()">Generera Live Schema</button>
+    </div>
+  </div>
+
+  <!-- SPONSOR ROTATOR -->
+  <div class="sponsor-widget" id="sponsorWidget">
+    <div class="sponsor-logo-container">
+      <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
+    </div>
+    <span class="sponsor-label">SPONSORER</span>
+  </div>
+
+  <!-- SCHEDULE TIMELINE BAR -->
+  <div class="schedule-widget" id="scheduleWidget">
+    <div class="timeline-container">
+      <div class="timeline-line-bg"></div>
+      <div class="timeline-line-fill" id="timelineProgressFill"></div>
+      <div class="timeline-cursor" id="timelineCursor"></div>
+      <div class="timeline-nodes-row" id="scheduleEventsRow"></div>
+    </div>
+  </div>
+
+  <script>
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
+    const SPONSORS_FOLDER = "sponsors";
+    const SPONSOR_ROTATE_SECONDS = 15;
+
+    const DEFAULT_SPONSORS = [
+      'https://via.placeholder.com/140x50/111/ace600?text=SPONSOR+A',
+      'https://via.placeholder.com/140x50/111/00ff88?text=SPONSOR+B',
+      'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
+    ];
+
+    let sponsorFileList = DEFAULT_SPONSORS;
+    let currentSponsorIndex = 0;
+    let testForcedEventId = -1;
+
+    // DYNAMIC SCHEDULE BUILDER
+    function buildDynamicLiveSchedule() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const dayNames = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
+
+      const today = new Date(now);
+      const tomorrow = new Date(now.getTime() + 24 * 3600000);
+
+      const getISO = (d, timeStr) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${timeStr}:00`;
+
+      const todayName = dayNames[today.getDay()];
+      const tomorrowName = dayNames[tomorrow.getDay()];
+
+      return [
+        { id: 0, dayName: todayName, start: getISO(today, "12:00"), end: getISO(today, "15:00"), timeText: "12:00 - 15:00", name: "MorgonSolen", giveaway: "" },
+        { id: 1, dayName: todayName, start: getISO(today, "15:00"), end: getISO(today, "17:00"), timeText: "15:00 - 17:00", name: "PixelPionjären", giveaway: "" },
+        { id: 2, dayName: todayName, start: getISO(today, "17:00"), end: getISO(today, "19:00"), timeText: "17:00 - 19:00", name: "KaffeKungen", giveaway: "" },
+        { id: 3, dayName: todayName, start: getISO(today, "19:00"), end: getISO(today, "20:00"), timeText: "19:00 - 20:00", name: "Kvälls Giveaway", giveaway: "🎁 STOR GIVEAWAY!" },
+        { id: 4, dayName: todayName, start: getISO(today, "20:00"), end: getISO(today, "22:00"), timeText: "20:00 - 22:00", name: "ZeldaMästaren", giveaway: "" },
+        { id: 5, dayName: todayName, start: getISO(today, "22:00"), end: getISO(tomorrow, "00:00"), timeText: "22:00 - 00:00", name: "NattUgglan", giveaway: "" },
+        { id: 6, dayName: tomorrowName, start: getISO(tomorrow, "12:00"), end: getISO(tomorrow, "15:00"), timeText: "12:00 - 15:00", name: "RetroSpelaren", giveaway: "" },
+        { id: 7, dayName: tomorrowName, start: getISO(tomorrow, "15:00"), end: getISO(tomorrow, "18:00"), timeText: "15:00 - 18:00", name: "SpelExperten", giveaway: "" }
+      ];
+    }
+
+    let ALL_SCHEDULE_EVENTS = buildDynamicLiveSchedule();
+
+    function generateRelativeLiveEvents() {
+      ALL_SCHEDULE_EVENTS = buildDynamicLiveSchedule();
+      testForcedEventId = -1;
+      renderSchedule();
+    }
+
+    function renderSchedule() {
+      const eventsRowEl = document.getElementById('scheduleEventsRow');
+      const fillLineEl = document.getElementById('timelineProgressFill');
+      const cursorEl = document.getElementById('timelineCursor');
+      if (!eventsRowEl) return;
+
+      const now = new Date();
+      let activeIndex = ALL_SCHEDULE_EVENTS.findIndex(ev => now >= new Date(ev.start) && now < new Date(ev.end));
+      if (activeIndex === -1) activeIndex = 0;
+
+      let visibleEvents = ALL_SCHEDULE_EVENTS.slice(activeIndex, activeIndex + 5);
+      const totalVisible = visibleEvents.length;
+
+      if (totalVisible > 0) {
+        const currentEv = visibleEvents[0];
+        const startMs = new Date(currentEv.start).getTime();
+        const endMs = new Date(currentEv.end).getTime();
+        const nowMs = now.getTime();
+
+        let currentSlotPct = (nowMs > startMs && nowMs < endMs) ? (nowMs - startMs) / (endMs - startMs) : 0;
+        const totalProgressPct = Math.min(100, Math.max(0, (0 + currentSlotPct) * (100 / totalVisible)));
+
+        if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
+        if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
+      }
+
+      eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
+        const isLiveNow = now >= new Date(ev.start) && now < new Date(ev.end);
+        const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
+        const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
+
+        return `
+          <div class="timeline-node ${isLiveNow ? 'active' : ''}">
+            <div class="node-time">${escapeHTML(ev.timeText)}</div>
+            <div class="node-tick-wrapper"><div class="node-divider-tick"></div></div>
+            <div class="node-streamer ${hasGiveaway ? 'is-giveaway-text' : ''}">${primaryText}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // SPONSORS
+    async function loadSponsorsAutomatically() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}`);
+        if (res.ok) {
+          const files = await res.json();
+          const apiSponsors = files.filter(f => f.name.match(/\.(png|jpg|jpeg|svg|webp)$/i))
+                                   .map(f => `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (apiSponsors.length > 0) sponsorFileList = apiSponsors;
+        }
+      } catch(e) {}
+
+      updateSponsorLogo();
+      setInterval(nextSponsor, SPONSOR_ROTATE_SECONDS * 1000);
+    }
+
+    function updateSponsorLogo() {
+      const img = document.getElementById('sponsorLogo');
+      if (!img || sponsorFileList.length === 0) return;
+      img.style.opacity = '0';
+      setTimeout(() => {
+        img.src = sponsorFileList[currentSponsorIndex];
+        img.style.opacity = '1';
+      }, 600);
+    }
+
+    function nextSponsor() {
+      currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
+      updateSponsorLogo();
+    }
+
+    function makePanelDraggable() {
+      const panel = document.getElementById('testPanel');
+      const header = document.getElementById('panelDragHeader');
+      if (!panel || !header) return;
+
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      header.onmousedown = (e) => {
+        e.preventDefault();
+        pos3 = e.clientX; pos4 = e.clientY;
+        document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+        document.onmousemove = (ev) => {
+          ev.preventDefault();
+          pos1 = pos3 - ev.clientX; pos2 = pos4 - ev.clientY;
+          pos3 = ev.clientX; pos4 = ev.clientY;
+          panel.style.top = (panel.offsetTop - pos2) + "px";
+          panel.style.left = (panel.offsetLeft - pos1) + "px";
+        };
+      };
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+    makePanelDraggable();
+    loadSponsorsAutomatically();
+    renderSchedule();
+    setInterval(renderSchedule, 1000);
+  </script>
+</body>
+</html>

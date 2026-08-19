@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Overlay - Giveaway Wheel Widget</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #ace600; /* Lime Green */
+      --secondary-color: #00ff88;
+      --giveaway-color: #ffea00;
+      --text-white: #ffffff;
+      --bg-dark: rgba(0, 0, 0, 0.92);
+      --shadow-dark: rgba(0, 0, 0, 0.85);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      color: var(--text-white);
+    }
+
+    /* 🎛️ CONTROL PANEL */
+    .test-panel {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: var(--bg-dark);
+      border: 2px solid var(--secondary-color);
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-white);
+      z-index: 999999;
+      max-width: 320px;
+      font-size: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+
+    .test-panel h4 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+      color: var(--secondary-color);
+      text-transform: uppercase;
+      cursor: move;
+      user-select: none;
+      background: rgba(0, 255, 136, 0.1);
+      padding: 5px 8px;
+      border-radius: 5px;
+    }
+
+    .test-panel button {
+      background: #222;
+      color: var(--text-white);
+      border: 1px solid var(--secondary-color);
+      padding: 5px 8px;
+      margin: 2px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .test-panel button:hover { background: var(--secondary-color); color: black; }
+
+    /* 🎁 GIVEAWAY REEL WIDGET */
+    .giveaway-widget {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99990;
+      opacity: 1;
+      visibility: visible;
+      overflow: hidden;
+    }
+
+    .giveaway-title-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .giveaway-head-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 2.5px;
+      color: var(--primary-color);
+      text-transform: uppercase;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+    }
+
+    .giveaway-sub-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--text-white);
+      opacity: 0.9;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .giveaway-timer-badge {
+      display: inline-block;
+      margin-top: 8px;
+      background: rgba(172, 230, 0, 0.15);
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      font-size: 11px;
+      font-weight: 900;
+      padding: 3px 10px;
+      border-radius: 5px;
+      text-transform: uppercase;
+    }
+
+    .reel-viewport {
+      position: relative;
+      width: 100%;
+      height: 215px;
+      overflow: hidden;
+    }
+
+    .reel-viewport::before, .reel-viewport::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 270px; 
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20px, var(--primary-color) calc(100% - 20px), transparent 100%);
+      box-shadow: 0 0 5px rgba(172, 230, 0, 0.5);
+      z-index: 10;
+    }
+
+    .reel-viewport::before { top: 86px; }  
+    .reel-viewport::after  { top: 129px; } 
+
+    .reel-track {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      will-change: transform;
+    }
+
+    .reel-item {
+      height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CONTROL PANEL -->
+  <div class="test-panel" id="testPanel">
+    <h4 id="panelDragHeader">🎁 GIVEAWAY CONTROL PANEL</h4>
+    <div id="giveawayStats" style="font-size:11px; color:#ace600; margin:4px 0;">Biljetter: 0 | Givare: 0</div>
+    <button onclick="startGiveawaySpin()" style="background:#ace600; color:#000;">🎯 Dra Vinnare</button>
+    <button onclick="skipWinner()" style="background:#ffea00; color:#000;">⏭️ Skip</button>
+    <button onclick="claimAndDeleteTicket()" style="background:#ff0055; color:#fff;">✅ Radera Vinnarbiljett</button>
+    <button onclick="loadFiftyTestNames()" style="background:#00ff88; color:#000;">🎲 Ladda 50+ Testnamn</button>
+  </div>
+
+  <!-- GIVEAWAY REEL WIDGET -->
+  <div class="giveaway-widget" id="giveawayWidget">
+    <div class="giveaway-title-container">
+      <div class="giveaway-head-title">🎁 GIVEAWAY</div>
+      <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 TICKETS</div>
+      <div class="giveaway-timer-badge" id="giveawayHeaderTimer">REDO FÖR DRAGNING</div>
+    </div>
+    <div class="reel-viewport">
+      <div class="reel-track" id="reelTrack"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
+    const TICKET_MILESTONE_KR = 200;
+    const MAX_TICKETS_PER_USER = 5;
+
+    let donorTicketsMap = {};
+    let currentDrawnWinner = null;
+    let isSpinningReel = false;
+    let giveawayHoldTimeout = null;
+    let headerCountdownInterval = null;
+
+    function loadTicketsFromStorage() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_DONORS);
+        if (saved) {
+          donorTicketsMap = JSON.parse(saved);
+          updateGiveawayStatsUI();
+        }
+      } catch(e) {}
+    }
+
+    function saveTicketsToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorTicketsMap));
+      } catch(e) {}
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY_DONORS) loadTicketsFromStorage();
+    });
+
+    function getActiveTicketPool() {
+      const pool = [];
+      for (const [name, donor] of Object.entries(donorTicketsMap)) {
+        for (let i = 0; i < donor.ticketsActive; i++) pool.push(name);
+      }
+      return pool;
+    }
+
+    function updateGiveawayStatsUI() {
+      const pool = getActiveTicketPool();
+      const uniqueDonorsCount = Object.keys(donorTicketsMap).length;
+      document.getElementById('giveawayStats').innerHTML = `Biljetter: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
+      document.getElementById('giveawaySubTitle').innerText = `TOTALT ${pool.length} TICKETS`;
+    }
+
+    function startGiveawaySpin() {
+      const ticketPool = getActiveTicketPool();
+      if (ticketPool.length === 0) return alert("Inga biljetter i potten ännu!");
+      executeReelSpinAnimation(10000);
+    }
+
+    function executeReelSpinAnimation(holdDelayMs = 10000) {
+      const ticketPool = getActiveTicketPool();
+      if (ticketPool.length === 0) return;
+
+      if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
+      if (headerCountdownInterval) clearInterval(headerCountdownInterval);
+
+      isSpinningReel = true;
+      const reelTrack = document.getElementById('reelTrack');
+      const timerBadgeEl = document.getElementById('giveawayHeaderTimer');
+
+      const winningTicketIndex = Math.floor(Math.random() * ticketPool.length);
+      const winnerName = ticketPool[winningTicketIndex];
+      currentDrawnWinner = winnerName;
+
+      const spinList = [];
+      for (let i = 0; i < 25; i++) spinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+      spinList.push(winnerName);
+      spinList.push(ticketPool[0]);
+      spinList.push(ticketPool[0]);
+
+      reelTrack.style.transition = 'none';
+      reelTrack.style.transform = 'translateY(0px)';
+      reelTrack.innerHTML = spinList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+
+      let currentSeconds = Math.round(holdDelayMs / 1000);
+      timerBadgeEl.innerText = `STARTAR OM ${currentSeconds}S`;
+
+      headerCountdownInterval = setInterval(() => {
+        currentSeconds--;
+        timerBadgeEl.innerText = `STARTAR OM ${Math.max(0, currentSeconds)}S`;
+        if (currentSeconds <= 0) clearInterval(headerCountdownInterval);
+      }, 1000);
+
+      giveawayHoldTimeout = setTimeout(() => {
+        timerBadgeEl.innerText = "DRAGNING PÅGÅR...";
+        const itemHeight = 43;
+        const targetIndex = spinList.length - 3;
+        const targetY = -(targetIndex - 2) * itemHeight;
+
+        reelTrack.style.transition = 'transform 12s cubic-bezier(0.1, 0.75, 0.25, 1)';
+        reelTrack.style.transform = `translateY(${targetY}px)`;
+
+        setTimeout(() => {
+          isSpinningReel = false;
+          timerBadgeEl.innerText = "VINNARE DRAGEN! 🎉";
+          
+          const items = reelTrack.children;
+          if (items[targetIndex]) {
+            items[targetIndex].style.color = '#ace600';
+            items[targetIndex].style.fontSize = '32px';
+            items[targetIndex].style.textShadow = '0 0 10px rgba(172, 230, 0, 0.8)';
+          }
+        }, 12100);
+      }, holdDelayMs);
+    }
+
+    function skipWinner() { executeReelSpinAnimation(1500); }
+
+    function claimAndDeleteTicket() {
+      if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
+        if (donorTicketsMap[currentDrawnWinner].ticketsActive > 0) {
+          donorTicketsMap[currentDrawnWinner].ticketsActive -= 1;
+        }
+      }
+      updateGiveawayStatsUI();
+      saveTicketsToStorage();
+      document.getElementById('giveawayHeaderTimer').innerText = "REDO FÖR DRAGNING";
+    }
+
+    function loadFiftyTestNames() {
+      const sampleNames = ["GamerGud", "Matilda99", "PixelPappa", "KaffeLoover", "NinjaBullen", "KattKungen", "ZeldaFan88", "MidsommarSvensken"];
+      sampleNames.forEach(name => {
+        if (!donorTicketsMap[name]) {
+          donorTicketsMap[name] = { totalAmount: 600, ticketsEarned: 3, ticketsActive: 3 };
+        }
+      });
+      saveTicketsToStorage();
+      updateGiveawayStatsUI();
+      alert("Testnamn laddade!");
+    }
+
+    function makePanelDraggable() {
+      const panel = document.getElementById('testPanel');
+      const header = document.getElementById('panelDragHeader');
+      if (!panel || !header) return;
+
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      header.onmousedown = (e) => {
+        e.preventDefault();
+        pos3 = e.clientX; pos4 = e.clientY;
+        document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+        document.onmousemove = (ev) => {
+          ev.preventDefault();
+          pos1 = pos3 - ev.clientX; pos2 = pos4 - ev.clientY;
+          pos3 = ev.clientX; pos4 = ev.clientY;
+          panel.style.top = (panel.offsetTop - pos2) + "px";
+          panel.style.left = (panel.offsetLeft - pos1) + "px";
+        };
+      };
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+    makePanelDraggable();
+    loadTicketsFromStorage();
+    setInterval(loadTicketsFromStorage, 2000);
+  </script>
+</body>
+</html>
