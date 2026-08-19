@@ -109,12 +109,14 @@
       align-items: center;
     }
 
+    /* Added margin-bottom to float the sponsor picture higher up while keeping the title where it is */
     .sponsor-logo-container {
       width: 140px;
       height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 14px; /* Space between sponsor pictures and title */
     }
 
     .sponsor-logo {
@@ -133,7 +135,7 @@
       letter-spacing: 1.5px;
       text-transform: uppercase;
       display: block;
-      margin-top: 4px;
+      margin-top: 0px;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
@@ -227,20 +229,19 @@
       align-items: center;
       text-align: center;
       padding: 0 2px;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); /* Subtle crisp shadow, smaller glow */
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
-    /* 🏷️ TIME DISPLAY: Bigger font (13px) & easy-to-read letter spacing (1px) */
     .node-time {
       height: 24px;
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      font-size: 13px; /* Bigger font */
+      font-size: 13px;
       font-weight: 800;
       color: #e6e6e6;
       white-space: nowrap;
-      letter-spacing: 1px; /* Letter spacing for readability */
+      letter-spacing: 1px;
     }
 
     .node-tick-wrapper {
@@ -263,7 +264,6 @@
       z-index: 4;
     }
 
-    /* 🎤 STREAMER DISPLAY: Spaced letters (0.8px) */
     .node-streamer {
       height: 24px;
       display: flex;
@@ -297,7 +297,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v2.5.0</span>
+      <span class="version-badge">v2.6.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
