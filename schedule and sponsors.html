@@ -134,7 +134,7 @@
       text-transform: uppercase;
       display: block;
       margin-top: 4px;
-      text-shadow: 0 2px 5px var(--shadow-dark);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
     /* 📅 SCHEDULE TIMELINE BAR */
@@ -227,18 +227,20 @@
       align-items: center;
       text-align: center;
       padding: 0 2px;
-      text-shadow: 0 2px 6px var(--shadow-dark);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); /* Subtle crisp shadow, smaller glow */
     }
 
+    /* 🏷️ TIME DISPLAY: Bigger font (13px) & easy-to-read letter spacing (1px) */
     .node-time {
-      height: 22px;
+      height: 24px;
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      font-size: 11px;
+      font-size: 13px; /* Bigger font */
       font-weight: 800;
-      color: #e0e0e0;
+      color: #e6e6e6;
       white-space: nowrap;
+      letter-spacing: 1px; /* Letter spacing for readability */
     }
 
     .node-tick-wrapper {
@@ -261,8 +263,9 @@
       z-index: 4;
     }
 
+    /* 🎤 STREAMER DISPLAY: Spaced letters (0.8px) */
     .node-streamer {
-      height: 22px;
+      height: 24px;
       display: flex;
       align-items: flex-start;
       justify-content: center;
@@ -270,6 +273,7 @@
       font-weight: 900;
       color: var(--text-white);
       white-space: nowrap;
+      letter-spacing: 0.8px;
     }
 
     .node-streamer.is-giveaway-text { color: var(--giveaway-color); }
@@ -283,6 +287,7 @@
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
   </style>
 </head>
@@ -292,7 +297,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v2.3.0</span>
+      <span class="version-badge">v2.5.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -393,32 +398,7 @@
       return new Date(dateStr.replace(' ', 'T') + ':00');
     }
 
-    // Convert time text like "20:00 - 22:00" into actual Date objects for today
-    function parseTimeTextToDates(timeText, dateRef) {
-      const parts = timeText.split(' - ').map(s => s.trim());
-      const [sh, sm] = parts[0].split(':').map(Number);
-      const [eh, em] = parts[1].split(':').map(Number);
-
-      const start = new Date(dateRef);
-      start.setHours(sh, sm, 0, 0);
-
-      const end = new Date(dateRef);
-      if (eh < sh || (eh === 0 && em === 0)) {
-        end.setDate(end.getDate() + 1);
-        end.setHours(eh, em, 0, 0);
-      } else {
-        end.setHours(eh, em, 0, 0);
-      }
-
-      if (start > end) {
-        start.setDate(start.getDate() - 1);
-      }
-
-      return { start, end };
-    }
-
     // ⚡ REAL-TIME DYNAMIC TEST SCHEDULE
-    // Creates 2-hour slots anchored strictly to current even hours (e.g., 20:00 - 22:00)
     function generateTestSchedule() {
       const now = new Date();
       const currentEvenHour = Math.floor(now.getHours() / 2) * 2;
@@ -456,14 +436,30 @@
       const firstEvStart = parseDate(SKARPT_EVENT_SCHEDULE[0].start);
       const lastEvEnd = parseDate(SKARPT_EVENT_SCHEDULE[SKARPT_EVENT_SCHEDULE.length - 1].end);
 
-      // If outside actual Nov 30 - Dec 6 dates (previewing today), map exact start/end dates to today so progress dot works
       const isOutsideDates = now < firstEvStart || now > lastEvEnd;
 
       return SKARPT_EVENT_SCHEDULE.map(ev => {
         if (isOutsideDates) {
-          const parsed = parseTimeTextToDates(ev.timeText, now);
-          return { ...ev, start: parsed.start, end: parsed.end };
+          // Preview mode: map timeText hours to today's date
+          const [startStr, endStr] = ev.timeText.split(' - ').map(s => s.trim());
+          const [sh, sm] = startStr.split(':').map(Number);
+          const [eh, em] = endStr.split(':').map(Number);
+
+          const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm, 0);
+          let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh === 0 ? 24 : eh, em, 0);
+
+          if (eh < sh && eh !== 0) {
+            end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, eh, em, 0);
+          }
+
+          if (now.getHours() < sh && sh >= 20 && eh <= 4) {
+            start.setDate(start.getDate() - 1);
+            end.setDate(end.getDate() - 1);
+          }
+
+          return { ...ev, start: start, end: end };
         }
+
         return { ...ev, start: parseDate(ev.start), end: parseDate(ev.end) };
       });
     }
