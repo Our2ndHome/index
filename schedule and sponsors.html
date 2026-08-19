@@ -7,13 +7,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #ace600;  /* Lime Green */
-      --secondary-color: #00ff88;/* Bright Mint */
-      --giveaway-color: #ffea00; /* Yellow */
+      --primary-color: #ace600; /* Lime Green */
+      --secondary-color: #00ff88;
+      --giveaway-color: #ffea00;
       --text-white: #ffffff;
-      --text-muted: #d0d0d0;
       --bg-dark: rgba(0, 0, 0, 0.92);
-      --shadow-dark: rgba(0, 0, 0, 0.95);
+      --shadow-dark: rgba(0, 0, 0, 0.85);
     }
 
     * { box-sizing: border-box; }
@@ -28,7 +27,7 @@
       color: var(--text-white);
     }
 
-    /* 🎛️ DRAGGABLE CONTROL PANEL (v4.0) */
+    /* 🎛️ CONTROL PANEL */
     .test-panel {
       position: absolute;
       top: 15px;
@@ -39,9 +38,9 @@
       border-radius: 10px;
       color: var(--text-white);
       z-index: 999999;
-      width: 330px;
+      max-width: 340px;
       font-size: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.85);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 
     .test-panel h4 {
@@ -55,7 +54,7 @@
       justify-content: space-between;
       align-items: center;
       background: rgba(0, 255, 136, 0.1);
-      padding: 6px 8px;
+      padding: 5px 8px;
       border-radius: 5px;
       border: 1px dashed rgba(0, 255, 136, 0.4);
     }
@@ -65,7 +64,7 @@
       color: #000;
       font-size: 9px;
       font-weight: 900;
-      padding: 2px 6px;
+      padding: 1px 5px;
       border-radius: 3px;
     }
 
@@ -73,31 +72,29 @@
       background: #222;
       color: var(--text-white);
       border: 1px solid var(--secondary-color);
-      padding: 6px 10px;
+      padding: 5px 8px;
       margin: 2px;
       border-radius: 5px;
       cursor: pointer;
       font-size: 11px;
-      font-weight: 800;
-      transition: all 0.2s ease;
+      font-weight: bold;
     }
 
-    .test-panel button:hover {
-      background: var(--secondary-color);
-      color: #000;
+    .test-panel button:hover { background: var(--secondary-color); color: black; }
+
+    .refresh-btn {
+      background: #ffea00 !important;
+      color: #000 !important;
+      font-weight: 900 !important;
+      border-color: #ffea00 !important;
+      margin-top: 6px !important;
+      width: 100%;
     }
 
-    .panel-clock {
-      font-size: 11px;
-      color: var(--primary-color);
-      font-weight: 800;
-      margin-top: 6px;
-    }
-
-    /* 🖼️ SPONSOR ROTATOR WIDGET */
+    /* 🖼️ SPONSOR ROTATOR (ORIGINAL TURN 9 STYLING) */
     .sponsor-widget {
       position: absolute;
-      bottom: 95px;
+      bottom: 85px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -108,8 +105,8 @@
     }
 
     .sponsor-logo-container {
-      width: 150px;
-      height: 45px;
+      width: 140px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -119,25 +116,26 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      transition: opacity 0.5s ease-in-out;
+      transition: opacity 0.6s ease-in-out;
       opacity: 1;
-      filter: drop-shadow(0 3px 6px var(--shadow-dark));
+      filter: drop-shadow(0 2px 5px var(--shadow-dark));
     }
 
     .sponsor-label {
       font-size: 11px;
       font-weight: 900;
       color: var(--primary-color);
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
+      display: block;
       margin-top: 4px;
       text-shadow: 0 2px 5px var(--shadow-dark);
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR */
+    /* 📅 SCHEDULE TIMELINE BAR (ORIGINAL TURN 9 STYLING) */
     .schedule-widget {
       position: absolute;
-      bottom: 15px;
+      bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
       width: 96vw;
@@ -153,97 +151,95 @@
       width: 100%;
     }
 
-    /* Track Background Line */
     .timeline-line-bg {
       position: absolute;
       top: 50%;
       left: 0;
       width: 100%;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.2);
+      height: 2px;
+      background: rgba(255, 255, 255, 0.25);
       transform: translateY(-50%);
       z-index: 1;
-      border-radius: 2px;
     }
 
-    /* Live Progress Fill Line */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
       left: 0;
-      height: 4px;
+      height: 3px;
       background: var(--primary-color);
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.5);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
-      border-radius: 2px;
-      transition: width 0.2s linear;
+      transition: width 0.3s linear;
     }
 
-    /* Realtime Sonar Cursor Dot */
     .timeline-cursor {
       position: absolute;
       top: 50%;
       left: 0%;
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       background: var(--primary-color);
-      box-shadow: 0 0 10px var(--primary-color);
+      box-shadow: 0 0 6px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
-      transition: left 0.2s linear;
+      transition: left 0.3s linear;
     }
 
     .timeline-cursor::after {
       content: '';
       position: absolute;
-      top: -5px; left: -5px; right: -5px; bottom: -5px;
-      border: 2px solid var(--primary-color);
+      top: -4px; left: -4px; right: -4px; bottom: -4px;
+      border: 1.5px solid var(--primary-color);
       border-radius: 50%;
       animation: cursorSonar 1.8s infinite ease-out;
     }
 
     @keyframes cursorSonar {
-      0% { transform: scale(0.5); opacity: 1; }
-      100% { transform: scale(2.2); opacity: 0; }
+      0% { transform: scale(0.5); opacity: 0.8; }
+      100% { transform: scale(1.8); opacity: 0; }
     }
 
-    /* Ticks & Events Row */
     .timeline-nodes-row {
       position: relative;
       display: flex;
       flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
       width: 100%;
       z-index: 3;
     }
 
-    /* Day Badge */
     .timeline-day-badge {
-      background: rgba(172, 230, 0, 0.15);
-      border: 1px solid var(--primary-color);
+      background: rgba(172, 230, 0, 0.12);
+      border: 1px solid rgba(172, 230, 0, 0.6);
+      backdrop-filter: blur(4px);
       color: var(--primary-color);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 900;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: 4px;
-      letter-spacing: 1.5px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
       white-space: nowrap;
-      margin-right: 14px;
+      margin-right: 12px;
       align-self: center;
-      box-shadow: 0 2px 8px var(--shadow-dark);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     }
 
-    /* Individual Event Node */
     .timeline-node {
       display: flex;
       flex-direction: column;
       position: relative;
+      flex: 1;
       align-items: center;
       text-align: center;
+      padding: 0 2px;
       transition: all 0.3s ease;
+      text-shadow: 0 2px 6px var(--shadow-dark);
     }
 
     .node-time {
@@ -253,18 +249,18 @@
       justify-content: center;
       font-size: 11px;
       font-weight: 800;
-      color: var(--text-muted);
+      color: #e0e0e0;
+      letter-spacing: 0.6px;
       white-space: nowrap;
-      letter-spacing: 0.5px;
-      text-shadow: 0 2px 4px var(--shadow-dark);
     }
 
     .node-tick-wrapper {
       position: relative;
       width: 100%;
-      height: 18px;
+      height: 16px;
       display: flex;
       align-items: center;
+      justify-content: flex-start;
     }
 
     .node-divider-tick {
@@ -274,9 +270,10 @@
       transform: translateY(-50%);
       width: 2px;
       height: 12px;
-      background: rgba(255, 255, 255, 0.35);
-      z-index: 4;
+      background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
+      transition: all 0.3s ease;
+      z-index: 4;
     }
 
     .timeline-node:last-child .node-tick-wrapper::after {
@@ -287,13 +284,14 @@
       transform: translateY(-50%);
       width: 2px;
       height: 12px;
-      background: rgba(255, 255, 255, 0.35);
-      z-index: 4;
+      background: rgba(255, 255, 255, 0.4);
       border-radius: 1px;
+      transition: all 0.3s ease;
+      z-index: 4;
     }
 
     .node-streamer {
-      height: 24px;
+      height: 22px;
       display: flex;
       align-items: flex-start;
       justify-content: center;
@@ -301,39 +299,37 @@
       font-weight: 900;
       color: var(--text-white);
       white-space: nowrap;
-      letter-spacing: 0.5px;
-      text-shadow: 0 2px 6px var(--shadow-dark);
+      letter-spacing: 0.3px;
     }
 
     .node-streamer.is-giveaway-text {
       color: var(--giveaway-color);
-      text-shadow: 0 0 8px rgba(255, 234, 0, 0.5), 0 2px 6px var(--shadow-dark);
     }
 
-    /* Active Live Event State */
     .timeline-node.active .node-divider-tick {
       background: var(--primary-color);
       height: 16px;
       width: 3px;
-      box-shadow: 0 0 8px var(--primary-color);
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
+    }
+
+    .timeline-node.active .node-streamer {
+      font-size: 17px;
+      font-weight: 900;
+      color: var(--primary-color);
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.5);
+    }
+
+    .timeline-node.active .node-streamer.is-giveaway-text {
+      color: var(--giveaway-color);
+      font-size: 17px;
+      text-shadow: 0 0 8px rgba(255, 234, 0, 0.6);
     }
 
     .timeline-node.active .node-time {
       color: var(--text-white);
       font-size: 12px;
       font-weight: 900;
-    }
-
-    .timeline-node.active .node-streamer {
-      font-size: 17px;
-      color: var(--primary-color);
-      text-shadow: 0 0 10px rgba(172, 230, 0, 0.7), 0 2px 8px var(--shadow-dark);
-    }
-
-    .timeline-node.active .node-streamer.is-giveaway-text {
-      color: var(--giveaway-color);
-      font-size: 17px;
-      text-shadow: 0 0 10px rgba(255, 234, 0, 0.8), 0 2px 8px var(--shadow-dark);
     }
   </style>
 </head>
@@ -344,13 +340,13 @@
     <h4 id="panelDragHeader">📅 SCHEMA & SPONSOR <span class="version-badge">v4.0</span></h4>
     <div>
       <button onclick="nextSponsor()">Nästa Sponsor</button>
-      <button onclick="switchTestDay('IDAG')">Idag</button>
-      <button onclick="switchTestDay('IMORGON')">Imorgon</button>
+      <button onclick="switchTestDay('IDAG')">Visa Idag</button>
+      <button onclick="switchTestDay('IMORGON')">Visa Imorgon</button>
     </div>
-    <div class="panel-clock" id="panelClock">Klockan: --:--:--</div>
+    <button class="refresh-btn" onclick="refreshOverlayInOBS()">🔄 Refresh Overlay</button>
   </div>
 
-  <!-- 🖼️ SPONSOR ROTATOR WIDGET -->
+  <!-- 🖼️ SPONSOR ROTATOR -->
   <div class="sponsor-widget" id="sponsorWidget">
     <div class="sponsor-logo-container">
       <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -370,7 +366,8 @@
 
   <script>
     // =========================================================
-    // ✏️ EASY SCHEDULE CONFIGURATION (EDIT YOUR EVENTS HERE)
+    // ✏️ EASY SCHEDULE CONFIGURATION
+    // Simply add or edit events for any day below!
     // =========================================================
     const SCHEDULE_DATA = [
       // TODAY'S EVENTS
@@ -393,74 +390,79 @@
     const SPONSOR_ROTATE_SECONDS = 15;
 
     const DEFAULT_SPONSORS = [
-      'https://via.placeholder.com/150x45/111/ace600?text=SPONSOR+A',
-      'https://via.placeholder.com/150x45/111/00ff88?text=SPONSOR+B',
-      'https://via.placeholder.com/150x45/111/ffea00?text=SPONSOR+C'
+      'https://via.placeholder.com/140x40/111/ace600?text=SPONSOR+A',
+      'https://via.placeholder.com/140x40/111/00ff88?text=SPONSOR+B',
+      'https://via.placeholder.com/140x40/111/ffea00?text=SPONSOR+C'
     ];
 
     let sponsorFileList = DEFAULT_SPONSORS;
     let currentSponsorIndex = 0;
     let activeDayGroup = "IDAG";
 
-    // Helper: Convert "14:30" string to minutes from midnight
+    function refreshOverlayInOBS() {
+      location.reload();
+    }
+
     function timeStrToMinutes(timeStr) {
-      if (timeStr === "00:00" || timeStr === "24:00") return 24 * 60; // Midnight end
+      if (timeStr === "00:00" || timeStr === "24:00") return 24 * 60;
       const [h, m] = timeStr.split(':').map(Number);
       return (h * 60) + m;
     }
 
-    // RENDER TIMELINE & CALCULATE REALTIME POSITIONS
+    // RENDER BALANCED SCHEDULE & ACCURATE REALTIME CURSOR
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
       const cursorEl = document.getElementById('timelineCursor');
-      const clockEl = document.getElementById('panelClock');
       if (!eventsRowEl) return;
 
       const now = new Date();
       const nowMinutes = (now.getHours() * 60) + now.getMinutes() + (now.getSeconds() / 60);
-      const timeStr = now.toLocaleTimeString('sv-SE');
-      if (clockEl) clockEl.innerText = `Klockan: ${timeStr}`;
 
-      // Get events for current day group
       const dayEvents = SCHEDULE_DATA.filter(ev => ev.dayGroup === activeDayGroup);
       if (dayEvents.length === 0) return;
 
-      const dayStartMin = timeStrToMinutes(dayEvents[0].start);
-      const dayEndMin = timeStrToMinutes(dayEvents[dayEvents.length - 1].end);
-      const totalDayDurationMin = dayEndMin - dayStartMin;
+      const totalNodes = dayEvents.length;
 
-      // 🎯 Calculate 100% Exact Realtime Progress Percentage
-      let progressPct = 0;
-      if (nowMinutes >= dayEndMin) {
-        progressPct = 100;
-      } else if (nowMinutes > dayStartMin) {
-        progressPct = ((nowMinutes - dayStartMin) / totalDayDurationMin) * 100;
+      // Find active event index
+      let activeIndex = dayEvents.findIndex(ev => {
+        const sMin = timeStrToMinutes(ev.start);
+        const eMin = timeStrToMinutes(ev.end);
+        return nowMinutes >= sMin && nowMinutes < eMin;
+      });
+
+      if (activeIndex === -1) activeIndex = 0;
+
+      // Calculate exact progress percentage so dot hits tick divider at exact end time
+      const currentEv = dayEvents[activeIndex];
+      const startMin = timeStrToMinutes(currentEv.start);
+      const endMin = timeStrToMinutes(currentEv.end);
+
+      let slotProgress = 0;
+      if (nowMinutes >= endMin) {
+        slotProgress = 1.0;
+      } else if (nowMinutes > startMin) {
+        slotProgress = (nowMinutes - startMin) / (endMin - startMin);
       }
 
-      if (fillLineEl) fillLineEl.style.width = `${progressPct}%`;
-      if (cursorEl) cursorEl.style.left = `${progressPct}%`;
+      const totalProgressPct = Math.min(100, Math.max(0, ((activeIndex + slotProgress) / totalNodes) * 100));
 
-      // Get Sweden Day Name
+      if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
+      if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
+
       const dayNames = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
       const displayDayName = activeDayGroup === "IDAG" ? dayNames[now.getDay()] : dayNames[(now.getDay() + 1) % 7];
 
-      // Build balanced nodes layout
+      // Build balanced nodes using flex: 1
       let html = `<div class="timeline-day-badge">${escapeHTML(displayDayName)}</div>`;
 
-      html += dayEvents.map(ev => {
-        const evStartMin = timeStrToMinutes(ev.start);
-        const evEndMin = timeStrToMinutes(ev.end);
-        const evDuration = evEndMin - evStartMin;
-
-        // Proportional width for perfect balance
-        const widthPct = (evDuration / totalDayDurationMin) * 100;
-        const isLive = nowMinutes >= evStartMin && nowMinutes < evEndMin;
+      html += dayEvents.map((ev, index) => {
+        const isLive = (index === activeIndex) && (nowMinutes >= startMin && nowMinutes < endMin);
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
         const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
 
         return `
-          <div class="timeline-node ${isLive ? 'active' : ''}" style="width: ${widthPct}%;">
+          <div class="timeline-node ${isLive ? 'active' : ''}">
             <div class="node-time">${escapeHTML(ev.start)}</div>
             <div class="node-tick-wrapper">
               <div class="node-divider-tick"></div>
@@ -501,7 +503,7 @@
       setTimeout(() => {
         img.src = sponsorFileList[currentSponsorIndex];
         img.style.opacity = '1';
-      }, 500);
+      }, 600);
     }
 
     function nextSponsor() {
@@ -533,11 +535,10 @@
       return String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
 
-    // INIT
     makePanelDraggable();
     loadSponsorsAutomatically();
     renderSchedule();
-    setInterval(renderSchedule, 1000); // 100% Realtime Clock Tick
+    setInterval(renderSchedule, 1000);
   </script>
 </body>
 </html>
