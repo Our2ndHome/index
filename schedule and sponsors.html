@@ -96,7 +96,7 @@
       border-color: var(--primary-color);
     }
 
-    /* 🖼️ SPONSOR ROTATOR */
+    /* 🖼️ SPONSOR ROTATOR & FLOATING ANIMATION */
     .sponsor-widget {
       position: absolute;
       bottom: 85px;
@@ -109,7 +109,6 @@
       align-items: center;
     }
 
-    /* Added margin-bottom to float the sponsor picture higher up while keeping the title where it is */
     .sponsor-logo-container {
       width: 140px;
       height: 40px;
@@ -119,13 +118,25 @@
       margin-bottom: 14px; /* Space between sponsor pictures and title */
     }
 
+    /* Smooth Floating / Breathing Animation */
     .sponsor-logo {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
       transition: opacity 0.6s ease-in-out;
       opacity: 1;
-      filter: drop-shadow(0 2px 5px var(--shadow-dark));
+      animation: sponsorFloat 3.5s ease-in-out infinite;
+    }
+
+    @keyframes sponsorFloat {
+      0%, 100% {
+        transform: translateY(0px);
+        filter: drop-shadow(0 2px 4px var(--shadow-dark));
+      }
+      50% {
+        transform: translateY(-6px);
+        filter: drop-shadow(0 6px 12px var(--shadow-dark));
+      }
     }
 
     .sponsor-label {
@@ -297,7 +308,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v2.6.0</span>
+      <span class="version-badge">v2.7.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -376,17 +387,18 @@
     ];
 
     // ==========================================
-    // CONFIGURATION & SPONSORS
+    // CONFIGURATION & TEST SPONSOR IMAGES
     // ==========================================
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
 
+    // Built-in SVG test sponsor logos (load instantly & look sleek)
     const DEFAULT_SPONSORS = [
-      'https://via.placeholder.com/140x50/111/ace600?text=SPONSOR+A',
-      'https://via.placeholder.com/140x50/111/00ff88?text=SPONSOR+B',
-      'https://via.placeholder.com/140x50/111/ffea00?text=SPONSOR+C'
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 140 40"><rect width="140" height="40" rx="8" fill="%23111" stroke="%23ace600" stroke-width="1.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="13" letter-spacing="1">LIME GAMING</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 140 40"><rect width="140" height="40" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="1.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="13" letter-spacing="1">NORDIC STREAM</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 140 40"><rect width="140" height="40" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="1.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="13" letter-spacing="1">MH PARTNER</text></svg>'
     ];
 
     let sponsorFileList = DEFAULT_SPONSORS;
