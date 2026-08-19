@@ -177,10 +177,10 @@
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
-      transition: width 0.2s linear;
+      transition: width 0.3s linear;
     }
 
-    /* 🎯 100% ACCURATE PROGRESS DOT */
+    /* 🎯 REAL-TIME PROGRESS DOT */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -192,7 +192,7 @@
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
-      transition: left 0.2s linear;
+      transition: left 0.3s linear;
     }
 
     .timeline-cursor::after {
@@ -292,7 +292,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v2.0.0</span>
+      <span class="version-badge">v2.1.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -321,54 +321,55 @@
 
   <script>
     // ==========================================
-    // ✏️ 2. SUPER SIMPLE SCHEDULE EDITING
-    // Edit schedule here easily: "YYYY-MM-DD HH:MM"
+    // ✏️ SIMPLE SCHEDULE EDITING
+    // Fixed time texts (`timeText`) that never change!
+    // Format: "YYYY-MM-DD HH:MM"
     // ==========================================
     const SKARPT_EVENT_SCHEDULE = [
       // MÅNDAG 30 NOV
-      { start: "2026-11-30 12:00", end: "2026-11-30 15:00", name: "Invigning & Morgongänget", giveaway: "" },
-      { start: "2026-11-30 15:00", end: "2026-11-30 18:00", name: "PixelPionjärerna", giveaway: "" },
-      { start: "2026-11-30 18:00", end: "2026-11-30 21:00", name: "KaffeKungen", giveaway: "🎁 GIVEAWAY: Gaming Mus" },
-      { start: "2026-11-30 21:00", end: "2026-12-01 00:00", name: "Nattstreamers", giveaway: "" },
+      { start: "2026-11-30 12:00", end: "2026-11-30 15:00", timeText: "12:00 - 15:00", name: "Invigning & Morgongänget", giveaway: "" },
+      { start: "2026-11-30 15:00", end: "2026-11-30 18:00", timeText: "15:00 - 18:00", name: "PixelPionjärerna", giveaway: "" },
+      { start: "2026-11-30 18:00", end: "2026-11-30 21:00", timeText: "18:00 - 21:00", name: "KaffeKungen", giveaway: "🎁 GIVEAWAY: Gaming Mus" },
+      { start: "2026-11-30 21:00", end: "2026-12-01 00:00", timeText: "21:00 - 00:00", name: "Nattstreamers", giveaway: "" },
 
       // TISDAG 1 DEC
-      { start: "2026-12-01 00:00", end: "2026-12-01 06:00", name: "Nattpatrullen", giveaway: "" },
-      { start: "2026-12-01 06:00", end: "2026-12-01 12:00", name: "Morgonsolen", giveaway: "" },
-      { start: "2026-12-01 12:00", end: "2026-12-01 16:00", name: "ZeldaMästaren", giveaway: "" },
-      { start: "2026-12-01 16:00", end: "2026-12-01 20:00", name: "RetroSpelaren", giveaway: "🎁 GIVEAWAY: Headset" },
-      { start: "2026-12-01 20:00", end: "2026-12-02 00:00", name: "KvällsShowen", giveaway: "" },
+      { start: "2026-12-01 00:00", end: "2026-12-01 06:00", timeText: "00:00 - 06:00", name: "Nattpatrullen", giveaway: "" },
+      { start: "2026-12-01 06:00", end: "2026-12-01 12:00", timeText: "06:00 - 12:00", name: "Morgonsolen", giveaway: "" },
+      { start: "2026-12-01 12:00", end: "2026-12-01 16:00", timeText: "12:00 - 16:00", name: "ZeldaMästaren", giveaway: "" },
+      { start: "2026-12-01 16:00", end: "2026-12-01 20:00", timeText: "16:00 - 20:00", name: "RetroSpelaren", giveaway: "🎁 GIVEAWAY: Headset" },
+      { start: "2026-12-01 20:00", end: "2026-12-02 00:00", timeText: "20:00 - 00:00", name: "KvällsShowen", giveaway: "" },
 
       // ONSDAG 2 DEC
-      { start: "2026-12-02 00:00", end: "2026-12-02 08:00", name: "NattUggan", giveaway: "" },
-      { start: "2026-12-02 08:00", end: "2026-12-02 14:00", name: "Förmiddagsmys", giveaway: "" },
-      { start: "2026-12-02 14:00", end: "2026-12-02 18:00", name: "Speedrunners", giveaway: "" },
-      { start: "2026-12-02 18:00", end: "2026-12-02 22:00", name: "Svenska Eliten", giveaway: "🎁 GIVEAWAY: Tangentbord" },
-      { start: "2026-12-02 22:00", end: "2026-12-03 00:00", name: "Nattchatt & Musik", giveaway: "" },
+      { start: "2026-12-02 00:00", end: "2026-12-02 08:00", timeText: "00:00 - 08:00", name: "NattUggan", giveaway: "" },
+      { start: "2026-12-02 08:00", end: "2026-12-02 14:00", timeText: "08:00 - 14:00", name: "Förmiddagsmys", giveaway: "" },
+      { start: "2026-12-02 14:00", end: "2026-12-02 18:00", timeText: "14:00 - 18:00", name: "Speedrunners", giveaway: "" },
+      { start: "2026-12-02 18:00", end: "2026-12-02 22:00", timeText: "18:00 - 22:00", name: "Svenska Eliten", giveaway: "🎁 GIVEAWAY: Tangentbord" },
+      { start: "2026-12-02 22:00", end: "2026-12-03 00:00", timeText: "22:00 - 00:00", name: "Nattchatt & Musik", giveaway: "" },
 
       // TORSDAG 3 DEC
-      { start: "2026-12-03 00:00", end: "2026-12-03 08:00", name: "Nattladdningen", giveaway: "" },
-      { start: "2026-12-03 08:00", end: "2026-12-03 14:00", name: "MH-Special Live", giveaway: "" },
-      { start: "2026-12-03 14:00", end: "2026-12-03 19:00", name: "Gäster & Turnering", giveaway: "" },
-      { start: "2026-12-03 19:00", end: "2026-12-03 23:00", name: "Stora Samlingen", giveaway: "🎁 MEGA GIVEAWAY!" },
-      { start: "2026-12-03 23:00", end: "2026-12-04 00:00", name: "Late Night Gaming", giveaway: "" },
+      { start: "2026-12-03 00:00", end: "2026-12-03 08:00", timeText: "00:00 - 08:00", name: "Nattladdningen", giveaway: "" },
+      { start: "2026-12-03 08:00", end: "2026-12-03 14:00", timeText: "08:00 - 14:00", name: "MH-Special Live", giveaway: "" },
+      { start: "2026-12-03 14:00", end: "2026-12-03 19:00", timeText: "14:00 - 19:00", name: "Gäster & Turnering", giveaway: "" },
+      { start: "2026-12-03 19:00", end: "2026-12-03 23:00", timeText: "19:00 - 23:00", name: "Stora Samlingen", giveaway: "🎁 MEGA GIVEAWAY!" },
+      { start: "2026-12-03 23:00", end: "2026-12-04 00:00", timeText: "23:00 - 00:00", name: "Late Night Gaming", giveaway: "" },
 
       // FREDAG 4 DEC
-      { start: "2026-12-04 00:00", end: "2026-12-04 09:00", name: "Fredagsnatt", giveaway: "" },
-      { start: "2026-12-04 09:00", end: "2026-12-04 15:00", name: "Helgstarten", giveaway: "" },
-      { start: "2026-12-04 15:00", end: "2026-12-04 20:00", name: "Fredagsmys & Esport", giveaway: "" },
-      { start: "2026-12-04 20:00", end: "2026-12-05 00:00", name: "FredagsGalan", giveaway: "🎁 GIVEAWAY: Konsol" },
+      { start: "2026-12-04 00:00", end: "2026-12-04 09:00", timeText: "00:00 - 09:00", name: "Fredagsnatt", giveaway: "" },
+      { start: "2026-12-04 09:00", end: "2026-12-04 15:00", timeText: "09:00 - 15:00", name: "Helgstarten", giveaway: "" },
+      { start: "2026-12-04 15:00", end: "2026-12-04 20:00", timeText: "15:00 - 20:00", name: "Fredagsmys & Esport", giveaway: "" },
+      { start: "2026-12-04 20:00", end: "2026-12-05 00:00", timeText: "20:00 - 00:00", name: "FredagsGalan", giveaway: "🎁 GIVEAWAY: Konsol" },
 
       // LÖRDAG 5 DEC
-      { start: "2026-12-05 00:00", end: "2026-12-05 10:00", name: "Lördagsnatt", giveaway: "" },
-      { start: "2026-12-05 10:00", end: "2026-12-05 16:00", name: "LördagsSatsningen", giveaway: "" },
-      { start: "2026-12-05 16:00", end: "2026-12-05 21:00", name: "Kändisduellen", giveaway: "🎁 VIP GIVEAWAY!" },
-      { start: "2026-12-05 21:00", end: "2026-12-06 00:00", name: "Lördagsparty", giveaway: "" },
+      { start: "2026-12-05 00:00", end: "2026-12-05 10:00", timeText: "00:00 - 10:00", name: "Lördagsnatt", giveaway: "" },
+      { start: "2026-12-05 10:00", end: "2026-12-05 16:00", timeText: "10:00 - 16:00", name: "LördagsSatsningen", giveaway: "" },
+      { start: "2026-12-05 16:00", end: "2026-12-05 21:00", timeText: "16:00 - 21:00", name: "Kändisduellen", giveaway: "🎁 VIP GIVEAWAY!" },
+      { start: "2026-12-05 21:00", end: "2026-12-06 00:00", timeText: "21:00 - 00:00", name: "Lördagsparty", giveaway: "" },
 
       // SÖNDAG 6 DEC
-      { start: "2026-12-06 00:00", end: "2026-12-06 10:00", name: "Sista Natten", giveaway: "" },
-      { start: "2026-12-06 10:00", end: "2026-12-06 15:00", name: "Spurt-Inlägget", giveaway: "" },
-      { start: "2026-12-06 15:00", end: "2026-12-06 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
-      { start: "2026-12-06 20:00", end: "2026-12-06 23:59", name: "Avslutning & Tack!", giveaway: "" }
+      { start: "2026-12-06 00:00", end: "2026-12-06 10:00", timeText: "00:00 - 10:00", name: "Sista Natten", giveaway: "" },
+      { start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "10:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
+      { start: "2026-12-06 15:00", end: "2026-12-06 20:00", timeText: "15:00 - 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
+      { start: "2026-12-06 20:00", end: "2026-12-06 23:59", timeText: "20:00 - 00:00", name: "Avslutning & Tack!", giveaway: "" }
     ];
 
     // ==========================================
@@ -389,38 +390,36 @@
     let currentSponsorIndex = 0;
     let scheduleMode = 'real'; // 'real' or 'test'
 
-    // Parse simple string date ("YYYY-MM-DD HH:MM")
     function parseDate(dateStr) {
       if (dateStr instanceof Date) return dateStr;
       return new Date(dateStr.replace(' ', 'T') + ':00');
     }
 
-    // Format HH:MM from Date
-    function formatTime(date) {
-      const pad = n => String(n).padStart(2, '0');
-      return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    }
-
-    // Get Swedish Day Name
-    function getDayName(date) {
-      const days = ["SÖNDAG", "MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG", "LÖRDAG"];
-      return days[date.getDay()];
-    }
-
-    // ⚡ 4. REAL-TIME DYNAMIC TEST SCHEDULE GENERATOR
+    // ⚡ REAL-TIME TEST SCHEDULE GENERATOR
+    // Uses fixed, unmoving display times (timeText), but anchors slot dates to the current hour
     function generateTestSchedule() {
       const now = new Date();
+      // Round down to current hour so slot 0 is currently active right now
+      const baseHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), 0, 0);
       const events = [];
-      
-      // Build relative slots relative to right now so test is always live
-      for (let i = -1; i < 7; i++) {
-        const start = new Date(now.getTime() + i * 2 * 3600000);
-        const end = new Date(now.getTime() + (i + 1) * 2 * 3600000);
+      const testNames = [
+        "Morgonsolen", "PixelPionjären", "KaffeKungen", "ZeldaMästaren",
+        "RetroSpelaren", "SpelExperten", "NattUgglan", "Fredagsmys"
+      ];
+      const testTimes = [
+        "12:00 - 14:00", "14:00 - 16:00", "16:00 - 18:00", "18:00 - 20:00",
+        "20:00 - 22:00", "22:00 - 00:00", "00:00 - 03:00", "03:00 - 06:00"
+      ];
+
+      for (let i = 0; i < 8; i++) {
+        const start = new Date(baseHour.getTime() + (i * 2 - 1) * 3600000); // slot 0 started 1 hour ago
+        const end = new Date(start.getTime() + 2 * 3600000); // 2 hour slots
         events.push({
           start: start,
           end: end,
-          name: i === 0 ? "LIVE JUST NU!" : `Streamer #${i + 2}`,
-          giveaway: i === 1 ? "🎁 GIVEAWAY TEST" : ""
+          timeText: testTimes[i % testTimes.length], // FIXED TIME TEXT
+          name: testNames[i % testNames.length],
+          giveaway: i === 1 ? "🎁 STOR GIVEAWAY!" : ""
         });
       }
       return events;
@@ -430,14 +429,29 @@
       if (scheduleMode === 'test') {
         return generateTestSchedule();
       }
-      return SKARPT_EVENT_SCHEDULE.map(ev => ({
-        ...ev,
-        start: parseDate(ev.start),
-        end: parseDate(ev.end)
-      }));
+
+      const now = new Date();
+      return SKARPT_EVENT_SCHEDULE.map(ev => {
+        let start = parseDate(ev.start);
+        let end = parseDate(ev.end);
+
+        // If today is outside the event dates (preview mode), map dates to today's date so the progress dot moves in real-time
+        if (now < parseDate(SKARPT_EVENT_SCHEDULE[0].start) || now > parseDate(SKARPT_EVENT_SCHEDULE[SKARPT_EVENT_SCHEDULE.length - 1].end)) {
+          const sTimes = ev.timeText.split(' - ')[0].split(':');
+          const eTimes = ev.timeText.split(' - ')[1].split(':');
+          start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(sTimes[0]), parseInt(sTimes[1]), 0);
+          end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(eTimes[0]) === 0 ? 24 : parseInt(eTimes[0]), parseInt(eTimes[1]), 0);
+        }
+
+        return {
+          ...ev,
+          start: start,
+          end: end
+        };
+      });
     }
 
-    // 🎯 3. 100% ACCURATE REAL-TIME PROGRESS CALCULATION & RENDER
+    // 🎯 ACCURATE REAL-TIME PROGRESS CALCULATION & RENDER
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -447,14 +461,10 @@
       const schedule = getActiveSchedule();
       const now = new Date();
 
-      // Find current active event or next upcoming event
+      // Find active event or fallback to first upcoming event
       let activeIndex = schedule.findIndex(ev => now >= ev.start && now < ev.end);
-      if (activeIndex === -1) {
-        activeIndex = schedule.findIndex(ev => ev.start > now);
-        if (activeIndex === -1) activeIndex = 0;
-      }
+      if (activeIndex === -1) activeIndex = 0;
 
-      // Display 5 visible node slots
       const visibleCount = 5;
       const visibleEvents = schedule.slice(activeIndex, activeIndex + visibleCount);
       const totalVisible = visibleEvents.length;
@@ -465,7 +475,7 @@
         const endMs = currentEv.end.getTime();
         const nowMs = now.getTime();
 
-        // Fraction elapsed inside current active event (0.0 to 1.0)
+        // Sub-second progress fraction inside the current active slot (0.0 -> 1.0)
         let slotFraction = 0;
         if (nowMs >= startMs && nowMs < endMs) {
           slotFraction = (nowMs - startMs) / (endMs - startMs);
@@ -473,8 +483,7 @@
           slotFraction = 1;
         }
 
-        // Exact timeline progress percentage calculation across total visible slots
-        // Each node takes exactly (100 / totalVisible) percentage width
+        // Percentage across full visible bar width
         const totalProgressPct = Math.min(100, Math.max(0, (slotFraction / totalVisible) * 100));
 
         if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
@@ -484,14 +493,15 @@
       // Render timeline HTML nodes
       eventsRowEl.innerHTML = visibleEvents.map((ev, index) => {
         const isLiveNow = now >= ev.start && now < ev.end;
-        const timeText = `${formatTime(ev.start)} - ${formatTime(ev.end)}`;
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
         const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
 
         return `
           <div class="timeline-node ${isLiveNow ? 'active' : ''}">
-            <div class="node-time">${timeText}</div>
-            <div class="node-tick-wrapper"><div class="node-divider-tick"></div></div>
+            <div class="node-time">${escapeHTML(ev.timeText)}</div>
+            <div class="node-tick-wrapper">
+              ${index > 0 ? '<div class="node-divider-tick"></div>' : ''}
+            </div>
             <div class="node-streamer ${hasGiveaway ? 'is-giveaway-text' : ''}">${primaryText}</div>
           </div>
         `;
