@@ -38,7 +38,7 @@
       border-radius: 10px;
       color: var(--text-white);
       z-index: 999999;
-      max-width: 340px;
+      max-width: 360px;
       font-size: 12px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
@@ -97,7 +97,6 @@
     }
 
     /* 🖼️ SPONSOR ROTATOR & FLOATING ANIMATION */
-    /* Positioned closer to schedule (bottom: 87px) for exact 15px gap */
     .sponsor-widget {
       position: absolute;
       bottom: 87px;
@@ -151,7 +150,7 @@
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR */
+    /* 📅 SCHEDULE TIMELINE BAR & SLOW FADE TRANSITION */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -168,7 +167,7 @@
     .timeline-container {
       position: relative;
       width: 100%;
-      transition: opacity 0.8s ease-in-out; /* Smooth slow fade transition */
+      transition: opacity 0.8s ease-in-out; /* Broadcast Slow Fade */
       opacity: 1;
     }
 
@@ -315,11 +314,12 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v3.2.0</span>
+      <span class="version-badge">v3.3.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
       <button id="btnTest" onclick="setMode('test')">⚡ TEST (Realtid)</button>
+      <button onclick="simulateDaySwitch()">⏩ Simulera Dagswitch</button>
       <button onclick="nextSponsor()">Nästa Sponsor</button>
     </div>
   </div>
@@ -420,32 +420,32 @@
       return new Date(dateStr.replace(' ', 'T') + ':00');
     }
 
-    // ⚡ REAL-TIME DYNAMIC TEST SCHEDULE
+    // ⚡ REAL-TIME MULTI-DAY TEST SCHEDULE GENERATOR
+    // Generates 3 test days relative to today so day rollover functions can be tested live!
     function generateTestSchedule() {
       const now = new Date();
-      const currentEvenHour = Math.floor(now.getHours() / 2) * 2;
-      const baseStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), currentEvenHour, 0, 0);
+      const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const d3 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
 
-      const testNames = [
-        "Morgonsolen (Test)", "PixelPionjären (Test)", "KaffeKungen (Test)", 
-        "ZeldaMästaren (Test)", "RetroSpelaren (Test)"
+      return [
+        // TEST DAY 1 (Today)
+        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 12, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 15, 0, 0), timeText: "12:00 - 15:00", name: "Invigning (Test)", giveaway: "" },
+        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 15, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 18, 0, 0), timeText: "15:00 - 18:00", name: "PixelPionjären (Test)", giveaway: "" },
+        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 18, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 21, 0, 0), timeText: "18:00 - 21:00", name: "KaffeKungen (Test)", giveaway: "🎁 TEST GIVEAWAY!" },
+        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 21, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 0, 0, 0), timeText: "21:00 - 00:00", name: "Nattstreamers (Test)", giveaway: "" },
+
+        // TEST DAY 2 (Tomorrow - Resets at 00:00)
+        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 0, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 6, 0, 0), timeText: "00:00 - 06:00", name: "Nattpatrullen (Test)", giveaway: "" },
+        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 6, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 12, 0, 0), timeText: "06:00 - 12:00", name: "Morgonsolen (Test)", giveaway: "" },
+        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 12, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 18, 0, 0), timeText: "12:00 - 18:00", name: "ZeldaMästaren (Test)", giveaway: "" },
+        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 18, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 0, 0, 0), timeText: "18:00 - 00:00", name: "KvällsShowen (Test)", giveaway: "" },
+
+        // TEST DAY 3 (Day After Tomorrow)
+        { day: "ONSDAG (TEST)", dayId: "TEST_WED", start: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 0, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 8, 0, 0), timeText: "00:00 - 08:00", name: "NattUggan (Test)", giveaway: "" },
+        { day: "ONSDAG (TEST)", dayId: "TEST_WED", start: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 8, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 16, 0, 0), timeText: "08:00 - 16:00", name: "Speedrunners (Test)", giveaway: "" },
+        { day: "ONSDAG (TEST)", dayId: "TEST_WED", start: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 16, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 23, 59, 0), timeText: "16:00 - 00:00", name: "Stora Finalen (Test)", giveaway: "🎁 SLUT GIVEAWAY!" }
       ];
-
-      return testNames.map((name, i) => {
-        const start = new Date(baseStart.getTime() + i * 2 * 3600000);
-        const end = new Date(start.getTime() + 2 * 3600000);
-        const pad = n => String(n).padStart(2, '0');
-
-        return {
-          day: "⚡ REALTID TEST",
-          dayId: "TEST",
-          start: start,
-          end: end,
-          timeText: `${pad(start.getHours())}:00 - ${pad(end.getHours())}:00`,
-          name: name,
-          giveaway: i === 1 ? "🎁 TEST GIVEAWAY!" : ""
-        };
-      });
     }
 
     // 🔄 SCHEDULE WITH DAY-BY-DAY GROUPING
@@ -530,7 +530,7 @@
 
     // 🎯 RENDER ENGINE WITH BROADCAST SLOW FADE OUT / FADE IN ON DAY ROLLOVER
     function renderSchedule() {
-      if (isDayTransitioning) return; // Prevent render glitch during transition
+      if (isDayTransitioning) return; // Prevent render glitch during active fade
 
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -571,6 +571,36 @@
       // Normal real-time progress update on current day
       currentDisplayedDayId = activeDayId;
       updateScheduleDOM(activeDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl);
+    }
+
+    // ⚡ INSTANT 1-CLICK TESTER FOR FADE ANIMATION AND DAY ROLLOVER
+    function simulateDaySwitch() {
+      if (isDayTransitioning) return;
+      
+      const schedule = getActiveSchedule();
+      const dayIds = [...new Set(schedule.map(ev => ev.dayId))];
+      
+      let currentIndex = dayIds.indexOf(currentDisplayedDayId);
+      let nextIndex = (currentIndex + 1) % dayIds.length;
+      let targetDayId = dayIds[nextIndex];
+
+      isDayTransitioning = true;
+      const containerEl = document.getElementById('timelineContainer');
+      const eventsRowEl = document.getElementById('scheduleEventsRow');
+      const fillLineEl = document.getElementById('timelineProgressFill');
+      const cursorEl = document.getElementById('timelineCursor');
+
+      if (containerEl) containerEl.classList.add('fading');
+
+      setTimeout(() => {
+        updateScheduleDOM(targetDayId, schedule, new Date(), eventsRowEl, fillLineEl, cursorEl);
+        currentDisplayedDayId = targetDayId;
+
+        setTimeout(() => {
+          if (containerEl) containerEl.classList.remove('fading');
+          isDayTransitioning = false;
+        }, 50);
+      }, 800);
     }
 
     // MODE TOGGLING (Triggers smooth fade transition)
