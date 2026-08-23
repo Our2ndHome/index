@@ -99,7 +99,7 @@
     /* 🖼️ SPONSOR ROTATOR & FLOATING ANIMATION */
     .sponsor-widget {
       position: absolute;
-      bottom: 85px;
+      bottom: 90px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -109,13 +109,14 @@
       align-items: center;
     }
 
+    /* Bigger sponsor container (180px x 50px) */
     .sponsor-logo-container {
-      width: 140px;
-      height: 40px;
+      width: 180px;
+      height: 50px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 14px; /* Space between sponsor pictures and title */
+      margin-bottom: 12px;
     }
 
     /* Smooth Floating / Breathing Animation */
@@ -308,7 +309,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v2.7.0</span>
+      <span class="version-badge">v2.8.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -338,6 +339,7 @@
   <script>
     // ==========================================
     // ✏️ SKARPT EVENT SCHEDULE (30 NOV - 6 DEC)
+    // Continuous multi-day schedule with midnight/post-midnight rollovers
     // ==========================================
     const SKARPT_EVENT_SCHEDULE = [
       // MÅNDAG 30 NOV
@@ -346,7 +348,7 @@
       { start: "2026-11-30 18:00", end: "2026-11-30 21:00", timeText: "18:00 - 21:00", name: "KaffeKungen", giveaway: "🎁 GIVEAWAY: Gaming Mus" },
       { start: "2026-11-30 21:00", end: "2026-12-01 00:00", timeText: "21:00 - 00:00", name: "Nattstreamers", giveaway: "" },
 
-      // TISDAG 1 DEC
+      // TISDAG 1 DEC (Resets/rolls over at 00:00)
       { start: "2026-12-01 00:00", end: "2026-12-01 06:00", timeText: "00:00 - 06:00", name: "Nattpatrullen", giveaway: "" },
       { start: "2026-12-01 06:00", end: "2026-12-01 12:00", timeText: "06:00 - 12:00", name: "Morgonsolen", giveaway: "" },
       { start: "2026-12-01 12:00", end: "2026-12-01 16:00", timeText: "12:00 - 16:00", name: "ZeldaMästaren", giveaway: "" },
@@ -387,18 +389,18 @@
     ];
 
     // ==========================================
-    // CONFIGURATION & TEST SPONSOR IMAGES
+    // CONFIGURATION & SPONSORS
     // ==========================================
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
 
-    // Built-in SVG test sponsor logos (load instantly & look sleek)
+    // Bigger SVG test sponsor logos (180px x 50px)
     const DEFAULT_SPONSORS = [
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 140 40"><rect width="140" height="40" rx="8" fill="%23111" stroke="%23ace600" stroke-width="1.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="13" letter-spacing="1">LIME GAMING</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 140 40"><rect width="140" height="40" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="1.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="13" letter-spacing="1">NORDIC STREAM</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 140 40"><rect width="140" height="40" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="1.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="13" letter-spacing="1">MH PARTNER</text></svg>'
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0 0 180 50"><rect width="180" height="50" rx="8" fill="%23111" stroke="%23ace600" stroke-width="1.8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="15" letter-spacing="1.2">LIME GAMING</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0 0 180 50"><rect width="180" height="50" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="1.8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="15" letter-spacing="1.2">NORDIC STREAM</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0 0 180 50"><rect width="180" height="50" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="1.8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="15" letter-spacing="1.2">MH PARTNER</text></svg>'
     ];
 
     let sponsorFileList = DEFAULT_SPONSORS;
@@ -439,6 +441,7 @@
       });
     }
 
+    // 🔄 AUTOMATIC MIDNIGHT / DAY ROLLOVER SCHEDULE LOGIC
     function getActiveSchedule() {
       if (scheduleMode === 'test') {
         return generateTestSchedule();
@@ -452,7 +455,7 @@
 
       return SKARPT_EVENT_SCHEDULE.map(ev => {
         if (isOutsideDates) {
-          // Preview mode: map timeText hours to today's date
+          // Preview mode: map timeText hours to current date
           const [startStr, endStr] = ev.timeText.split(' - ').map(s => s.trim());
           const [sh, sm] = startStr.split(':').map(Number);
           const [eh, em] = endStr.split(':').map(Number);
@@ -460,11 +463,13 @@
           const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm, 0);
           let end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh === 0 ? 24 : eh, em, 0);
 
+          // Handle overnight slots going past midnight
           if (eh < sh && eh !== 0) {
             end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, eh, em, 0);
           }
 
-          if (now.getHours() < sh && sh >= 20 && eh <= 4) {
+          // Automatically roll over early morning hours to keep active slot on left
+          if (now.getHours() < sh && sh >= 20 && (eh <= 6 || eh === 0)) {
             start.setDate(start.getDate() - 1);
             end.setDate(end.getDate() - 1);
           }
@@ -476,7 +481,7 @@
       });
     }
 
-    // 🎯 ACCURATE REAL-TIME PROGRESS CALCULATION
+    // 🎯 ACCURATE REAL-TIME PROGRESS CALCULATION & AUTO ROLLOVER
     function renderSchedule() {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -486,9 +491,16 @@
       const schedule = getActiveSchedule();
       const now = new Date();
 
+      // Find currently active live event
       let activeIndex = schedule.findIndex(ev => now >= ev.start && now < ev.end);
-      if (activeIndex === -1) activeIndex = 0;
+      
+      // Automatic Day Rollover: If midnight just passed or event finished, snap to next upcoming event
+      if (activeIndex === -1) {
+        activeIndex = schedule.findIndex(ev => ev.start > now);
+        if (activeIndex === -1) activeIndex = 0; // Fallback
+      }
 
+      // Display 5 visible slots starting from current active event (rolls over automatically after 00:00)
       const visibleCount = 5;
       const visibleEvents = schedule.slice(activeIndex, activeIndex + visibleCount);
       const totalVisible = visibleEvents.length;
@@ -506,7 +518,7 @@
           slotFraction = 1;
         }
 
-        // Percentage across full visible bar width
+        // Percentage across total visible bar width
         const totalProgressPct = Math.min(100, Math.max(0, (slotFraction / totalVisible) * 100));
 
         if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
