@@ -147,7 +147,7 @@
       letter-spacing: 2px;
       text-transform: uppercase;
       display: block;
-      margin-top: 5px; /* Moved 5px down */
+      margin-top: 5px;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
@@ -271,6 +271,7 @@
       justify-content: flex-start;
     }
 
+    /* ALL DIVIDER TICKS KEEP UNIFORM WHITE COLOR */
     .node-divider-tick {
       position: absolute;
       left: 0;
@@ -296,12 +297,6 @@
 
     .node-streamer.is-giveaway-text { color: var(--giveaway-color); }
 
-    .timeline-node.active .node-divider-tick {
-      background: var(--primary-color);
-      height: 16px;
-      width: 3px;
-    }
-
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
@@ -315,7 +310,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v3.5.1</span>
+      <span class="version-badge">v3.5.2</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -389,7 +384,7 @@
 
       // SÖNDAG 6 DEC
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 00:00", end: "2026-12-06 10:00", timeText: "00:00 - 10:00", name: "Sista Natten", giveaway: "" },
-      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "10:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
+      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "15:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 15:00", end: "2026-12-06 20:00", timeText: "15:00 - 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 20:00", end: "2026-12-06 23:59", timeText: "20:00 - 00:00", name: "Avslutning & Tack!", giveaway: "" }
     ];
