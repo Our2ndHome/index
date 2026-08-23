@@ -97,9 +97,10 @@
     }
 
     /* 🖼️ SPONSOR ROTATOR & FLOATING ANIMATION */
+    /* Positioned closer to schedule (bottom: 87px) for exact 15px gap */
     .sponsor-widget {
       position: absolute;
-      bottom: 110px;
+      bottom: 87px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -109,7 +110,6 @@
       align-items: center;
     }
 
-    /* BIGGER SPONSOR CONTAINER (300px x 100px) */
     .sponsor-logo-container {
       width: 300px;
       height: 100px;
@@ -117,7 +117,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .sponsor-logo {
@@ -151,7 +151,7 @@
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR & SLOW FADE TRANSITION */
+    /* 📅 SCHEDULE TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -168,7 +168,7 @@
     .timeline-container {
       position: relative;
       width: 100%;
-      transition: opacity 0.8s ease-in-out; /* Smooth slow fade in / fade out */
+      transition: opacity 0.8s ease-in-out; /* Smooth slow fade transition */
       opacity: 1;
     }
 
@@ -315,7 +315,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v3.1.0</span>
+      <span class="version-badge">v3.2.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -394,7 +394,7 @@
     ];
 
     // ==========================================
-    // CONFIGURATION & BIG SPONSOR LOGOS (300x100)
+    // CONFIGURATION & SPONSORS
     // ==========================================
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
