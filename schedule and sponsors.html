@@ -99,7 +99,7 @@
     /* 🖼️ SPONSOR ROTATOR & FLOATING ANIMATION */
     .sponsor-widget {
       position: absolute;
-      bottom: 95px;
+      bottom: 110px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -109,9 +109,11 @@
       align-items: center;
     }
 
+    /* BIGGER SPONSOR CONTAINER (300px x 100px) */
     .sponsor-logo-container {
-      width: 180px;
-      height: 50px;
+      width: 300px;
+      height: 100px;
+      max-width: 90vw;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -149,7 +151,7 @@
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR */
+    /* 📅 SCHEDULE TIMELINE BAR & SLOW FADE TRANSITION */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -163,25 +165,15 @@
       pointer-events: none;
     }
 
-    /* 🏷️ DAY INDICATOR BADGE */
-    .day-indicator {
-      font-size: 11px;
-      font-weight: 900;
-      color: var(--primary-color);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-      background: rgba(172, 230, 0, 0.12);
-      border: 1px solid rgba(172, 230, 0, 0.5);
-      padding: 3px 12px;
-      border-radius: 4px;
-      backdrop-filter: blur(4px);
-    }
-
     .timeline-container {
       position: relative;
       width: 100%;
+      transition: opacity 0.8s ease-in-out; /* Smooth slow fade in / fade out */
+      opacity: 1;
+    }
+
+    .timeline-container.fading {
+      opacity: 0;
     }
 
     .timeline-line-bg {
@@ -323,7 +315,7 @@
   <div class="test-panel" id="testPanel">
     <div class="panel-header" id="panelDragHeader">
       <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v3.0.0</span>
+      <span class="version-badge">v3.1.0</span>
     </div>
     <div>
       <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
@@ -342,8 +334,7 @@
 
   <!-- 📅 SCHEDULE TIMELINE BAR -->
   <div class="schedule-widget" id="scheduleWidget">
-    <div class="day-indicator" id="dayIndicator">MÅNDAG 30 NOV</div>
-    <div class="timeline-container">
+    <div class="timeline-container" id="timelineContainer">
       <div class="timeline-line-bg"></div>
       <div class="timeline-line-fill" id="timelineProgressFill"></div>
       <div class="timeline-cursor" id="timelineCursor"></div>
@@ -354,7 +345,6 @@
   <script>
     // ==========================================
     // ✏️ SKARPT EVENT SCHEDULE (30 NOV - 6 DEC)
-    // Grouped strictly day-by-day. Resets automatically at day end!
     // ==========================================
     const SKARPT_EVENT_SCHEDULE = [
       // MÅNDAG 30 NOV
@@ -404,7 +394,7 @@
     ];
 
     // ==========================================
-    // CONFIGURATION & SPONSORS
+    // CONFIGURATION & BIG SPONSOR LOGOS (300x100)
     // ==========================================
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
@@ -412,14 +402,18 @@
     const SPONSOR_ROTATE_SECONDS = 15;
 
     const DEFAULT_SPONSORS = [
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0 0 180 50"><rect width="180" height="50" rx="8" fill="%23111" stroke="%23ace600" stroke-width="1.8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="15" letter-spacing="1.2">LIME GAMING</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0 0 180 50"><rect width="180" height="50" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="1.8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="15" letter-spacing="1.2">NORDIC STREAM</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="50" viewBox="0 0 180 50"><rect width="180" height="50" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="1.8"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="15" letter-spacing="1.2">MH PARTNER</text></svg>'
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100"><rect width="300" height="100" rx="12" fill="%23111" stroke="%23ace600" stroke-width="2.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="22" letter-spacing="2">LIME GAMING</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100"><rect width="300" height="100" rx="12" fill="%23111" stroke="%2300ff88" stroke-width="2.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="22" letter-spacing="2">NORDIC STREAM</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100"><rect width="300" height="100" rx="12" fill="%23111" stroke="%23ffea00" stroke-width="2.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="22" letter-spacing="2">MH PARTNER</text></svg>'
     ];
 
     let sponsorFileList = DEFAULT_SPONSORS;
     let currentSponsorIndex = 0;
     let scheduleMode = 'real'; // 'real' or 'test'
+
+    // Transition State Tracking
+    let currentDisplayedDayId = null;
+    let isDayTransitioning = false;
 
     function parseDate(dateStr) {
       if (dateStr instanceof Date) return dateStr;
@@ -465,8 +459,6 @@
       const lastEvEnd = parseDate(SKARPT_EVENT_SCHEDULE[SKARPT_EVENT_SCHEDULE.length - 1].end);
 
       const isOutsideDates = now < firstEvStart || now > lastEvEnd;
-
-      // Group days mapping
       const dayOrder = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
       
       return SKARPT_EVENT_SCHEDULE.map(ev => {
@@ -476,7 +468,6 @@
           const [sh, sm] = startStr.split(':').map(Number);
           const [eh, em] = endStr.split(':').map(Number);
 
-          // Offset days relative to preview start
           const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayIndex);
 
           const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), sh, sm, 0);
@@ -493,44 +484,14 @@
       });
     }
 
-    // 🎯 SINGLE-DAY RENDER ENGINE WITH AUTOMATIC ROLLOVER AT 00:00 / EVENT END
-    function renderSchedule() {
-      const eventsRowEl = document.getElementById('scheduleEventsRow');
-      const fillLineEl = document.getElementById('timelineProgressFill');
-      const cursorEl = document.getElementById('timelineCursor');
-      const dayIndicatorEl = document.getElementById('dayIndicator');
-      if (!eventsRowEl) return;
-
-      const schedule = getActiveSchedule();
-      const now = new Date();
-
-      // 1. Find currently active live event across the full master schedule
-      let activeEv = schedule.find(ev => now >= ev.start && now < ev.end);
-
-      // 2. Determine active day ID
-      let activeDayId = activeEv ? activeEv.dayId : null;
-      
-      if (!activeDayId) {
-        // Find next upcoming event
-        let nextEv = schedule.find(ev => ev.start > now);
-        activeDayId = nextEv ? nextEv.dayId : schedule[0].dayId;
-      }
-
-      // 3. Filter schedule to ONLY show events from the active day
+    // 🎯 DOM UPDATE FUNCTION FOR TIMELINE NODES AND PROGRESS
+    function updateScheduleDOM(activeDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl) {
       const dayEvents = schedule.filter(ev => ev.dayId === activeDayId);
-      const dayNameText = dayEvents.length > 0 ? dayEvents[0].day : "";
-
-      if (dayIndicatorEl) {
-        dayIndicatorEl.innerText = dayNameText;
-      }
-
-      // 4. Calculate real-time progress inside the current active day
       const totalDayCount = dayEvents.length;
       let activeSlotIndex = dayEvents.findIndex(ev => now >= ev.start && now < ev.end);
 
       if (totalDayCount > 0) {
         if (activeSlotIndex === -1) {
-          // If before start of day events, progress is 0%
           activeSlotIndex = 0;
           if (fillLineEl) fillLineEl.style.width = `0%`;
           if (cursorEl) cursorEl.style.left = `0%`;
@@ -543,7 +504,6 @@
           let slotFraction = (nowMs >= startMs && nowMs < endMs) ? (nowMs - startMs) / (endMs - startMs) : 0;
           slotFraction = Math.min(1, Math.max(0, slotFraction));
 
-          // Exact percentage calculation across the active day's total width
           const totalProgressPct = Math.min(100, Math.max(0, ((activeSlotIndex + slotFraction) / totalDayCount) * 100));
 
           if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
@@ -551,7 +511,6 @@
         }
       }
 
-      // 5. Render ONLY the active day's nodes across the 100% width
       eventsRowEl.innerHTML = dayEvents.map((ev, index) => {
         const isLiveNow = now >= ev.start && now < ev.end;
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
@@ -569,9 +528,55 @@
       }).join('');
     }
 
-    // MODE TOGGLING
+    // 🎯 RENDER ENGINE WITH BROADCAST SLOW FADE OUT / FADE IN ON DAY ROLLOVER
+    function renderSchedule() {
+      if (isDayTransitioning) return; // Prevent render glitch during transition
+
+      const eventsRowEl = document.getElementById('scheduleEventsRow');
+      const fillLineEl = document.getElementById('timelineProgressFill');
+      const cursorEl = document.getElementById('timelineCursor');
+      const containerEl = document.getElementById('timelineContainer');
+      if (!eventsRowEl || !containerEl) return;
+
+      const schedule = getActiveSchedule();
+      const now = new Date();
+
+      // Find currently active live event across master schedule
+      let activeEv = schedule.find(ev => now >= ev.start && now < ev.end);
+      let activeDayId = activeEv ? activeEv.dayId : null;
+      
+      if (!activeDayId) {
+        let nextEv = schedule.find(ev => ev.start > now);
+        activeDayId = nextEv ? nextEv.dayId : schedule[0].dayId;
+      }
+
+      // Detect Day Switch / Reset -> Initiate Slow Fade Out & Fade In Transition!
+      if (currentDisplayedDayId !== null && currentDisplayedDayId !== activeDayId) {
+        isDayTransitioning = true;
+        containerEl.classList.add('fading'); // Fade out over 0.8s
+
+        setTimeout(() => {
+          updateScheduleDOM(activeDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl);
+          currentDisplayedDayId = activeDayId;
+
+          setTimeout(() => {
+            containerEl.classList.remove('fading'); // Fade in over 0.8s
+            isDayTransitioning = false;
+          }, 50);
+        }, 800); // 800ms fade duration
+
+        return;
+      }
+
+      // Normal real-time progress update on current day
+      currentDisplayedDayId = activeDayId;
+      updateScheduleDOM(activeDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl);
+    }
+
+    // MODE TOGGLING (Triggers smooth fade transition)
     function setMode(mode) {
       scheduleMode = mode;
+      currentDisplayedDayId = null; // Reset day ID to force smooth fade
       document.getElementById('btnReal').classList.toggle('active', mode === 'real');
       document.getElementById('btnTest').classList.toggle('active', mode === 'test');
       renderSchedule();
