@@ -244,7 +244,7 @@
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      width: 320px;
+      width: 340px;
       height: 2px;
       background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20px, var(--primary-color) calc(100% - 20px), transparent 100%);
       box-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
@@ -289,7 +289,7 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v2.5</span></span>
+      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v2.6</span></span>
       <span style="font-size: 9px; opacity: 0.7;">DRAG ME</span>
     </h4>
     
@@ -362,25 +362,42 @@
     const targetTicketsInput = document.getElementById('targetTicketCount');
     const maxTicketsInput = document.getElementById('maxTicketsPerUser');
 
-    // --- Dynamic Donor Generator (Random 1-5 tickets per person) ---
+    // --- 1000+ Unique Swedish Donor Name Generator ---
     function generateRandomizedDonors(totalTicketsTarget, maxPerUser = 5) {
-      const sampleBaseNames = [
-        "GamerGud", "Matilda99", "PixelPappa", "KaffeLoover", "NinjaBullen", 
-        "KattKungen", "ZeldaFan88", "MidsommarSvensken", "SpelKatten", "KaffeKungen",
-        "RetroRobin", "Bullen88", "CyberMatilda", "PappaBetalar", "TurboTomten"
+      const prefixes = [
+        "Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Bacon",
+        "Midsommar", "Super", "Laser", "Krypto", "Kex", "Retro", "Cyber", "Turbo",
+        "Spel", "Snack", "Kungen", "Mys", "Fredags", "Glada", "Tokiga", "Skogs",
+        "Fjäll", "Havs", "Kaffedrickar", "Ost", "Kanel", "Choklad", "Vinter", "Sommar"
       ];
+      const suffixes = [
+        "Kungen", "Gud", "Bullen", "Loover", "Pappa", "Mamma", "Svensken", "Master",
+        "Rider", "Mannen", "Tjejen", "Fan88", "Hjälte", "Viking", "Räven", "Björnen",
+        "Katten", "Hunden", "Lover", "Pro", "Legen", "Nörden", "Mästaren", "Kompisen"
+      ];
+
+      // Build unique name pool
+      const namePool = [];
+      for (const p of prefixes) {
+        for (const s of suffixes) {
+          namePool.push(p + s);
+        }
+      }
+      // Shuffle name pool
+      for (let i = namePool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [namePool[i], namePool[j]] = [namePool[j], namePool[i]];
+      }
 
       const newDonorMap = {};
       let remainingTickets = Math.max(1, totalTicketsTarget);
-      let donorIndex = 1;
+      let donorIndex = 0;
 
       while (remainingTickets > 0) {
-        // Randomize tickets between 1 and maxPerUser for each donor
         const ticketsForDonor = Math.min(remainingTickets, Math.floor(Math.random() * maxPerUser) + 1);
-        const baseName = sampleBaseNames[(donorIndex - 1) % sampleBaseNames.length];
-        const donorName = `${baseName}_${donorIndex}`;
+        const name = namePool[donorIndex % namePool.length] + (donorIndex >= namePool.length ? (donorIndex + 1) : '');
 
-        newDonorMap[donorName] = {
+        newDonorMap[name] = {
           totalAmount: ticketsForDonor * 200,
           ticketsEarned: ticketsForDonor,
           ticketsActive: ticketsForDonor
@@ -394,7 +411,6 @@
       saveTicketsToStorage();
     }
 
-    // Enforce target ticket count so local storage sync can NEVER overwrite your typed target
     function ensureTargetTicketCount() {
       const targetCount = parseInt(targetTicketsInput.value) || 250;
       const maxPerUser = parseInt(maxTicketsInput.value) || 5;
@@ -454,7 +470,7 @@
     }
 
     function updateGiveawayStatsUI() {
-      ensureTargetTicketCount(); // Guarantees typed ticket count is always respected
+      ensureTargetTicketCount();
       const pool = getActiveTicketPool();
       const uniqueDonorsCount = Object.keys(donorTicketsMap).length;
       giveawayStatsEl.innerHTML = `Biljetter: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
@@ -578,17 +594,41 @@
         activeSpinList[centerIdx + 2] || ticketPool[0],
       ];
 
-      // Build new spin list starting seamlessly from current visible names
-      const newSpinList = [...visibleFive];
-      for (let i = 0; i < 30; i++) {
-        newSpinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
-      }
-      newSpinList.push(winnerName); // Main winner target
-      newSpinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]); // Padding below
-      newSpinList.push(ticketPool[Math.floor(Math.random() * ticketPool.length)]);
+      // Build 85-Item High-Speed Reel Track (No back-to-back duplicates)
+      const reelCount = 85;
+      const spinList = [...visibleFive];
 
-      activeSpinList = newSpinList;
-      currentWinnerIndexInList = newSpinList.length - 3;
+      // Shuffle pool copy
+      const shuffledPool = [...ticketPool];
+      for (let i = shuffledPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledPool[i], shuffledPool[j]] = [shuffledPool[j], shuffledPool[i]];
+      }
+
+      let lastAdded = visibleFive[visibleFive.length - 1];
+      let poolIndex = 0;
+
+      for (let i = 0; i < reelCount; i++) {
+        let candidate = shuffledPool[poolIndex % shuffledPool.length];
+        if (candidate === lastAdded && shuffledPool.length > 1) {
+          poolIndex++;
+          candidate = shuffledPool[poolIndex % shuffledPool.length];
+        }
+        spinList.push(candidate);
+        lastAdded = candidate;
+        poolIndex++;
+      }
+
+      spinList.push(winnerName); // Winner target
+
+      // Padding below winner
+      const pad1 = shuffledPool[(poolIndex + 1) % shuffledPool.length];
+      const pad2 = shuffledPool[(poolIndex + 2) % shuffledPool.length];
+      spinList.push(pad1 !== winnerName ? pad1 : ticketPool[0]);
+      spinList.push(pad2 !== pad1 ? pad2 : ticketPool[0]);
+
+      activeSpinList = spinList;
+      currentWinnerIndexInList = spinList.length - 3;
 
       // Reset list offset seamlessly
       reelTrackEl.style.transition = 'none';
@@ -620,14 +660,15 @@
         }
       }, 100);
 
-      // Trigger Spin Animation
+      // Trigger High-Speed Spin Animation
       giveawayHoldTimeout = setTimeout(() => {
         giveawayTimerEl.innerText = "DRAGNING PÅGÅR...";
 
         const targetY = -(currentWinnerIndexInList - 2) * ITEM_HEIGHT;
         const spinDuration = 11000;
 
-        reelTrackEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.1, 0.75, 0.25, 1)`;
+        // Realistic slot deceleration curve
+        reelTrackEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.12, 0.8, 0.15, 1)`;
         reelTrackEl.style.transform = `translateY(${targetY}px)`;
 
         spinAnimationTimeout = setTimeout(() => {
