@@ -99,7 +99,7 @@
       color: rgba(255, 255, 255, 0.8);
     }
 
-    .control-row input {
+    .control-row input, .control-row textarea {
       background: #111;
       border: 1px solid var(--secondary-color);
       color: #fff;
@@ -304,7 +304,7 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.2</span></span>
+      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.3</span></span>
       <span style="font-size: 9px; opacity: 0.7;">DRAG ME</span>
     </h4>
     
@@ -318,7 +318,14 @@
         <label for="bossaSlugInput">Bössa URL/ID:</label>
         <input type="text" id="bossaSlugInput" value="our2ndhome" placeholder="our2ndhome" style="width: 130px;">
       </div>
-      <button id="btnFetchBossa" class="btn btn-green btn-small" style="width: 100%; margin-top: 2px;">🔄 Hämta från Bössan</button>
+      <button id="btnFetchBossa" class="btn btn-green btn-small" style="width: 100%; margin-top: 2px;">🔄 Hämta från Bössan (Nätverk)</button>
+
+      <!-- FAST PASTE IMPORTER -->
+      <button id="btnTogglePaste" class="btn btn-yellow btn-small" style="width: 100%; margin-top: 4px;">📋 Klistra in text från Bössan</button>
+      <div id="pasteContainer" style="display: none; flex-direction: column; gap: 4px; margin-top: 4px;">
+        <textarea id="pasteTextArea" rows="3" placeholder="Klistra in text från Bössan (t.ex: gregerlukt gav 400 kr)" style="width: 100%; font-size: 10px;"></textarea>
+        <button id="btnImportPaste" class="btn btn-lime btn-small">Importera Text</button>
+      </div>
 
       <!-- MANUAL DONOR INPUT -->
       <div class="control-row" style="margin-top: 6px;">
@@ -327,7 +334,7 @@
         <button id="btnAddManual" class="btn btn-lime btn-small">+ Lägg till</button>
       </div>
 
-      <!-- TEST MODE TOGGLES -->
+      <!-- TEST MODE TOGGLE -->
       <div class="control-row" style="margin-top: 6px;">
         <button id="btnSwitchTest" class="btn btn-yellow btn-small" style="width: 100%;">🎲 Växla till Testläge (Dummy-data)</button>
       </div>
@@ -379,7 +386,7 @@
     let currentDrawnWinner = null;
     let isSpinningReel = false;
     let isTestMode = false;
-    let currentVisibleFive = null; // Stores currently displayed 5 names for zero-jump skip
+    let currentVisibleFive = null; // Stores displayed 5 names for zero-jump skip
 
     let activeSpinList = [];
     let giveawayHoldTimeout = null;
@@ -401,53 +408,77 @@
     const maxTicketsInput = document.getElementById('maxTicketsPerUser');
     const modeIndicatorEl = document.getElementById('modeIndicator');
     const testControlsContainer = document.getElementById('testControlsContainer');
+    const pasteContainerEl = document.getElementById('pasteContainer');
+    const pasteTextAreaEl = document.getElementById('pasteTextArea');
 
-    // --- Fetch Real Musikhjälpen Bössa Data ---
+    // --- Multi-Proxy Network Fetcher ---
     async function fetchRealBossaData() {
       let rawSlug = bossaSlugInput.value.trim();
       if (!rawSlug) return alert("Ange ett giltigt Böss-ID eller URL!");
 
-      // Extract slug from full URL if pasted
       const slug = rawSlug.replace(/.*bossan\.musikhjalpen\.se\//, '').replace(/\/.*/, '').trim();
       const targetUrl = `https://bossan.musikhjalpen.se/${slug}`;
 
-      try {
-        // Fetch via CORS Proxy
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-        const res = await fetch(proxyUrl);
-        const data = await res.json();
+      const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+        `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+      ];
 
-        if (data && data.contents) {
-          parseBossaHTML(data.contents);
-          switchToRealMode();
-          alert(`Hämtat data från Bössan (${slug})!`);
-        } else {
-          alert("Kunde inte läsa in Bössan.");
+      let success = false;
+
+      for (const proxy of proxies) {
+        try {
+          const res = await fetch(proxy);
+          if (!res.ok) continue;
+
+          let htmlText = "";
+          if (proxy.includes("allorigins")) {
+            const data = await res.json();
+            htmlText = data.contents;
+          } else {
+            htmlText = await res.text();
+          }
+
+          if (htmlText && htmlText.length > 500) {
+            const newMap = parseTextOrHTMLForDonors(htmlText);
+            if (Object.keys(newMap).length > 0) {
+              donorTicketsMap = newMap;
+              saveTicketsToStorage();
+              switchToRealMode();
+              success = true;
+              alert(`Hämtade ${Object.keys(newMap).length} givare från Bössan (${slug})!`);
+              break;
+            }
+          }
+        } catch (err) {
+          console.warn("Proxy misslyckades:", proxy, err);
         }
-      } catch (err) {
-        console.error("Fel vid hämtning av Bössan:", err);
-        alert("Kunde inte kontakta Bössan. Använd manuell tilläggning eller testläge.");
+      }
+
+      if (!success) {
+        alert("Kunde inte hämta nätverksvägen pga säkerhetsspärr på musikhjalpen.se.\n\nAnvänd knappen '📋 Klistra in text från Bössan' för snabb direkt-import!");
+        pasteContainerEl.style.display = "flex";
       }
     }
 
-    // Parse HTML content from Musikhjälpen Bössa
-    function parseBossaHTML(htmlText) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlText, 'text/html');
-      
+    // --- Robust Donor Text & HTML Parser ---
+    function parseTextOrHTMLForDonors(text) {
       const newMap = {};
-
-      // Match donation text entries (e.g. "gregerlukt gav 400 kr")
-      const regex = /([a-zA-Z0-9_\-åäöÅÄÖ\s]+?)\s+gav\s+([\d\s]+)\s*kr/gi;
+      const regex = /([a-zA-Z0-9_\-åäöÅÄÖ\s]+?)\s+(?:gav|skänkte|bidrog med)?\s*([\d\s]+)\s*kr/gi;
       let match;
-      
-      while ((match = regex.exec(htmlText)) !== null) {
-        let name = match[1].trim();
+
+      while ((match = regex.exec(text)) !== null) {
+        let rawName = match[1].trim();
+        // Clean linebreaks
+        const lines = rawName.split(/\r?\n/);
+        let name = lines[lines.length - 1].trim();
+
         let amount = parseInt(match[2].replace(/\s+/g, '')) || 0;
 
-        if (name && name.toLowerCase() !== "en hemlig hjälte" && amount > 0) {
+        if (name && name.toLowerCase() !== "en hemlig hjälte" && name.toLowerCase() !== "senaste gåvorna" && amount > 0) {
           let tickets = Math.min(MAX_TICKETS_PER_USER, Math.max(1, Math.floor(amount / TICKET_MILESTONE_KR)));
-          
+
           if (!newMap[name]) {
             newMap[name] = { totalAmount: amount, ticketsEarned: tickets, ticketsActive: tickets };
           } else {
@@ -457,13 +488,26 @@
           }
         }
       }
+      return newMap;
+    }
 
-      if (Object.keys(newMap).length > 0) {
-        donorTicketsMap = newMap;
-        saveTicketsToStorage();
-        updateGiveawayStatsUI();
-        initReelTrack();
+    function importPastedText() {
+      const text = pasteTextAreaEl.value.trim();
+      if (!text) return alert("Klistra in texten från din Bössas sida först!");
+
+      const newMap = parseTextOrHTMLForDonors(text);
+      const count = Object.keys(newMap).length;
+
+      if (count === 0) {
+        return alert("Hittade inga giltiga gåvor i texten. Exempel på giltig text:\n\ngregerlukt gav 400 kr");
       }
+
+      donorTicketsMap = newMap;
+      saveTicketsToStorage();
+      switchToRealMode();
+      pasteTextAreaEl.value = "";
+      pasteContainerEl.style.display = "none";
+      alert(`Importerat ${count} givare från texten!`);
     }
 
     function addManualDonor() {
@@ -486,8 +530,7 @@
       manualAmountInput.value = "";
 
       saveTicketsToStorage();
-      updateGiveawayStatsUI();
-      initReelTrack();
+      switchToRealMode();
     }
 
     // --- Switch Modes ---
@@ -496,7 +539,8 @@
       modeIndicatorEl.className = "mode-indicator real-mode";
       modeIndicatorEl.innerText = "🟢 LÄGE: RIKTIGA BÖSSAN";
       testControlsContainer.style.display = "none";
-      loadTicketsFromStorage();
+      updateGiveawayStatsUI();
+      initReelTrack();
     }
 
     function switchToTestMode() {
@@ -618,7 +662,7 @@
         return candidate;
       };
 
-      // If startingFive is provided (from previous spin end), use them for index 0..4 to eliminate visual jumps!
+      // Use startingFive from previous spin end to eliminate visual jumps on skip!
       if (startingFive && startingFive.length === 5) {
         for (let i = 0; i < 5; i++) {
           spinList.push(startingFive[i]);
@@ -871,6 +915,11 @@
     document.getElementById('btnAddManual').addEventListener('click', addManualDonor);
     document.getElementById('btnSwitchTest').addEventListener('click', switchToTestMode);
     document.getElementById('btnResetZero').addEventListener('click', resetEverythingToZero);
+
+    document.getElementById('btnTogglePaste').addEventListener('click', () => {
+      pasteContainerEl.style.display = pasteContainerEl.style.display === "none" ? "flex" : "none";
+    });
+    document.getElementById('btnImportPaste').addEventListener('click', importPastedText);
 
     // --- Initialization ---
     makePanelDraggable();
