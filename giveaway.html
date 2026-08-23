@@ -219,21 +219,21 @@
       /* Smooth mask gradient fading edges */
       -webkit-mask-image: linear-gradient(
         to bottom,
-        rgba(0, 0, 0, 0.1) 0%,
-        rgba(0, 0, 0, 0.5) 20%,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0.4) 20%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.5) 80%,
-        rgba(0, 0, 0, 0.1) 100%
+        rgba(0, 0, 0, 0.4) 80%,
+        rgba(0, 0, 0, 0.05) 100%
       );
       mask-image: linear-gradient(
         to bottom,
-        rgba(0, 0, 0, 0.1) 0%,
-        rgba(0, 0, 0, 0.5) 20%,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0.4) 20%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.5) 80%,
-        rgba(0, 0, 0, 0.1) 100%
+        rgba(0, 0, 0, 0.4) 80%,
+        rgba(0, 0, 0, 0.05) 100%
       );
     }
 
@@ -244,10 +244,10 @@
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      width: 280px;
+      width: 320px;
       height: 2px;
       background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20px, var(--primary-color) calc(100% - 20px), transparent 100%);
-      box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
       z-index: 10;
     }
 
@@ -280,7 +280,7 @@
 
     .reel-item.is-winner {
       color: var(--primary-color) !important;
-      text-shadow: 0 0 14px rgba(172, 230, 0, 0.9);
+      text-shadow: 0 0 16px rgba(172, 230, 0, 1) !important;
     }
   </style>
 </head>
@@ -289,7 +289,7 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v2.4</span></span>
+      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v2.5</span></span>
       <span style="font-size: 9px; opacity: 0.7;">DRAG ME</span>
     </h4>
     
@@ -392,7 +392,21 @@
 
       donorTicketsMap = newDonorMap;
       saveTicketsToStorage();
-      updateGiveawayStatsUI();
+    }
+
+    // Enforce target ticket count so local storage sync can NEVER overwrite your typed target
+    function ensureTargetTicketCount() {
+      const targetCount = parseInt(targetTicketsInput.value) || 250;
+      const maxPerUser = parseInt(maxTicketsInput.value) || 5;
+
+      let currentPoolTotal = 0;
+      for (const donor of Object.values(donorTicketsMap)) {
+        currentPoolTotal += donor.ticketsActive || 0;
+      }
+
+      if (currentPoolTotal !== targetCount) {
+        generateRandomizedDonors(targetCount, maxPerUser);
+      }
     }
 
     // --- Storage Sync ---
@@ -401,17 +415,11 @@
         const saved = localStorage.getItem(STORAGE_KEY_DONORS);
         if (saved) {
           donorTicketsMap = JSON.parse(saved);
-          if (Object.keys(donorTicketsMap).length === 0) {
-            generateRandomizedDonors(parseInt(targetTicketsInput.value) || 250, parseInt(maxTicketsInput.value) || 5);
-          } else {
-            updateGiveawayStatsUI();
-          }
-        } else {
-          generateRandomizedDonors(250, 5);
         }
       } catch (err) {
         console.error("Kunde inte läsa från localStorage", err);
       }
+      updateGiveawayStatsUI();
     }
 
     function saveTicketsToStorage() {
@@ -441,10 +449,12 @@
       targetTicketsInput.value = val;
       const maxPerUser = parseInt(maxTicketsInput.value) || 5;
       generateRandomizedDonors(val, maxPerUser);
+      updateGiveawayStatsUI();
       initReelWithRealNames();
     }
 
     function updateGiveawayStatsUI() {
+      ensureTargetTicketCount(); // Guarantees typed ticket count is always respected
       const pool = getActiveTicketPool();
       const uniqueDonorsCount = Object.keys(donorTicketsMap).length;
       giveawayStatsEl.innerHTML = `Biljetter: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
@@ -470,7 +480,7 @@
       reelTrackEl.innerHTML = activeSpinList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
     }
 
-    // --- Dynamic 3D Proximity Scaling Loop ---
+    // --- Dynamic 2X Proximity Scaling Loop ---
     function updateItemProximityScaling() {
       if (!reelTrackEl) return;
 
@@ -488,10 +498,10 @@
         // Normalized distance (0 at center line, 1 at edge)
         const normDist = Math.min(1, dist / viewportCenter);
 
-        // Dynamic scale: 1.35x at center, shrinking to 0.75x towards edges
-        const scale = 0.75 + 0.6 * Math.pow(1 - normDist, 1.8);
+        // 2.0X SCALE AT CENTER (Doubles size between green lines, shrinks to 0.65x at edges)
+        const scale = 0.65 + 1.35 * Math.pow(1 - normDist, 1.8);
         
-        // Dynamic opacity: 1.0 at center, fading down to 0.2 at edges
+        // Opacity drops from 1.0 down to 0.2
         const opacity = 0.2 + 0.8 * Math.pow(1 - normDist, 2);
 
         item.style.transform = `scale(${scale.toFixed(3)})`;
@@ -511,6 +521,7 @@
     // --- 1. START GIVEAWAY ---
     function startGiveawaySpin() {
       if (isSpinningReel) return;
+      ensureTargetTicketCount();
       const ticketPool = getActiveTicketPool();
       if (ticketPool.length === 0) return alert("Inga biljetter i potten ännu!");
 
@@ -520,6 +531,7 @@
 
     // --- 2. SKIP (REROLL) ---
     function skipWinner() {
+      ensureTargetTicketCount();
       giveawayWidgetEl.classList.remove('faded-out');
       isSpinningReel = false;
       executeReelSpinAnimation(5000); // 5 second countdown
@@ -675,6 +687,7 @@
       const val = parseInt(targetTicketsInput.value) || 250;
       const maxPerUser = parseInt(maxTicketsInput.value) || 5;
       generateRandomizedDonors(val, maxPerUser);
+      updateGiveawayStatsUI();
       initReelWithRealNames();
     });
 
@@ -682,6 +695,7 @@
       const val = parseInt(targetTicketsInput.value) || 250;
       const maxPerUser = parseInt(maxTicketsInput.value) || 5;
       generateRandomizedDonors(val, maxPerUser);
+      updateGiveawayStatsUI();
       initReelWithRealNames();
     });
 
