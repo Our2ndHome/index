@@ -12,7 +12,7 @@
       --giveaway-color: #ffea00;
       --danger-color: #ff0055;
       --text-white: #ffffff;
-      --bg-dark: rgba(10, 10, 12, 0.95);
+      --bg-dark: rgba(10, 10, 12, 0.96);
       --shadow-dark: rgba(0, 0, 0, 0.85);
       --item-height: 43px;
       --viewport-height: 215px;
@@ -80,6 +80,41 @@
       font-size: 12px;
       box-shadow: 0 10px 30px var(--shadow-dark);
       backdrop-filter: blur(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .test-panel.panel-hidden {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateY(-20px) !important;
+    }
+
+    /* OBS DOCK MODE: When loaded specifically as an OBS Custom Dock */
+    body.dock-mode {
+      background-color: #121215 !important;
+      overflow-y: auto !important;
+    }
+
+    body.dock-mode .test-panel {
+      position: relative !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    body.dock-mode .giveaway-widget,
+    body.dock-mode #victoryCanvas,
+    body.dock-mode .victory-flash {
+      display: none !important;
+    }
+
+    /* OBS OVERLAY MODE: When loaded on the stream canvas */
+    body.overlay-mode .test-panel {
+      display: none !important;
     }
 
     .test-panel h4 {
@@ -97,6 +132,28 @@
     }
 
     .test-panel h4:active { cursor: grabbing; }
+
+    .header-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 10px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .icon-btn:hover {
+      background: var(--secondary-color);
+      color: #000;
+    }
 
     .widget-version-badge {
       font-size: 9px;
@@ -259,7 +316,6 @@
       margin-top: 2px;
     }
 
-    /* ✨ CLEAN BORDERLESS COUNTDOWN TEXT */
     .giveaway-timer-badge {
       display: block;
       margin-top: 8px;
@@ -366,8 +422,10 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.7</span></span>
-      <span style="font-size: 9px; opacity: 0.7;">DRAG ME</span>
+      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.8</span></span>
+      <div class="header-icons">
+        <button id="btnHidePanel" class="icon-btn" title="Dölj panelen (Tryck 'H')">👁️ Göm (H)</button>
+      </div>
     </h4>
     
     <div id="modeIndicator" class="mode-indicator real-mode">🟢 LÄGE: RIKTIGA BÖSSAN</div>
@@ -459,11 +517,13 @@
     const ITEM_HEIGHT = 43;
     const VIEWPORT_HEIGHT = 215;
 
-    // 🎵 HIGH-QUALITY MODERN AUDIO SAMPLES (Hosted on high-speed CDN)
+    // 📡 OBS SYNC BUS (Synchronizes actions between OBS Dock and Overlay Scene)
+    const syncChannel = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
+
     const AUDIO_PRESETS = {
-      hype_win: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3", // Modern Level Up Win with sub-bass punch
-      jackpot: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3", // Casino Gold Jackpot Chime
-      fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"  // Triumphant Victory Fanfare
+      hype_win: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3",
+      jackpot: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3",
+      fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"
     };
 
     let donorTicketsMap = {};
@@ -510,7 +570,36 @@
     const customSoundContainer = document.getElementById('customSoundContainer');
     const customSoundUrl = document.getElementById('customSoundUrl');
     const btnTestSound = document.getElementById('btnTestSound');
+    const btnHidePanel = document.getElementById('btnHidePanel');
     const vCtx = victoryCanvas.getContext('2d');
+
+    // 🖥️ CHECK HASH / VIEW MODES (#overlay or #panel)
+    function applyViewMode() {
+      const hash = window.location.hash.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      const isOverlay = hash.includes('overlay') || params.has('overlay');
+      const isDock = hash.includes('panel') || hash.includes('dock') || params.has('panel');
+
+      if (isOverlay) {
+        document.body.classList.add('overlay-mode');
+      } else if (isDock) {
+        document.body.classList.add('dock-mode');
+      }
+    }
+    applyViewMode();
+
+    function togglePanelVisibility() {
+      testPanelEl.classList.toggle('panel-hidden');
+    }
+
+    // Keyboard shortcut 'H' to toggle panel
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'h' || e.key === 'H') {
+        togglePanelVisibility();
+      }
+    });
+    btnHidePanel.addEventListener('click', togglePanelVisibility);
 
     function resizeCanvas() {
       victoryCanvas.width = window.innerWidth;
@@ -519,7 +608,6 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Sound Selector UI Toggle
     soundPresetSelect.addEventListener('change', () => {
       customSoundContainer.style.display = soundPresetSelect.value === 'custom' ? 'flex' : 'none';
     });
@@ -528,7 +616,7 @@
       playModernVictorySound();
     });
 
-    // 🔊 AUDIO PLAYER
+    // 🔊 AUDIO ENGINE
     function playModernVictorySound() {
       let soundSrc = AUDIO_PRESETS[soundPresetSelect.value] || AUDIO_PRESETS.hype_win;
       if (soundPresetSelect.value === 'custom') {
@@ -539,15 +627,12 @@
       try {
         const audio = new Audio(soundSrc);
         audio.volume = 0.85;
-        audio.play().catch(err => {
-          console.warn("Ljud kunde inte spelas automatiskt:", err);
-        });
+        audio.play().catch(err => console.warn("Ljudfel:", err));
       } catch (e) {
         console.error(e);
       }
     }
 
-    // Modern Mechanical Wheel Click Sound
     let audioCtx = null;
     function getAudioContext() {
       if (!audioCtx) {
@@ -588,7 +673,6 @@
       void victoryFlashEl.offsetWidth;
       victoryFlashEl.classList.add('active');
 
-      // Play modern stream win sound
       playModernVictorySound();
 
       confettiParticles = [];
@@ -659,7 +743,31 @@
       vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
     }
 
-    // Network / Data Fetcher
+    // 📡 BROADCAST SYNC HANDLER
+    if (syncChannel) {
+      syncChannel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'START_SPIN') {
+          handleStartGiveaway(false);
+        } else if (type === 'SKIP_SPIN') {
+          handleSkipWinner(false);
+        } else if (type === 'CLOSE_CLAIM') {
+          handleCloseGiveaway(false);
+        } else if (type === 'UPDATE_DONORS') {
+          donorTicketsMap = payload.map;
+          updateGiveawayStatsUI();
+          initReelTrack();
+        } else if (type === 'RESET') {
+          handleResetEverything(false);
+        }
+      };
+    }
+
+    function broadcastEvent(type, payload = {}) {
+      if (syncChannel) syncChannel.postMessage({ type, payload });
+    }
+
+    // Data Fetcher
     async function fetchRealBossaData() {
       getAudioContext();
       const rawSlug = bossaSlugInput.value.trim();
@@ -692,6 +800,7 @@
             if (Object.keys(newMap).length > 0) {
               donorTicketsMap = newMap;
               saveTicketsToStorage();
+              broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
               switchToRealMode();
               success = true;
               alert(`Hämtade ${Object.keys(newMap).length} givare från Bössan (${slug})!`);
@@ -704,7 +813,7 @@
       }
 
       if (!success) {
-        alert("Kunde inte hämta automatiskt (CORS-begränsning). Använd 'Klistra in text från Bössan' istället!");
+        alert("Kunde inte hämta automatiskt (CORS-spärr). Använd 'Klistra in text från Bössan'!");
         pasteContainerEl.style.display = "flex";
       }
     }
@@ -750,6 +859,7 @@
 
       donorTicketsMap = newMap;
       saveTicketsToStorage();
+      broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
       switchToRealMode();
       pasteTextAreaEl.value = "";
       pasteContainerEl.style.display = "none";
@@ -778,6 +888,7 @@
       manualNameInput.value = "";
       manualAmountInput.value = "";
       saveTicketsToStorage();
+      broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
       switchToRealMode();
     }
 
@@ -802,9 +913,10 @@
       );
       updateGiveawayStatsUI();
       initReelTrack();
+      broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
     }
 
-    function resetEverythingToZero() {
+    function handleResetEverything(shouldBroadcast = true) {
       stopAllTimers();
       clearVictoryEffects();
       isSpinningReel = false;
@@ -818,6 +930,7 @@
       giveawayTimerEl.classList.remove('winner-drawn');
       giveawayTimerEl.innerText = "REDO FÖR DRAGNING";
       giveawayWidgetEl.classList.add('faded-out');
+      if (shouldBroadcast) broadcastEvent('RESET');
     }
 
     function generateRandomizedDonors(totalTicketsTarget, maxPerUser = 5) {
@@ -879,6 +992,7 @@
         generateRandomizedDonors(val, parseInt(maxTicketsInput.value) || 5);
         updateGiveawayStatsUI();
         initReelTrack();
+        broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
       }
     }
 
@@ -1021,7 +1135,7 @@
       animationFrameId = null;
     }
 
-    function startGiveawaySpin() {
+    function handleStartGiveaway(shouldBroadcast = true) {
       getAudioContext();
       if (isSpinningReel) return;
       const ticketPool = getWeightedTicketPool();
@@ -1031,9 +1145,11 @@
       giveawayTimerEl.classList.remove('winner-drawn');
       giveawayWidgetEl.classList.remove('faded-out');
       executeReelSpinAnimation(10000);
+
+      if (shouldBroadcast) broadcastEvent('START_SPIN');
     }
 
-    function skipWinner() {
+    function handleSkipWinner(shouldBroadcast = true) {
       getAudioContext();
       clearVictoryEffects();
       giveawayTimerEl.classList.remove('winner-drawn');
@@ -1041,9 +1157,11 @@
       stopAllTimers();
       isSpinningReel = false;
       executeReelSpinAnimation(5000);
+
+      if (shouldBroadcast) broadcastEvent('SKIP_SPIN');
     }
 
-    function closeAndClaimGiveaway() {
+    function handleCloseGiveaway(shouldBroadcast = true) {
       stopAllTimers();
       clearVictoryEffects();
       isSpinningReel = false;
@@ -1062,6 +1180,8 @@
       giveawayTimerEl.classList.remove('winner-drawn');
       giveawayTimerEl.innerText = "REDO FÖR DRAGNING";
       giveawayWidgetEl.classList.add('faded-out');
+
+      if (shouldBroadcast) broadcastEvent('CLOSE_CLAIM');
     }
 
     function executeReelSpinAnimation(holdDelayMs = 10000) {
@@ -1089,7 +1209,6 @@
       lastTrackY = 0;
       lastTickedIndex = null;
 
-      // Countdown Timer
       const endTime = Date.now() + holdDelayMs;
       const updateTimerUI = () => {
         const remainingSec = Math.ceil(Math.max(0, endTime - Date.now()) / 1000);
@@ -1105,7 +1224,6 @@
         }
       }, 200);
 
-      // Spin Trigger
       giveawayHoldTimeout = setTimeout(() => {
         giveawayTimerEl.innerText = "DRAGNING PÅGÅR...";
         const targetY = -(winnerIndex * ITEM_HEIGHT - 86);
@@ -1130,7 +1248,6 @@
             items[winnerIndex].classList.add('is-winner');
           }
 
-          // Trigger Modern Victory Celebration
           triggerFullscreenVictory();
 
           currentVisibleFive = [
@@ -1164,6 +1281,7 @@
       };
 
       panelHeaderEl.addEventListener('mousedown', (e) => {
+        if (document.body.classList.contains('dock-mode')) return;
         getAudioContext();
         e.preventDefault();
         startX = e.clientX;
@@ -1183,13 +1301,13 @@
     }
 
     // Event Listeners
-    btnStart.addEventListener('click', startGiveawaySpin);
-    btnSkip.addEventListener('click', skipWinner);
-    btnClose.addEventListener('click', closeAndClaimGiveaway);
+    btnStart.addEventListener('click', () => handleStartGiveaway(true));
+    btnSkip.addEventListener('click', () => handleSkipWinner(true));
+    btnClose.addEventListener('click', () => handleCloseGiveaway(true));
     document.getElementById('btnFetchBossa').addEventListener('click', fetchRealBossaData);
     document.getElementById('btnAddManual').addEventListener('click', addManualDonor);
     document.getElementById('btnSwitchTest').addEventListener('click', switchToTestMode);
-    document.getElementById('btnResetZero').addEventListener('click', resetEverythingToZero);
+    document.getElementById('btnResetZero').addEventListener('click', () => handleResetEverything(true));
 
     document.getElementById('btnTogglePaste').addEventListener('click', () => {
       pasteContainerEl.style.display = pasteContainerEl.style.display === "none" ? "flex" : "none";
