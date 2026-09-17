@@ -26,9 +26,43 @@
       background-color: transparent;
       font-family: 'Montserrat', Arial, sans-serif;
       height: 100vh;
+      width: 100vw;
       overflow: hidden;
       color: var(--text-white);
       user-select: none;
+    }
+
+    /* 🎆 FULLSCREEN VICTORY EFFECTS */
+    #victoryCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99992;
+    }
+
+    .victory-flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99991;
+      opacity: 0;
+      background: radial-gradient(circle at center, rgba(172, 230, 0, 0.45) 0%, rgba(0, 255, 136, 0.15) 45%, transparent 75%);
+    }
+
+    .victory-flash.active {
+      animation: victoryPulse 1.4s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+    }
+
+    @keyframes victoryPulse {
+      0% { opacity: 0; transform: scale(0.92); }
+      20% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.1); }
     }
 
     /* 🎛️ CONTROL PANEL */
@@ -179,7 +213,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 600px;
+      width: 620px;
       height: 380px;
       display: flex;
       flex-direction: column;
@@ -189,7 +223,7 @@
       overflow: hidden;
       opacity: 1;
       visibility: visible;
-      transition: opacity 0.5s ease, visibility 0.5s ease;
+      transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.4s ease;
     }
 
     .giveaway-widget.faded-out {
@@ -209,10 +243,10 @@
     .giveaway-head-title {
       font-size: 28px;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       color: var(--primary-color);
       text-transform: uppercase;
-      text-shadow: 0 2px 10px var(--shadow-dark);
+      text-shadow: 0 2px 12px var(--shadow-dark);
     }
 
     .giveaway-sub-title {
@@ -225,17 +259,28 @@
       margin-top: 2px;
     }
 
+    /* ✨ CLEAN BORDERLESS COUNTDOWN TEXT */
     .giveaway-timer-badge {
-      display: inline-block;
-      margin-top: 6px;
-      background: rgba(172, 230, 0, 0.15);
-      border: 1px solid var(--primary-color);
+      display: block;
+      margin-top: 8px;
       color: var(--primary-color);
-      font-size: 11px;
+      font-size: 14px;
       font-weight: 900;
-      padding: 4px 14px;
-      border-radius: 20px;
+      letter-spacing: 2px;
       text-transform: uppercase;
+      text-shadow: 0 0 16px rgba(172, 230, 0, 0.8), 0 2px 5px rgba(0, 0, 0, 0.9);
+      transition: color 0.3s ease, text-shadow 0.3s ease;
+    }
+
+    .giveaway-timer-badge.winner-drawn {
+      color: var(--giveaway-color);
+      text-shadow: 0 0 22px rgba(255, 234, 0, 1), 0 2px 6px rgba(0, 0, 0, 0.9);
+      animation: pulseText 1s infinite alternate;
+    }
+
+    @keyframes pulseText {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.06); }
     }
 
     .reel-viewport {
@@ -273,7 +318,7 @@
       width: 380px;
       height: 2px;
       background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20%, var(--primary-color) 80%, transparent 100%);
-      box-shadow: 0 0 12px rgba(172, 230, 0, 0.8);
+      box-shadow: 0 0 14px rgba(172, 230, 0, 0.8);
       z-index: 10;
     }
 
@@ -297,7 +342,7 @@
       align-items: center;
       justify-content: center;
       font-weight: 900;
-      font-size: 17px;
+      font-size: 18px;
       text-transform: uppercase;
       white-space: nowrap;
       color: #ffffff;
@@ -307,17 +352,21 @@
     }
 
     .reel-item.is-winner {
-      color: var(--primary-color) !important;
-      text-shadow: 0 0 20px rgba(172, 230, 0, 1) !important;
+      color: var(--giveaway-color) !important;
+      text-shadow: 0 0 25px rgba(255, 234, 0, 1) !important;
     }
   </style>
 </head>
 <body>
 
+  <!-- FULLSCREEN VICTORY EFFECTS -->
+  <div class="victory-flash" id="victoryFlash"></div>
+  <canvas id="victoryCanvas"></canvas>
+
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.4</span></span>
+      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.5</span></span>
       <span style="font-size: 9px; opacity: 0.7;">DRAG ME</span>
     </h4>
     
@@ -325,28 +374,24 @@
     <div class="panel-stats" id="giveawayStats">Biljetter: <b>0</b> | Givare: <b>0</b></div>
 
     <div class="panel-controls">
-      <!-- REAL BÖSSA INTEGRATION -->
       <div class="control-row">
         <label for="bossaSlugInput">Bössa ID:</label>
         <input type="text" id="bossaSlugInput" value="our2ndhome" placeholder="our2ndhome" style="width: 140px;">
       </div>
       <button id="btnFetchBossa" class="btn btn-green btn-small" style="width: 100%;">🔄 Hämta från Bössan (Nätverk)</button>
 
-      <!-- FAST PASTE IMPORTER -->
       <button id="btnTogglePaste" class="btn btn-yellow btn-small" style="width: 100%;">📋 Klistra in text från Bössan</button>
       <div id="pasteContainer" style="display: none; flex-direction: column; gap: 4px;">
-        <textarea id="pasteTextArea" rows="3" placeholder="Klistra in text här (t.ex: gregerlukt gav 400 kr)" style="width: 100%; font-size: 10px;"></textarea>
+        <textarea id="pasteTextArea" rows="3" placeholder="Klistra in text här (t.ex: greger gav 400 kr)" style="width: 100%; font-size: 10px;"></textarea>
         <button id="btnImportPaste" class="btn btn-lime btn-small">Importera Text</button>
       </div>
 
-      <!-- MANUAL DONOR INPUT -->
       <div class="control-row" style="margin-top: 4px;">
         <input type="text" id="manualNameInput" placeholder="Namn" style="flex:2;">
-        <input type="number" id="manualAmountInput" placeholder="Kr (400)" style="flex:1; width:50px;">
+        <input type="number" id="manualAmountInput" placeholder="Kr" style="flex:1; width:50px;">
         <button id="btnAddManual" class="btn btn-lime btn-small">+ Lägg till</button>
       </div>
 
-      <!-- TEST MODE CONTROLS -->
       <div class="control-row" style="margin-top: 4px;">
         <button id="btnSwitchTest" class="btn btn-yellow btn-small" style="width: 100%;">🎲 Växla till Testläge</button>
       </div>
@@ -385,6 +430,7 @@
     <div class="giveaway-title-container">
       <div class="giveaway-head-title">🎁 GIVEAWAY</div>
       <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 BILJETTER</div>
+      <!-- BORDERLESS CLEAN COUNTDOWN TEXT -->
       <div class="giveaway-timer-badge" id="giveawayHeaderTimer">REDO FÖR DRAGNING</div>
     </div>
     <div class="reel-viewport">
@@ -409,6 +455,15 @@
     let spinAnimationTimeout = null;
     let animationFrameId = null;
 
+    // Trackers for scroll sound
+    let lastTrackY = 0;
+    let lastTickedIndex = null;
+    let lastTickTimestamp = 0;
+
+    // Confetti Engine State
+    let confettiParticles = [];
+    let confettiAnimId = null;
+
     // DOM Elements
     const testPanelEl = document.getElementById('testPanel');
     const panelHeaderEl = document.getElementById('panelDragHeader');
@@ -429,9 +484,161 @@
     const btnStart = document.getElementById('btnStart');
     const btnSkip = document.getElementById('btnSkip');
     const btnClose = document.getElementById('btnClose');
+    const victoryFlashEl = document.getElementById('victoryFlash');
+    const victoryCanvas = document.getElementById('victoryCanvas');
+    const vCtx = victoryCanvas.getContext('2d');
+
+    // Setup Canvas Resolution
+    function resizeCanvas() {
+      victoryCanvas.width = window.innerWidth;
+      victoryCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 🔊 SYNTHETIC WEB AUDIO ENGINE (Zero external files needed)
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioCtx = new AudioCtx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Scroll Ratchet Click Sound
+    function playRatchetClick(pitchMultiplier = 1.0) {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const now = ctx.currentTime;
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(460 * pitchMultiplier, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.022);
+
+      gain.gain.setValueAtTime(0.24, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.024);
+    }
+
+    // Victory Chime / Fanfare Sound
+    function playVictoryChime() {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      const chord = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+      chord.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const startTime = ctx.currentTime + (idx * 0.07);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.22, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 1.4);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + 1.5);
+      });
+    }
+
+    // 🎉 FULLSCREEN CONFETTI ENGINE
+    function triggerFullscreenVictory() {
+      // 1. Ambient Flash
+      victoryFlashEl.classList.remove('active');
+      void victoryFlashEl.offsetWidth; // Reflow
+      victoryFlashEl.classList.add('active');
+
+      // 2. Play Victory Fanfare
+      playVictoryChime();
+
+      // 3. Launch Confetti
+      confettiParticles = [];
+      const colors = ['#ace600', '#00ff88', '#ffea00', '#ffffff', '#ff0055'];
+      const count = 160;
+
+      for (let i = 0; i < count; i++) {
+        confettiParticles.push({
+          x: window.innerWidth / 2 + (Math.random() * 80 - 40),
+          y: window.innerHeight / 2 + (Math.random() * 40 - 20),
+          vx: (Math.random() - 0.5) * 26,
+          vy: (Math.random() * -18) - 6,
+          size: Math.random() * 8 + 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 12,
+          opacity: 1,
+          gravity: 0.45 + Math.random() * 0.25,
+          drag: 0.985
+        });
+      }
+
+      if (confettiAnimId) cancelAnimationFrame(confettiAnimId);
+      animateConfetti();
+    }
+
+    function animateConfetti() {
+      vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+      let aliveCount = 0;
+
+      for (let p of confettiParticles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.vx *= p.drag;
+        p.rotation += p.rotSpeed;
+
+        if (p.y > window.innerHeight * 0.65) {
+          p.opacity -= 0.015;
+        }
+
+        if (p.opacity > 0 && p.y < window.innerHeight + 50) {
+          aliveCount++;
+          vCtx.save();
+          vCtx.translate(p.x, p.y);
+          vCtx.rotate((p.rotation * Math.PI) / 180);
+          vCtx.globalAlpha = Math.max(0, p.opacity);
+          vCtx.fillStyle = p.color;
+          vCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
+          vCtx.restore();
+        }
+      }
+
+      if (aliveCount > 0) {
+        confettiAnimId = requestAnimationFrame(animateConfetti);
+      } else {
+        vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+        confettiAnimId = null;
+      }
+    }
+
+    function clearVictoryEffects() {
+      victoryFlashEl.classList.remove('active');
+      if (confettiAnimId) {
+        cancelAnimationFrame(confettiAnimId);
+        confettiAnimId = null;
+      }
+      vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+    }
 
     // Multi-Proxy Network Fetcher
     async function fetchRealBossaData() {
+      getAudioContext();
       const rawSlug = bossaSlugInput.value.trim();
       if (!rawSlug) return alert("Ange ett giltigt Böss-ID eller URL!");
 
@@ -507,6 +714,7 @@
     }
 
     function importPastedText() {
+      getAudioContext();
       const text = pasteTextAreaEl.value.trim();
       if (!text) return alert("Klistra in texten från din Bössas sida först!");
 
@@ -526,6 +734,7 @@
     }
 
     function addManualDonor() {
+      getAudioContext();
       const name = manualNameInput.value.trim();
       const amount = parseInt(manualAmountInput.value) || TICKET_MILESTONE_KR;
       const maxCap = parseInt(maxTicketsInput ? maxTicketsInput.value : 5) || 5;
@@ -559,6 +768,7 @@
     }
 
     function switchToTestMode() {
+      getAudioContext();
       isTestMode = true;
       modeIndicatorEl.className = "mode-indicator test-mode";
       modeIndicatorEl.innerText = "🎲 LÄGE: TESTLÄGE (DUMMY-DATA)";
@@ -573,6 +783,7 @@
 
     function resetEverythingToZero() {
       stopAllTimers();
+      clearVictoryEffects();
       isSpinningReel = false;
       donorTicketsMap = {};
       currentDrawnWinner = null;
@@ -581,6 +792,7 @@
       updateGiveawayStatsUI();
       initReelTrack();
       setButtonLock(false);
+      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayTimerEl.innerText = "REDO FÖR DRAGNING";
       giveawayWidgetEl.classList.add('faded-out');
     }
@@ -659,7 +871,6 @@
       btnSkip.disabled = locked;
     }
 
-    // Build Seamless Reel Track
     function createCleanReelTrack(winnerName, startingFive = null) {
       const uniqueNames = getUniqueDonorNames();
       if (uniqueNames.length === 0) return { spinList: [winnerName], winnerIndex: 0 };
@@ -729,14 +940,12 @@
       renderItemProximity(0);
     }
 
-    // High Performance Proximity Render (only calculates visible items)
     function renderItemProximity(currentY) {
-      const viewportCenter = VIEWPORT_HEIGHT / 2; // 107.5px
+      const viewportCenter = VIEWPORT_HEIGHT / 2;
       const children = reelTrackEl.children;
       const count = children.length;
       if (count === 0) return;
 
-      // Identify visible range (padding +- 2 items)
       const centerItemIdx = Math.round((-currentY + viewportCenter - ITEM_HEIGHT / 2) / ITEM_HEIGHT);
       const startIdx = Math.max(0, centerItemIdx - 4);
       const endIdx = Math.min(count - 1, centerItemIdx + 4);
@@ -755,12 +964,27 @@
       }
     }
 
+    // Animation Loop with Deceleration Sound Trigger
     function runAnimationLoop() {
       if (!isSpinningReel) return;
 
       const style = window.getComputedStyle(reelTrackEl);
       const matrix = new DOMMatrix(style.transform);
-      renderItemProximity(matrix.m42);
+      const currentY = matrix.m42;
+      renderItemProximity(currentY);
+
+      // Sound ratchet check when items roll past the center pointer
+      const centerItemIdx = Math.floor((-currentY + (VIEWPORT_HEIGHT / 2)) / ITEM_HEIGHT);
+      const now = performance.now();
+      
+      if (centerItemIdx !== lastTickedIndex && (now - lastTickTimestamp) > 18) {
+        const speed = Math.abs(currentY - lastTrackY);
+        const pitch = Math.max(0.7, Math.min(1.4, 0.7 + speed * 0.05));
+        playRatchetClick(pitch);
+        lastTickedIndex = centerItemIdx;
+        lastTickTimestamp = now;
+      }
+      lastTrackY = currentY;
 
       animationFrameId = requestAnimationFrame(runAnimationLoop);
     }
@@ -777,15 +1001,21 @@
     }
 
     function startGiveawaySpin() {
+      getAudioContext();
       if (isSpinningReel) return;
       const ticketPool = getWeightedTicketPool();
       if (ticketPool.length === 0) return alert("Inga biljetter i potten ännu!");
 
+      clearVictoryEffects();
+      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayWidgetEl.classList.remove('faded-out');
       executeReelSpinAnimation(10000);
     }
 
     function skipWinner() {
+      getAudioContext();
+      clearVictoryEffects();
+      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayWidgetEl.classList.remove('faded-out');
       stopAllTimers();
       isSpinningReel = false;
@@ -794,6 +1024,7 @@
 
     function closeAndClaimGiveaway() {
       stopAllTimers();
+      clearVictoryEffects();
       isSpinningReel = false;
       setButtonLock(false);
 
@@ -807,6 +1038,7 @@
       saveTicketsToStorage();
       updateGiveawayStatsUI();
 
+      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayTimerEl.innerText = "REDO FÖR DRAGNING";
       giveawayWidgetEl.classList.add('faded-out');
     }
@@ -816,8 +1048,10 @@
       if (ticketPool.length === 0) return;
 
       stopAllTimers();
+      clearVictoryEffects();
       isSpinningReel = true;
       setButtonLock(true);
+      giveawayTimerEl.classList.remove('winner-drawn');
 
       const winningIndex = Math.floor(Math.random() * ticketPool.length);
       const winnerName = ticketPool[winningIndex];
@@ -828,9 +1062,11 @@
       reelTrackEl.style.transition = 'none';
       reelTrackEl.style.transform = 'translateY(0px)';
       reelTrackEl.innerHTML = spinList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-      void reelTrackEl.offsetHeight; // Force reflow
+      void reelTrackEl.offsetHeight;
 
       renderItemProximity(0);
+      lastTrackY = 0;
+      lastTickedIndex = null;
 
       // Countdown Timer
       const endTime = Date.now() + holdDelayMs;
@@ -857,7 +1093,6 @@
         reelTrackEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.1, 0.85, 0.15, 1)`;
         reelTrackEl.style.transform = `translateY(${targetY}px)`;
 
-        // Start Proximity Loop for smooth scale during motion
         runAnimationLoop();
 
         spinAnimationTimeout = setTimeout(() => {
@@ -865,13 +1100,17 @@
           setButtonLock(false);
           stopAllTimers();
 
-          giveawayTimerEl.innerText = "VINNARE DRAGEN! 🎉";
+          giveawayTimerEl.classList.add('winner-drawn');
+          giveawayTimerEl.innerText = "🎉 VINNARE DRAGEN! 🎉";
           renderItemProximity(targetY);
 
           const items = reelTrackEl.children;
           if (items[winnerIndex]) {
             items[winnerIndex].classList.add('is-winner');
           }
+
+          // Fullscreen Victory Explosion
+          triggerFullscreenVictory();
 
           currentVisibleFive = [
             spinList[winnerIndex - 2] || winnerName,
@@ -884,7 +1123,6 @@
       }, holdDelayMs);
     }
 
-    // Draggable Panel with bounds lock
     function makePanelDraggable() {
       if (!testPanelEl || !panelHeaderEl) return;
       let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
@@ -905,6 +1143,7 @@
       };
 
       panelHeaderEl.addEventListener('mousedown', (e) => {
+        getAudioContext();
         e.preventDefault();
         startX = e.clientX;
         startY = e.clientY;
@@ -936,7 +1175,7 @@
     });
     document.getElementById('btnImportPaste').addEventListener('click', importPastedText);
 
-    // Init
+    // Initialization
     makePanelDraggable();
     loadTicketsFromStorage();
     initReelTrack();
