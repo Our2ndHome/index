@@ -7,13 +7,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #ace600;
-      --secondary-color: #00ff88;
-      --giveaway-color: #ffea00;
-      --danger-color: #ff0055;
       --text-white: #ffffff;
-      --bg-dark: rgba(10, 10, 12, 0.96);
-      --shadow-dark: rgba(0, 0, 0, 0.85);
+      --text-dim: rgba(255, 255, 255, 0.65);
+      --bg-panel: rgba(12, 12, 14, 0.96);
+      --border-subtle: rgba(255, 255, 255, 0.15);
       --item-height: 43px;
       --viewport-height: 215px;
     }
@@ -32,7 +29,7 @@
       user-select: none;
     }
 
-    /* 🎆 FULLSCREEN VICTORY EFFECTS */
+    /* VICTORY CANVAS */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -43,55 +40,33 @@
       z-index: 99992;
     }
 
-    .victory-flash {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 99991;
-      opacity: 0;
-      background: radial-gradient(circle at center, rgba(172, 230, 0, 0.55) 0%, rgba(255, 234, 0, 0.25) 45%, transparent 75%);
-    }
-
-    .victory-flash.active {
-      animation: victoryPulse 1.4s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
-    }
-
-    @keyframes victoryPulse {
-      0% { opacity: 0; transform: scale(0.92); }
-      20% { opacity: 1; transform: scale(1); }
-      100% { opacity: 0; transform: scale(1.1); }
-    }
-
-    /* 🎛️ CONTROL PANEL */
+    /* CONTROL PANEL */
     .test-panel {
       position: absolute;
       top: 15px;
       left: 15px;
-      background: var(--bg-dark);
-      border: 2px solid var(--secondary-color);
-      padding: 12px;
-      border-radius: 10px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      padding: 14px;
+      border-radius: 8px;
       color: var(--text-white);
       z-index: 999999;
       width: 350px;
       font-size: 12px;
-      box-shadow: 0 10px 30px var(--shadow-dark);
-      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
     .test-panel.panel-hidden {
       opacity: 0 !important;
       pointer-events: none !important;
-      transform: translateY(-20px) !important;
+      transform: translateY(-15px) !important;
     }
 
-    /* OBS DOCK MODE: When loaded specifically as an OBS Custom Dock */
+    /* OBS DOCK MODE */
     body.dock-mode {
-      background-color: #121215 !important;
+      background-color: #0e0e11 !important;
       overflow-y: auto !important;
     }
 
@@ -107,25 +82,26 @@
     }
 
     body.dock-mode .giveaway-widget,
-    body.dock-mode #victoryCanvas,
-    body.dock-mode .victory-flash {
+    body.dock-mode #victoryCanvas {
       display: none !important;
     }
 
-    /* OBS OVERLAY MODE: When loaded on the stream canvas */
+    /* OBS OVERLAY MODE */
     body.overlay-mode .test-panel {
       display: none !important;
     }
 
     .test-panel h4 {
-      margin: 0 0 8px 0;
-      font-size: 13px;
-      color: var(--secondary-color);
+      margin: 0 0 10px 0;
+      font-size: 12px;
+      color: var(--text-white);
+      letter-spacing: 1px;
       text-transform: uppercase;
       cursor: grab;
-      background: rgba(0, 255, 136, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
       padding: 6px 8px;
-      border-radius: 5px;
+      border-radius: 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -141,41 +117,47 @@
 
     .icon-btn {
       background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid var(--border-subtle);
       color: #fff;
       border-radius: 4px;
-      padding: 2px 5px;
+      padding: 2px 6px;
       font-size: 10px;
       cursor: pointer;
       font-weight: 800;
     }
 
     .icon-btn:hover {
-      background: var(--secondary-color);
+      background: #fff;
       color: #000;
     }
 
     .widget-version-badge {
       font-size: 9px;
-      background: var(--secondary-color);
+      background: #ffffff;
       color: #000;
       padding: 2px 5px;
-      border-radius: 4px;
+      border-radius: 3px;
       font-weight: 900;
     }
 
     .panel-stats {
       font-size: 11px;
-      color: var(--primary-color);
-      margin: 6px 0;
+      color: var(--text-dim);
+      margin: 8px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .panel-stats b {
+      color: #ffffff;
     }
 
     .panel-controls {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-bottom: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
       padding: 8px;
       border-radius: 6px;
     }
@@ -191,43 +173,37 @@
       font-size: 10px;
       text-transform: uppercase;
       font-weight: 800;
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
     }
 
     .control-row input, .control-row textarea, .control-row select {
-      background: #151515;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #18181b;
+      border: 1px solid var(--border-subtle);
       color: #fff;
-      padding: 4px 6px;
+      padding: 5px 8px;
       border-radius: 4px;
       font-family: inherit;
       font-size: 11px;
     }
 
     .control-row input:focus, .control-row textarea:focus, .control-row select:focus {
-      border-color: var(--secondary-color);
+      border-color: #ffffff;
       outline: none;
     }
 
     .mode-indicator {
       font-size: 10px;
       font-weight: 900;
-      padding: 4px 8px;
+      padding: 5px 8px;
       border-radius: 4px;
       text-align: center;
-      margin-bottom: 4px;
-    }
-
-    .mode-indicator.real-mode {
-      background: rgba(0, 255, 136, 0.15);
-      color: var(--secondary-color);
-      border: 1px solid var(--secondary-color);
-    }
-
-    .mode-indicator.test-mode {
-      background: rgba(255, 234, 0, 0.15);
-      color: var(--giveaway-color);
-      border: 1px solid var(--giveaway-color);
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: #ffffff;
     }
 
     .quick-presets {
@@ -239,39 +215,61 @@
     .panel-actions {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
     }
 
     .btn {
-      border: none;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
       padding: 8px 10px;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
       font-size: 11px;
       font-weight: 900;
       font-family: inherit;
-      transition: opacity 0.2s ease, transform 0.1s ease;
+      letter-spacing: 0.5px;
+      transition: background 0.2s ease, opacity 0.2s ease;
       text-align: center;
     }
 
-    .btn:hover:not(:disabled) { opacity: 0.88; }
-    .btn:active:not(:disabled) { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn:hover:not(:disabled) {
+      background: #ffffff;
+      color: #000000;
+    }
 
-    .btn-lime { background: var(--primary-color); color: #000; }
-    .btn-yellow { background: var(--giveaway-color); color: #000; }
-    .btn-red { background: var(--danger-color); color: #fff; }
-    .btn-green { background: var(--secondary-color); color: #000; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-white {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+    }
+
+    .btn-white:hover:not(:disabled) {
+      background: #e4e4e7;
+    }
+
+    .btn-danger {
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #ffffff;
+      color: #000000;
+    }
+
     .btn-small { padding: 4px 8px; font-size: 9px; }
 
-    /* 🎁 GIVEAWAY REEL WIDGET */
+    /* CLEAN GIVEAWAY REEL WIDGET */
     .giveaway-widget {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 620px;
-      height: 380px;
+      height: 360px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -280,7 +278,7 @@
       overflow: hidden;
       opacity: 1;
       visibility: visible;
-      transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.4s ease;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
     }
 
     .giveaway-widget.faded-out {
@@ -294,49 +292,34 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
 
     .giveaway-head-title {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 900;
-      letter-spacing: 2.5px;
-      color: var(--primary-color);
+      letter-spacing: 4px;
+      color: #ffffff;
       text-transform: uppercase;
-      text-shadow: 0 2px 12px var(--shadow-dark);
     }
 
     .giveaway-sub-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
-      letter-spacing: 1.5px;
-      color: var(--text-white);
-      opacity: 0.9;
+      letter-spacing: 2px;
+      color: var(--text-dim);
       text-transform: uppercase;
-      margin-top: 2px;
+      margin-top: 4px;
     }
 
     .giveaway-timer-badge {
       display: block;
       margin-top: 8px;
-      color: var(--primary-color);
-      font-size: 14px;
+      color: #ffffff;
+      font-size: 12px;
       font-weight: 900;
       letter-spacing: 2px;
       text-transform: uppercase;
-      text-shadow: 0 0 16px rgba(172, 230, 0, 0.8), 0 2px 5px rgba(0, 0, 0, 0.9);
-      transition: color 0.3s ease, text-shadow 0.3s ease;
-    }
-
-    .giveaway-timer-badge.winner-drawn {
-      color: var(--giveaway-color);
-      text-shadow: 0 0 25px rgba(255, 234, 0, 1), 0 2px 6px rgba(0, 0, 0, 0.9);
-      animation: pulseText 0.8s infinite alternate;
-    }
-
-    @keyframes pulseText {
-      0% { transform: scale(1); }
-      100% { transform: scale(1.08); }
     }
 
     .reel-viewport {
@@ -348,38 +331,28 @@
       -webkit-mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0.05) 0%,
-        rgba(0, 0, 0, 0.5) 20%,
+        rgba(0, 0, 0, 0.45) 20%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.5) 80%,
+        rgba(0, 0, 0, 0.45) 80%,
         rgba(0, 0, 0, 0.05) 100%
       );
       mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0.05) 0%,
-        rgba(0, 0, 0, 0.5) 20%,
+        rgba(0, 0, 0, 0.45) 20%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.5) 80%,
+        rgba(0, 0, 0, 0.45) 80%,
         rgba(0, 0, 0, 0.05) 100%
       );
     }
 
-    .reel-viewport::before, 
+    /* Green bars removed entirely */
+    .reel-viewport::before,
     .reel-viewport::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 380px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20%, var(--primary-color) 80%, transparent 100%);
-      box-shadow: 0 0 14px rgba(172, 230, 0, 0.8);
-      z-index: 10;
+      display: none !important;
     }
-
-    .reel-viewport::before { top: 86px; }  
-    .reel-viewport::after  { top: 129px; } 
 
     .reel-track {
       position: absolute;
@@ -399,75 +372,74 @@
       justify-content: center;
       font-weight: 900;
       font-size: 18px;
+      letter-spacing: 1px;
       text-transform: uppercase;
       white-space: nowrap;
       color: #ffffff;
       transform-origin: center center;
       will-change: transform, opacity;
-      transition: color 0.3s ease;
     }
 
     .reel-item.is-winner {
-      color: var(--giveaway-color) !important;
-      text-shadow: 0 0 25px rgba(255, 234, 0, 1) !important;
+      color: #ffffff !important;
+      font-weight: 900;
     }
   </style>
 </head>
 <body>
 
-  <!-- FULLSCREEN VICTORY EFFECTS -->
-  <div class="victory-flash" id="victoryFlash"></div>
+  <!-- VICTORY CANVAS -->
   <canvas id="victoryCanvas"></canvas>
 
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.8</span></span>
+      <span>GIVEAWAY CONTROL <span class="widget-version-badge">v4.0</span></span>
       <div class="header-icons">
-        <button id="btnHidePanel" class="icon-btn" title="Dölj panelen (Tryck 'H')">👁️ Göm (H)</button>
+        <button id="btnHidePanel" class="icon-btn" title="Dölj panelen (Tryck 'H')">GÖM (H)</button>
       </div>
     </h4>
     
-    <div id="modeIndicator" class="mode-indicator real-mode">🟢 LÄGE: RIKTIGA BÖSSAN</div>
+    <div id="modeIndicator" class="mode-indicator">LÄGE: RIKTIGA BÖSSAN</div>
     <div class="panel-stats" id="giveawayStats">Biljetter: <b>0</b> | Givare: <b>0</b></div>
 
     <div class="panel-controls">
       <!-- SOUND SETTINGS -->
       <div class="control-row">
-        <label for="soundPresetSelect">🔊 Vinnarljud:</label>
+        <label for="soundPresetSelect">Vinnarljud:</label>
         <select id="soundPresetSelect" style="width: 175px;">
-          <option value="hype_win">🏆 Level Up / Gold Victory</option>
-          <option value="jackpot">🎰 Casino Jackpot Fanfare</option>
-          <option value="fanfare">🎺 Stadium Victory Brass</option>
-          <option value="custom">📁 Eget ljud (URL / Fil)</option>
+          <option value="hype_win">Level Up / Gold Victory</option>
+          <option value="jackpot">Casino Jackpot Fanfare</option>
+          <option value="fanfare">Stadium Victory Brass</option>
+          <option value="custom">Eget ljud (URL / Fil)</option>
         </select>
       </div>
       <div id="customSoundContainer" style="display: none;" class="control-row">
         <input type="text" id="customSoundUrl" placeholder="Filnamn (winner.mp3) eller URL" style="width: 100%;">
       </div>
-      <button id="btnTestSound" class="btn btn-green btn-small" style="width: 100%;">▶️ Testa vinnarljud</button>
+      <button id="btnTestSound" class="btn btn-small" style="width: 100%;">Testa vinnarljud</button>
 
       <!-- REAL BÖSSA INTEGRATION -->
       <div class="control-row" style="margin-top: 4px;">
         <label for="bossaSlugInput">Bössa ID:</label>
         <input type="text" id="bossaSlugInput" value="our2ndhome" placeholder="our2ndhome" style="width: 140px;">
       </div>
-      <button id="btnFetchBossa" class="btn btn-green btn-small" style="width: 100%;">🔄 Hämta från Bössan (Nätverk)</button>
+      <button id="btnFetchBossa" class="btn btn-small" style="width: 100%;">Hämta från Bössan (Nätverk)</button>
 
-      <button id="btnTogglePaste" class="btn btn-yellow btn-small" style="width: 100%;">📋 Klistra in text från Bössan</button>
+      <button id="btnTogglePaste" class="btn btn-small" style="width: 100%;">Klistra in text från Bössan</button>
       <div id="pasteContainer" style="display: none; flex-direction: column; gap: 4px;">
         <textarea id="pasteTextArea" rows="3" placeholder="Klistra in text här (t.ex: greger gav 400 kr)" style="width: 100%; font-size: 10px;"></textarea>
-        <button id="btnImportPaste" class="btn btn-lime btn-small">Importera Text</button>
+        <button id="btnImportPaste" class="btn btn-white btn-small">Importera Text</button>
       </div>
 
       <div class="control-row" style="margin-top: 4px;">
         <input type="text" id="manualNameInput" placeholder="Namn" style="flex:2;">
         <input type="number" id="manualAmountInput" placeholder="Kr" style="flex:1; width:50px;">
-        <button id="btnAddManual" class="btn btn-lime btn-small">+ Lägg till</button>
+        <button id="btnAddManual" class="btn btn-small">+ Lägg till</button>
       </div>
 
       <div class="control-row" style="margin-top: 4px;">
-        <button id="btnSwitchTest" class="btn btn-yellow btn-small" style="width: 100%;">🎲 Växla till Testläge</button>
+        <button id="btnSwitchTest" class="btn btn-small" style="width: 100%;">Växla till Testläge</button>
       </div>
 
       <div id="testControlsContainer" style="display: none; flex-direction: column; gap: 6px;">
@@ -480,29 +452,29 @@
           <input type="number" id="maxTicketsPerUser" value="5" min="1" style="width: 65px;">
         </div>
         <div class="quick-presets">
-          <span style="font-size: 9px; color: #aaa; align-self: center;">Sätt:</span>
-          <button class="btn btn-green btn-small" onclick="setTargetTicketPreset(50)">50</button>
-          <button class="btn btn-green btn-small" onclick="setTargetTicketPreset(100)">100</button>
-          <button class="btn btn-green btn-small" onclick="setTargetTicketPreset(250)">250</button>
-          <button class="btn btn-green btn-small" onclick="setTargetTicketPreset(500)">500</button>
+          <span style="font-size: 9px; color: var(--text-dim); align-self: center;">Sätt:</span>
+          <button class="btn btn-small" onclick="setTargetTicketPreset(50)">50</button>
+          <button class="btn btn-small" onclick="setTargetTicketPreset(100)">100</button>
+          <button class="btn btn-small" onclick="setTargetTicketPreset(250)">250</button>
+          <button class="btn btn-small" onclick="setTargetTicketPreset(500)">500</button>
         </div>
       </div>
 
-      <button id="btnResetZero" class="btn btn-red btn-small" style="margin-top: 4px;">🗑️ Nollställ allt till 0</button>
+      <button id="btnResetZero" class="btn btn-danger btn-small" style="margin-top: 4px;">Nollställ allt till 0</button>
     </div>
 
     <!-- ACTION BUTTONS -->
     <div class="panel-actions">
-      <button id="btnStart" class="btn btn-lime">▶️ Starta Giveaway (10s)</button>
-      <button id="btnSkip" class="btn btn-yellow">⏭️ Skip / Reroll (5s)</button>
-      <button id="btnClose" class="btn btn-red">✖️ Claim & Stäng</button>
+      <button id="btnStart" class="btn btn-white">Starta Giveaway (10s)</button>
+      <button id="btnSkip" class="btn">Skip / Reroll (5s)</button>
+      <button id="btnClose" class="btn btn-danger">Claim & Stäng</button>
     </div>
   </div>
 
   <!-- GIVEAWAY REEL WIDGET -->
   <div class="giveaway-widget faded-out" id="giveawayWidget">
     <div class="giveaway-title-container">
-      <div class="giveaway-head-title">🎁 GIVEAWAY</div>
+      <div class="giveaway-head-title">GIVEAWAY</div>
       <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 BILJETTER</div>
       <div class="giveaway-timer-badge" id="giveawayHeaderTimer">REDO FÖR DRAGNING</div>
     </div>
@@ -517,7 +489,6 @@
     const ITEM_HEIGHT = 43;
     const VIEWPORT_HEIGHT = 215;
 
-    // 📡 OBS SYNC BUS (Synchronizes actions between OBS Dock and Overlay Scene)
     const syncChannel = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
 
     const AUDIO_PRESETS = {
@@ -564,7 +535,6 @@
     const btnStart = document.getElementById('btnStart');
     const btnSkip = document.getElementById('btnSkip');
     const btnClose = document.getElementById('btnClose');
-    const victoryFlashEl = document.getElementById('victoryFlash');
     const victoryCanvas = document.getElementById('victoryCanvas');
     const soundPresetSelect = document.getElementById('soundPresetSelect');
     const customSoundContainer = document.getElementById('customSoundContainer');
@@ -573,7 +543,7 @@
     const btnHidePanel = document.getElementById('btnHidePanel');
     const vCtx = victoryCanvas.getContext('2d');
 
-    // 🖥️ CHECK HASH / VIEW MODES (#overlay or #panel)
+    // View Modes
     function applyViewMode() {
       const hash = window.location.hash.toLowerCase();
       const params = new URLSearchParams(window.location.search);
@@ -592,7 +562,6 @@
       testPanelEl.classList.toggle('panel-hidden');
     }
 
-    // Keyboard shortcut 'H' to toggle panel
     document.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.key === 'h' || e.key === 'H') {
@@ -616,7 +585,7 @@
       playModernVictorySound();
     });
 
-    // 🔊 AUDIO ENGINE
+    // Audio Engine
     function playModernVictorySound() {
       let soundSrc = AUDIO_PRESETS[soundPresetSelect.value] || AUDIO_PRESETS.hype_win;
       if (soundPresetSelect.value === 'custom') {
@@ -657,7 +626,7 @@
       osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
       osc.frequency.exponentialRampToValueAtTime(80, now + 0.018);
 
-      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.setValueAtTime(0.24, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
 
       osc.connect(gain);
@@ -667,30 +636,26 @@
       osc.stop(now + 0.02);
     }
 
-    // 🎉 FULLSCREEN VICTORY CELEBRATION
-    function triggerFullscreenVictory() {
-      victoryFlashEl.classList.remove('active');
-      void victoryFlashEl.offsetWidth;
-      victoryFlashEl.classList.add('active');
-
+    // Clean Monochrome Victory Celebration
+    function triggerCleanVictory() {
       playModernVictorySound();
 
       confettiParticles = [];
-      const colors = ['#ace600', '#00ff88', '#ffea00', '#ffffff', '#ff0055'];
-      const count = 160;
+      const colors = ['#ffffff', '#e4e4e7', '#a1a1aa'];
+      const count = 120;
 
       for (let i = 0; i < count; i++) {
         confettiParticles.push({
           x: window.innerWidth / 2 + (Math.random() * 80 - 40),
           y: window.innerHeight / 2 + (Math.random() * 40 - 20),
-          vx: (Math.random() - 0.5) * 26,
-          vy: (Math.random() * -18) - 6,
-          size: Math.random() * 8 + 5,
+          vx: (Math.random() - 0.5) * 22,
+          vy: (Math.random() * -16) - 5,
+          size: Math.random() * 6 + 4,
           color: colors[Math.floor(Math.random() * colors.length)],
           rotation: Math.random() * 360,
-          rotSpeed: (Math.random() - 0.5) * 12,
+          rotSpeed: (Math.random() - 0.5) * 10,
           opacity: 1,
-          gravity: 0.45 + Math.random() * 0.25,
+          gravity: 0.42 + Math.random() * 0.2,
           drag: 0.985
         });
       }
@@ -721,7 +686,7 @@
           vCtx.rotate((p.rotation * Math.PI) / 180);
           vCtx.globalAlpha = Math.max(0, p.opacity);
           vCtx.fillStyle = p.color;
-          vCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
+          vCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.3);
           vCtx.restore();
         }
       }
@@ -735,7 +700,6 @@
     }
 
     function clearVictoryEffects() {
-      victoryFlashEl.classList.remove('active');
       if (confettiAnimId) {
         cancelAnimationFrame(confettiAnimId);
         confettiAnimId = null;
@@ -743,7 +707,7 @@
       vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
     }
 
-    // 📡 BROADCAST SYNC HANDLER
+    // Broadcast Sync
     if (syncChannel) {
       syncChannel.onmessage = (event) => {
         const { type, payload } = event.data;
@@ -767,7 +731,7 @@
       if (syncChannel) syncChannel.postMessage({ type, payload });
     }
 
-    // Data Fetcher
+    // Data Fetching
     async function fetchRealBossaData() {
       getAudioContext();
       const rawSlug = bossaSlugInput.value.trim();
@@ -894,8 +858,7 @@
 
     function switchToRealMode() {
       isTestMode = false;
-      modeIndicatorEl.className = "mode-indicator real-mode";
-      modeIndicatorEl.innerText = "🟢 LÄGE: RIKTIGA BÖSSAN";
+      modeIndicatorEl.innerText = "LÄGE: RIKTIGA BÖSSAN";
       testControlsContainer.style.display = "none";
       updateGiveawayStatsUI();
       initReelTrack();
@@ -904,8 +867,7 @@
     function switchToTestMode() {
       getAudioContext();
       isTestMode = true;
-      modeIndicatorEl.className = "mode-indicator test-mode";
-      modeIndicatorEl.innerText = "🎲 LÄGE: TESTLÄGE (DUMMY-DATA)";
+      modeIndicatorEl.innerText = "LÄGE: TESTLÄGE";
       testControlsContainer.style.display = "flex";
       generateRandomizedDonors(
         parseInt(targetTicketsInput.value) || 250,
@@ -927,7 +889,6 @@
       updateGiveawayStatsUI();
       initReelTrack();
       setButtonLock(false);
-      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayTimerEl.innerText = "REDO FÖR DRAGNING";
       giveawayWidgetEl.classList.add('faded-out');
       if (shouldBroadcast) broadcastEvent('RESET');
@@ -1093,7 +1054,7 @@
         const dist = Math.abs(itemCenter - viewportCenter);
         const normDist = Math.min(1, dist / viewportCenter);
 
-        const scale = 0.7 + 0.6 * Math.pow(1 - normDist, 1.6);
+        const scale = 0.75 + 0.55 * Math.pow(1 - normDist, 1.6);
         const opacity = 0.25 + 0.75 * Math.pow(1 - normDist, 2);
 
         item.style.transform = `scale(${scale.toFixed(3)})`;
@@ -1142,7 +1103,6 @@
       if (ticketPool.length === 0) return alert("Inga biljetter i potten ännu!");
 
       clearVictoryEffects();
-      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayWidgetEl.classList.remove('faded-out');
       executeReelSpinAnimation(10000);
 
@@ -1152,7 +1112,6 @@
     function handleSkipWinner(shouldBroadcast = true) {
       getAudioContext();
       clearVictoryEffects();
-      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayWidgetEl.classList.remove('faded-out');
       stopAllTimers();
       isSpinningReel = false;
@@ -1177,7 +1136,6 @@
       saveTicketsToStorage();
       updateGiveawayStatsUI();
 
-      giveawayTimerEl.classList.remove('winner-drawn');
       giveawayTimerEl.innerText = "REDO FÖR DRAGNING";
       giveawayWidgetEl.classList.add('faded-out');
 
@@ -1192,7 +1150,6 @@
       clearVictoryEffects();
       isSpinningReel = true;
       setButtonLock(true);
-      giveawayTimerEl.classList.remove('winner-drawn');
 
       const winningIndex = Math.floor(Math.random() * ticketPool.length);
       const winnerName = ticketPool[winningIndex];
@@ -1239,8 +1196,7 @@
           setButtonLock(false);
           stopAllTimers();
 
-          giveawayTimerEl.classList.add('winner-drawn');
-          giveawayTimerEl.innerText = "🎉 VINNARE DRAGEN! 🎉";
+          giveawayTimerEl.innerText = "VINNARE DRAGEN";
           renderItemProximity(targetY);
 
           const items = reelTrackEl.children;
@@ -1248,7 +1204,7 @@
             items[winnerIndex].classList.add('is-winner');
           }
 
-          triggerFullscreenVictory();
+          triggerCleanVictory();
 
           currentVisibleFive = [
             spinList[winnerIndex - 2] || winnerName,
