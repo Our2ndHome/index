@@ -52,7 +52,7 @@
       pointer-events: none;
       z-index: 99991;
       opacity: 0;
-      background: radial-gradient(circle at center, rgba(172, 230, 0, 0.5) 0%, rgba(0, 255, 136, 0.2) 45%, transparent 75%);
+      background: radial-gradient(circle at center, rgba(172, 230, 0, 0.55) 0%, rgba(255, 234, 0, 0.25) 45%, transparent 75%);
     }
 
     .victory-flash.active {
@@ -76,7 +76,7 @@
       border-radius: 10px;
       color: var(--text-white);
       z-index: 999999;
-      width: 340px;
+      width: 350px;
       font-size: 12px;
       box-shadow: 0 10px 30px var(--shadow-dark);
       backdrop-filter: blur(8px);
@@ -137,7 +137,7 @@
       color: rgba(255, 255, 255, 0.8);
     }
 
-    .control-row input, .control-row textarea {
+    .control-row input, .control-row textarea, .control-row select {
       background: #151515;
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
@@ -147,7 +147,7 @@
       font-size: 11px;
     }
 
-    .control-row input:focus, .control-row textarea:focus {
+    .control-row input:focus, .control-row textarea:focus, .control-row select:focus {
       border-color: var(--secondary-color);
       outline: none;
     }
@@ -366,7 +366,7 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.6</span></span>
+      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.7</span></span>
       <span style="font-size: 9px; opacity: 0.7;">DRAG ME</span>
     </h4>
     
@@ -374,7 +374,23 @@
     <div class="panel-stats" id="giveawayStats">Biljetter: <b>0</b> | Givare: <b>0</b></div>
 
     <div class="panel-controls">
+      <!-- SOUND SETTINGS -->
       <div class="control-row">
+        <label for="soundPresetSelect">🔊 Vinnarljud:</label>
+        <select id="soundPresetSelect" style="width: 175px;">
+          <option value="hype_win">🏆 Level Up / Gold Victory</option>
+          <option value="jackpot">🎰 Casino Jackpot Fanfare</option>
+          <option value="fanfare">🎺 Stadium Victory Brass</option>
+          <option value="custom">📁 Eget ljud (URL / Fil)</option>
+        </select>
+      </div>
+      <div id="customSoundContainer" style="display: none;" class="control-row">
+        <input type="text" id="customSoundUrl" placeholder="Filnamn (winner.mp3) eller URL" style="width: 100%;">
+      </div>
+      <button id="btnTestSound" class="btn btn-green btn-small" style="width: 100%;">▶️ Testa vinnarljud</button>
+
+      <!-- REAL BÖSSA INTEGRATION -->
+      <div class="control-row" style="margin-top: 4px;">
         <label for="bossaSlugInput">Bössa ID:</label>
         <input type="text" id="bossaSlugInput" value="our2ndhome" placeholder="our2ndhome" style="width: 140px;">
       </div>
@@ -443,6 +459,13 @@
     const ITEM_HEIGHT = 43;
     const VIEWPORT_HEIGHT = 215;
 
+    // 🎵 HIGH-QUALITY MODERN AUDIO SAMPLES (Hosted on high-speed CDN)
+    const AUDIO_PRESETS = {
+      hype_win: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3", // Modern Level Up Win with sub-bass punch
+      jackpot: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3", // Casino Gold Jackpot Chime
+      fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"  // Triumphant Victory Fanfare
+    };
+
     let donorTicketsMap = {};
     let currentDrawnWinner = null;
     let isSpinningReel = false;
@@ -483,6 +506,10 @@
     const btnClose = document.getElementById('btnClose');
     const victoryFlashEl = document.getElementById('victoryFlash');
     const victoryCanvas = document.getElementById('victoryCanvas');
+    const soundPresetSelect = document.getElementById('soundPresetSelect');
+    const customSoundContainer = document.getElementById('customSoundContainer');
+    const customSoundUrl = document.getElementById('customSoundUrl');
+    const btnTestSound = document.getElementById('btnTestSound');
     const vCtx = victoryCanvas.getContext('2d');
 
     function resizeCanvas() {
@@ -492,7 +519,35 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // 🔊 SYNTHETIC WEB AUDIO ENGINE
+    // Sound Selector UI Toggle
+    soundPresetSelect.addEventListener('change', () => {
+      customSoundContainer.style.display = soundPresetSelect.value === 'custom' ? 'flex' : 'none';
+    });
+
+    btnTestSound.addEventListener('click', () => {
+      playModernVictorySound();
+    });
+
+    // 🔊 AUDIO PLAYER
+    function playModernVictorySound() {
+      let soundSrc = AUDIO_PRESETS[soundPresetSelect.value] || AUDIO_PRESETS.hype_win;
+      if (soundPresetSelect.value === 'custom') {
+        const customUrl = customSoundUrl.value.trim();
+        if (customUrl) soundSrc = customUrl;
+      }
+
+      try {
+        const audio = new Audio(soundSrc);
+        audio.volume = 0.85;
+        audio.play().catch(err => {
+          console.warn("Ljud kunde inte spelas automatiskt:", err);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Modern Mechanical Wheel Click Sound
     let audioCtx = null;
     function getAudioContext() {
       if (!audioCtx) {
@@ -505,8 +560,7 @@
       return audioCtx;
     }
 
-    // Rolling Ratchet Click Sound
-    function playRatchetClick(pitchMultiplier = 1.0) {
+    function playWheelClick(pitchMultiplier = 1.0) {
       const ctx = getAudioContext();
       if (!ctx) return;
 
@@ -515,144 +569,27 @@
       const now = ctx.currentTime;
 
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(460 * pitchMultiplier, now);
-      osc.frequency.exponentialRampToValueAtTime(70, now + 0.022);
+      osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.018);
 
-      gain.gain.setValueAtTime(0.24, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.024);
+      osc.stop(now + 0.02);
     }
 
-    // 🔊 HYPE STADIUM VICTORY FANFARE & IMPACT
-    function playVictoryChime() {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-
-      const now = ctx.currentTime;
-
-      // 1. SUB-BASS BOOM
-      const subOsc = ctx.createOscillator();
-      const subGain = ctx.createGain();
-      subOsc.type = 'sine';
-      subOsc.frequency.setValueAtTime(160, now);
-      subOsc.frequency.exponentialRampToValueAtTime(32, now + 0.6);
-      subGain.gain.setValueAtTime(0.75, now);
-      subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-      subOsc.connect(subGain);
-      subGain.connect(ctx.destination);
-      subOsc.start(now);
-      subOsc.stop(now + 0.7);
-
-      // 2. CONFETTI CANNON NOISE CRASH
-      const bufferSize = ctx.sampleRate * 0.75;
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.18));
-      }
-      const noise = ctx.createBufferSource();
-      noise.buffer = noiseBuffer;
-
-      const noiseFilter = ctx.createBiquadFilter();
-      noiseFilter.type = 'lowpass';
-      noiseFilter.frequency.setValueAtTime(3200, now);
-      noiseFilter.frequency.exponentialRampToValueAtTime(400, now + 0.7);
-
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.45, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
-
-      noise.connect(noiseFilter);
-      noiseFilter.connect(noiseGain);
-      noiseGain.connect(ctx.destination);
-      noise.start(now);
-
-      // 3. RAPID BRASS PICKUP: "Ba-da-..." (G4 -> C5 -> E5)
-      const pickups = [
-        { freq: 392.00, start: now + 0.00, dur: 0.09 },
-        { freq: 523.25, start: now + 0.11, dur: 0.09 },
-        { freq: 659.25, start: now + 0.22, dur: 0.11 }
-      ];
-
-      pickups.forEach(note => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(note.freq, note.start);
-
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(2400, note.start);
-
-        gain.gain.setValueAtTime(0.28, note.start);
-        gain.gain.exponentialRampToValueAtTime(0.001, note.start + note.dur);
-
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(note.start);
-        osc.stop(note.start + note.dur + 0.02);
-      });
-
-      // 4. POWER CHORD: "...BAAAAM!" (Starts at +0.35s)
-      const hitTime = now + 0.35;
-
-      const chordSub = ctx.createOscillator();
-      const chordSubGain = ctx.createGain();
-      chordSub.type = 'sine';
-      chordSub.frequency.setValueAtTime(130, hitTime);
-      chordSub.frequency.exponentialRampToValueAtTime(28, hitTime + 0.9);
-      chordSubGain.gain.setValueAtTime(0.65, hitTime);
-      chordSubGain.gain.exponentialRampToValueAtTime(0.001, hitTime + 0.95);
-      chordSub.connect(chordSubGain);
-      chordSubGain.connect(ctx.destination);
-      chordSub.start(hitTime);
-      chordSub.stop(hitTime + 1.0);
-
-      const powerChord = [130.81, 261.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
-
-      powerChord.forEach(freq => {
-        [-10, 10].forEach(detuneCents => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          const filter = ctx.createBiquadFilter();
-
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(freq, hitTime);
-          osc.detune.setValueAtTime(detuneCents, hitTime);
-
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(4000, hitTime);
-          filter.frequency.exponentialRampToValueAtTime(900, hitTime + 2.0);
-
-          gain.gain.setValueAtTime(0.12, hitTime);
-          gain.gain.setValueAtTime(0.11, hitTime + 0.15);
-          gain.gain.exponentialRampToValueAtTime(0.0001, hitTime + 2.2);
-
-          osc.connect(filter);
-          filter.connect(gain);
-          gain.connect(ctx.destination);
-
-          osc.start(hitTime);
-          osc.stop(hitTime + 2.3);
-        });
-      });
-    }
-
-    // 🎉 FULLSCREEN CONFETTI ENGINE
+    // 🎉 FULLSCREEN VICTORY CELEBRATION
     function triggerFullscreenVictory() {
       victoryFlashEl.classList.remove('active');
       void victoryFlashEl.offsetWidth;
       victoryFlashEl.classList.add('active');
 
-      playVictoryChime();
+      // Play modern stream win sound
+      playModernVictorySound();
 
       confettiParticles = [];
       const colors = ['#ace600', '#00ff88', '#ffea00', '#ffffff', '#ff0055'];
@@ -1061,10 +998,10 @@
       const centerItemIdx = Math.floor((-currentY + (VIEWPORT_HEIGHT / 2)) / ITEM_HEIGHT);
       const now = performance.now();
       
-      if (centerItemIdx !== lastTickedIndex && (now - lastTickTimestamp) > 18) {
+      if (centerItemIdx !== lastTickedIndex && (now - lastTickTimestamp) > 20) {
         const speed = Math.abs(currentY - lastTrackY);
-        const pitch = Math.max(0.7, Math.min(1.4, 0.7 + speed * 0.05));
-        playRatchetClick(pitch);
+        const pitch = Math.max(0.75, Math.min(1.35, 0.75 + speed * 0.05));
+        playWheelClick(pitch);
         lastTickedIndex = centerItemIdx;
         lastTickTimestamp = now;
       }
@@ -1193,7 +1130,7 @@
             items[winnerIndex].classList.add('is-winner');
           }
 
-          // Trigger Fullscreen Victory and Sound
+          // Trigger Modern Victory Celebration
           triggerFullscreenVictory();
 
           currentVisibleFive = [
