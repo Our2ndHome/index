@@ -7,14 +7,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #ace600; /* Lime Green */
+      --primary-color: #ace600;
       --secondary-color: #00ff88;
       --giveaway-color: #ffea00;
       --danger-color: #ff0055;
       --text-white: #ffffff;
-      --bg-dark: rgba(0, 0, 0, 0.94);
+      --bg-dark: rgba(10, 10, 12, 0.95);
       --shadow-dark: rgba(0, 0, 0, 0.85);
       --item-height: 43px;
+      --viewport-height: 215px;
     }
 
     * { box-sizing: border-box; }
@@ -27,6 +28,7 @@
       height: 100vh;
       overflow: hidden;
       color: var(--text-white);
+      user-select: none;
     }
 
     /* 🎛️ CONTROL PANEL */
@@ -43,6 +45,7 @@
       width: 340px;
       font-size: 12px;
       box-shadow: 0 10px 30px var(--shadow-dark);
+      backdrop-filter: blur(8px);
     }
 
     .test-panel h4 {
@@ -50,8 +53,7 @@
       font-size: 13px;
       color: var(--secondary-color);
       text-transform: uppercase;
-      cursor: move;
-      user-select: none;
+      cursor: grab;
       background: rgba(0, 255, 136, 0.1);
       padding: 6px 8px;
       border-radius: 5px;
@@ -59,6 +61,8 @@
       justify-content: space-between;
       align-items: center;
     }
+
+    .test-panel h4:active { cursor: grabbing; }
 
     .widget-version-badge {
       font-size: 9px;
@@ -100,8 +104,8 @@
     }
 
     .control-row input, .control-row textarea {
-      background: #111;
-      border: 1px solid var(--secondary-color);
+      background: #151515;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
       padding: 4px 6px;
       border-radius: 4px;
@@ -109,23 +113,28 @@
       font-size: 11px;
     }
 
+    .control-row input:focus, .control-row textarea:focus {
+      border-color: var(--secondary-color);
+      outline: none;
+    }
+
     .mode-indicator {
       font-size: 10px;
-      font-weight: bold;
-      padding: 3px 8px;
+      font-weight: 900;
+      padding: 4px 8px;
       border-radius: 4px;
       text-align: center;
       margin-bottom: 4px;
     }
 
     .mode-indicator.real-mode {
-      background: rgba(0, 255, 136, 0.2);
+      background: rgba(0, 255, 136, 0.15);
       color: var(--secondary-color);
       border: 1px solid var(--secondary-color);
     }
 
     .mode-indicator.test-mode {
-      background: rgba(255, 234, 0, 0.2);
+      background: rgba(255, 234, 0, 0.15);
       color: var(--giveaway-color);
       border: 1px solid var(--giveaway-color);
     }
@@ -148,20 +157,21 @@
       border-radius: 5px;
       cursor: pointer;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 900;
       font-family: inherit;
       transition: opacity 0.2s ease, transform 0.1s ease;
       text-align: center;
     }
 
-    .btn:hover { opacity: 0.88; }
-    .btn:active { transform: scale(0.97); }
+    .btn:hover:not(:disabled) { opacity: 0.88; }
+    .btn:active:not(:disabled) { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .btn-lime { background: var(--primary-color); color: #000; }
     .btn-yellow { background: var(--giveaway-color); color: #000; }
     .btn-red { background: var(--danger-color); color: #fff; }
     .btn-green { background: var(--secondary-color); color: #000; }
-    .btn-small { padding: 3px 8px; font-size: 9px; }
+    .btn-small { padding: 4px 8px; font-size: 9px; }
 
     /* 🎁 GIVEAWAY REEL WIDGET */
     .giveaway-widget {
@@ -170,7 +180,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       width: 600px;
-      height: 370px;
+      height: 380px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -179,12 +189,13 @@
       overflow: hidden;
       opacity: 1;
       visibility: visible;
-      transition: opacity 0.8s ease, visibility 0.8s ease;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
     }
 
     .giveaway-widget.faded-out {
       opacity: 0;
       visibility: hidden;
+      pointer-events: none;
     }
 
     .giveaway-title-container {
@@ -192,26 +203,26 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .giveaway-head-title {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 900;
-      letter-spacing: 2.5px;
+      letter-spacing: 2px;
       color: var(--primary-color);
       text-transform: uppercase;
       text-shadow: 0 2px 10px var(--shadow-dark);
     }
 
     .giveaway-sub-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       letter-spacing: 1.5px;
       color: var(--text-white);
       opacity: 0.9;
       text-transform: uppercase;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     .giveaway-timer-badge {
@@ -230,25 +241,25 @@
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: 215px;
+      height: var(--viewport-height);
       overflow: hidden;
 
       -webkit-mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0.05) 0%,
-        rgba(0, 0, 0, 0.4) 20%,
+        rgba(0, 0, 0, 0.5) 20%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.4) 80%,
+        rgba(0, 0, 0, 0.5) 80%,
         rgba(0, 0, 0, 0.05) 100%
       );
       mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0.05) 0%,
-        rgba(0, 0, 0, 0.4) 20%,
+        rgba(0, 0, 0, 0.5) 20%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.4) 80%,
+        rgba(0, 0, 0, 0.5) 80%,
         rgba(0, 0, 0, 0.05) 100%
       );
     }
@@ -259,10 +270,10 @@
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      width: 360px;
+      width: 380px;
       height: 2px;
-      background: linear-gradient(90deg, transparent 0%, var(--primary-color) 25px, var(--primary-color) calc(100% - 25px), transparent 100%);
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
+      background: linear-gradient(90deg, transparent 0%, var(--primary-color) 20%, var(--primary-color) 80%, transparent 100%);
+      box-shadow: 0 0 12px rgba(172, 230, 0, 0.8);
       z-index: 10;
     }
 
@@ -286,16 +297,18 @@
       align-items: center;
       justify-content: center;
       font-weight: 900;
+      font-size: 17px;
       text-transform: uppercase;
       white-space: nowrap;
       color: #ffffff;
-      will-change: transform, opacity;
       transform-origin: center center;
+      will-change: transform, opacity;
+      transition: color 0.3s ease;
     }
 
     .reel-item.is-winner {
       color: var(--primary-color) !important;
-      text-shadow: 0 0 18px rgba(172, 230, 0, 1) !important;
+      text-shadow: 0 0 20px rgba(172, 230, 0, 1) !important;
     }
   </style>
 </head>
@@ -304,48 +317,51 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.3</span></span>
+      <span>🎁 GIVEAWAY CONTROL <span class="widget-version-badge">v3.4</span></span>
       <span style="font-size: 9px; opacity: 0.7;">DRAG ME</span>
     </h4>
     
     <div id="modeIndicator" class="mode-indicator real-mode">🟢 LÄGE: RIKTIGA BÖSSAN</div>
     <div class="panel-stats" id="giveawayStats">Biljetter: <b>0</b> | Givare: <b>0</b></div>
 
-    <!-- TICKET & POOL SETTINGS -->
     <div class="panel-controls">
       <!-- REAL BÖSSA INTEGRATION -->
       <div class="control-row">
-        <label for="bossaSlugInput">Bössa URL/ID:</label>
-        <input type="text" id="bossaSlugInput" value="our2ndhome" placeholder="our2ndhome" style="width: 130px;">
+        <label for="bossaSlugInput">Bössa ID:</label>
+        <input type="text" id="bossaSlugInput" value="our2ndhome" placeholder="our2ndhome" style="width: 140px;">
       </div>
-      <button id="btnFetchBossa" class="btn btn-green btn-small" style="width: 100%; margin-top: 2px;">🔄 Hämta från Bössan (Nätverk)</button>
+      <button id="btnFetchBossa" class="btn btn-green btn-small" style="width: 100%;">🔄 Hämta från Bössan (Nätverk)</button>
 
       <!-- FAST PASTE IMPORTER -->
-      <button id="btnTogglePaste" class="btn btn-yellow btn-small" style="width: 100%; margin-top: 4px;">📋 Klistra in text från Bössan</button>
-      <div id="pasteContainer" style="display: none; flex-direction: column; gap: 4px; margin-top: 4px;">
-        <textarea id="pasteTextArea" rows="3" placeholder="Klistra in text från Bössan (t.ex: gregerlukt gav 400 kr)" style="width: 100%; font-size: 10px;"></textarea>
+      <button id="btnTogglePaste" class="btn btn-yellow btn-small" style="width: 100%;">📋 Klistra in text från Bössan</button>
+      <div id="pasteContainer" style="display: none; flex-direction: column; gap: 4px;">
+        <textarea id="pasteTextArea" rows="3" placeholder="Klistra in text här (t.ex: gregerlukt gav 400 kr)" style="width: 100%; font-size: 10px;"></textarea>
         <button id="btnImportPaste" class="btn btn-lime btn-small">Importera Text</button>
       </div>
 
       <!-- MANUAL DONOR INPUT -->
-      <div class="control-row" style="margin-top: 6px;">
-        <input type="text" id="manualNameInput" placeholder="Namn (t.ex. gregerlukt)" style="flex:2;">
+      <div class="control-row" style="margin-top: 4px;">
+        <input type="text" id="manualNameInput" placeholder="Namn" style="flex:2;">
         <input type="number" id="manualAmountInput" placeholder="Kr (400)" style="flex:1; width:50px;">
         <button id="btnAddManual" class="btn btn-lime btn-small">+ Lägg till</button>
       </div>
 
-      <!-- TEST MODE TOGGLE -->
-      <div class="control-row" style="margin-top: 6px;">
-        <button id="btnSwitchTest" class="btn btn-yellow btn-small" style="width: 100%;">🎲 Växla till Testläge (Dummy-data)</button>
+      <!-- TEST MODE CONTROLS -->
+      <div class="control-row" style="margin-top: 4px;">
+        <button id="btnSwitchTest" class="btn btn-yellow btn-small" style="width: 100%;">🎲 Växla till Testläge</button>
       </div>
 
-      <div id="testControlsContainer" style="display: none; flex-direction: column; gap: 4px; margin-top: 4px;">
+      <div id="testControlsContainer" style="display: none; flex-direction: column; gap: 6px;">
         <div class="control-row">
-          <label for="targetTicketCount">Totalt biljetter (Test):</label>
-          <input type="number" id="targetTicketCount" value="250" min="1" style="width:60px;">
+          <label for="targetTicketCount">Totalt biljetter:</label>
+          <input type="number" id="targetTicketCount" value="250" min="1" style="width: 65px;">
+        </div>
+        <div class="control-row">
+          <label for="maxTicketsPerUser">Max per person:</label>
+          <input type="number" id="maxTicketsPerUser" value="5" min="1" style="width: 65px;">
         </div>
         <div class="quick-presets">
-          <span style="font-size: 9px; color: #888; align-self: center;">Sätt:</span>
+          <span style="font-size: 9px; color: #aaa; align-self: center;">Sätt:</span>
           <button class="btn btn-green btn-small" onclick="setTargetTicketPreset(50)">50</button>
           <button class="btn btn-green btn-small" onclick="setTargetTicketPreset(100)">100</button>
           <button class="btn btn-green btn-small" onclick="setTargetTicketPreset(250)">250</button>
@@ -353,14 +369,14 @@
         </div>
       </div>
 
-      <button id="btnResetZero" class="btn btn-red btn-small" style="margin-top: 6px;">🗑️ Nollställ allt till 0</button>
+      <button id="btnResetZero" class="btn btn-red btn-small" style="margin-top: 4px;">🗑️ Nollställ allt till 0</button>
     </div>
 
     <!-- ACTION BUTTONS -->
     <div class="panel-actions">
-      <button id="btnStart" class="btn btn-lime">▶️ Starta Giveaway</button>
-      <button id="btnSkip" class="btn btn-yellow">⏭️ Skip (Omstart 5s)</button>
-      <button id="btnClose" class="btn btn-red">✖️ Stäng & Radera Vinnarbiljett</button>
+      <button id="btnStart" class="btn btn-lime">▶️ Starta Giveaway (10s)</button>
+      <button id="btnSkip" class="btn btn-yellow">⏭️ Skip / Reroll (5s)</button>
+      <button id="btnClose" class="btn btn-red">✖️ Claim & Stäng</button>
     </div>
   </div>
 
@@ -368,7 +384,7 @@
   <div class="giveaway-widget faded-out" id="giveawayWidget">
     <div class="giveaway-title-container">
       <div class="giveaway-head-title">🎁 GIVEAWAY</div>
-      <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 TICKETS</div>
+      <div class="giveaway-sub-title" id="giveawaySubTitle">TOTALT 0 BILJETTER</div>
       <div class="giveaway-timer-badge" id="giveawayHeaderTimer">REDO FÖR DRAGNING</div>
     </div>
     <div class="reel-viewport">
@@ -378,22 +394,22 @@
 
   <script>
     const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
-    const TICKET_MILESTONE_KR = 200; // 1 ticket per 200 kr
-    const MAX_TICKETS_PER_USER = 5;
+    const TICKET_MILESTONE_KR = 200;
     const ITEM_HEIGHT = 43;
+    const VIEWPORT_HEIGHT = 215;
 
     let donorTicketsMap = {};
     let currentDrawnWinner = null;
     let isSpinningReel = false;
     let isTestMode = false;
-    let currentVisibleFive = null; // Stores displayed 5 names for zero-jump skip
+    let currentVisibleFive = null;
 
-    let activeSpinList = [];
     let giveawayHoldTimeout = null;
     let headerCountdownInterval = null;
     let spinAnimationTimeout = null;
+    let animationFrameId = null;
 
-    // --- DOM Elements ---
+    // DOM Elements
     const testPanelEl = document.getElementById('testPanel');
     const panelHeaderEl = document.getElementById('panelDragHeader');
     const giveawayWidgetEl = document.getElementById('giveawayWidget');
@@ -410,10 +426,13 @@
     const testControlsContainer = document.getElementById('testControlsContainer');
     const pasteContainerEl = document.getElementById('pasteContainer');
     const pasteTextAreaEl = document.getElementById('pasteTextArea');
+    const btnStart = document.getElementById('btnStart');
+    const btnSkip = document.getElementById('btnSkip');
+    const btnClose = document.getElementById('btnClose');
 
-    // --- Multi-Proxy Network Fetcher ---
+    // Multi-Proxy Network Fetcher
     async function fetchRealBossaData() {
-      let rawSlug = bossaSlugInput.value.trim();
+      const rawSlug = bossaSlugInput.value.trim();
       if (!rawSlug) return alert("Ange ett giltigt Böss-ID eller URL!");
 
       const slug = rawSlug.replace(/.*bossan\.musikhjalpen\.se\//, '').replace(/\/.*/, '').trim();
@@ -421,12 +440,10 @@
 
       const proxies = [
         `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
-        `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
       ];
 
       let success = false;
-
       for (const proxy of proxies) {
         try {
           const res = await fetch(proxy);
@@ -457,33 +474,31 @@
       }
 
       if (!success) {
-        alert("Kunde inte hämta nätverksvägen pga säkerhetsspärr på musikhjalpen.se.\n\nAnvänd knappen '📋 Klistra in text från Bössan' för snabb direkt-import!");
+        alert("Kunde inte hämta automatiskt (CORS-begränsning). Använd 'Klistra in text från Bössan' istället!");
         pasteContainerEl.style.display = "flex";
       }
     }
 
-    // --- Robust Donor Text & HTML Parser ---
     function parseTextOrHTMLForDonors(text) {
       const newMap = {};
-      const regex = /([a-zA-Z0-9_\-åäöÅÄÖ\s]+?)\s+(?:gav|skänkte|bidrog med)?\s*([\d\s]+)\s*kr/gi;
+      const maxCap = parseInt(maxTicketsInput ? maxTicketsInput.value : 5) || 5;
+      const regex = /([a-zA-Z0-9_\-åäöÅÄÖ\s]{2,30}?)\s+(?:gav|skänkte|bidrog med)?\s*([\d\s]+)\s*kr/gi;
       let match;
 
       while ((match = regex.exec(text)) !== null) {
         let rawName = match[1].trim();
-        // Clean linebreaks
         const lines = rawName.split(/\r?\n/);
         let name = lines[lines.length - 1].trim();
-
         let amount = parseInt(match[2].replace(/\s+/g, '')) || 0;
 
-        if (name && name.toLowerCase() !== "en hemlig hjälte" && name.toLowerCase() !== "senaste gåvorna" && amount > 0) {
-          let tickets = Math.min(MAX_TICKETS_PER_USER, Math.max(1, Math.floor(amount / TICKET_MILESTONE_KR)));
-
+        const ignoreList = ["en hemlig hjälte", "senaste gåvorna", "musikhjälpen"];
+        if (name && !ignoreList.includes(name.toLowerCase()) && amount >= TICKET_MILESTONE_KR) {
+          let tickets = Math.min(maxCap, Math.floor(amount / TICKET_MILESTONE_KR));
           if (!newMap[name]) {
             newMap[name] = { totalAmount: amount, ticketsEarned: tickets, ticketsActive: tickets };
           } else {
             newMap[name].totalAmount += amount;
-            newMap[name].ticketsEarned = Math.min(MAX_TICKETS_PER_USER, Math.floor(newMap[name].totalAmount / TICKET_MILESTONE_KR));
+            newMap[name].ticketsEarned = Math.min(maxCap, Math.floor(newMap[name].totalAmount / TICKET_MILESTONE_KR));
             newMap[name].ticketsActive = newMap[name].ticketsEarned;
           }
         }
@@ -499,7 +514,7 @@
       const count = Object.keys(newMap).length;
 
       if (count === 0) {
-        return alert("Hittade inga giltiga gåvor i texten. Exempel på giltig text:\n\ngregerlukt gav 400 kr");
+        return alert("Hittade inga giltiga gåvor (minst 200 kr). Exempel: 'greger gav 400 kr'");
       }
 
       donorTicketsMap = newMap;
@@ -512,28 +527,28 @@
 
     function addManualDonor() {
       const name = manualNameInput.value.trim();
-      const amount = parseInt(manualAmountInput.value) || 200;
+      const amount = parseInt(manualAmountInput.value) || TICKET_MILESTONE_KR;
+      const maxCap = parseInt(maxTicketsInput ? maxTicketsInput.value : 5) || 5;
 
       if (!name) return alert("Ange ett namn!");
+      if (amount < TICKET_MILESTONE_KR) return alert(`Beloppet måste vara minst ${TICKET_MILESTONE_KR} kr för 1 biljett.`);
 
-      let tickets = Math.min(MAX_TICKETS_PER_USER, Math.max(1, Math.floor(amount / TICKET_MILESTONE_KR)));
+      let tickets = Math.min(maxCap, Math.floor(amount / TICKET_MILESTONE_KR));
 
       if (!donorTicketsMap[name]) {
         donorTicketsMap[name] = { totalAmount: amount, ticketsEarned: tickets, ticketsActive: tickets };
       } else {
         donorTicketsMap[name].totalAmount += amount;
-        donorTicketsMap[name].ticketsEarned = Math.min(MAX_TICKETS_PER_USER, Math.floor(donorTicketsMap[name].totalAmount / TICKET_MILESTONE_KR));
+        donorTicketsMap[name].ticketsEarned = Math.min(maxCap, Math.floor(donorTicketsMap[name].totalAmount / TICKET_MILESTONE_KR));
         donorTicketsMap[name].ticketsActive = donorTicketsMap[name].ticketsEarned;
       }
 
       manualNameInput.value = "";
       manualAmountInput.value = "";
-
       saveTicketsToStorage();
       switchToRealMode();
     }
 
-    // --- Switch Modes ---
     function switchToRealMode() {
       isTestMode = false;
       modeIndicatorEl.className = "mode-indicator real-mode";
@@ -548,7 +563,10 @@
       modeIndicatorEl.className = "mode-indicator test-mode";
       modeIndicatorEl.innerText = "🎲 LÄGE: TESTLÄGE (DUMMY-DATA)";
       testControlsContainer.style.display = "flex";
-      generateRandomizedDonors(parseInt(targetTicketsInput.value) || 250, parseInt(maxTicketsInput.value) || 5);
+      generateRandomizedDonors(
+        parseInt(targetTicketsInput.value) || 250,
+        parseInt(maxTicketsInput.value) || 5
+      );
       updateGiveawayStatsUI();
       initReelTrack();
     }
@@ -562,11 +580,11 @@
       saveTicketsToStorage();
       updateGiveawayStatsUI();
       initReelTrack();
+      setButtonLock(false);
       giveawayTimerEl.innerText = "REDO FÖR DRAGNING";
       giveawayWidgetEl.classList.add('faded-out');
     }
 
-    // --- Dynamic Test Generator ---
     function generateRandomizedDonors(totalTicketsTarget, maxPerUser = 5) {
       const prefixes = ["Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Bacon", "Norrlands", "Glada"];
       const suffixes = ["Kungen", "Gud", "Bullen", "Loover", "Pappa", "Mamma", "Svensken", "Master", "Viking", "Räven"];
@@ -575,29 +593,26 @@
       for (const p of prefixes) {
         for (const s of suffixes) namePool.push(p + s);
       }
-      for (let i = namePool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [namePool[i], namePool[j]] = [namePool[j], namePool[i]];
-      }
+      namePool.sort(() => Math.random() - 0.5);
 
       const newDonorMap = {};
-      let remainingTickets = Math.max(1, totalTicketsTarget);
-      let donorIndex = 0;
+      let remaining = Math.max(1, totalTicketsTarget);
+      let idx = 0;
 
-      while (remainingTickets > 0) {
-        const tickets = Math.min(remainingTickets, Math.floor(Math.random() * maxPerUser) + 1);
-        const name = namePool[donorIndex % namePool.length];
-        newDonorMap[name] = { totalAmount: tickets * 200, ticketsEarned: tickets, ticketsActive: tickets };
-        remainingTickets -= tickets;
-        donorIndex++;
+      while (remaining > 0) {
+        const tickets = Math.min(remaining, Math.floor(Math.random() * maxPerUser) + 1);
+        const name = namePool[idx % namePool.length];
+        newDonorMap[name] = { totalAmount: tickets * TICKET_MILESTONE_KR, ticketsEarned: tickets, ticketsActive: tickets };
+        remaining -= tickets;
+        idx++;
       }
 
       donorTicketsMap = newDonorMap;
       saveTicketsToStorage();
     }
 
-    // --- Storage Sync ---
     function loadTicketsFromStorage() {
+      if (isSpinningReel) return;
       try {
         const saved = localStorage.getItem(STORAGE_KEY_DONORS);
         if (saved) donorTicketsMap = JSON.parse(saved);
@@ -610,10 +625,6 @@
         localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorTicketsMap));
       } catch (err) {}
     }
-
-    window.addEventListener('storage', (e) => {
-      if (e.key === STORAGE_KEY_DONORS) loadTicketsFromStorage();
-    });
 
     function getWeightedTicketPool() {
       const pool = [];
@@ -640,10 +651,15 @@
       const pool = getWeightedTicketPool();
       const uniqueDonorsCount = getUniqueDonorNames().length;
       giveawayStatsEl.innerHTML = `Biljetter: <b>${pool.length}</b> | Givare: <b>${uniqueDonorsCount}</b>`;
-      giveawaySubTitleEl.innerText = `TOTALT ${pool.length} TICKETS`;
+      giveawaySubTitleEl.innerText = `TOTALT ${pool.length} BILJETTER`;
     }
 
-    // --- Build Clean Reel Track (Guarantees NO Adjacent Duplicate Names & ZERO Jump on Skip) ---
+    function setButtonLock(locked) {
+      btnStart.disabled = locked;
+      btnSkip.disabled = locked;
+    }
+
+    // Build Seamless Reel Track
     function createCleanReelTrack(winnerName, startingFive = null) {
       const uniqueNames = getUniqueDonorNames();
       if (uniqueNames.length === 0) return { spinList: [winnerName], winnerIndex: 0 };
@@ -651,18 +667,17 @@
       const spinList = [];
       let lastAdded = "";
 
-      const getNextDistinctName = () => {
+      const getDistinctName = () => {
         if (uniqueNames.length === 1) return uniqueNames[0];
         let candidate;
         let attempts = 0;
         do {
           candidate = uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
           attempts++;
-        } while (candidate === lastAdded && attempts < 30);
+        } while (candidate === lastAdded && attempts < 25);
         return candidate;
       };
 
-      // Use startingFive from previous spin end to eliminate visual jumps on skip!
       if (startingFive && startingFive.length === 5) {
         for (let i = 0; i < 5; i++) {
           spinList.push(startingFive[i]);
@@ -670,27 +685,24 @@
         }
       } else {
         for (let i = 0; i < 5; i++) {
-          const name = getNextDistinctName();
+          const name = getDistinctName();
           spinList.push(name);
           lastAdded = name;
         }
       }
 
-      // Fill up to index 75
       for (let i = spinList.length; i < 75; i++) {
-        const name = getNextDistinctName();
+        const name = getDistinctName();
         spinList.push(name);
         lastAdded = name;
       }
 
-      // Winner at index 75
       const winnerIndex = 75;
       spinList.push(winnerName);
       lastAdded = winnerName;
 
-      // Padding below winner
-      for (let i = 0; i < 4; i++) {
-        const name = getNextDistinctName();
+      for (let i = 0; i < 5; i++) {
+        const name = getDistinctName();
         spinList.push(name);
         lastAdded = name;
       }
@@ -698,7 +710,6 @@
       return { spinList, winnerIndex };
     }
 
-    // --- Initial Reel Population ---
     function initReelTrack() {
       const uniqueNames = getUniqueDonorNames();
       if (uniqueNames.length === 0) {
@@ -706,60 +717,65 @@
         return;
       }
 
-      activeSpinList = [];
-      let lastAdded = "";
+      const initialList = [];
       for (let i = 0; i < 5; i++) {
-        let name = uniqueNames[i % uniqueNames.length];
-        if (name === lastAdded && uniqueNames.length > 1) {
-          name = uniqueNames[(i + 1) % uniqueNames.length];
-        }
-        activeSpinList.push(name);
-        lastAdded = name;
+        initialList.push(uniqueNames[i % uniqueNames.length]);
       }
-
-      currentVisibleFive = [...activeSpinList];
+      currentVisibleFive = [...initialList];
 
       reelTrackEl.style.transition = 'none';
       reelTrackEl.style.transform = 'translateY(0px)';
-      reelTrackEl.innerHTML = activeSpinList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+      reelTrackEl.innerHTML = initialList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+      renderItemProximity(0);
     }
 
-    // --- Dynamic 2.0X Proximity Scaling Loop ---
-    function updateItemProximityScaling() {
-      if (!reelTrackEl) return;
-
-      const style = window.getComputedStyle(reelTrackEl);
-      const matrix = new DOMMatrix(style.transform);
-      const currentY = matrix.m42;
-      const viewportCenter = 215 / 2; // 107.5px
-
+    // High Performance Proximity Render (only calculates visible items)
+    function renderItemProximity(currentY) {
+      const viewportCenter = VIEWPORT_HEIGHT / 2; // 107.5px
       const children = reelTrackEl.children;
-      for (let i = 0; i < children.length; i++) {
+      const count = children.length;
+      if (count === 0) return;
+
+      // Identify visible range (padding +- 2 items)
+      const centerItemIdx = Math.round((-currentY + viewportCenter - ITEM_HEIGHT / 2) / ITEM_HEIGHT);
+      const startIdx = Math.max(0, centerItemIdx - 4);
+      const endIdx = Math.min(count - 1, centerItemIdx + 4);
+
+      for (let i = startIdx; i <= endIdx; i++) {
         const item = children[i];
         const itemCenter = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) + currentY;
         const dist = Math.abs(itemCenter - viewportCenter);
-        
         const normDist = Math.min(1, dist / viewportCenter);
 
-        // 2.0X Scale at Center Line
-        const scale = 0.65 + 1.35 * Math.pow(1 - normDist, 1.8);
-        const opacity = 0.2 + 0.8 * Math.pow(1 - normDist, 2);
+        const scale = 0.7 + 0.6 * Math.pow(1 - normDist, 1.6);
+        const opacity = 0.25 + 0.75 * Math.pow(1 - normDist, 2);
 
         item.style.transform = `scale(${scale.toFixed(3)})`;
         item.style.opacity = opacity.toFixed(3);
       }
-
-      requestAnimationFrame(updateItemProximityScaling);
     }
 
-    // --- Timer Cleanup ---
+    function runAnimationLoop() {
+      if (!isSpinningReel) return;
+
+      const style = window.getComputedStyle(reelTrackEl);
+      const matrix = new DOMMatrix(style.transform);
+      renderItemProximity(matrix.m42);
+
+      animationFrameId = requestAnimationFrame(runAnimationLoop);
+    }
+
     function stopAllTimers() {
-      if (giveawayHoldTimeout) { clearTimeout(giveawayHoldTimeout); giveawayHoldTimeout = null; }
-      if (spinAnimationTimeout) { clearTimeout(spinAnimationTimeout); spinAnimationTimeout = null; }
-      if (headerCountdownInterval) { clearInterval(headerCountdownInterval); headerCountdownInterval = null; }
+      if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
+      if (spinAnimationTimeout) clearTimeout(spinAnimationTimeout);
+      if (headerCountdownInterval) clearInterval(headerCountdownInterval);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      giveawayHoldTimeout = null;
+      spinAnimationTimeout = null;
+      headerCountdownInterval = null;
+      animationFrameId = null;
     }
 
-    // --- 1. START GIVEAWAY ---
     function startGiveawaySpin() {
       if (isSpinningReel) return;
       const ticketPool = getWeightedTicketPool();
@@ -769,17 +785,17 @@
       executeReelSpinAnimation(10000);
     }
 
-    // --- 2. SKIP (REROLL) ---
     function skipWinner() {
       giveawayWidgetEl.classList.remove('faded-out');
+      stopAllTimers();
       isSpinningReel = false;
-      executeReelSpinAnimation(5000); // Fast 5s reroll directly from active name
+      executeReelSpinAnimation(5000);
     }
 
-    // --- 3. CLOSE & CLAIM GIVEAWAY ---
     function closeAndClaimGiveaway() {
       stopAllTimers();
       isSpinningReel = false;
+      setButtonLock(false);
 
       if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
         if (donorTicketsMap[currentDrawnWinner].ticketsActive > 0) {
@@ -787,6 +803,7 @@
         }
       }
 
+      currentDrawnWinner = null;
       saveTicketsToStorage();
       updateGiveawayStatsUI();
 
@@ -794,41 +811,32 @@
       giveawayWidgetEl.classList.add('faded-out');
     }
 
-    // --- Core Reel Spin Animation ---
     function executeReelSpinAnimation(holdDelayMs = 10000) {
       const ticketPool = getWeightedTicketPool();
       if (ticketPool.length === 0) return;
 
       stopAllTimers();
       isSpinningReel = true;
+      setButtonLock(true);
 
-      // Pick winning ticket
       const winningIndex = Math.floor(Math.random() * ticketPool.length);
       const winnerName = ticketPool[winningIndex];
       currentDrawnWinner = winnerName;
 
-      // Create clean reel track using currentVisibleFive to prevent visual jumps
       const { spinList, winnerIndex } = createCleanReelTrack(winnerName, currentVisibleFive);
-      activeSpinList = spinList;
 
-      // Seamless positioning reset at 0px
       reelTrackEl.style.transition = 'none';
       reelTrackEl.style.transform = 'translateY(0px)';
       reelTrackEl.innerHTML = spinList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-
       void reelTrackEl.offsetHeight; // Force reflow
 
-      // Countdown Timer Math
-      const endTime = Date.now() + holdDelayMs;
+      renderItemProximity(0);
 
+      // Countdown Timer
+      const endTime = Date.now() + holdDelayMs;
       const updateTimerUI = () => {
-        const remainingMs = Math.max(0, endTime - Date.now());
-        const remainingSec = Math.ceil(remainingMs / 1000);
-        if (remainingSec > 0) {
-          giveawayTimerEl.innerText = `STARTAR OM ${remainingSec}S`;
-        } else {
-          giveawayTimerEl.innerText = "DRAGNING PÅGÅR...";
-        }
+        const remainingSec = Math.ceil(Math.max(0, endTime - Date.now()) / 1000);
+        giveawayTimerEl.innerText = remainingSec > 0 ? `STARTAR OM ${remainingSec}S` : "DRAGNING PÅGÅR...";
       };
 
       updateTimerUI();
@@ -838,28 +846,33 @@
           clearInterval(headerCountdownInterval);
           headerCountdownInterval = null;
         }
-      }, 100);
+      }, 200);
 
-      // Trigger Spin Animation
+      // Spin Trigger
       giveawayHoldTimeout = setTimeout(() => {
         giveawayTimerEl.innerText = "DRAGNING PÅGÅR...";
-
         const targetY = -(winnerIndex * ITEM_HEIGHT - 86);
-        const spinDuration = holdDelayMs <= 5000 ? 5000 : 9000;
+        const spinDuration = holdDelayMs <= 5000 ? 5500 : 8500;
 
-        reelTrackEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.12, 0.8, 0.15, 1)`;
+        reelTrackEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.1, 0.85, 0.15, 1)`;
         reelTrackEl.style.transform = `translateY(${targetY}px)`;
+
+        // Start Proximity Loop for smooth scale during motion
+        runAnimationLoop();
 
         spinAnimationTimeout = setTimeout(() => {
           isSpinningReel = false;
+          setButtonLock(false);
+          stopAllTimers();
+
           giveawayTimerEl.innerText = "VINNARE DRAGEN! 🎉";
-          
+          renderItemProximity(targetY);
+
           const items = reelTrackEl.children;
           if (items[winnerIndex]) {
             items[winnerIndex].classList.add('is-winner');
           }
 
-          // Save the 5 visible items around winner so next spin/skip starts with ZERO jump!
           currentVisibleFive = [
             spinList[winnerIndex - 2] || winnerName,
             spinList[winnerIndex - 1] || winnerName,
@@ -867,21 +880,23 @@
             spinList[winnerIndex + 1] || winnerName,
             spinList[winnerIndex + 2] || winnerName
           ];
-        }, spinDuration + 100);
+        }, spinDuration + 50);
       }, holdDelayMs);
     }
 
-    // --- Draggable Panel ---
+    // Draggable Panel with bounds lock
     function makePanelDraggable() {
       if (!testPanelEl || !panelHeaderEl) return;
-
       let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
 
       const onMouseMove = (e) => {
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-        testPanelEl.style.left = `${initialLeft + dx}px`;
-        testPanelEl.style.top = `${initialTop + dy}px`;
+        const maxLeft = window.innerWidth - testPanelEl.offsetWidth - 10;
+        const maxTop = window.innerHeight - testPanelEl.offsetHeight - 10;
+
+        testPanelEl.style.left = `${Math.max(10, Math.min(maxLeft, initialLeft + dx))}px`;
+        testPanelEl.style.top = `${Math.max(10, Math.min(maxTop, initialTop + dy))}px`;
       };
 
       const onMouseUp = () => {
@@ -907,10 +922,10 @@
       }[tag] || tag));
     }
 
-    // --- Event Listeners ---
-    document.getElementById('btnStart').addEventListener('click', startGiveawaySpin);
-    document.getElementById('btnSkip').addEventListener('click', skipWinner);
-    document.getElementById('btnClose').addEventListener('click', closeAndClaimGiveaway);
+    // Event Listeners
+    btnStart.addEventListener('click', startGiveawaySpin);
+    btnSkip.addEventListener('click', skipWinner);
+    btnClose.addEventListener('click', closeAndClaimGiveaway);
     document.getElementById('btnFetchBossa').addEventListener('click', fetchRealBossaData);
     document.getElementById('btnAddManual').addEventListener('click', addManualDonor);
     document.getElementById('btnSwitchTest').addEventListener('click', switchToTestMode);
@@ -921,12 +936,11 @@
     });
     document.getElementById('btnImportPaste').addEventListener('click', importPastedText);
 
-    // --- Initialization ---
+    // Init
     makePanelDraggable();
     loadTicketsFromStorage();
     initReelTrack();
-    requestAnimationFrame(updateItemProximityScaling);
-    setInterval(loadTicketsFromStorage, 2000);
+    setInterval(loadTicketsFromStorage, 4000);
   </script>
 </body>
 </html>
