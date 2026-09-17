@@ -269,7 +269,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       width: 640px;
-      height: 410px;
+      height: 440px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -348,19 +348,6 @@
       );
     }
 
-    .center-focus-frame {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 380px;
-      height: 52px;
-      border-top: 1px solid rgba(255, 255, 255, 0.15);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-      pointer-events: none;
-      z-index: 5;
-    }
-
     .reel-track {
       position: absolute;
       top: 0;
@@ -394,17 +381,17 @@
       letter-spacing: 1px;
     }
 
-    /* PRIZE DISPLAY UNDER EVERYTHING */
+    /* 🏷️ PRIZE DISPLAY (Samma storlek som GIVEAWAY-rubriken) */
     .giveaway-prize-display {
-      margin-top: 14px;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      color: rgba(255, 255, 255, 0.75);
+      margin-top: 16px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #ffffff;
       text-transform: uppercase;
       text-align: center;
       max-width: 90%;
-      min-height: 18px;
+      min-height: 32px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -419,7 +406,7 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>Kontrollpanel <span class="widget-version-badge">v4.3</span></span>
+      <span>Kontrollpanel <span class="widget-version-badge">v4.4</span></span>
       <div class="header-icons">
         <button id="btnHidePanel" class="icon-btn" title="Dölj panelen (Tryck 'H')">Göm (H)</button>
       </div>
@@ -511,7 +498,6 @@
       <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
     </div>
     <div class="reel-viewport">
-      <div class="center-focus-frame"></div>
       <div class="reel-track" id="reelTrack"></div>
     </div>
     <!-- VINST / PRIS VISAS UNDER ALLT -->
@@ -640,7 +626,6 @@
       playModernVictorySound();
     });
 
-    // 🔉 50% LÄGRE LJUDVOLYM (0.42 istället för 0.85)
     function playModernVictorySound() {
       let soundSrc = AUDIO_PRESETS[soundPresetSelect.value] || AUDIO_PRESETS.hype_win;
       if (soundPresetSelect.value === 'custom') {
@@ -650,7 +635,7 @@
 
       try {
         const audio = new Audio(soundSrc);
-        audio.volume = 0.42; // 50% lägre
+        audio.volume = 0.42;
         audio.play().catch(err => console.warn("Ljudfel:", err));
       } catch (e) {
         console.error(e);
@@ -669,7 +654,6 @@
       return audioCtx;
     }
 
-    // 🔉 50% LÄGRE KLICKLJUD (0.12 istället för 0.24)
     function playWheelClick(pitchMultiplier = 1.0) {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -682,7 +666,7 @@
       osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
       osc.frequency.exponentialRampToValueAtTime(80, now + 0.018);
 
-      gain.gain.setValueAtTime(0.12, now); // 50% lägre
+      gain.gain.setValueAtTime(0.12, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
 
       osc.connect(gain);
@@ -1052,7 +1036,6 @@
         return candidate;
       };
 
-      // Om startingFive finns, säkerställ att namnen fortfarande har aktiva biljetter kvar!
       if (startingFive && startingFive.length === 5) {
         for (let i = 0; i < 5; i++) {
           const name = startingFive[i];
@@ -1063,7 +1046,6 @@
         }
       }
 
-      // Alla unika aktiva givare garanteras att vara med i rullen
       const allDonorsShuffled = [...uniqueNames].sort(() => Math.random() - 0.5);
       for (const name of allDonorsShuffled) {
         if (name !== lastAdded) {
@@ -1072,7 +1054,6 @@
         }
       }
 
-      // Fyll på med viktade aktiva biljetter upp till index 115
       const weightedPool = getWeightedTicketPool().sort(() => Math.random() - 0.5);
       let poolIdx = 0;
 
@@ -1198,27 +1179,33 @@
       if (shouldBroadcast) broadcastEvent('SKIP_SPIN');
     }
 
-    // 🏆 AVSLUTA & DELA UT VINST (Nollställer vinnaren och uppdaterar rullen omedelbart)
+    // 🏆 AVSLUTA & DELA UT VINST (Med fördröjning så vinnarnamnet inte försvinner framför ögonen på tittarna!)
     function handleCloseGiveaway(shouldBroadcast = true) {
       stopAllTimers();
       clearVictoryEffects();
       isSpinningReel = false;
       setButtonLock(false);
 
+      // 1. Dra bort biljetten direkt i datan
       if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
         if (donorTicketsMap[currentDrawnWinner].ticketsActive > 0) {
           donorTicketsMap[currentDrawnWinner].ticketsActive -= 1;
         }
       }
 
-      currentDrawnWinner = null;
-      currentVisibleFive = null; // Rensa vinnarpositionen så den inte är kvar i nästa dragning!
       saveTicketsToStorage();
       updateGiveawayStatsUI();
-      initReelTrack(); // Återställ rullen med kvarvarande aktiva givare direkt
 
-      giveawayTimerEl.innerText = "";
+      // 2. Tona ut widgeten först!
       giveawayWidgetEl.classList.add('faded-out');
+
+      // 3. Vänta 500 ms (tills widgeten är 100% osynlig) innan namnet tas bort och rullen återställs!
+      setTimeout(() => {
+        currentDrawnWinner = null;
+        currentVisibleFive = null;
+        initReelTrack();
+        giveawayTimerEl.innerText = "";
+      }, 500);
 
       if (shouldBroadcast) broadcastEvent('CLOSE_CLAIM');
     }
