@@ -269,7 +269,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       width: 640px;
-      height: 380px;
+      height: 410px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -292,7 +292,7 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
     .giveaway-head-title {
@@ -318,7 +318,7 @@
       font-size: 13px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      min-height: 18px; /* Förhindrar hopp i höjdled när texten dyker upp */
+      min-height: 18px;
     }
 
     /* VIEWPORT */
@@ -393,6 +393,22 @@
       font-weight: 900 !important;
       letter-spacing: 1px;
     }
+
+    /* PRIZE DISPLAY UNDER EVERYTHING */
+    .giveaway-prize-display {
+      margin-top: 14px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: rgba(255, 255, 255, 0.75);
+      text-transform: uppercase;
+      text-align: center;
+      max-width: 90%;
+      min-height: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   </style>
 </head>
 <body>
@@ -403,7 +419,7 @@
   <!-- CONTROL PANEL -->
   <div class="test-panel" id="testPanel">
     <h4 id="panelDragHeader">
-      <span>Kontrollpanel <span class="widget-version-badge">v4.2</span></span>
+      <span>Kontrollpanel <span class="widget-version-badge">v4.3</span></span>
       <div class="header-icons">
         <button id="btnHidePanel" class="icon-btn" title="Dölj panelen (Tryck 'H')">Göm (H)</button>
       </div>
@@ -413,6 +429,12 @@
     <div class="panel-stats" id="giveawayStats">0 biljetter fördelade på 0 givare</div>
 
     <div class="panel-controls">
+      <!-- PRIZE INPUT -->
+      <div class="control-row">
+        <label for="prizeInput">Vinst / Pris:</label>
+        <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 175px;">
+      </div>
+
       <!-- SOUND SETTINGS -->
       <div class="control-row">
         <label for="soundPresetSelect">Vinnarljud:</label>
@@ -492,10 +514,13 @@
       <div class="center-focus-frame"></div>
       <div class="reel-track" id="reelTrack"></div>
     </div>
+    <!-- VINST / PRIS VISAS UNDER ALLT -->
+    <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
   </div>
 
   <script>
     const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
+    const STORAGE_KEY_PRIZE = "mh_overlay_prize_text";
     const TICKET_MILESTONE_KR = 200;
     const ITEM_HEIGHT = 44;
     const VIEWPORT_HEIGHT = 220;
@@ -533,6 +558,8 @@
     const giveawayStatsEl = document.getElementById('giveawayStats');
     const giveawaySubTitleEl = document.getElementById('giveawaySubTitle');
     const giveawayTimerEl = document.getElementById('giveawayHeaderTimer');
+    const giveawayPrizeDisplayEl = document.getElementById('giveawayPrizeDisplay');
+    const prizeInputEl = document.getElementById('prizeInput');
     const reelTrackEl = document.getElementById('reelTrack');
     const bossaSlugInput = document.getElementById('bossaSlugInput');
     const manualNameInput = document.getElementById('manualNameInput');
@@ -588,6 +615,23 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
+    // Prize Input Handler
+    function updatePrizeDisplay(text, shouldBroadcast = true) {
+      const clean = (text || '').trim();
+      giveawayPrizeDisplayEl.innerText = clean ? `Vinst: ${clean}` : '';
+      prizeInputEl.value = clean;
+      try {
+        localStorage.setItem(STORAGE_KEY_PRIZE, clean);
+      } catch (err) {}
+      if (shouldBroadcast) {
+        broadcastEvent('UPDATE_PRIZE', { prize: clean });
+      }
+    }
+
+    prizeInputEl.addEventListener('input', () => {
+      updatePrizeDisplay(prizeInputEl.value, true);
+    });
+
     soundPresetSelect.addEventListener('change', () => {
       customSoundContainer.style.display = soundPresetSelect.value === 'custom' ? 'flex' : 'none';
     });
@@ -596,6 +640,7 @@
       playModernVictorySound();
     });
 
+    // 🔉 50% LÄGRE LJUDVOLYM (0.42 istället för 0.85)
     function playModernVictorySound() {
       let soundSrc = AUDIO_PRESETS[soundPresetSelect.value] || AUDIO_PRESETS.hype_win;
       if (soundPresetSelect.value === 'custom') {
@@ -605,7 +650,7 @@
 
       try {
         const audio = new Audio(soundSrc);
-        audio.volume = 0.85;
+        audio.volume = 0.42; // 50% lägre
         audio.play().catch(err => console.warn("Ljudfel:", err));
       } catch (e) {
         console.error(e);
@@ -624,6 +669,7 @@
       return audioCtx;
     }
 
+    // 🔉 50% LÄGRE KLICKLJUD (0.12 istället för 0.24)
     function playWheelClick(pitchMultiplier = 1.0) {
       const ctx = getAudioContext();
       if (!ctx) return;
@@ -636,7 +682,7 @@
       osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
       osc.frequency.exponentialRampToValueAtTime(80, now + 0.018);
 
-      gain.gain.setValueAtTime(0.24, now);
+      gain.gain.setValueAtTime(0.12, now); // 50% lägre
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
 
       osc.connect(gain);
@@ -732,6 +778,8 @@
           initReelTrack();
         } else if (type === 'RESET') {
           handleResetEverything(false);
+        } else if (type === 'UPDATE_PRIZE') {
+          updatePrizeDisplay(payload.prize, false);
         }
       };
     }
@@ -897,12 +945,11 @@
       updateGiveawayStatsUI();
       initReelTrack();
       setButtonLock(false);
-      giveawayTimerEl.innerText = ""; // Ingen redo-text
+      giveawayTimerEl.innerText = "";
       giveawayWidgetEl.classList.add('faded-out');
       if (shouldBroadcast) broadcastEvent('RESET');
     }
 
-    // Dynamisk slumpgenerator utan tak
     function generateRandomizedDonors(totalTicketsTarget, maxPerUser = 5) {
       const prefixes = ["Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Bacon", "Norrlands", "Glada", "Super", "Mighty", "Cosmic", "Turbo", "Vinter", "Retro", "Hyper", "Snabb", "Mystic", "Cyber"];
       const suffixes = ["Kungen", "Gud", "Bullen", "Loover", "Pappa", "Mamma", "Svensken", "Master", "Viking", "Räven", "Hjälten", "Kompis", "Vännen", "Tiger", "Björn", "Stjärnan", "Bonden", "Riddarn", "Tomten", "Liraren"];
@@ -939,6 +986,8 @@
       try {
         const saved = localStorage.getItem(STORAGE_KEY_DONORS);
         if (saved) donorTicketsMap = JSON.parse(saved);
+        const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
+        if (savedPrize !== null) updatePrizeDisplay(savedPrize, false);
       } catch (err) {}
       updateGiveawayStatsUI();
     }
@@ -971,7 +1020,6 @@
       }
     }
 
-    // Uppdaterad till: Totalt X biljetter · Y givare
     function updateGiveawayStatsUI() {
       const pool = getWeightedTicketPool();
       const uniqueDonorsCount = getUniqueDonorNames().length;
@@ -985,7 +1033,7 @@
       btnSkip.disabled = locked;
     }
 
-    // Bygger rullen så att 100% av givarna syns
+    // 🎯 REEL TRACK BUILDER
     function createCleanReelTrack(winnerName, startingFive = null) {
       const uniqueNames = getUniqueDonorNames();
       if (uniqueNames.length === 0) return { spinList: [winnerName], winnerIndex: 0 };
@@ -993,14 +1041,29 @@
       const spinList = [];
       let lastAdded = "";
 
+      const getDistinctName = () => {
+        if (uniqueNames.length === 1) return uniqueNames[0];
+        let candidate;
+        let attempts = 0;
+        do {
+          candidate = uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
+          attempts++;
+        } while (candidate === lastAdded && attempts < 25);
+        return candidate;
+      };
+
+      // Om startingFive finns, säkerställ att namnen fortfarande har aktiva biljetter kvar!
       if (startingFive && startingFive.length === 5) {
         for (let i = 0; i < 5; i++) {
-          spinList.push(startingFive[i]);
-          lastAdded = startingFive[i];
+          const name = startingFive[i];
+          const valid = uniqueNames.includes(name);
+          const chosen = valid ? name : getDistinctName();
+          spinList.push(chosen);
+          lastAdded = chosen;
         }
       }
 
-      // Alla unika givare garanteras att vara med i rullen
+      // Alla unika aktiva givare garanteras att vara med i rullen
       const allDonorsShuffled = [...uniqueNames].sort(() => Math.random() - 0.5);
       for (const name of allDonorsShuffled) {
         if (name !== lastAdded) {
@@ -1009,12 +1072,12 @@
         }
       }
 
-      // Fyll på med viktade biljetter upp till index 115
+      // Fyll på med viktade aktiva biljetter upp till index 115
       const weightedPool = getWeightedTicketPool().sort(() => Math.random() - 0.5);
       let poolIdx = 0;
 
       while (spinList.length < 115) {
-        const candidate = weightedPool[poolIdx % weightedPool.length] || uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
+        const candidate = weightedPool[poolIdx % weightedPool.length] || getDistinctName();
         poolIdx++;
         if (candidate !== lastAdded || uniqueNames.length === 1) {
           spinList.push(candidate);
@@ -1027,7 +1090,7 @@
       lastAdded = winnerName;
 
       for (let i = 0; i < 5; i++) {
-        const next = uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
+        const next = getDistinctName();
         spinList.push(next);
       }
 
@@ -1135,6 +1198,7 @@
       if (shouldBroadcast) broadcastEvent('SKIP_SPIN');
     }
 
+    // 🏆 AVSLUTA & DELA UT VINST (Nollställer vinnaren och uppdaterar rullen omedelbart)
     function handleCloseGiveaway(shouldBroadcast = true) {
       stopAllTimers();
       clearVictoryEffects();
@@ -1148,10 +1212,12 @@
       }
 
       currentDrawnWinner = null;
+      currentVisibleFive = null; // Rensa vinnarpositionen så den inte är kvar i nästa dragning!
       saveTicketsToStorage();
       updateGiveawayStatsUI();
+      initReelTrack(); // Återställ rullen med kvarvarande aktiva givare direkt
 
-      giveawayTimerEl.innerText = ""; // Ingen redo-text
+      giveawayTimerEl.innerText = "";
       giveawayWidgetEl.classList.add('faded-out');
 
       if (shouldBroadcast) broadcastEvent('CLOSE_CLAIM');
@@ -1181,7 +1247,6 @@
       lastTrackY = 0;
       lastTickedIndex = null;
 
-      // Nedräkningstext: Startar om Xs
       const endTime = Date.now() + holdDelayMs;
       const updateTimerUI = () => {
         const remainingSec = Math.ceil(Math.max(0, endTime - Date.now()) / 1000);
@@ -1197,7 +1262,6 @@
         }
       }, 200);
 
-      // Startar dragningen: Dragning pågår...
       giveawayHoldTimeout = setTimeout(() => {
         giveawayTimerEl.innerText = "Dragning pågår...";
         const targetY = -(winnerIndex * ITEM_HEIGHT - 88);
@@ -1213,7 +1277,6 @@
           setButtonLock(false);
           stopAllTimers();
 
-          // Vinnartext: Vill du behålla eller ge vidare?
           giveawayTimerEl.innerText = "Vill du behålla eller ge vidare?";
           renderItemProximity(targetY);
 
