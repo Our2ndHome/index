@@ -107,6 +107,7 @@
       opacity: 0.95;
     }
 
+    /* Clean transparent alerts */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -328,17 +329,17 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">REALTIME-SYNC v6.0</div>
+    <div class="overlay-version-tag">ALERT-SYNC v6.1</div>
   </div>
 
   <!-- 🎛️ DOCK -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.0</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.1</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluter till Live Database...</div>
+    <div class="status-box" id="dockStatusBox">Ansluter till Firebase...</div>
 
     <div class="summary-text" id="dockSummaryText">
       <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
@@ -363,15 +364,25 @@
     <button class="btn-dark" onclick="dockResetAll()">Nollställ allt till 0</button>
 
     <button class="btn-primary-action" onclick="dockTriggerSampleDonation('Lisa', 250, 'Kämpa på!')">
-      Skicka testdonation (250 kr)
+      Skicka testdonation (+250 kr)
     </button>
   </div>
 
   <script>
-    // 🔴 PASTE YOUR FIREBASE DATABASE URL HERE:
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
 
-    const bus = new BroadcastChannel('musikhjalpen_unified_bus');
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
+    const SOUNDS_FOLDER = "sounds";
+    const SOUND_VOLUME = 0.8;
+    const MIN_ALERT_DISPLAY_MS = 4500;
+
+    const BACKUP_SOUNDS = [
+      'sounds/ssstik.io_1786298964532.mp3',
+      'sounds/ssstik.io_1786298991426.mp3',
+      'sounds/ssstik.io_1786299005161.mp3'
+    ];
 
     function formatSEK(num) {
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
@@ -381,34 +392,111 @@
     const isPanel = hash.includes('panel');
 
     let currentTotal = 0;
-    let initialSyncDone = false;
+    let lastProcessedAlertId = 0;
+    let initialLoad = true;
+    let soundFileList = [...BACKUP_SOUNDS];
 
-    // Initialize Firebase Realtime Connection
+    // Alert Queue to prevent overlapping
+    const alertQueue = [];
+    let isProcessingAlert = false;
+
+    // Initialize Firebase
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbRef = firebase.database().ref('bossa');
 
-    // ⚡ LISTEN IN REAL-TIME: Fires instantly (<100ms) on all streamers' computers worldwide
+    // 🔊 Auto-load sounds from GitHub
+    async function loadSounds() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
+        if (res.ok) {
+          const files = await res.json();
+          const sounds = files.filter(f => f.name.match(/\.(mp3|wav|ogg)$/i)).map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (sounds.length > 0) soundFileList = sounds;
+        }
+      } catch(e) {}
+    }
+    loadSounds();
+
+    // ⚡ REAL-TIME SYNCHRONIZER
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
 
       const newTotal = data.total || 0;
-      const prevTotal = currentTotal;
       currentTotal = newTotal;
 
-      updateTotalDisplay(formatSEK(currentTotal));
+      updateTotalDisplaySmooth(formatSEK(currentTotal));
       updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
 
-      // Fire donation alert if new donation arrived live
-      if (initialSyncDone && data.diff > 0 && newTotal > prevTotal) {
-        triggerBannerAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+      // Check if new alert arrived
+      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId && data.diff > 0) {
+        lastProcessedAlertId = data.alertId;
+        enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+      } else if (initialLoad) {
+        lastProcessedAlertId = data.alertId || 0;
+        initialLoad = false;
       }
-      initialSyncDone = true;
     }, (error) => {
-      updateStatusDisplay("Databasfel: Kontrollera Firebase URL");
+      updateStatusDisplay("Databasfel: Kontrollera Firebase");
     });
+
+    function enqueueAlert(donor, amount, comment) {
+      alertQueue.push({ donor, amount, comment });
+      processAlertQueue();
+    }
+
+    async function processAlertQueue() {
+      if (isProcessingAlert || alertQueue.length === 0) return;
+      isProcessingAlert = true;
+
+      const alert = alertQueue.shift();
+      const banner = document.getElementById('alertBanner');
+
+      if (banner) {
+        document.getElementById('donorName').innerText = alert.donor;
+        document.getElementById('alertAmount').innerText = formatSEK(alert.amount);
+        document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
+
+        banner.classList.remove('show-alert');
+        void banner.offsetWidth; // Force CSS reflow
+        banner.classList.add('show-alert');
+
+        // Play audio & show banner simultaneously
+        const soundPromise = playAlertSound();
+        const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+
+        await Promise.all([soundPromise, displayPromise]);
+        banner.classList.remove('show-alert');
+      }
+
+      setTimeout(() => {
+        isProcessingAlert = false;
+        processAlertQueue();
+      }, 1000);
+    }
+
+    function playAlertSound() {
+      return new Promise((resolve) => {
+        if (!soundFileList || soundFileList.length === 0) return resolve();
+        try {
+          const audio = new Audio(soundFileList[Math.floor(Math.random() * soundFileList.length)]);
+          audio.volume = SOUND_VOLUME;
+          let done = false;
+          const finish = () => { if (!done) { done = true; resolve(); } };
+          audio.onended = finish;
+          audio.onerror = finish;
+          audio.play().catch(() => finish());
+          setTimeout(finish, 7000);
+        } catch(e) { resolve(); }
+      });
+    }
+
+    function updateTotalDisplaySmooth(text) {
+      const el = document.getElementById('totalDisplay');
+      if (el) el.innerText = text;
+    }
 
     function updateStatusDisplay(text) {
       const box = document.getElementById('dockStatusBox');
@@ -420,30 +508,11 @@
       }
     }
 
-    function updateTotalDisplay(text) {
-      const el = document.getElementById('totalDisplay');
-      if (el) el.innerText = text;
-    }
-
-    function triggerBannerAlert(donor, amount, comment) {
-      const banner = document.getElementById('alertBanner');
-      document.getElementById('donorName').innerText = donor;
-      document.getElementById('alertAmount').innerText = formatSEK(amount);
-      document.getElementById('alertComment').innerText = comment ? `"${comment}"` : "";
-
-      banner.classList.remove('show-alert');
-      void banner.offsetWidth;
-      banner.classList.add('show-alert');
-
-      setTimeout(() => {
-        banner.classList.remove('show-alert');
-      }, 4500);
-    }
-
+    // 🎛️ DOCK ACTIONS (Pushes to Firebase with the Secret Key)
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
       if (isNaN(val)) return;
-      dbRef.set({ total: val, diff: 0, donor: "", comment: "", timestamp: Date.now() });
+      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, secret: WRITE_SECRET });
     }
 
     function dockSubmitManualDonation() {
@@ -451,16 +520,30 @@
       const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
       const comment = document.getElementById('dockManualComment').value.trim();
 
-      dbRef.set({ total: currentTotal + amount, diff: amount, donor: donor, comment: comment, timestamp: Date.now() });
+      dbRef.set({
+        total: currentTotal + amount,
+        diff: amount,
+        donor: donor,
+        comment: comment,
+        alertId: Date.now(),
+        secret: WRITE_SECRET
+      });
     }
 
     function dockTriggerSampleDonation(donor, amount, comment) {
-      dbRef.set({ total: currentTotal + amount, diff: amount, donor: donor, comment: comment, timestamp: Date.now() });
+      dbRef.set({
+        total: currentTotal + amount,
+        diff: amount,
+        donor: donor,
+        comment: comment,
+        alertId: Date.now(),
+        secret: WRITE_SECRET
+      });
     }
 
     function dockResetAll() {
       if (confirm("Nollställ räknaren för alla streamers till 0 kr?")) {
-        dbRef.set({ total: 0, diff: 0, donor: "", comment: "", timestamp: Date.now() });
+        dbRef.set({ total: 0, diff: 0, donor: "", comment: "", alertId: 0, secret: WRITE_SECRET });
       }
     }
 
