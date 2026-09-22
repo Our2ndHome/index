@@ -380,7 +380,7 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag" id="overlayVersionTag">v4.7</div>
+    <div class="overlay-version-tag" id="overlayVersionTag">v4.8</div>
   </div>
 
   <!-- ========================================================
@@ -391,7 +391,7 @@
     <div class="header-box">
       <div class="header-title-wrap">
         <span class="header-title">KONTROLLPANEL</span>
-        <span class="version-badge" id="dockVersionBadge">v4.7</span>
+        <span class="version-badge" id="dockVersionBadge">v4.8</span>
       </div>
       <button class="btn-header" onclick="location.reload()">Ladda om</button>
     </div>
@@ -444,7 +444,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v4.7";
+    const APP_VERSION = "v4.8";
     const bus = new BroadcastChannel('musikhjalpen_unified_bus');
 
     const STORAGE_KEY_TOTAL = "mh_overlay_total_amount";
@@ -611,7 +611,7 @@
           updateTotalDisplaySmooth(formatSEK(nextEvent.newTotal));
 
           banner.classList.remove('show-alert');
-          void banner.offsetWidth; // Force CSS reflow
+          void banner.offsetWidth; // Force reflow
           banner.classList.add('show-alert');
 
           const soundPromise = playAlertSound();
@@ -656,7 +656,6 @@
         } catch(e) {}
       }
 
-      // 🚀 Auto-Drive Engine: Fast initial trigger (1.5s), followed by 12–22s intervals
       function scheduleNextAutoDrive(delayMs = null) {
         if (!autoDriveEnabled) return;
         if (autoDriveTimer) clearTimeout(autoDriveTimer);
@@ -725,62 +724,60 @@
         return { amount, donations, success };
       }
 
+      // 🔄 CONNECTED DIRECTLY TO YOUR CLOUDFLARE RELAY
       async function fetchMusikhjalpenData() {
-        const slugVariants = [FUNDRAISER_SLUG, FUNDRAISER_SLUG.toLowerCase()];
-        const proxyBases = [
-          (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-          (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-          (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-          (url) => url // Direct connection
+        const endpoints = [
+          // 1. Primary: Your own Cloudflare relay (0 CORS, 0 rate limit)
+          `https://musikhjalpen.emil-forsberg.workers.dev/bossa?slug=${encodeURIComponent(FUNDRAISER_SLUG)}`,
+          // 2. Relative endpoint if served from the worker domain
+          `/bossa?slug=${encodeURIComponent(FUNDRAISER_SLUG)}`,
+          // 3. Fallback proxies if worker is offline
+          `https://api.allorigins.win/get?url=${encodeURIComponent(`https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}/`)}`
         ];
 
-        for (const slug of slugVariants) {
-          const targetUrl = `https://bossan.musikhjalpen.se/${slug}/`;
-          
-          for (const makeProxyUrl of proxyBases) {
-            try {
-              const url = makeProxyUrl(targetUrl);
-              const res = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { cache: 'no-store' });
-              if (!res.ok) continue;
+        for (const ep of endpoints) {
+          try {
+            const url = ep + (ep.includes('?') ? '&' : '?') + '_t=' + Date.now();
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) continue;
 
-              let rawData = url.includes('allorigins.win/get') ? (await res.json()).contents : await res.text();
-              const parsed = parseFundraiserPayload(rawData);
+            let rawData = ep.includes('allorigins.win') ? (await res.json()).contents : await res.text();
+            const parsed = parseFundraiserPayload(rawData);
 
-              if (parsed.success) {
-                const timeStr = new Date().toLocaleTimeString('sv-SE');
-                broadcastState(`Ansluten till bössan (${formatSEK(parsed.amount)}) • ${timeStr}`);
+            if (parsed.success) {
+              const timeStr = new Date().toLocaleTimeString('sv-SE');
+              broadcastState(`Ansluten till bössan (${formatSEK(parsed.amount)}) • ${timeStr}`);
 
-                if (isInitialFetch) {
-                  isInitialFetch = false;
-                  if (parsed.amount > currentTotal) currentTotal = parsed.amount;
-                  updateTotalDisplayDirect(formatSEK(currentTotal));
-                  parsed.donations.forEach(d => { knownDonationIds.add(d.id); recordDonorDonation(d.donor, d.amount); });
-                  saveState();
-                  return;
-                }
-
-                if (parsed.amount > currentTotal) {
-                  const diff = parsed.amount - currentTotal;
-                  currentTotal = parsed.amount;
-                  const newItems = parsed.donations.filter(d => !knownDonationIds.has(d.id));
-
-                  if (newItems.length > 0) {
-                    newItems.forEach(d => {
-                      knownDonationIds.add(d.id);
-                      recordDonorDonation(d.donor, d.amount);
-                      enqueueAlert(d.donor, d.amount, currentTotal, d.comment);
-                    });
-                  } else {
-                    enqueueAlert("Anonym Givare", diff, currentTotal, "");
-                  }
-                  saveState();
-                }
+              if (isInitialFetch) {
+                isInitialFetch = false;
+                if (parsed.amount > currentTotal) currentTotal = parsed.amount;
+                updateTotalDisplayDirect(formatSEK(currentTotal));
+                parsed.donations.forEach(d => { knownDonationIds.add(d.id); recordDonorDonation(d.donor, d.amount); });
+                saveState();
                 return;
               }
-            } catch(e) {}
-          }
+
+              if (parsed.amount > currentTotal) {
+                const diff = parsed.amount - currentTotal;
+                currentTotal = parsed.amount;
+                const newItems = parsed.donations.filter(d => !knownDonationIds.has(d.id));
+
+                if (newItems.length > 0) {
+                  newItems.forEach(d => {
+                    knownDonationIds.add(d.id);
+                    recordDonorDonation(d.donor, d.amount);
+                    enqueueAlert(d.donor, d.amount, currentTotal, d.comment);
+                  });
+                } else {
+                  enqueueAlert("Anonym Givare", diff, currentTotal, "");
+                }
+                saveState();
+              }
+              return;
+            }
+          } catch(e) {}
         }
-        broadcastState(`Kunde inte ansluta till bössan (CORS/Offline)`);
+        broadcastState(`Kunde inte ansluta till bössan`);
       }
 
       function updateCountdown() {
@@ -829,7 +826,6 @@
             autoDriveEnabled = data.enabled;
             if (autoDriveTimer) clearTimeout(autoDriveTimer);
             if (autoDriveEnabled) {
-              // Trigger first simulation within 1.5s so testing feels instantaneous
               scheduleNextAutoDrive(1500);
             }
             saveState();
