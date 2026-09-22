@@ -51,7 +51,7 @@
       color: #ace600;
       text-transform: uppercase;
       margin-bottom: 6px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.8);
     }
 
     .countdown-timer {
@@ -60,7 +60,7 @@
       letter-spacing: 1px;
       color: #ffffff;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.8);
     }
 
     .sep-dot { color: #ace600; margin: 0 3px; }
@@ -86,6 +86,7 @@
       display: block;
       margin-bottom: 6px;
       letter-spacing: 1.5px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
     .amount {
@@ -94,6 +95,7 @@
       font-weight: 900;
       display: block;
       transition: opacity 0.3s ease, transform 0.3s ease;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95), 0 0 15px rgba(172, 230, 0, 0.4);
     }
 
     .goal-target {
@@ -103,9 +105,11 @@
       display: block;
       margin-top: 6px;
       letter-spacing: 1.2px;
-      opacity: 0.9;
+      opacity: 0.95;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
+    /* ✨ CLEAN POPUP: NO BORDER, NO BACKGROUND BOX */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -114,43 +118,44 @@
       opacity: 0;
       visibility: hidden;
       text-align: center;
-      background: rgba(0, 0, 0, 0.94);
-      border: 2px solid #ace600;
-      border-radius: 16px;
-      padding: 24px 38px;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 10px 20px;
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
       z-index: 99999;
-      box-shadow: 0 0 35px rgba(172, 230, 0, 0.4);
       transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0.3s;
     }
 
     .donor-name {
       color: #ace600;
       display: block;
-      font-size: 48px;
+      font-size: 54px;
       font-weight: 900;
       margin-bottom: 4px;
-      text-shadow: 0 0 10px rgba(172, 230, 0, 0.5);
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(172, 230, 0, 0.6);
     }
 
     .alert-subtext {
       color: #ffffff;
-      font-size: 30px;
+      font-size: 32px;
       font-weight: 900;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
     }
 
     .alert-comment {
       color: #ffea00;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
       font-style: italic;
       margin-top: 8px;
       text-transform: none;
       white-space: normal;
-      max-width: 520px;
+      max-width: 600px;
       line-height: 1.3;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
     }
 
     .show-alert {
@@ -159,7 +164,6 @@
       transform: translate(-50%, -50%) scale(1) !important;
     }
 
-    /* Subtle version watermark in preview corner */
     .overlay-version-tag {
       position: absolute;
       bottom: 12px;
@@ -376,8 +380,7 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <!-- Visible overlay watermark to verify cache reload -->
-    <div class="overlay-version-tag" id="overlayVersionTag">v4.6</div>
+    <div class="overlay-version-tag" id="overlayVersionTag">v4.7</div>
   </div>
 
   <!-- ========================================================
@@ -385,35 +388,29 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     
-    <!-- Top Header -->
     <div class="header-box">
       <div class="header-title-wrap">
         <span class="header-title">KONTROLLPANEL</span>
-        <span class="version-badge" id="dockVersionBadge">v4.6</span>
+        <span class="version-badge" id="dockVersionBadge">v4.7</span>
       </div>
       <button class="btn-header" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- Status Bar -->
     <div class="status-box" id="dockStatusBox">
       Laddar...
     </div>
 
-    <!-- Stats Summary -->
     <div class="summary-text" id="dockSummaryText">
       <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
     </div>
 
-    <!-- Campaign ID / Slug -->
     <div class="field-row">
       <span class="field-label">BÖSSA ID:</span>
       <input type="text" id="dockSlugInput" value="our2ndHome" style="width: 60%; text-align: right;">
     </div>
 
-    <!-- Fetch from online Bössa button -->
     <button class="btn-dark" onclick="dockSyncSlug()">Hämta gåvor från bössan</button>
 
-    <!-- Direct Total Override -->
     <div class="field-row" style="margin-top: 6px;">
       <span class="field-label">SÄTT BELOPP:</span>
       <div style="display:flex; gap:4px; width:60%;">
@@ -422,25 +419,21 @@
       </div>
     </div>
 
-    <!-- Manual Donation Row -->
     <div class="manual-row" style="margin-top: 10px;">
       <input type="text" id="dockManualName" name="name" placeholder="Namn" value="Lisa">
       <input type="number" id="dockManualAmount" name="amount" placeholder="Kr" value="250">
       <button id="dockSubmitDonationBtn" onclick="dockSubmitManualDonation()">+ Lägg till</button>
     </div>
 
-    <!-- Optional Comment -->
     <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:8px;">
 
-    <!-- Toggle Auto-Drive (OFF by default) -->
+    <!-- Auto-drive toggle with status indicator -->
     <button class="btn-dark" id="dockAutoDriveBtn" onclick="dockToggleAutoDrive()">
       Växla till testläge (Auto-Drive: AV)
     </button>
 
-    <!-- Reset -->
     <button class="btn-dark" onclick="dockResetAll()">Nollställ allt till 0</button>
 
-    <!-- Primary Action Buttons -->
     <button class="btn-primary-action" onclick="dockTriggerSampleDonation('Lisa', 250, 'Kämpa på!')">
       Skicka testdonation (250 kr)
     </button>
@@ -451,10 +444,7 @@
   </div>
 
   <script>
-    // 🏷️ CENTRAL VERSION DEFINITION
-    const APP_VERSION = "v4.6";
-
-    // Unified communication bus across OBS
+    const APP_VERSION = "v4.7";
     const bus = new BroadcastChannel('musikhjalpen_unified_bus');
 
     const STORAGE_KEY_TOTAL = "mh_overlay_total_amount";
@@ -466,11 +456,10 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
     }
 
-    // Hash check
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel');
 
-    console.log(`[Musikhjälpen] Running version ${APP_VERSION} in mode: ${isPanel ? 'PANEL' : 'OVERLAY'}`);
+    console.log(`[Musikhjälpen] v${APP_VERSION} initialized in mode: ${isPanel ? 'PANEL' : 'OVERLAY'}`);
 
     if (isPanel) {
       document.body.classList.add('mode-panel');
@@ -484,7 +473,6 @@
     // 📺 OVERLAY ENGINE (Stream graphics & sound)
     // ========================================================
     function initOverlayMode() {
-      // Set the watermark version on the overlay
       const tag = document.getElementById('overlayVersionTag');
       if (tag) tag.innerText = APP_VERSION;
 
@@ -514,8 +502,7 @@
       const alertQueue = [];
       let isProcessingAlert = false;
 
-      // Auto-drive OFF by default
-      let autoDriveEnabled = false;
+      let autoDriveEnabled = false; // OFF by default
       let autoDriveTimer = null;
 
       function getStats() {
@@ -615,27 +602,31 @@
         isProcessingAlert = true;
         const nextEvent = alertQueue.shift();
 
-        const banner = document.getElementById('alertBanner');
-        document.getElementById('donorName').innerText = nextEvent.donorName;
-        document.getElementById('alertAmount').innerText = formatSEK(nextEvent.diffAmount);
-        document.getElementById('alertComment').innerText = nextEvent.comment ? `"${nextEvent.comment}"` : "";
+        try {
+          const banner = document.getElementById('alertBanner');
+          document.getElementById('donorName').innerText = nextEvent.donorName;
+          document.getElementById('alertAmount').innerText = formatSEK(nextEvent.diffAmount);
+          document.getElementById('alertComment').innerText = nextEvent.comment ? `"${nextEvent.comment}"` : "";
 
-        updateTotalDisplaySmooth(formatSEK(nextEvent.newTotal));
+          updateTotalDisplaySmooth(formatSEK(nextEvent.newTotal));
 
-        banner.classList.remove('show-alert');
-        void banner.offsetWidth;
-        banner.classList.add('show-alert');
+          banner.classList.remove('show-alert');
+          void banner.offsetWidth; // Force CSS reflow
+          banner.classList.add('show-alert');
 
-        const soundPromise = playAlertSound();
-        const minDisplayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+          const soundPromise = playAlertSound();
+          const minDisplayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
 
-        await Promise.all([soundPromise, minDisplayPromise]);
-        banner.classList.remove('show-alert');
-
-        setTimeout(() => {
-          isProcessingAlert = false;
-          processQueue();
-        }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
+          await Promise.all([soundPromise, minDisplayPromise]);
+          banner.classList.remove('show-alert');
+        } catch(err) {
+          console.error("Alert processing error:", err);
+        } finally {
+          setTimeout(() => {
+            isProcessingAlert = false;
+            processQueue();
+          }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
+        }
       }
 
       function playAlertSound() {
@@ -649,7 +640,7 @@
             audio.onended = done;
             audio.onerror = done;
             audio.play().catch(() => done());
-            setTimeout(done, 8000);
+            setTimeout(done, 7000); // Failsafe
           } catch(e) { resolve(); }
         });
       }
@@ -665,20 +656,23 @@
         } catch(e) {}
       }
 
-      function scheduleNextAutoDrive() {
+      // 🚀 Auto-Drive Engine: Fast initial trigger (1.5s), followed by 12–22s intervals
+      function scheduleNextAutoDrive(delayMs = null) {
         if (!autoDriveEnabled) return;
         if (autoDriveTimer) clearTimeout(autoDriveTimer);
-        const delayMs = (Math.floor(Math.random() * 25) + 20) * 1000;
+        
+        const nextDelay = delayMs !== null ? delayMs : (Math.floor(Math.random() * 10) + 12) * 1000;
+        
         autoDriveTimer = setTimeout(() => {
           if (autoDriveEnabled) {
             triggerAutoDriveDonation();
             scheduleNextAutoDrive();
           }
-        }, delayMs);
+        }, nextDelay);
       }
 
       function triggerAutoDriveDonation() {
-        const donors = ["Sofia", "Marcus", "Elin", "Oscar", "Emma", "Viktor", "Lina", "Filip", "Agnes", "Lucas"];
+        const donors = ["Sofia", "Marcus", "Elin", "Oscar", "Emma", "Viktor", "Lina", "Filip", "Agnes", "Lucas", "David", "Klara"];
         const amounts = [50, 100, 150, 200, 250, 300, 500];
         const comments = ["Kämpa på!", "Grymt initiativ ❤️", "För Musikhjälpen!", "Heja er!", ""];
 
@@ -732,55 +726,61 @@
       }
 
       async function fetchMusikhjalpenData() {
-        const targetUrl = `https://bossan.musikhjalpen.se/${FUNDRAISER_SLUG}/`;
-        const proxyCandidates = [
-          `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
-          `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-          targetUrl
+        const slugVariants = [FUNDRAISER_SLUG, FUNDRAISER_SLUG.toLowerCase()];
+        const proxyBases = [
+          (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+          (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+          (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+          (url) => url // Direct connection
         ];
 
-        for (const url of proxyCandidates) {
-          try {
-            const res = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { cache: 'no-store' });
-            if (!res.ok) continue;
+        for (const slug of slugVariants) {
+          const targetUrl = `https://bossan.musikhjalpen.se/${slug}/`;
+          
+          for (const makeProxyUrl of proxyBases) {
+            try {
+              const url = makeProxyUrl(targetUrl);
+              const res = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { cache: 'no-store' });
+              if (!res.ok) continue;
 
-            let rawData = url.includes('allorigins.win/get') ? (await res.json()).contents : await res.text();
-            const parsed = parseFundraiserPayload(rawData);
+              let rawData = url.includes('allorigins.win/get') ? (await res.json()).contents : await res.text();
+              const parsed = parseFundraiserPayload(rawData);
 
-            if (parsed.success) {
-              const timeStr = new Date().toLocaleTimeString('sv-SE');
-              broadcastState(`Ansluten till bössan (${formatSEK(parsed.amount)}) • ${timeStr}`);
+              if (parsed.success) {
+                const timeStr = new Date().toLocaleTimeString('sv-SE');
+                broadcastState(`Ansluten till bössan (${formatSEK(parsed.amount)}) • ${timeStr}`);
 
-              if (isInitialFetch) {
-                isInitialFetch = false;
-                if (parsed.amount > currentTotal) currentTotal = parsed.amount;
-                updateTotalDisplayDirect(formatSEK(currentTotal));
-                parsed.donations.forEach(d => { knownDonationIds.add(d.id); recordDonorDonation(d.donor, d.amount); });
-                saveState();
+                if (isInitialFetch) {
+                  isInitialFetch = false;
+                  if (parsed.amount > currentTotal) currentTotal = parsed.amount;
+                  updateTotalDisplayDirect(formatSEK(currentTotal));
+                  parsed.donations.forEach(d => { knownDonationIds.add(d.id); recordDonorDonation(d.donor, d.amount); });
+                  saveState();
+                  return;
+                }
+
+                if (parsed.amount > currentTotal) {
+                  const diff = parsed.amount - currentTotal;
+                  currentTotal = parsed.amount;
+                  const newItems = parsed.donations.filter(d => !knownDonationIds.has(d.id));
+
+                  if (newItems.length > 0) {
+                    newItems.forEach(d => {
+                      knownDonationIds.add(d.id);
+                      recordDonorDonation(d.donor, d.amount);
+                      enqueueAlert(d.donor, d.amount, currentTotal, d.comment);
+                    });
+                  } else {
+                    enqueueAlert("Anonym Givare", diff, currentTotal, "");
+                  }
+                  saveState();
+                }
                 return;
               }
-
-              if (parsed.amount > currentTotal) {
-                const diff = parsed.amount - currentTotal;
-                currentTotal = parsed.amount;
-                const newItems = parsed.donations.filter(d => !knownDonationIds.has(d.id));
-
-                if (newItems.length > 0) {
-                  newItems.forEach(d => {
-                    knownDonationIds.add(d.id);
-                    recordDonorDonation(d.donor, d.amount);
-                    enqueueAlert(d.donor, d.amount, currentTotal, d.comment);
-                  });
-                } else {
-                  enqueueAlert("Anonym Givare", diff, currentTotal, "");
-                }
-                saveState();
-              }
-              return;
-            }
-          } catch(e) {}
+            } catch(e) {}
+          }
         }
-        broadcastState(`Kunde inte ansluta till bössan`);
+        broadcastState(`Kunde inte ansluta till bössan (CORS/Offline)`);
       }
 
       function updateCountdown() {
@@ -828,7 +828,10 @@
           case 'TOGGLE_AUTODRIVE':
             autoDriveEnabled = data.enabled;
             if (autoDriveTimer) clearTimeout(autoDriveTimer);
-            if (autoDriveEnabled) scheduleNextAutoDrive();
+            if (autoDriveEnabled) {
+              // Trigger first simulation within 1.5s so testing feels instantaneous
+              scheduleNextAutoDrive(1500);
+            }
             saveState();
             break;
 
@@ -874,7 +877,6 @@
     let isSubmitting = false;
 
     function initPanelMode() {
-      // Set the version badge in the dock header
       const badge = document.getElementById('dockVersionBadge');
       if (badge) badge.innerText = APP_VERSION;
 
@@ -905,7 +907,6 @@
         }
       };
 
-      // Query overlay
       bus.postMessage({ type: 'REQUEST_STATE' });
     }
 
@@ -921,9 +922,11 @@
       if (autoDriveIsActive) {
         btn.innerText = "Växla till testläge (Auto-Drive: PÅ)";
         btn.style.borderColor = "#ffffff";
+        btn.style.background = "#27272a";
       } else {
         btn.innerText = "Växla till testläge (Auto-Drive: AV)";
         btn.style.borderColor = "#27272a";
+        btn.style.background = "#18181c";
       }
     }
 
@@ -941,7 +944,7 @@
     }
 
     function dockSubmitManualDonation() {
-      if (isSubmitting) return; // Prevent double clicks
+      if (isSubmitting) return;
       isSubmitting = true;
       const btn = document.getElementById('dockSubmitDonationBtn');
       if (btn) btn.disabled = true;
