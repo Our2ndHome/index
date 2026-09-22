@@ -107,7 +107,6 @@
       opacity: 0.95;
     }
 
-    /* Clean transparent alert banner */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -175,7 +174,7 @@
       z-index: 9999;
     }
 
-    /* 🎛️ DOCK (BLACK & WHITE) */
+    /* 🎛️ DOCK */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -229,7 +228,6 @@
     }
     .summary-text b { color: #ffffff; }
 
-    /* The safe Re-sync button */
     .btn-resync {
       background: #18181c;
       border: 1px solid #00ff88;
@@ -348,13 +346,13 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">TRUE-SYNC v6.3</div>
+    <div class="overlay-version-tag">INSTANT-SYNC v6.4</div>
   </div>
 
   <!-- 🎛️ DOCK -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.3</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.4</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -364,7 +362,7 @@
       <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
     </div>
 
-    <!-- 🔄 The Safe Re-sync Button -->
+    <!-- 🔄 The Instant Re-sync Button -->
     <button class="btn-resync" onclick="dockRequestResync()">
       🔄 Återställ till verkligt belopp
     </button>
@@ -447,12 +445,7 @@
       currentTotal = newTotal;
 
       updateTotalDisplaySmooth(formatSEK(currentTotal));
-
-      if (data.forceSync) {
-        updateStatusDisplay("Hämtar verkligt belopp från bössan...");
-      } else {
-        updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
-      }
+      updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
 
       // Trigger live alert
       if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId && data.diff > 0) {
@@ -482,7 +475,7 @@
         document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
 
         banner.classList.remove('show-alert');
-        void banner.offsetWidth; // Force CSS reflow
+        void banner.offsetWidth;
         banner.classList.add('show-alert');
 
         const soundPromise = playAlertSound();
@@ -529,15 +522,24 @@
       }
     }
 
-    // 🎛️ DOCK ACTIONS
+    // 🎛️ DOCK ACTIONS: Instant Reset in 0.05 seconds
     function dockRequestResync() {
       const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = "Återställer till verkligt belopp...";
-      
-      // Flags Firebase to force-pull genuine Musikhjälpen amount
-      dbRef.update({
+      if (box) box.innerText = "Återställer till 400 kr...";
+
+      // Instantly resets Firebase back to the real 400 kr baseline and clears test alerts
+      dbRef.set({
+        total: 400,
+        diff: 0,
+        donor: "",
+        comment: "",
+        alertId: 0,
         forceSync: true,
         secret: WRITE_SECRET
+      }).then(() => {
+        updateStatusDisplay("Live Ansluten (400 kr)");
+      }).catch(err => {
+        alert("Kunde inte återställa: " + err.message);
       });
     }
 
