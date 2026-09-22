@@ -107,6 +107,7 @@
       opacity: 0.95;
     }
 
+    /* Clean transparent alert banner */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -174,7 +175,7 @@
       z-index: 9999;
     }
 
-    /* 🎛️ DOCK */
+    /* 🎛️ DOCK (BLACK & WHITE) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -228,6 +229,24 @@
     }
     .summary-text b { color: #ffffff; }
 
+    /* The safe Re-sync button */
+    .btn-resync {
+      background: #18181c;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 10px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-resync:hover { background: #00ff88; color: #000000; }
+
     .field-row {
       display: flex;
       justify-content: space-between;
@@ -272,22 +291,6 @@
     }
     .btn-dark:hover { background: #24242a; }
 
-    .btn-resync {
-      background: #18181c;
-      border: 1px solid #00ff88;
-      color: #00ff88;
-      border-radius: 4px;
-      padding: 9px 12px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    .btn-resync:hover { background: #00ff88; color: #000000; }
-
     .manual-row {
       display: flex;
       gap: 6px;
@@ -321,6 +324,7 @@
       margin-top: 8px;
       margin-bottom: 6px;
     }
+    .btn-primary-action:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -344,13 +348,13 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">RESYNC v6.2</div>
+    <div class="overlay-version-tag">TRUE-SYNC v6.3</div>
   </div>
 
   <!-- 🎛️ DOCK -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.2</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.3</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -360,9 +364,9 @@
       <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
     </div>
 
-    <!-- 🔄 The new Re-sync button -->
+    <!-- 🔄 The Safe Re-sync Button -->
     <button class="btn-resync" onclick="dockRequestResync()">
-      🔄 Återställ & Hämta från bössan
+      🔄 Återställ till verkligt belopp
     </button>
 
     <div class="field-row">
@@ -380,8 +384,6 @@
     </div>
 
     <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:8px;">
-
-    <button class="btn-dark" onclick="dockResetAll()">Nollställ allt till 0</button>
 
     <button class="btn-primary-action" onclick="dockTriggerSampleDonation('Lisa', 250, 'Kämpa på!')">
       Skicka testdonation (+250 kr)
@@ -447,7 +449,7 @@
       updateTotalDisplaySmooth(formatSEK(currentTotal));
 
       if (data.forceSync) {
-        updateStatusDisplay("Synk begärd från servern...");
+        updateStatusDisplay("Hämtar verkligt belopp från bössan...");
       } else {
         updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
       }
@@ -480,7 +482,7 @@
         document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
 
         banner.classList.remove('show-alert');
-        void banner.offsetWidth;
+        void banner.offsetWidth; // Force CSS reflow
         banner.classList.add('show-alert');
 
         const soundPromise = playAlertSound();
@@ -530,9 +532,9 @@
     // 🎛️ DOCK ACTIONS
     function dockRequestResync() {
       const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = "Begär synk från servern...";
+      if (box) box.innerText = "Återställer till verkligt belopp...";
       
-      // Flags Firebase to force-pull from Musikhjälpen
+      // Flags Firebase to force-pull genuine Musikhjälpen amount
       dbRef.update({
         forceSync: true,
         secret: WRITE_SECRET
@@ -571,12 +573,6 @@
         forceSync: false,
         secret: WRITE_SECRET
       });
-    }
-
-    function dockResetAll() {
-      if (confirm("Nollställ räknaren för alla streamers till 0 kr?")) {
-        dbRef.set({ total: 0, diff: 0, donor: "", comment: "", alertId: 0, forceSync: false, secret: WRITE_SECRET });
-      }
     }
 
     function updateCountdown() {
