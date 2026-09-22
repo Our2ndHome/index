@@ -1,6 +1,6 @@
 export async function onRequest(context) {
   const url = new URL(context.request.url);
-  const slug = url.searchParams.get("slug") || "our2ndHome";
+  const slug = url.searchParams.get("slug") || "our2ndhome";
   const targetUrl = `https://bossan.musikhjalpen.se/${slug}/`;
 
   try {
