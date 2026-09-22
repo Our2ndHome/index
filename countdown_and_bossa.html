@@ -17,9 +17,6 @@
       color: #ffffff;
     }
 
-    /* ========================================================
-       🔀 HASH ROUTER VISIBILITY (#overlay vs #panel)
-       ======================================================== */
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
 
@@ -30,9 +27,7 @@
       user-select: none;
     }
 
-    /* ========================================================
-       📺 1. STREAM OVERLAY STYLING (#overlay)
-       ======================================================== */
+    /* 📺 1. OVERLAY */
     .countdown-widget {
       position: absolute;
       top: 20px;
@@ -51,7 +46,7 @@
       color: #ace600;
       text-transform: uppercase;
       margin-bottom: 6px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.8);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
     .countdown-timer {
@@ -60,7 +55,7 @@
       letter-spacing: 1px;
       color: #ffffff;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 12px rgba(0, 0, 0, 0.8);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
     }
 
     .sep-dot { color: #ace600; margin: 0 3px; }
@@ -86,7 +81,6 @@
       display: block;
       margin-bottom: 6px;
       letter-spacing: 1.5px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
     .amount {
@@ -106,10 +100,8 @@
       margin-top: 6px;
       letter-spacing: 1.2px;
       opacity: 0.95;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
-    /* ✨ CLEAN POPUP: NO BORDER, NO BACKGROUND BOX */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -142,7 +134,7 @@
       color: #ffffff;
       font-size: 32px;
       font-weight: 900;
-      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
     }
 
     .alert-comment {
@@ -155,7 +147,7 @@
       white-space: normal;
       max-width: 600px;
       line-height: 1.3;
-      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8);
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
     }
 
     .show-alert {
@@ -175,12 +167,9 @@
       text-transform: uppercase;
       pointer-events: none;
       z-index: 9999;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
     }
 
-    /* ========================================================
-       🎛️ 2. OBS DOCK (BLACK & WHITE THEME)
-       ======================================================== */
+    /* 🎛️ 2. DOCK (BLACK & WHITE THEME) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -197,16 +186,9 @@
       margin-bottom: 8px;
     }
 
-    .header-title-wrap {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
     .header-title {
       font-size: 13px;
       font-weight: 900;
-      letter-spacing: 0.5px;
       text-transform: uppercase;
       color: #ffffff;
     }
@@ -218,19 +200,8 @@
       font-weight: 900;
       padding: 1px 5px;
       border-radius: 3px;
+      margin-left: 6px;
     }
-
-    .btn-header {
-      background: #1e1e24;
-      border: 1px solid #333338;
-      color: #ffffff;
-      border-radius: 4px;
-      padding: 4px 10px;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-header:hover { background: #2c2c34; }
 
     .status-box {
       background: #141418;
@@ -269,7 +240,7 @@
       white-space: nowrap;
     }
 
-    input[type="text"], input[type="number"], select, textarea {
+    input[type="text"], input[type="number"] {
       background: #121215;
       border: 1px solid #27272a;
       border-radius: 4px;
@@ -278,10 +249,6 @@
       font-family: inherit;
       font-size: 12px;
       outline: none;
-      transition: border 0.15s ease;
-    }
-    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
-      border-color: #52525b;
     }
 
     .btn-dark {
@@ -297,12 +264,8 @@
       width: 100%;
       text-align: center;
       margin-bottom: 6px;
-      transition: background 0.15s ease, border-color 0.15s ease;
     }
-    .btn-dark:hover {
-      background: #24242a;
-      border-color: #3f3f46;
-    }
+    .btn-dark:hover { background: #24242a; }
 
     .manual-row {
       display: flex;
@@ -322,7 +285,6 @@
       font-size: 12px;
       cursor: pointer;
     }
-    .manual-row button:hover { background: #27272e; }
 
     .btn-primary-action {
       background: #ffffff;
@@ -337,41 +299,12 @@
       width: 100%;
       margin-top: 8px;
       margin-bottom: 6px;
-      transition: opacity 0.15s ease;
-    }
-    .btn-primary-action:hover { opacity: 0.9; }
-
-    .btn-secondary-action {
-      background: #18181c;
-      border: 1px solid #27272a;
-      color: #ffffff;
-      border-radius: 4px;
-      padding: 10px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      margin-bottom: 6px;
-    }
-    .btn-secondary-action:hover { background: #24242a; }
-
-    /* Modal for manual clipboard paste */
-    .paste-modal {
-      display: none;
-      background: #111114;
-      border: 1px solid #3f3f46;
-      border-radius: 6px;
-      padding: 10px;
-      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
 
-  <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW (#overlay)
-       ======================================================== -->
+  <!-- 📺 1. OVERLAY -->
   <div id="overlayRoot">
     <div class="countdown-widget">
       <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
@@ -390,25 +323,17 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag" id="overlayVersionTag">v4.9</div>
+    <div class="overlay-version-tag">DIRECT-SYNC v5.0</div>
   </div>
 
-  <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel - Black & White Style)
-       ======================================================== -->
+  <!-- 🎛️ 2. OBS DOCK -->
   <div id="panelRoot" class="dock-container">
-    
     <div class="header-box">
-      <div class="header-title-wrap">
-        <span class="header-title">KONTROLLPANEL</span>
-        <span class="version-badge" id="dockVersionBadge">v4.9</span>
-      </div>
-      <button class="btn-header" onclick="location.reload()">Ladda om</button>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v5.0</span></span>
+      <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">
-      Initierar...
-    </div>
+    <div class="status-box" id="dockStatusBox">Ansluter till bössan...</div>
 
     <div class="summary-text" id="dockSummaryText">
       <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
@@ -420,17 +345,6 @@
     </div>
 
     <button class="btn-dark" onclick="dockSyncSlug()">Hämta gåvor från bössan</button>
-    <button class="btn-dark" onclick="togglePasteModal()">Klistra in gåvor manuellt</button>
-
-    <!-- Modal for pasting text directly from bossan.musikhjalpen.se -->
-    <div id="pasteModal" class="paste-modal">
-      <span class="field-label" style="display:block; margin-bottom:4px;">Klistra in text från bössan här:</span>
-      <textarea id="pasteTextInput" style="width:100%; height:70px; margin-bottom:6px;" placeholder="Markera allt på din böss-sida, kopiera och klistra in här..."></textarea>
-      <div style="display:flex; gap:6px;">
-        <button class="btn-dark" style="margin:0; background:#fff; color:#000; font-weight:900;" onclick="parsePastedText()">Importera</button>
-        <button class="btn-dark" style="margin:0;" onclick="togglePasteModal()">Avbryt</button>
-      </div>
-    </div>
 
     <div class="field-row" style="margin-top: 6px;">
       <span class="field-label">SÄTT BELOPP:</span>
@@ -448,7 +362,6 @@
 
     <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:8px;">
 
-    <!-- Auto-drive toggle with status indicator (OFF by default) -->
     <button class="btn-dark" id="dockAutoDriveBtn" onclick="dockToggleAutoDrive()">
       Växla till testläge (Auto-Drive: AV)
     </button>
@@ -458,14 +371,9 @@
     <button class="btn-primary-action" onclick="dockTriggerSampleDonation('Lisa', 250, 'Kämpa på!')">
       Skicka testdonation (250 kr)
     </button>
-    
-    <button class="btn-secondary-action" onclick="dockTestSound()">
-      Provlyssna donationsljud
-    </button>
   </div>
 
   <script>
-    const APP_VERSION = "v4.9";
     const bus = new BroadcastChannel('musikhjalpen_unified_bus');
 
     const STORAGE_KEY_TOTAL = "mh_overlay_total_amount";
@@ -480,8 +388,6 @@
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel');
 
-    console.log(`[Musikhjälpen] v${APP_VERSION} initialized in mode: ${isPanel ? 'PANEL' : 'OVERLAY'}`);
-
     if (isPanel) {
       document.body.classList.add('mode-panel');
       initPanelMode();
@@ -491,38 +397,21 @@
     }
 
     // ========================================================
-    // 📺 OVERLAY ENGINE (Stream graphics & sound)
+    // 📺 OVERLAY ENGINE
     // ========================================================
     function initOverlayMode() {
-      const tag = document.getElementById('overlayVersionTag');
-      if (tag) tag.innerText = APP_VERSION;
-
       let FUNDRAISER_SLUG = "our2ndhome";
-      const CHECK_INTERVAL_SECONDS = 10;
+      const CHECK_INTERVAL_SECONDS = 8;
       const MIN_ALERT_DISPLAY_MS = 4500;
       const TICKET_MILESTONE_KR = 200;
       const MAX_TICKETS_PER_USER = 5;
 
-      const GITHUB_USERNAME = "Our2ndHome";
-      const GITHUB_REPO = "index";
-      const SOUNDS_FOLDER = "sounds";
-      const SOUND_VOLUME = 0.8;
-      const PAUSE_BETWEEN_ALERTS_SECONDS = 1.2;
-
-      const BACKUP_SOUNDS = [
-        'sounds/ssstik.io_1786298964532.mp3',
-        'sounds/ssstik.io_1786298991426.mp3',
-        'sounds/ssstik.io_1786299005161.mp3'
-      ];
-
       let currentTotal = 0;
       let isInitialFetch = true;
-      let soundFileList = [...BACKUP_SOUNDS];
       const donorTicketsMap = {};
       let knownDonationIds = new Set();
       const alertQueue = [];
       let isProcessingAlert = false;
-
       let autoDriveEnabled = false;
       let autoDriveTimer = null;
 
@@ -539,7 +428,6 @@
         const stats = getStats();
         bus.postMessage({
           type: 'STATUS_SYNC',
-          version: APP_VERSION,
           total: currentTotal,
           slug: FUNDRAISER_SLUG,
           autoDrive: autoDriveEnabled,
@@ -580,9 +468,8 @@
       }
 
       function recordDonorDonation(donorName, donationAmount) {
-        if (!donorName || !donorName.trim()) return;
+        if (!donorName || !donorName.trim() || /anonym/i.test(donorName)) return;
         const cleanName = donorName.trim();
-        if (/anonym/i.test(cleanName)) return;
 
         if (!donorTicketsMap[cleanName]) {
           donorTicketsMap[cleanName] = { totalAmount: 0, ticketsEarned: 0, ticketsActive: 0 };
@@ -635,73 +522,14 @@
           void banner.offsetWidth;
           banner.classList.add('show-alert');
 
-          const soundPromise = playAlertSound();
-          const minDisplayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
-
-          await Promise.all([soundPromise, minDisplayPromise]);
+          await new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
           banner.classList.remove('show-alert');
-        } catch(err) {
-          console.error("Alert processing error:", err);
         } finally {
           setTimeout(() => {
             isProcessingAlert = false;
             processQueue();
-          }, PAUSE_BETWEEN_ALERTS_SECONDS * 1000);
+          }, 1200);
         }
-      }
-
-      function playAlertSound() {
-        return new Promise((resolve) => {
-          if (!soundFileList || soundFileList.length === 0) return resolve();
-          try {
-            const audio = new Audio(soundFileList[Math.floor(Math.random() * soundFileList.length)]);
-            audio.volume = SOUND_VOLUME;
-            let finished = false;
-            const done = () => { if (!finished) { finished = true; resolve(); } };
-            audio.onended = done;
-            audio.onerror = done;
-            audio.play().catch(() => done());
-            setTimeout(done, 7000);
-          } catch(e) { resolve(); }
-        });
-      }
-
-      async function loadSoundsAutomatically() {
-        try {
-          const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
-          if (res.ok) {
-            const files = await res.json();
-            const sounds = files.filter(f => f.name.match(/\.(mp3|wav|ogg)$/i)).map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
-            if (sounds.length > 0) soundFileList = sounds;
-          }
-        } catch(e) {}
-      }
-
-      function scheduleNextAutoDrive(delayMs = null) {
-        if (!autoDriveEnabled) return;
-        if (autoDriveTimer) clearTimeout(autoDriveTimer);
-        const nextDelay = delayMs !== null ? delayMs : (Math.floor(Math.random() * 10) + 12) * 1000;
-        autoDriveTimer = setTimeout(() => {
-          if (autoDriveEnabled) {
-            triggerAutoDriveDonation();
-            scheduleNextAutoDrive();
-          }
-        }, nextDelay);
-      }
-
-      function triggerAutoDriveDonation() {
-        const donors = ["Sofia", "Marcus", "Elin", "Oscar", "Emma", "Viktor", "Lina", "Filip", "Agnes", "Lucas", "David", "Klara"];
-        const amounts = [50, 100, 150, 200, 250, 300, 500];
-        const comments = ["Kämpa på!", "Grymt initiativ ❤️", "För Musikhjälpen!", "Heja er!", ""];
-
-        const donor = donors[Math.floor(Math.random() * donors.length)];
-        const amount = amounts[Math.floor(Math.random() * amounts.length)];
-        const comment = comments[Math.floor(Math.random() * comments.length)];
-
-        currentTotal += amount;
-        recordDonorDonation(donor, amount);
-        saveState();
-        enqueueAlert(donor, amount, currentTotal, comment);
       }
 
       function cleanSwedishAmount(val) {
@@ -712,85 +540,66 @@
         return isNaN(num) ? 0 : num;
       }
 
-      function parseFundraiserPayload(rawData) {
-        let amount = -1, donations = [], success = false;
-        if (!rawData) return { amount, donations, success };
+      // Scrapes directly from Musikhjälpen HTML
+      function parseHTML(htmlText) {
+        let amount = -1;
 
-        // Unpack AllOrigins JSON
-        if (typeof rawData === 'string' && rawData.includes('"contents"')) {
+        // Matches the amount on the bössa page (e.g. "400 kr" or "Insamlat just nu: 400 kr")
+        const match = htmlText.match(/insamlat\s*just\s*nu[:\s]*([0-9\s]+)\s*kr/i)
+                   || htmlText.match(/([0-9\s]+)\s*kr\b[\s\S]*?Mål/i)
+                   || htmlText.match(/([0-9\s]+)\s*kr\s*insamlat/i)
+                   || htmlText.match(/([0-9\s]+)\s*kr/i);
+
+        if (match && match[1]) {
+          const val = cleanSwedishAmount(match[1]);
+          if (val >= 0 && val !== 40000) {
+            amount = val;
+          }
+        }
+        return amount;
+      }
+
+      // DIRECT FETCHER: Fetches Musikhjälpen directly
+      async function fetchMusikhjalpenData() {
+        const slug = (FUNDRAISER_SLUG || "our2ndhome").trim();
+        const urls = [
+          `https://bossan.musikhjalpen.se/${slug}/`,
+          `https://bossan.musikhjalpen.se/`
+        ];
+
+        for (const targetUrl of urls) {
           try {
-            const j = JSON.parse(rawData);
-            if (j.contents) rawData = j.contents;
+            const res = await fetch(targetUrl + '?_t=' + Date.now(), { cache: 'no-store' });
+            if (!res.ok) continue;
+
+            const text = await res.text();
+            const amount = parseHTML(text);
+
+            if (amount >= 0) {
+              const timeStr = new Date().toLocaleTimeString('sv-SE');
+              broadcastState(`Ansluten till bössan (${formatSEK(amount)}) • ${timeStr}`);
+
+              if (isInitialFetch) {
+                isInitialFetch = false;
+                currentTotal = amount;
+                updateTotalDisplayDirect(formatSEK(currentTotal));
+                saveState();
+                return;
+              }
+
+              if (amount > currentTotal) {
+                const diff = amount - currentTotal;
+                currentTotal = amount;
+                enqueueAlert("Givare", diff, currentTotal, "Tack för gåvan!");
+                saveState();
+              }
+              return;
+            }
           } catch(e) {}
         }
 
-        // 1. Text scraping from live HTML
-        if (typeof rawData === 'string') {
-          const match = rawData.match(/insamlat\s*just\s*nu[:\s]*([0-9\s]+)\s*kr/i)
-                     || rawData.match(/([0-9\s]+)\s*kr\s*insamlat/i)
-                     || rawData.match(/"raised"\s*:\s*([0-9]+)/i)
-                     || rawData.match(/"totalAmount"\s*:\s*([0-9]+)/i)
-                     || rawData.match(/([0-9\s]+)\s*kr\b[\s\S]*?Mål/i);
-
-          if (match && match[1]) {
-            const parsedVal = cleanSwedishAmount(match[1]);
-            if (parsedVal >= 0 && parsedVal !== 40000) {
-              amount = parsedVal;
-              success = true;
-            }
-          }
-        }
-
-        return { amount, donations, success };
-      }
-
-      async function fetchMusikhjalpenData() {
-        const slug = (FUNDRAISER_SLUG || "our2ndhome").trim();
-        const slugList = [slug, "our2ndhome", "Our2ndHome"];
-
-        for (const s of slugList) {
-          const targetUrl = `https://bossan.musikhjalpen.se/${s}/`;
-          const proxies = [
-            `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-            `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-            `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
-          ];
-
-          for (const p of proxies) {
-            try {
-              const res = await fetch(p + (p.includes('?') ? '&' : '?') + '_t=' + Date.now(), { cache: 'no-store' });
-              if (!res.ok) continue;
-
-              const text = await res.text();
-              const parsed = parseFundraiserPayload(text);
-
-              if (parsed.success && parsed.amount >= 0) {
-                const timeStr = new Date().toLocaleTimeString('sv-SE');
-                broadcastState(`Ansluten till bössan (${formatSEK(parsed.amount)}) • ${timeStr}`);
-
-                if (isInitialFetch) {
-                  isInitialFetch = false;
-                  currentTotal = parsed.amount;
-                  updateTotalDisplayDirect(formatSEK(currentTotal));
-                  saveState();
-                  return;
-                }
-
-                if (parsed.amount > currentTotal) {
-                  const diff = parsed.amount - currentTotal;
-                  currentTotal = parsed.amount;
-                  enqueueAlert("Givare", diff, currentTotal, "Tack för gåvan!");
-                  saveState();
-                }
-                return;
-              }
-            } catch(e) {}
-          }
-        }
-        
-        // If proxies are blocked by MH firewall, display current local total
         const timeStr = new Date().toLocaleTimeString('sv-SE');
-        broadcastState(`Lokal sync (${formatSEK(currentTotal)}) • ${timeStr}`);
+        broadcastState(`Kunde inte nå bössan • ${timeStr}`);
       }
 
       function updateCountdown() {
@@ -838,7 +647,13 @@
           case 'TOGGLE_AUTODRIVE':
             autoDriveEnabled = data.enabled;
             if (autoDriveTimer) clearTimeout(autoDriveTimer);
-            if (autoDriveEnabled) scheduleNextAutoDrive(1500);
+            if (autoDriveEnabled) {
+              autoDriveTimer = setTimeout(() => {
+                currentTotal += 100;
+                saveState();
+                enqueueAlert("Lisa", 100, currentTotal, "Kämpa på!");
+              }, 1500);
+            }
             saveState();
             break;
 
@@ -846,10 +661,6 @@
             FUNDRAISER_SLUG = data.slug;
             saveState();
             fetchMusikhjalpenData();
-            break;
-
-          case 'PLAY_TEST_SOUND':
-            playAlertSound();
             break;
 
           case 'RESET_ALL':
@@ -869,7 +680,6 @@
       };
 
       loadState();
-      loadSoundsAutomatically();
       fetchMusikhjalpenData();
       updateCountdown();
 
@@ -878,19 +688,11 @@
     }
 
     // ========================================================
-    // 🎛️ DOCK CONTROLLER LOGIC
+    // 🎛️ DOCK CONTROLLER
     // ========================================================
     let autoDriveIsActive = false;
-    let isSubmitting = false;
 
     function initPanelMode() {
-      const badge = document.getElementById('dockVersionBadge');
-      if (badge) badge.innerText = APP_VERSION;
-
-      const initTime = new Date().toLocaleTimeString('sv-SE');
-      const statusBox = document.getElementById('dockStatusBox');
-      if (statusBox) statusBox.innerText = `Laddat ${APP_VERSION} (${initTime}) • Söker overlay...`;
-
       bus.onmessage = (event) => {
         const data = event.data;
         if (!data) return;
@@ -909,36 +711,16 @@
 
           if (typeof data.autoDrive === 'boolean') {
             autoDriveIsActive = data.autoDrive;
-            updateAutoDriveButtonUI();
+            const btn = document.getElementById('dockAutoDriveBtn');
+            if (btn) {
+              btn.innerText = autoDriveIsActive ? "Växla till testläge (Auto-Drive: PÅ)" : "Växla till testläge (Auto-Drive: AV)";
+              btn.style.borderColor = autoDriveIsActive ? "#ffffff" : "#27272a";
+            }
           }
         }
       };
 
       bus.postMessage({ type: 'REQUEST_STATE' });
-    }
-
-    function togglePasteModal() {
-      const modal = document.getElementById('pasteModal');
-      modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function parsePastedText() {
-      const text = document.getElementById('pasteTextInput').value;
-      if (!text.trim()) return;
-
-      // Extract amount from pasted text (e.g. "Insamlat just nu: 400 kr" or "400 kr")
-      const match = text.match(/([0-9\s]+)\s*kr/i);
-      if (match && match[1]) {
-        let cleanStr = match[1].replace(/[^0-9.]/g, '');
-        let amount = parseFloat(cleanStr);
-        if (!isNaN(amount) && amount > 0) {
-          bus.postMessage({ type: 'SET_TOTAL', amount });
-          alert(`Hittade och satte beloppet till: ${amount} kr!`);
-          togglePasteModal();
-          return;
-        }
-      }
-      alert("Kunde inte hitta något belopp i texten. Kontrollera att det står t.ex. '400 kr'.");
     }
 
     function dockSetTotal() {
@@ -947,23 +729,8 @@
       bus.postMessage({ type: 'SET_TOTAL', amount: val });
     }
 
-    function updateAutoDriveButtonUI() {
-      const btn = document.getElementById('dockAutoDriveBtn');
-      if (!btn) return;
-      if (autoDriveIsActive) {
-        btn.innerText = "Växla till testläge (Auto-Drive: PÅ)";
-        btn.style.borderColor = "#ffffff";
-        btn.style.background = "#27272a";
-      } else {
-        btn.innerText = "Växla till testläge (Auto-Drive: AV)";
-        btn.style.borderColor = "#27272a";
-        btn.style.background = "#18181c";
-      }
-    }
-
     function dockToggleAutoDrive() {
       autoDriveIsActive = !autoDriveIsActive;
-      updateAutoDriveButtonUI();
       bus.postMessage({ type: 'TOGGLE_AUTODRIVE', enabled: autoDriveIsActive });
     }
 
@@ -975,29 +742,15 @@
     }
 
     function dockSubmitManualDonation() {
-      if (isSubmitting) return;
-      isSubmitting = true;
-      const btn = document.getElementById('dockSubmitDonationBtn');
-      if (btn) btn.disabled = true;
-
       const donor = document.getElementById('dockManualName').value.trim() || "Lisa";
       const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
       const comment = document.getElementById('dockManualComment').value.trim();
 
       bus.postMessage({ type: 'TRIGGER_DONATION', donor, amount, comment });
-
-      setTimeout(() => {
-        isSubmitting = false;
-        if (btn) btn.disabled = false;
-      }, 500);
     }
 
     function dockTriggerSampleDonation(donor, amount, comment) {
       bus.postMessage({ type: 'TRIGGER_DONATION', donor, amount, comment });
-    }
-
-    function dockTestSound() {
-      bus.postMessage({ type: 'PLAY_TEST_SOUND' });
     }
 
     function dockResetAll() {
