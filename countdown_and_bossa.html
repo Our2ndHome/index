@@ -107,7 +107,6 @@
       opacity: 0.95;
     }
 
-    /* Clean transparent alerts */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -175,7 +174,7 @@
       z-index: 9999;
     }
 
-    /* 🎛️ DOCK (BLACK & WHITE) */
+    /* 🎛️ DOCK */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -273,6 +272,22 @@
     }
     .btn-dark:hover { background: #24242a; }
 
+    .btn-resync {
+      background: #18181c;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      border-radius: 4px;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .btn-resync:hover { background: #00ff88; color: #000000; }
+
     .manual-row {
       display: flex;
       gap: 6px;
@@ -329,13 +344,13 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">ALERT-SYNC v6.1</div>
+    <div class="overlay-version-tag">RESYNC v6.2</div>
   </div>
 
   <!-- 🎛️ DOCK -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.1</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.2</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -344,6 +359,11 @@
     <div class="summary-text" id="dockSummaryText">
       <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
     </div>
+
+    <!-- 🔄 The new Re-sync button -->
+    <button class="btn-resync" onclick="dockRequestResync()">
+      🔄 Återställ & Hämta från bössan
+    </button>
 
     <div class="field-row">
       <span class="field-label">SÄTT BELOPP:</span>
@@ -396,17 +416,14 @@
     let initialLoad = true;
     let soundFileList = [...BACKUP_SOUNDS];
 
-    // Alert Queue to prevent overlapping
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    // Initialize Firebase
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbRef = firebase.database().ref('bossa');
 
-    // 🔊 Auto-load sounds from GitHub
     async function loadSounds() {
       try {
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
@@ -419,7 +436,7 @@
     }
     loadSounds();
 
-    // ⚡ REAL-TIME SYNCHRONIZER
+    // ⚡ REAL-TIME DATABASE LISTENER
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -428,9 +445,14 @@
       currentTotal = newTotal;
 
       updateTotalDisplaySmooth(formatSEK(currentTotal));
-      updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
 
-      // Check if new alert arrived
+      if (data.forceSync) {
+        updateStatusDisplay("Synk begärd från servern...");
+      } else {
+        updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
+      }
+
+      // Trigger live alert
       if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId && data.diff > 0) {
         lastProcessedAlertId = data.alertId;
         enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
@@ -438,8 +460,6 @@
         lastProcessedAlertId = data.alertId || 0;
         initialLoad = false;
       }
-    }, (error) => {
-      updateStatusDisplay("Databasfel: Kontrollera Firebase");
     });
 
     function enqueueAlert(donor, amount, comment) {
@@ -460,10 +480,9 @@
         document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
 
         banner.classList.remove('show-alert');
-        void banner.offsetWidth; // Force CSS reflow
+        void banner.offsetWidth;
         banner.classList.add('show-alert');
 
-        // Play audio & show banner simultaneously
         const soundPromise = playAlertSound();
         const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
 
@@ -487,7 +506,7 @@
           const finish = () => { if (!done) { done = true; resolve(); } };
           audio.onended = finish;
           audio.onerror = finish;
-          audio.play().catch(() => finish());
+          audio.play().catch(() => done());
           setTimeout(finish, 7000);
         } catch(e) { resolve(); }
       });
@@ -508,11 +527,22 @@
       }
     }
 
-    // 🎛️ DOCK ACTIONS (Pushes to Firebase with the Secret Key)
+    // 🎛️ DOCK ACTIONS
+    function dockRequestResync() {
+      const box = document.getElementById('dockStatusBox');
+      if (box) box.innerText = "Begär synk från servern...";
+      
+      // Flags Firebase to force-pull from Musikhjälpen
+      dbRef.update({
+        forceSync: true,
+        secret: WRITE_SECRET
+      });
+    }
+
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
       if (isNaN(val)) return;
-      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, secret: WRITE_SECRET });
+      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, forceSync: false, secret: WRITE_SECRET });
     }
 
     function dockSubmitManualDonation() {
@@ -526,6 +556,7 @@
         donor: donor,
         comment: comment,
         alertId: Date.now(),
+        forceSync: false,
         secret: WRITE_SECRET
       });
     }
@@ -537,13 +568,14 @@
         donor: donor,
         comment: comment,
         alertId: Date.now(),
+        forceSync: false,
         secret: WRITE_SECRET
       });
     }
 
     function dockResetAll() {
       if (confirm("Nollställ räknaren för alla streamers till 0 kr?")) {
-        dbRef.set({ total: 0, diff: 0, donor: "", comment: "", alertId: 0, secret: WRITE_SECRET });
+        dbRef.set({ total: 0, diff: 0, donor: "", comment: "", alertId: 0, forceSync: false, secret: WRITE_SECRET });
       }
     }
 
