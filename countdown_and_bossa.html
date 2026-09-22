@@ -27,7 +27,7 @@
       user-select: none;
     }
 
-    /* 📺 1. OVERLAY */
+    /* 📺 OVERLAY */
     .countdown-widget {
       position: absolute;
       top: 20px;
@@ -169,7 +169,7 @@
       z-index: 9999;
     }
 
-    /* 🎛️ 2. DOCK (BLACK & WHITE) */
+    /* 🎛️ DOCK (BLACK & WHITE) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -323,13 +323,13 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">TRUE-SYNC v5.3</div>
+    <div class="overlay-version-tag">DUAL-SYNC v5.4</div>
   </div>
 
   <!-- 🎛️ DOCK -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v5.3</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v5.4</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -341,7 +341,7 @@
 
     <div class="field-row">
       <span class="field-label">BÖSSA ID:</span>
-      <input type="text" id="dockSlugInput" value="Our2ndHome" style="width: 60%; text-align: right;">
+      <input type="text" id="dockSlugInput" value="our2ndhome" style="width: 60%; text-align: right;">
     </div>
 
     <button class="btn-dark" onclick="triggerDirectFetch()">Hämta gåvor från bössan</button>
@@ -388,14 +388,13 @@
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel');
 
-    let FUNDRAISER_SLUG = "Our2ndHome";
+    let FUNDRAISER_SLUG = "our2ndhome";
     let currentTotal = 0;
     const donorTicketsMap = {};
     let knownDonationIds = new Set();
     let autoDriveEnabled = false;
     let autoDriveTimer = null;
 
-    // Load persisted state
     try {
       const savedSlug = localStorage.getItem(STORAGE_KEY_SLUG);
       if (savedSlug) FUNDRAISER_SLUG = savedSlug;
@@ -407,63 +406,88 @@
 
       const savedDonors = localStorage.getItem(STORAGE_KEY_DONORS);
       if (savedDonors) Object.assign(donorTicketsMap, JSON.parse(savedDonors));
+
+      const savedIds = localStorage.getItem(STORAGE_KEY_KNOWN_IDS);
+      if (savedIds) knownDonationIds = new Set(JSON.parse(savedIds));
     } catch(e) {}
 
     // ========================================================
-    // 🧠 100% PRECISE PARSER FOR OUR2NDHOME
+    // 🧠 ADVANCED DUAL PARSER (Extracts Amount AND Donors)
     // ========================================================
-    function extractOurBossaAmount(rawText) {
-      if (!rawText || typeof rawText !== 'string') return -1;
+    function parseMusikhjalpenPage(rawText, bossaSlug) {
+      let amount = -1;
+      let donations = [];
 
-      // Unpack AllOrigins wrapper if present
-      if (rawText.includes('"contents"')) {
+      if (!rawText || typeof rawText !== 'string') return { amount, donations };
+
+      // 1. Extract the current total
+      const topplistaMatch = rawText.match(/Our2ndHome[\s\S]{0,120}?insamlat\s*just\s*nu[:\s]*([0-9\s]+)\s*kr/i)
+                          || rawText.match(/Our2ndHome[\s\S]{0,120}?([0-9\s]+)\s*kr\b/i)
+                          || rawText.match(/insamlat\s*just\s*nu[:\s]*([0-9\s]+)\s*kr/i)
+                          || rawText.match(/([0-9\s]+)\s*kr\b[\s\S]*?Mål/i);
+
+      if (topplistaMatch && topplistaMatch[1]) {
+        const val = parseInt(topplistaMatch[1].replace(/[^0-9]/g, ''), 10);
+        if (!isNaN(val) && val > 0 && val !== 40000) amount = val;
+      }
+
+      // 2. Extract recent donors, amounts, and comments if present in JSON/HTML
+      try {
+        const jsonMatch = rawText.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
+        if (jsonMatch && jsonMatch[1]) {
+          const json = JSON.parse(jsonMatch[1]);
+          const rawDonations = json.props?.pageProps?.fundraiser?.donations || json.props?.pageProps?.donations || [];
+          if (Array.isArray(rawDonations)) {
+            donations = rawDonations.map(d => ({
+              id: d.id || `${d.name}_${d.amount}_${d.createdAt}`,
+              donor: d.name || "Anonym Givare",
+              amount: parseInt(d.amount, 10) || 50,
+              comment: d.comment || d.message || ""
+            }));
+          }
+        }
+      } catch(e) {}
+
+      // Fallback text donor scraping
+      if (donations.length === 0) {
         try {
-          const j = JSON.parse(rawText);
-          if (j.contents) rawText = j.contents;
+          const donorMatches = rawText.matchAll(/"name"\s*:\s*"([^"]+)"[\s\S]*?"amount"\s*:\s*([0-9]+)/gi);
+          for (const m of donorMatches) {
+            donations.push({
+              id: `${m[1]}_${m[2]}`,
+              donor: m[1],
+              amount: parseInt(m[2], 10),
+              comment: ""
+            });
+          }
         } catch(e) {}
       }
 
-      // Pattern 1: Exact match from Musikhjälpen Topplista: "Our2ndHome. Insamlat just nu: 400 kr."
-      const topplistaMatch = rawText.match(/Our2ndHome[\s\S]{0,120}?insamlat\s*just\s*nu[:\s]*([0-9\s]+)\s*kr/i);
-      if (topplistaMatch && topplistaMatch[1]) {
-        const val = parseInt(topplistaMatch[1].replace(/[^0-9]/g, ''), 10);
-        if (!isNaN(val) && val > 0 && val !== 40000) return val;
-      }
-
-      // Pattern 2: Front page match: "Our2ndHome ... 400 kr"
-      const frontMatch = rawText.match(/Our2ndHome[\s\S]{0,120}?([0-9\s]+)\s*kr\b/i);
-      if (frontMatch && frontMatch[1]) {
-        const val = parseInt(frontMatch[1].replace(/[^0-9]/g, ''), 10);
-        if (!isNaN(val) && val > 0 && val !== 40000) return val;
-      }
-
-      return -1;
+      return { amount, donations };
     }
 
     // ========================================================
-    // 🔄 SHARED FETCH FUNCTION (Executes in Dock AND Overlay)
+    // 🔄 FETCH CYCLE: Queries both Topplista AND Individual Bössa
     // ========================================================
     async function executeBossaFetch() {
-      const endpoints = [
-        // 1. Direct connection (Works 100% in OBS with --disable-web-security)
+      const slug = (FUNDRAISER_SLUG || "our2ndhome").trim();
+      const urls = [
+        `https://bossan.musikhjalpen.se/${slug.toLowerCase()}/`,
         `https://bossan.musikhjalpen.se/topplista`,
-        `https://bossan.musikhjalpen.se/`,
-        // 2. Public proxies (Fallback for standard browsers)
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent('https://bossan.musikhjalpen.se/topplista')}`,
-        `https://corsproxy.io/?${encodeURIComponent('https://bossan.musikhjalpen.se/topplista')}`
+        `https://bossan.musikhjalpen.se/`
       ];
 
-      for (const url of endpoints) {
+      for (const url of urls) {
         try {
           const res = await fetch(url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now(), { cache: 'no-store' });
           if (!res.ok) continue;
 
           const text = await res.text();
-          const amount = extractOurBossaAmount(text);
+          const result = parseMusikhjalpenPage(text, slug);
 
-          if (amount > 0) {
+          if (result.amount > 0) {
             const timeStr = new Date().toLocaleTimeString('sv-SE');
-            applyNewTotal(amount, `Ansluten till bössan (${formatSEK(amount)}) • ${timeStr}`);
+            handleNewBossaData(result.amount, result.donations, `Ansluten till bössan (${formatSEK(result.amount)}) • ${timeStr}`);
             return true;
           }
         } catch(e) {}
@@ -474,8 +498,10 @@
       return false;
     }
 
-    function applyNewTotal(amount, statusText) {
-      currentTotal = amount;
+    function handleNewBossaData(newAmount, newDonations, statusText) {
+      const prevTotal = currentTotal;
+      currentTotal = newAmount;
+
       try {
         localStorage.setItem(STORAGE_KEY_TOTAL, currentTotal.toString());
       } catch(e) {}
@@ -483,12 +509,50 @@
       updateStatusDisplay(statusText);
       updateTotalDisplay(formatSEK(currentTotal));
 
-      // Broadcast update across all OBS windows
+      // Trigger alerts if new donations arrived
+      if (prevTotal > 0 && newAmount > prevTotal) {
+        const diff = newAmount - prevTotal;
+        const freshItems = newDonations.filter(d => !knownDonationIds.has(d.id));
+
+        if (freshItems.length > 0) {
+          freshItems.forEach(d => {
+            knownDonationIds.add(d.id);
+            recordDonor(d.donor, d.amount);
+            triggerAlert(d.donor, d.amount, d.comment);
+          });
+        } else {
+          // If individual names were hidden on the page, still fire the alert!
+          triggerAlert("Givare", diff, "Tack för bidraget till Musikhjälpen!");
+        }
+
+        try {
+          localStorage.setItem(STORAGE_KEY_KNOWN_IDS, JSON.stringify(Array.from(knownDonationIds)));
+        } catch(e) {}
+      } else if (prevTotal === 0) {
+        // First load baseline
+        newDonations.forEach(d => {
+          knownDonationIds.add(d.id);
+          recordDonor(d.donor, d.amount);
+        });
+      }
+
       bus.postMessage({
         type: 'TOTAL_UPDATED',
         amount: currentTotal,
         statusText: statusText
       });
+    }
+
+    function recordDonor(name, amount) {
+      if (!name || /anonym/i.test(name)) return;
+      if (!donorTicketsMap[name]) {
+        donorTicketsMap[name] = { total: 0, tickets: 0 };
+      }
+      donorTicketsMap[name].total += amount;
+      donorTicketsMap[name].tickets = Math.min(5, Math.floor(donorTicketsMap[name].total / 200));
+      try {
+        localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorTicketsMap));
+      } catch(e) {}
     }
 
     function updateStatusDisplay(text) {
@@ -497,7 +561,8 @@
 
       const summary = document.getElementById('dockSummaryText');
       if (summary) {
-        summary.innerHTML = `<b>1</b> biljett fördelad på <b>1</b> givare (Totalt: <b>${formatSEK(currentTotal)}</b>)`;
+        const donorCount = Object.keys(donorTicketsMap).length || 1;
+        summary.innerHTML = `<b>1</b> biljett fördelad på <b>${donorCount}</b> givare (Totalt: <b>${formatSEK(currentTotal)}</b>)`;
       }
     }
 
@@ -506,8 +571,17 @@
       if (el) el.innerText = text;
     }
 
+    function triggerAlert(donor, amount, comment) {
+      bus.postMessage({
+        type: 'TRIGGER_ALERT',
+        donor: donor,
+        amount: amount,
+        comment: comment
+      });
+    }
+
     // ========================================================
-    // 📺 OVERLAY ENGINE
+    // 📺 OVERLAY VIEW
     // ========================================================
     function initOverlayMode() {
       updateTotalDisplay(formatSEK(currentTotal));
@@ -522,19 +596,18 @@
         }
 
         if (data.type === 'TRIGGER_ALERT') {
-          triggerBannerAlert(data.donor, data.amount, data.comment);
+          showBanner(data.donor, data.amount, data.comment);
         }
       };
 
       updateCountdown();
       setInterval(updateCountdown, 1000);
-      
-      // Auto-fetch cycle
+
       executeBossaFetch();
       setInterval(executeBossaFetch, 10000);
     }
 
-    function triggerBannerAlert(donor, amount, comment) {
+    function showBanner(donor, amount, comment) {
       const banner = document.getElementById('alertBanner');
       document.getElementById('donorName').innerText = donor;
       document.getElementById('alertAmount').innerText = formatSEK(amount);
@@ -574,7 +647,7 @@
     }
 
     // ========================================================
-    // 🎛️ DOCK CONTROLLER
+    // 🎛️ DOCK VIEW
     // ========================================================
     function initPanelMode() {
       updateStatusDisplay(`Redo (${formatSEK(currentTotal)})`);
@@ -589,21 +662,20 @@
         }
       };
 
-      // Fetch immediately upon opening the dock
       executeBossaFetch();
       setInterval(executeBossaFetch, 10000);
     }
 
     function triggerDirectFetch() {
       const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = "Hämtar data från topplistan...";
+      if (box) box.innerText = "Hämtar data...";
       executeBossaFetch();
     }
 
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
       if (isNaN(val)) return;
-      applyNewTotal(val, `Satt manuellt (${formatSEK(val)})`);
+      handleNewBossaData(val, [], `Satt manuellt (${formatSEK(val)})`);
     }
 
     function dockToggleAutoDrive() {
@@ -617,8 +689,8 @@
       if (autoDriveTimer) clearTimeout(autoDriveTimer);
       if (autoDriveEnabled) {
         autoDriveTimer = setTimeout(() => {
-          applyNewTotal(currentTotal + 100, `Auto-Drive (+100 kr)`);
-          bus.postMessage({ type: 'TRIGGER_ALERT', donor: 'Lisa', amount: 100, comment: 'Kämpa på!' });
+          handleNewBossaData(currentTotal + 100, [], `Auto-Drive (+100 kr)`);
+          triggerAlert("Lisa", 100, "Kämpa på!");
         }, 1500);
       }
     }
@@ -628,23 +700,27 @@
       const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
       const comment = document.getElementById('dockManualComment').value.trim();
 
-      applyNewTotal(currentTotal + amount, `Donation från ${donor} (+${amount} kr)`);
-      bus.postMessage({ type: 'TRIGGER_ALERT', donor, amount, comment });
+      handleNewBossaData(currentTotal + amount, [], `Donation från ${donor} (+${amount} kr)`);
+      recordDonor(donor, amount);
+      triggerAlert(donor, amount, comment);
     }
 
     function dockTriggerSampleDonation(donor, amount, comment) {
-      applyNewTotal(currentTotal + amount, `Testdonation (+${amount} kr)`);
-      bus.postMessage({ type: 'TRIGGER_ALERT', donor, amount, comment });
+      handleNewBossaData(currentTotal + amount, [], `Testdonation (+${amount} kr)`);
+      recordDonor(donor, amount);
+      triggerAlert(donor, amount, comment);
     }
 
     function dockResetAll() {
       if (confirm("Nollställ alla sparade gåvor och räknare till 0?")) {
         try { localStorage.clear(); } catch(e) {}
-        applyNewTotal(0, "Nollställt till 0 kr");
+        currentTotal = 0;
+        knownDonationIds.clear();
+        for (const k in donorTicketsMap) delete donorTicketsMap[k];
+        handleNewBossaData(0, [], "Nollställt till 0 kr");
       }
     }
 
-    // Launch correct mode
     if (isPanel) {
       document.body.classList.add('mode-panel');
       initPanelMode();
