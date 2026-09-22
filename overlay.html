@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Master Overlay & Dock</title>
+  <title>Musikhjälpen Master Hub</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
@@ -18,7 +18,7 @@
     }
 
     /* ========================================================
-       📺 1. STREAM OVERLAY (#overlay) - ALL VISIBLE TOGETHER
+       📺 1. STREAM OVERLAY VIEW (#overlay or default)
        ======================================================== */
     body.mode-overlay {
       overflow: hidden;
@@ -33,31 +33,64 @@
       height: 100vh;
       border: none;
       background: transparent;
-      pointer-events: none; /* Mouse clicks pass right through */
+      pointer-events: none; /* Mouse clicks pass right through to your game/stream */
     }
 
-    /* Z-Index layer ordering */
+    /* Proper stacking order on stream */
     #layerSchedule { z-index: 10; } /* Bottom schedule bar */
-    #layerBossa    { z-index: 20; } /* Top countdown & goal */
-    #layerGiveaway { z-index: 30; } /* Center wheel popup */
+    #layerBossa    { z-index: 20; } /* Top countdown & goal + alerts */
+    #layerGiveaway { z-index: 30; } /* Center giveaway wheel modal */
 
     /* ========================================================
-       🎛️ 2. OBS DOCK (#panel) - ALL 3 PANELS STACKED TOGETHER
+       🎛️ 2. OBS DOCK CONTROLLER VIEW (#panel)
        ======================================================== */
     body.mode-panel {
       background-color: #0b0b0d;
       color: #ffffff;
-      overflow-y: auto; /* Scrollable window in OBS */
-      padding-bottom: 20px;
+      overflow-y: auto; /* Clean scrolling in OBS dock */
+      padding-bottom: 24px;
     }
 
-    /* Sticky quick-jump bar at the top */
-    .dock-jump-nav {
+    /* Master Dock Header */
+    .dock-master-header {
+      background: #111114;
+      border-bottom: 1px solid #27272a;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       position: sticky;
       top: 0;
+      z-index: 10000;
+    }
+
+    .dock-master-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-hub {
+      background: #ffffff;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* Sticky quick-jump buttons */
+    .dock-jump-nav {
+      position: sticky;
+      top: 36px;
       z-index: 9999;
       display: flex;
-      background: #111114;
+      background: #141418;
       border-bottom: 1px solid #27272a;
       padding: 6px;
       gap: 6px;
@@ -65,23 +98,26 @@
 
     .jump-btn {
       flex: 1;
-      background: #18181c;
+      background: #1e1e24;
       border: 1px solid #27272a;
       color: #ffffff;
       border-radius: 4px;
       padding: 6px 4px;
       font-family: inherit;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       cursor: pointer;
       text-align: center;
       text-transform: uppercase;
-      transition: background 0.15s ease;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
-    .jump-btn:hover { background: #27272e; border-color: #3f3f46; }
+    .jump-btn:hover { 
+      background: #2b2b34; 
+      border-color: #3f3f46; 
+    }
 
     .panel-section-divider {
-      background: #18181c;
+      background: #141418;
       border: 1px solid #27272a;
       border-radius: 4px;
       padding: 6px 10px;
@@ -103,8 +139,8 @@
       overflow: hidden;
     }
 
-    /* Height calibrated for each controller panel */
-    #frameBossa    { height: 490px; }
+    /* Heights calibrated to prevent unnecessary inner scrollbars */
+    #frameBossa    { height: 500px; }
     #frameGiveaway { height: 460px; }
     #frameSchedule { height: 400px; }
   </style>
@@ -112,32 +148,41 @@
 <body>
 
   <!-- ========================================================
-       📺 1. STREAM OVERLAY (All 3 live simultaneously)
+       📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
-    <!-- Bottom: Schedule bar -->
+    <!-- Bottom: Schedule / Sponsor Bar -->
     <iframe id="layerSchedule" class="overlay-frame" src="schedule.html#overlay" allow="autoplay"></iframe>
 
-    <!-- Top: Countdown & Goal + Center Alerts -->
+    <!-- Top: Countdown & Goal + Center: Donation Alerts -->
     <iframe id="layerBossa" class="overlay-frame" src="countdown_and_bossa.html#overlay" allow="autoplay"></iframe>
 
-    <!-- Center: Giveaway wheel modal -->
+    <!-- Center: Giveaway Wheel Popup -->
     <iframe id="layerGiveaway" class="overlay-frame" src="giveaway.html#overlay" allow="autoplay"></iframe>
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS DOCK (All 3 stacked in one scrollable dock)
+       🎛️ 2. OBS DOCK CONTROLLER VIEW
        ======================================================== -->
   <div id="panelContainer" style="display: none;">
     
-    <!-- Quick-jump navigation bar -->
+    <!-- Top Header -->
+    <div class="dock-master-header">
+      <div class="dock-master-title">
+        <span>KONTROLLPANEL</span>
+        <span class="badge-hub">MASTER HUB</span>
+      </div>
+      <button class="jump-btn" style="flex:0; padding: 4px 8px;" onclick="location.reload()">Ladda om</button>
+    </div>
+
+    <!-- Quick Jump Navigation -->
     <div class="dock-jump-nav">
       <button class="jump-btn" onclick="scrollToSection('secBossa')">↓ Bössa</button>
       <button class="jump-btn" onclick="scrollToSection('secGiveaway')">↓ Giveaway</button>
       <button class="jump-btn" onclick="scrollToSection('secSchedule')">↓ Schema</button>
     </div>
 
-    <!-- Section 1: Bössa & Tracker -->
+    <!-- Section 1: Bössa & Countdown -->
     <div id="secBossa" class="panel-section-divider">
       <span>💰 BÖSSA & INSAMLINGSMÅL</span>
     </div>
@@ -159,12 +204,13 @@
 
   <script>
     const hash = window.location.hash.toLowerCase();
-    const isPanel = hash.includes('panel');
+    const isPanel = hash.includes('panel') || hash.includes('dock');
 
     if (isPanel) {
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'block';
     } else {
+      // Default to overlay view
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
     }
