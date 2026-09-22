@@ -323,13 +323,13 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">DIRECT-SYNC v5.0</div>
+    <div class="overlay-version-tag">TARGETED-SYNC v5.1</div>
   </div>
 
   <!-- 🎛️ 2. OBS DOCK -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v5.0</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v5.1</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -340,8 +340,8 @@
     </div>
 
     <div class="field-row">
-      <span class="field-label">BÖSSA ID:</span>
-      <input type="text" id="dockSlugInput" value="our2ndhome" style="width: 60%; text-align: right;">
+      <span class="field-label">BÖSSA ID / NAMN:</span>
+      <input type="text" id="dockSlugInput" value="Our2ndHome" style="width: 60%; text-align: right;">
     </div>
 
     <button class="btn-dark" onclick="dockSyncSlug()">Hämta gåvor från bössan</button>
@@ -400,7 +400,7 @@
     // 📺 OVERLAY ENGINE
     // ========================================================
     function initOverlayMode() {
-      let FUNDRAISER_SLUG = "our2ndhome";
+      let FUNDRAISER_SLUG = "Our2ndHome";
       const CHECK_INTERVAL_SECONDS = 8;
       const MIN_ALERT_DISPLAY_MS = 4500;
       const TICKET_MILESTONE_KR = 200;
@@ -540,31 +540,40 @@
         return isNaN(num) ? 0 : num;
       }
 
-      // Scrapes directly from Musikhjälpen HTML
-      function parseHTML(htmlText) {
+      // 🎯 TARGETED PARSER: Matches specifically for Our2ndHome!
+      function parseHTMLForOurBossa(htmlText, nameToSearch) {
         let amount = -1;
+        const safeName = nameToSearch || "Our2ndHome";
 
-        // Matches the amount on the bössa page (e.g. "400 kr" or "Insamlat just nu: 400 kr")
-        const match = htmlText.match(/insamlat\s*just\s*nu[:\s]*([0-9\s]+)\s*kr/i)
-                   || htmlText.match(/([0-9\s]+)\s*kr\b[\s\S]*?Mål/i)
-                   || htmlText.match(/([0-9\s]+)\s*kr\s*insamlat/i)
-                   || htmlText.match(/([0-9\s]+)\s*kr/i);
+        // Regex 1: Matches "Our2ndHome ... 400 kr" (skips other bössor!)
+        const targetRegex = new RegExp(safeName + '[\\s\\S]{1,250}?([0-9\\s]+)\\s*kr\\b', 'i');
+        const match = htmlText.match(targetRegex);
 
         if (match && match[1]) {
           const val = cleanSwedishAmount(match[1]);
+          // Guard: Ignore the 40 000 kr goal itself
           if (val >= 0 && val !== 40000) {
-            amount = val;
+            return val;
           }
         }
+
+        // Regex 2: Matches "Our2ndHome ... Insamlat just nu: 400 kr" (from topplista)
+        const topplistaRegex = new RegExp(safeName + '[\\s\\S]{1,250}?insamlat\\s*just\\s*nu[:\\s]*([0-9\\s]+)\\s*kr', 'i');
+        const toppMatch = htmlText.match(topplistaRegex);
+        if (toppMatch && toppMatch[1]) {
+          return cleanSwedishAmount(toppMatch[1]);
+        }
+
         return amount;
       }
 
-      // DIRECT FETCHER: Fetches Musikhjälpen directly
+      // DIRECT FETCHER: Queries pages where Our2ndHome is active
       async function fetchMusikhjalpenData() {
-        const slug = (FUNDRAISER_SLUG || "our2ndhome").trim();
+        const name = (FUNDRAISER_SLUG || "Our2ndHome").trim();
         const urls = [
-          `https://bossan.musikhjalpen.se/${slug}/`,
-          `https://bossan.musikhjalpen.se/`
+          `https://bossan.musikhjalpen.se/topplista`,
+          `https://bossan.musikhjalpen.se/`,
+          `https://bossan.musikhjalpen.se/${name.toLowerCase()}/`
         ];
 
         for (const targetUrl of urls) {
@@ -573,9 +582,9 @@
             if (!res.ok) continue;
 
             const text = await res.text();
-            const amount = parseHTML(text);
+            const amount = parseHTMLForOurBossa(text, name);
 
-            if (amount >= 0) {
+            if (amount > 0) {
               const timeStr = new Date().toLocaleTimeString('sv-SE');
               broadcastState(`Ansluten till bössan (${formatSEK(amount)}) • ${timeStr}`);
 
@@ -599,7 +608,7 @@
         }
 
         const timeStr = new Date().toLocaleTimeString('sv-SE');
-        broadcastState(`Kunde inte nå bössan • ${timeStr}`);
+        broadcastState(`Lokal status (${formatSEK(currentTotal)}) • ${timeStr}`);
       }
 
       function updateCountdown() {
