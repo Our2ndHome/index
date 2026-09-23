@@ -32,7 +32,7 @@
       user-select: none;
     }
 
-    /* 📺 OVERLAY */
+    /* 📺 1. STREAM OVERLAY */
     .countdown-widget {
       position: absolute;
       top: 20px;
@@ -107,7 +107,7 @@
       opacity: 0.95;
     }
 
-    /* Clean transparent alert banner */
+    /* Clean transparent alert banner (no border, no background box) */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -175,7 +175,7 @@
       z-index: 9999;
     }
 
-    /* 🎛️ DOCK */
+    /* 🎛️ 2. OBS DOCK (BLACK & WHITE THEME) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -328,7 +328,7 @@
 </head>
 <body>
 
-  <!-- 📺 OVERLAY -->
+  <!-- 📺 1. STREAM OVERLAY VIEW -->
   <div id="overlayRoot">
     <div class="countdown-widget">
       <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
@@ -347,23 +347,23 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">MULTI-ALERT v6.5</div>
+    <div class="overlay-version-tag">FINAL-STABLE v6.6</div>
   </div>
 
-  <!-- 🎛️ DOCK -->
+  <!-- 🎛️ 2. OBS DOCK CONTROLLER -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.5</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.6</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluter till Firebase...</div>
 
     <div class="summary-text" id="dockSummaryText">
-      <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
+      <b>0</b> biljetter genererade (Totalt: <b>0 kr</b>)
     </div>
 
-    <!-- Safe Re-sync Button -->
+    <!-- 🔄 The Safe Re-sync Button -->
     <button class="btn-resync" onclick="dockRequestResync()">
       🔄 Återställ till verkligt belopp
     </button>
@@ -421,8 +421,13 @@
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    // Initialize Firebase
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+      }
+    } catch(e) {
+      console.error("Firebase init error:", e);
     }
     const dbRef = firebase.database().ref('bossa');
 
@@ -441,7 +446,10 @@
     // ⚡ REAL-TIME MULTI-ALERT LISTENER
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
-      if (!data) return;
+      if (!data) {
+        updateStatusDisplay("Databasen är tom (null)");
+        return;
+      }
 
       const newTotal = data.total || 0;
       currentTotal = newTotal;
@@ -454,7 +462,7 @@
         updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
       }
 
-      // Check if new alert arrived
+      // Check if new alerts arrived
       if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
         lastProcessedAlertId = data.alertId;
 
@@ -472,6 +480,9 @@
         lastProcessedAlertId = data.alertId || 0;
         initialLoad = false;
       }
+    }, (error) => {
+      console.error("Firebase Error:", error);
+      updateStatusDisplay("Databasfel: " + error.message);
     });
 
     function enqueueAlert(donor, amount, comment) {
@@ -530,13 +541,15 @@
       if (el) el.innerText = text;
     }
 
+    // 🛡️ DYNAMIC SUMMARY: Calculates 1 ticket per 200 kr milestone
     function updateStatusDisplay(text) {
       const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = text;
+      if (box && text) box.innerText = text;
 
       const summary = document.getElementById('dockSummaryText');
       if (summary) {
-        summary.innerHTML = `<b>1</b> biljett fördelad på <b>1</b> givare (Totalt: <b>${formatSEK(currentTotal)}</b>)`;
+        const tickets = Math.floor(currentTotal / 200);
+        summary.innerHTML = `<b>${tickets}</b> biljetter genererade (Totalt: <b>${formatSEK(currentTotal)}</b>)`;
       }
     }
 
@@ -564,7 +577,8 @@
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
       if (isNaN(val)) return;
-      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET });
+      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET })
+        .catch(err => alert("Kunde inte sätta belopp: " + err.message));
     }
 
     function dockSubmitManualDonation() {
@@ -581,7 +595,7 @@
         alerts: [{ donor: donor, amount: amount, comment: comment }],
         forceSync: false,
         secret: WRITE_SECRET
-      });
+      }).catch(err => alert("Kunde inte lägga till donation: " + err.message));
     }
 
     function dockTriggerSampleDonation(donor, amount, comment) {
@@ -594,7 +608,7 @@
         alerts: [{ donor: donor, amount: amount, comment: comment }],
         forceSync: false,
         secret: WRITE_SECRET
-      });
+      }).catch(err => alert("Testdonation misslyckades: " + err.message));
     }
 
     function updateCountdown() {
