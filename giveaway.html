@@ -44,7 +44,7 @@
       padding: 10px;
     }
 
-    /* 🌧️ EMOTE RAIN & CELEBRATION CANVAS */
+    /* 🌧️ EMOTE RAIN CANVAS */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -120,7 +120,7 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 THE 5-SLOT STAGE (CENTER ANCHORED AT Y: 140px) */
+    /* 🎰 THE 5-SLOT STAGE */
     .reel-viewport {
       position: relative;
       width: 100%;
@@ -401,11 +401,11 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.3</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.5</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
+    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
 
     <!-- Prize Input -->
@@ -468,7 +468,7 @@
 
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
-    const EMOTES_FOLDER = "emotes"; // 📁 Reads images from /emotes on GitHub
+    const EMOTES_FOLDER = "emotes";
 
     const TICKET_MILESTONE_KR = 200;
     const MAX_TICKETS_PER_USER = 5;
@@ -499,10 +499,10 @@
     let lastTickIndex = null;
     let lastTickTime = 0;
 
-    // 🌧️ CELEBRATION ENGINE
+    // 🌧️ VERIFIED PRELOADED EMOTES LIST
+    let loadedEmoteImages = [];
     let celebrationParticles = [];
     let celebrationAnimId = null;
-    let loadedEmoteImages = []; // Stores preloaded PNG/GIF/WebP Image objects
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -542,26 +542,34 @@
     const dbBossaRef = firebase.database().ref('bossa');
 
     // ========================================================
-    // 🖼️ AUTO-LOAD EMOTES FROM GITHUB /emotes FOLDER
+    // 🖼️ DIRECT CDN PRELOADER: Loads images immediately
     // ========================================================
     async function loadCustomEmotesFromGitHub() {
       try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
-        if (res.ok) {
-          const files = await res.json();
-          const imageFiles = files.filter(f => f.name.match(/\.(png|jpe?g|webp|gif|svg)$/i));
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}?_t=${Date.now()}`);
+        if (!res.ok) return;
 
-          loadedEmoteImages = [];
-          for (const f of imageFiles) {
-            const img = new Image();
-            img.src = `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`;
+        const files = await res.json();
+        const imageFiles = files.filter(f => f.name.match(/\.(png|jpe?g|webp|gif|svg)$/i));
+        
+        let loadedCount = 0;
+        loadedEmoteImages = [];
+
+        for (const f of imageFiles) {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          
+          img.onload = () => {
+            loadedCount++;
             loadedEmoteImages.push(img);
-          }
+            updateStatsUI();
+          };
 
-          console.log(`[Giveaway] Laddade ${loadedEmoteImages.length} egna emotes från /${EMOTES_FOLDER}`);
+          // Use direct CDN raw URL so it never 404s while GitHub Pages is building
+          img.src = f.download_url || `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`;
         }
       } catch(e) {
-        console.log("[Giveaway] Inga egna emotes hittades, använder standard-emojis");
+        console.warn("Kunde inte hämta emotes via GitHub API, använder emoji-backup.");
       }
     }
     loadCustomEmotesFromGitHub();
@@ -806,7 +814,7 @@
     }
 
     // ========================================================
-    // 🎯 BALANCED 5-SLOT SCALING (PROPORTIONAL SIZES)
+    // 🎯 BALANCED 5-SLOT SCALING
     // ========================================================
     function getSlotPhysicalMetrics(d) {
       const absD = Math.abs(d);
@@ -818,21 +826,18 @@
       let fontWeight = '900';
 
       if (absD <= 1.0) {
-        // Between Center (d=0, Y=140px) and Medium (d=1)
-        const t = absD; // 0 to 1
+        const t = absD;
         yOffset = sign * (54 * t);
-        scale = 1.18 - (1.18 - 0.86) * t; // 1.18 -> 0.86 (~28px -> ~20px)
-        opacity = 1.0 - (1.0 - 0.60) * t;  // 1.00 -> 0.60
+        scale = 1.18 - (1.18 - 0.86) * t;
+        opacity = 1.0 - (1.0 - 0.60) * t;
         fontWeight = absD < 0.25 ? '900' : '800';
       } else if (absD <= 2.0) {
-        // Between Medium (d=1) and Small (d=2)
         const t = absD - 1.0;
         yOffset = sign * (54 + 46 * t);
-        scale = 0.86 - (0.86 - 0.62) * t; // 0.86 -> 0.62 (~20px -> ~15px)
-        opacity = 0.60 - (0.60 - 0.22) * t; // 0.60 -> 0.22
+        scale = 0.86 - (0.86 - 0.62) * t;
+        opacity = 0.60 - (0.60 - 0.22) * t;
         fontWeight = '700';
       } else {
-        // Outer edges fade out
         const t = Math.min(1.0, absD - 2.0);
         yOffset = sign * (100 + 40 * t);
         scale = 0.62 - (0.62 - 0.45) * t;
@@ -841,7 +846,7 @@
       }
 
       return {
-        top: 140 + yOffset, // 140px is dead center
+        top: 140 + yOffset,
         scale: scale,
         opacity: opacity,
         fontWeight: fontWeight
@@ -898,7 +903,7 @@
     }
 
     // ========================================================
-    // 🚀 SEAMLESS KINETIC ROLL (ZERO JUMP)
+    // 🚀 CONTINUOUS FORWARD ROLLING
     // ========================================================
     function startDraw(holdDelayMs = 10000) {
       const pool = getWeightedTicketPool();
@@ -946,7 +951,6 @@
         return chosen;
       };
 
-      // Append forward seamlessly
       let lastAdded = trackNamesList[trackNamesList.length - 1] || "";
       while (trackNamesList.length < totalTrackNeeded) {
         const nextIdx = trackNamesList.length;
@@ -992,7 +996,6 @@
 
           renderVirtualSlots(currentVirtualOffset);
 
-          // Audio clicks
           const currentItemIdx = Math.floor(currentVirtualOffset);
           if (currentItemIdx !== lastTickIndex && (now - lastTickTime) > 16) {
             const speed = (1 - progress);
@@ -1004,7 +1007,6 @@
           if (progress < 1.0) {
             animFrameId = requestAnimationFrame(spinStep);
           } else {
-            // Lock dead center
             currentVirtualOffset = targetOffset;
             renderVirtualSlots(currentVirtualOffset);
 
@@ -1027,6 +1029,7 @@
               }
             }, 1000);
 
+            // 🌧️ TRIGGER PRO EMOTE RAIN
             triggerCelebrationBurst();
           }
         }
@@ -1064,40 +1067,40 @@
     }
 
     // ========================================================
-    // 🌧️ CELEBRATION ENGINE: USES GITHUB /emotes IMAGES + FALLBACK
+    // 🌧️ CELEBRATION ENGINE: GUARANTEED VISIBLE EMOTE RAIN
     // ========================================================
     function triggerCelebrationBurst() {
       playVictorySound();
       celebrationParticles = [];
 
       const FALLBACK_EMOJIS = ['👑', '🎉', '🎁', '✨', '❤️', '🔥', '🏆', '⭐'];
-      const hasCustomImages = loadedEmoteImages.length > 0;
-
       const W = window.innerWidth;
       const H = window.innerHeight;
       const cX = W / 2;
       const cY = H / 2;
 
-      // 💥 WAVE 1: Radial 360° Blast from behind winner (45 particles)
+      // 💥 WAVE 1: Radial 360° Blast from Center (45 particles)
       for (let i = 0; i < 45; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = 11 + Math.random() * 16;
-        const img = hasCustomImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
-        const char = hasCustomImages ? null : FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
+        const speed = 12 + Math.random() * 18;
+
+        const hasImages = loadedEmoteImages.length > 0;
+        const imgObj = hasImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
+        const fallbackChar = FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
 
         celebrationParticles.push({
           x: cX,
           y: cY,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 3.5,
+          vy: Math.sin(angle) * speed - 4,
           gravity: 0.32,
           drag: 0.94,
-          size: 32 + Math.random() * 20,
+          size: 46 + Math.random() * 22, // Size calibrated for stream (46-68px)
           rotation: Math.random() * 360,
           rotSpeed: (Math.random() - 0.5) * 8,
           opacity: 1.0,
-          img: img,
-          char: char,
+          img: imgObj,
+          char: fallbackChar,
           sway: Math.random() * 10,
           swaySpeed: 0.04 + Math.random() * 0.04
         });
@@ -1105,22 +1108,23 @@
 
       // 🌧️ WAVE 2: Full-Screen Cascading Emote Rain (75 particles across 100% width)
       for (let i = 0; i < 75; i++) {
-        const img = hasCustomImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
-        const char = hasCustomImages ? null : FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
+        const hasImages = loadedEmoteImages.length > 0;
+        const imgObj = hasImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
+        const fallbackChar = FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
 
         celebrationParticles.push({
           x: Math.random() * W,
-          y: -50 - Math.random() * (H * 0.8),
-          vx: (Math.random() - 0.5) * 2,
-          vy: 3.5 + Math.random() * 5.0,
+          y: -60 - Math.random() * (H * 0.8),
+          vx: (Math.random() - 0.5) * 2.2,
+          vy: 3.8 + Math.random() * 5.2,
           gravity: 0.12,
           drag: 0.99,
-          size: 30 + Math.random() * 18,
+          size: 42 + Math.random() * 20, // 42-62px
           rotation: Math.random() * 360,
           rotSpeed: (Math.random() - 0.5) * 5,
           opacity: 1.0,
-          img: img,
-          char: char,
+          img: imgObj,
+          char: fallbackChar,
           sway: Math.random() * 10,
           swaySpeed: 0.03 + Math.random() * 0.03
         });
@@ -1142,23 +1146,23 @@
         p.rotation += p.rotSpeed;
 
         p.sway += p.swaySpeed;
-        p.x += Math.sin(p.sway) * 1.5;
+        p.x += Math.sin(p.sway) * 1.6;
 
-        if (p.y > window.innerHeight * 0.72) {
-          p.opacity -= 0.012;
+        if (p.y > window.innerHeight * 0.74) {
+          p.opacity -= 0.014;
         }
 
-        if (p.opacity > 0.02 && p.y < window.innerHeight + 80) {
+        if (p.opacity > 0.02 && p.y < window.innerHeight + 90) {
           aliveCount++;
           vCtx.save();
           vCtx.translate(p.x, p.y);
           vCtx.rotate((p.rotation * Math.PI) / 180);
           vCtx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
 
-          // Draw real custom image if loaded, otherwise fallback emoji
+          // 🛡️ GUARANTEED VISIBLE: Draw image if loaded, otherwise fallback emoji!
           if (p.img && p.img.complete && p.img.naturalWidth > 0) {
             vCtx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
-          } else if (p.char) {
+          } else {
             vCtx.font = `${Math.round(p.size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
             vCtx.textAlign = 'center';
             vCtx.textBaseline = 'middle';
@@ -1203,9 +1207,9 @@
 
       const statusBox = document.getElementById('dockStatusBox');
       if (statusBox) {
-        const emoteCount = loadedEmoteImages.length;
-        const emoteText = emoteCount > 0 ? ` (${emoteCount} emotes)` : '';
-        statusBox.innerText = isTestMode ? `Testläge aktivt${emoteText}` : `Ansluten till databas${emoteText}`;
+        const count = loadedEmoteImages.length;
+        const emoteBadge = count > 0 ? ` (${count} emotes redo)` : '';
+        statusBox.innerText = isTestMode ? `Testläge aktivt${emoteBadge}` : `Ansluten till databas${emoteBadge}`;
       }
     }
 
