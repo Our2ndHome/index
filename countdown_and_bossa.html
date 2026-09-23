@@ -32,7 +32,7 @@
       user-select: none;
     }
 
-    /* 📺 1. STREAM OVERLAY */
+    /* 📺 OVERLAY */
     .countdown-widget {
       position: absolute;
       top: 20px;
@@ -97,17 +97,36 @@
       text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95), 0 0 15px rgba(172, 230, 0, 0.4);
     }
 
+    /* ✨ SLEEK MINIMAL PROGRESS BAR */
+    .progress-bar-container {
+      width: 260px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      margin: 8px auto 6px auto;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 1%;
+      background: linear-gradient(90deg, #ace600, #00ff88);
+      border-radius: 999px;
+      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+    }
+
     .goal-target {
       font-size: 11px;
       font-weight: 800;
       color: #ffffff;
       display: block;
-      margin-top: 6px;
       letter-spacing: 1.2px;
       opacity: 0.95;
     }
 
-    /* Clean transparent alert banner (no border, no background box) */
+    /* Clean transparent alert banner */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -175,7 +194,7 @@
       z-index: 9999;
     }
 
-    /* 🎛️ 2. OBS DOCK (BLACK & WHITE THEME) */
+    /* 🎛️ DOCK (BLACK & WHITE) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -338,7 +357,13 @@
     <div class="goal-widget">
       <span class="goal-label">TOTALT INSAMLAT</span>
       <span class="amount" id="totalDisplay">0 kr</span>
-      <span class="goal-target">MÅL: 40 000 KR</span>
+      
+      <!-- Progress Bar Element -->
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="goalProgressBar"></div>
+      </div>
+
+      <span class="goal-target" id="goalTargetText">MÅL: 40 000 KR (0%)</span>
     </div>
 
     <div class="alert-banner" id="alertBanner">
@@ -347,13 +372,13 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">FINAL-STABLE v6.6</div>
+    <div class="overlay-version-tag">GOAL-PROGRESS v7.1</div>
   </div>
 
   <!-- 🎛️ 2. OBS DOCK CONTROLLER -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.6</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v7.1</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -392,13 +417,14 @@
   <script>
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
+    const GOAL_TARGET_KR = 40000;
 
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SOUNDS_FOLDER = "sounds";
     const SOUND_VOLUME = 0.8;
     const MIN_ALERT_DISPLAY_MS = 4500;
-    const PAUSE_BETWEEN_ALERTS_MS = 5000; // ⏱️ 5-second pause between sequential alerts
+    const PAUSE_BETWEEN_ALERTS_MS = 5000;
 
     const BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
@@ -421,15 +447,11 @@
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    // Initialize Firebase
-    try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
-      }
-    } catch(e) {
-      console.error("Firebase init error:", e);
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbRef = firebase.database().ref('bossa');
+    const dbDonorsRef = firebase.database().ref('giveaway_donors');
 
     async function loadSounds() {
       try {
@@ -446,15 +468,12 @@
     // ⚡ REAL-TIME MULTI-ALERT LISTENER
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
-      if (!data) {
-        updateStatusDisplay("Databasen är tom (null)");
-        return;
-      }
+      if (!data) return;
 
       const newTotal = data.total || 0;
       currentTotal = newTotal;
 
-      updateTotalDisplaySmooth(formatSEK(currentTotal));
+      updateTotalDisplaySmooth(currentTotal);
 
       if (data.forceSync) {
         updateStatusDisplay("Hämtar verkligt belopp från bössan...");
@@ -466,23 +485,17 @@
       if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
         lastProcessedAlertId = data.alertId;
 
-        // Process array of multiple donors
         if (Array.isArray(data.alerts) && data.alerts.length > 0) {
           data.alerts.forEach(item => {
             enqueueAlert(item.donor || "Givare", item.amount || 50, item.comment || "Tack för gåvan!");
           });
-        } 
-        // Fallback for single manual dock alerts
-        else if (data.diff > 0) {
+        } else if (data.diff > 0) {
           enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
         }
       } else if (initialLoad) {
         lastProcessedAlertId = data.alertId || 0;
         initialLoad = false;
       }
-    }, (error) => {
-      console.error("Firebase Error:", error);
-      updateStatusDisplay("Databasfel: " + error.message);
     });
 
     function enqueueAlert(donor, amount, comment) {
@@ -503,7 +516,7 @@
         document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
 
         banner.classList.remove('show-alert');
-        void banner.offsetWidth; // Force CSS reflow
+        void banner.offsetWidth;
         banner.classList.add('show-alert');
 
         const soundPromise = playAlertSound();
@@ -513,7 +526,6 @@
         banner.classList.remove('show-alert');
       }
 
-      // ⏱️ 5-SECOND PAUSE BETWEEN ALERTS
       setTimeout(() => {
         isProcessingAlert = false;
         processAlertQueue();
@@ -536,15 +548,22 @@
       });
     }
 
-    function updateTotalDisplaySmooth(text) {
+    // Smooth counter & progress bar update
+    function updateTotalDisplaySmooth(num) {
       const el = document.getElementById('totalDisplay');
-      if (el) el.innerText = text;
+      if (el) el.innerText = formatSEK(num);
+
+      const percent = Math.min(100, Math.max(0, (num / GOAL_TARGET_KR) * 100));
+      const bar = document.getElementById('goalProgressBar');
+      if (bar) bar.style.width = `${Math.max(1, percent)}%`;
+
+      const targetText = document.getElementById('goalTargetText');
+      if (targetText) targetText.innerText = `MÅL: 40 000 KR (${percent.toFixed(percent < 10 ? 1 : 0)}%)`;
     }
 
-    // 🛡️ DYNAMIC SUMMARY: Calculates 1 ticket per 200 kr milestone
     function updateStatusDisplay(text) {
       const box = document.getElementById('dockStatusBox');
-      if (box && text) box.innerText = text;
+      if (box) box.innerText = text;
 
       const summary = document.getElementById('dockSummaryText');
       if (summary) {
@@ -577,8 +596,30 @@
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
       if (isNaN(val)) return;
-      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET })
-        .catch(err => alert("Kunde inte sätta belopp: " + err.message));
+      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET });
+    }
+
+    // Case-Insensitive Donor Bridge to Giveaway
+    function bridgeDonorToGiveaway(name, amount) {
+      if (!name || amount < 1) return;
+      const cleanName = name.replace(/^@+/, '').trim();
+      const key = cleanName.toLowerCase();
+      if (/anonym|hemlig hjälte/i.test(key)) return;
+
+      dbDonorsRef.child('map').child(key).transaction((current) => {
+        const donor = current || { displayName: cleanName, totalAmount: 0, milestonesClaimed: 0, ticketsActive: 0 };
+        donor.displayName = cleanName; // Keep best casing
+        donor.totalAmount = (donor.totalAmount || 0) + amount;
+        
+        const totalMilestones = Math.floor(donor.totalAmount / 200);
+        const newMilestones = totalMilestones - (donor.milestonesClaimed || 0);
+
+        if (newMilestones > 0) {
+          donor.ticketsActive = Math.min(5, (donor.ticketsActive || 0) + newMilestones);
+          donor.milestonesClaimed = totalMilestones;
+        }
+        return donor;
+      });
     }
 
     function dockSubmitManualDonation() {
@@ -586,6 +627,9 @@
       const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
       const comment = document.getElementById('dockManualComment').value.trim();
 
+      // 🌉 Automatically feed tickets into giveaway pool!
+      bridgeDonorToGiveaway(donor, amount);
+
       dbRef.set({
         total: currentTotal + amount,
         diff: amount,
@@ -595,10 +639,12 @@
         alerts: [{ donor: donor, amount: amount, comment: comment }],
         forceSync: false,
         secret: WRITE_SECRET
-      }).catch(err => alert("Kunde inte lägga till donation: " + err.message));
+      });
     }
 
     function dockTriggerSampleDonation(donor, amount, comment) {
+      bridgeDonorToGiveaway(donor, amount);
+
       dbRef.set({
         total: currentTotal + amount,
         diff: amount,
@@ -608,7 +654,7 @@
         alerts: [{ donor: donor, amount: amount, comment: comment }],
         forceSync: false,
         secret: WRITE_SECRET
-      }).catch(err => alert("Testdonation misslyckades: " + err.message));
+      });
     }
 
     function updateCountdown() {
