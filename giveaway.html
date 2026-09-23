@@ -17,8 +17,8 @@
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
-      --item-height: 48px;
-      --viewport-height: 240px; /* 5 slots visible */
+      --item-height: 56px;
+      --viewport-height: 280px; /* Exactly 5 proportional slots */
     }
 
     * { box-sizing: border-box; }
@@ -56,13 +56,13 @@
       z-index: 99992;
     }
 
-    /* 📺 1. STREAM OVERLAY (CLEAN, NO BACKGROUND BOX, NO GLOW) */
+    /* 📺 1. STREAM OVERLAY: PURE PLAIN TEXT (NO CARDS, NO BOXES, NO GLOW) */
     .giveaway-widget {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 680px;
+      width: 800px;
       padding: 10px;
       background: transparent !important;
       border: none !important;
@@ -90,16 +90,16 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .giveaway-head-title {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 900;
-      letter-spacing: 3px;
+      letter-spacing: 4px;
       color: #ffffff;
       text-transform: uppercase;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
     .giveaway-sub-title {
@@ -115,14 +115,14 @@
       display: block;
       margin-top: 6px;
       color: #ffffff;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      min-height: 20px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+      min-height: 22px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 REEL VIEWPORT WITH SMOOTH EDGE MASK */
+    /* 🎰 REEL VIEWPORT */
     .reel-viewport {
       position: relative;
       width: 100%;
@@ -134,19 +134,19 @@
       -webkit-mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.4) 15%,
-        rgba(0, 0, 0, 1) 38%,
-        rgba(0, 0, 0, 1) 62%,
-        rgba(0, 0, 0, 0.4) 85%,
+        rgba(0, 0, 0, 0.5) 12%,
+        rgba(0, 0, 0, 1) 32%,
+        rgba(0, 0, 0, 1) 68%,
+        rgba(0, 0, 0, 0.5) 88%,
         rgba(0, 0, 0, 0) 100%
       );
       mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.4) 15%,
-        rgba(0, 0, 0, 1) 38%,
-        rgba(0, 0, 0, 1) 62%,
-        rgba(0, 0, 0, 0.4) 85%,
+        rgba(0, 0, 0, 0.5) 12%,
+        rgba(0, 0, 0, 1) 32%,
+        rgba(0, 0, 0, 1) 68%,
+        rgba(0, 0, 0, 0.5) 88%,
         rgba(0, 0, 0, 0) 100%
       );
     }
@@ -167,28 +167,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      letter-spacing: 0.5px;
+      font-size: 24px; /* Base size */
+      font-weight: 900;
+      letter-spacing: 1px;
       white-space: nowrap;
       color: #ffffff;
       transform-origin: center center;
       will-change: transform, opacity;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
-    }
-
-    /* WINNER TEXT */
-    .reel-item.is-winner {
-      font-weight: 900 !important;
-      color: #ffffff !important;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95) !important;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
     /* PRIZE TEXT */
     .giveaway-prize-display {
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 22px;
       font-weight: 900;
-      letter-spacing: 1.5px;
+      letter-spacing: 2px;
       color: #ffffff;
       text-transform: uppercase;
       text-align: center;
@@ -197,7 +191,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
@@ -395,7 +389,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.5</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.6</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -462,8 +456,8 @@
 
     const TICKET_MILESTONE_KR = 200;
     const MAX_TICKETS_PER_USER = 5;
-    const ITEM_HEIGHT = 48;
-    const VIEWPORT_HEIGHT = 240; // 5 visible slots
+    const ITEM_HEIGHT = 56;
+    const VIEWPORT_HEIGHT = 280; // 5 proportional slots
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
 
@@ -478,8 +472,8 @@
     let isSpinning = false;
     let isTestMode = false;
 
-    // Continuous Rolling State
-    let currentCenterIndex = 2; // Starts centered on item 2
+    // Continuous Rolling State (Zero Jump)
+    let currentCenterIndex = 2;
     let currentTrackItems = [];
 
     let holdTimeout = null;
@@ -533,7 +527,7 @@
     const dbBossaRef = firebase.database().ref('bossa');
 
     // ========================================================
-    // 🧠 1. DONOR ENGINE & TICKET CALCULATION
+    // 🧠 1. DONOR ENGINE
     // ========================================================
     function normalizeDonorKey(name) {
       if (!name) return "";
@@ -671,7 +665,7 @@
       };
     }
 
-    // 💬 TEST !BILJETT SIMULATOR IN DOCK
+    // 💬 TEST !BILJETT SIMULATOR
     function testChatCommandSimulator() {
       const input = document.getElementById('searchDonorInput');
       const box = document.getElementById('lookupOutput');
@@ -764,7 +758,7 @@
     }
 
     // ========================================================
-    // 🎰 DYNAMIC HIERARCHY: Small ➔ Medium ➔ BIG (Center Locked)
+    // 🎰 VISUAL ENGINE: EXACT 5-TIER MATCH (Small ➔ Medium ➔ BIG)
     // ========================================================
     function initInitialTrack() {
       const uniqueNames = getUniqueDonorNames();
@@ -778,8 +772,8 @@
         }
       }
 
-      currentCenterIndex = 2; // Center slot is item 2
-      const targetY = -(currentCenterIndex * ITEM_HEIGHT - 96); // 96px is center offset
+      currentCenterIndex = 2; // Center is item 2
+      const targetY = -(currentCenterIndex * ITEM_HEIGHT - 112); // Center offset: (280-56)/2 = 112px
 
       reelTrack.style.transition = 'none';
       reelTrack.style.transform = `translateY(${targetY}px)`;
@@ -787,9 +781,9 @@
       renderProximity(targetY);
     }
 
-    // 🎯 STRICT HIERARCHY: Center is FIXED BIG, Medium and Small scale smoothly
+    // 🎯 SMOOTH MATHEMATICAL "MERGING" CURVE (Matches Your Image 1:1)
     function renderProximity(currentY) {
-      const viewportCenter = VIEWPORT_HEIGHT / 2; // 120px
+      const viewportCenter = VIEWPORT_HEIGHT / 2; // 140px
       const items = reelTrack.children;
       const count = items.length;
       if (count === 0) return;
@@ -801,40 +795,39 @@
       for (let i = 0; i < count; i++) {
         const item = items[i];
         if (i < start || i > end) {
-          item.style.opacity = '0.05';
-          item.style.transform = 'scale(0.60)';
+          item.style.opacity = '0';
+          item.style.transform = 'scale(0.5)';
           continue;
         }
 
         const itemCenterY = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) + currentY;
-        const dist = Math.abs(itemCenterY - viewportCenter); // Distance from center 120px
+        const dist = Math.abs(itemCenterY - viewportCenter); // Distance from center 140px
 
-        let scale = 0.65;
-        let opacity = 0.15;
-        let fontWeight = '700';
+        let scale = 0.90;
+        let opacity = 0.35;
 
-        if (dist <= 24) {
-          // 🏆 BIG (CENTER SLOT) - ALWAYS FIXED FULL SIZE & BRIGHTNESS
-          scale = 1.20;
-          opacity = 1.0;
-          fontWeight = '900';
-        } else if (dist <= 72) {
-          // 🟡 MEDIUM - Smooth step between 24px and 72px
-          const t = (dist - 24) / 48; // 0 to 1
-          scale = 1.20 - (1.20 - 0.90) * t; // 1.20 -> 0.90
-          opacity = 1.0 - (1.0 - 0.55) * t;  // 1.00 -> 0.55
-          fontWeight = '700';
-        } else if (dist <= 120) {
-          // ⚪ SMALL - Outer edges fade out
-          const t = (dist - 72) / 48; // 0 to 1
-          scale = 0.90 - (0.90 - 0.65) * t; // 0.90 -> 0.65
-          opacity = 0.55 - (0.55 - 0.15) * t; // 0.55 -> 0.15
-          fontWeight = '600';
+        // Smooth cosine interpolation merging towards the center BIG size
+        if (dist <= 56) {
+          // Between Center (0px) and Medium (56px): Merges from 1.55 ➔ BIG 2.60!
+          const t = dist / 56.0;
+          const ease = (1 - Math.cos(t * Math.PI)) / 2;
+          scale = 2.60 - (2.60 - 1.55) * ease;   // 2.60 (BIG) ➔ 1.55 (Medium)
+          opacity = 1.00 - (1.00 - 0.70) * ease; // 1.00 ➔ 0.70
+        } else if (dist <= 112) {
+          // Between Medium (56px) and Small (112px): Merges from 0.90 ➔ 1.55!
+          const t = (dist - 56.0) / 56.0;
+          const ease = (1 - Math.cos(t * Math.PI)) / 2;
+          scale = 1.55 - (1.55 - 0.90) * ease;   // 1.55 (Medium) ➔ 0.90 (Small)
+          opacity = 0.70 - (0.70 - 0.35) * ease; // 0.70 ➔ 0.35
+        } else {
+          // Exiting edges (beyond 112px)
+          const t = Math.min(1.0, (dist - 112.0) / 38.0);
+          scale = 0.90 - (0.90 - 0.60) * t;
+          opacity = 0.35 - 0.35 * t;
         }
 
         item.style.transform = `scale(${scale.toFixed(3)})`;
         item.style.opacity = opacity.toFixed(3);
-        item.style.fontWeight = fontWeight;
       }
     }
 
@@ -875,7 +868,7 @@
     }
 
     // ========================================================
-    // 🚀 SEAMLESS FORWARD SPIN (ZERO JUMP ON REDRAW)
+    // 🚀 CONTINUOUS FORWARD ROLLING (ZERO JUMP)
     // ========================================================
     function startDraw(holdDelayMs = 10000) {
       const pool = getWeightedTicketPool();
@@ -922,7 +915,7 @@
         return chosen;
       };
 
-      // Seamlessly append forward to the existing track (ZERO JUMP)
+      // Append forward to current track seamlessly (Zero Jump)
       let lastAdded = currentTrackItems[currentTrackItems.length - 1] || "";
       let newHtml = "";
 
@@ -938,10 +931,9 @@
         lastAdded = name;
       }
 
-      // Append items without altering current visual transform
       reelTrack.insertAdjacentHTML('beforeend', newHtml);
 
-      // Start countdown
+      // Countdown
       const endAt = Date.now() + holdDelayMs;
       const tickBadge = () => {
         const leftSec = Math.ceil(Math.max(0, endAt - Date.now()) / 1000);
@@ -959,7 +951,7 @@
 
       holdTimeout = setTimeout(() => {
         giveawayTimerBadge.innerText = "Dragning pågår...";
-        const targetY = -(newWinnerIndex * ITEM_HEIGHT - 96);
+        const targetY = -(newWinnerIndex * ITEM_HEIGHT - 112); // Exactly centers the winner item
         const duration = holdDelayMs <= 5000 ? 5500 : 8500;
 
         reelTrack.style.transition = `transform ${duration}ms cubic-bezier(0.10, 0.85, 0.16, 1)`;
@@ -990,12 +982,6 @@
           }, 1000);
 
           renderProximity(targetY);
-
-          const items = reelTrack.children;
-          if (items[newWinnerIndex]) {
-            items[newWinnerIndex].classList.add('is-winner');
-          }
-
           triggerVictoryEffects();
         }, duration + 60);
       }, holdDelayMs);
