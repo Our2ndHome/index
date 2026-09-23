@@ -56,18 +56,18 @@
       z-index: 99992;
     }
 
-    /* 📺 1. STREAM OVERLAY: SLEEK BLACK & WHITE MODAL */
+    /* 📺 1. STREAM OVERLAY: CLEAN TRANSPARENT (NO BACKGROUND BOX, NO GLOW) */
     .giveaway-widget {
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0.92);
-      width: 660px;
-      padding: 24px 28px;
-      background: rgba(14, 14, 18, 0.95);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9), 0 0 1px rgba(255, 255, 255, 0.1);
+      transform: translate(-50%, -50%) scale(0.95);
+      width: 680px;
+      padding: 10px;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -76,8 +76,7 @@
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      backdrop-filter: blur(14px);
-      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
+      transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
     }
 
     .giveaway-widget.active {
@@ -91,24 +90,25 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .giveaway-head-title {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 900;
       letter-spacing: 3px;
       color: #ffffff;
       text-transform: uppercase;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
     }
 
     .giveaway-sub-title {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.5px;
-      color: var(--text-dim);
+      color: rgba(255, 255, 255, 0.7);
       margin-top: 4px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
     .giveaway-timer-badge {
@@ -119,17 +119,17 @@
       font-weight: 800;
       letter-spacing: 0.5px;
       min-height: 20px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
     }
 
-    /* 🎰 REEL VIEWPORT WITH CENTER TARGET NOTCH */
+    /* 🎰 REEL VIEWPORT WITH SMOOTH EDGE MASK */
     .reel-viewport {
       position: relative;
       width: 100%;
       height: var(--viewport-height);
       overflow: hidden;
-      border-radius: 8px;
-      background: rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: transparent;
+      border: none;
 
       -webkit-mask-image: linear-gradient(
         to bottom,
@@ -151,21 +151,6 @@
       );
     }
 
-    /* Target bracket highlighting the center winner slot */
-    .reel-center-indicator {
-      position: absolute;
-      top: 96px; /* Exactly at (240 - 48)/2 */
-      left: 14px;
-      right: 14px;
-      height: var(--item-height);
-      border-top: 1px solid rgba(255, 255, 255, 0.28);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.28);
-      background: rgba(255, 255, 255, 0.04);
-      border-radius: 4px;
-      pointer-events: none;
-      z-index: 5;
-    }
-
     .reel-track {
       position: absolute;
       top: 0;
@@ -183,26 +168,26 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 17px;
+      font-size: 18px;
       letter-spacing: 0.5px;
       white-space: nowrap;
       color: #ffffff;
       transform-origin: center center;
       will-change: transform, opacity;
-      transition: color 0.2s ease, text-shadow 0.2s ease;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
     }
 
-    /* WINNER ROW HIGHLIGHT */
+    /* CENTER WINNER LOCK (Always prominent) */
     .reel-item.is-winner {
-      font-size: 24px !important;
+      font-size: 20px !important;
       font-weight: 900 !important;
       color: #ffffff !important;
-      text-shadow: 0 0 18px rgba(255, 255, 255, 0.8), 0 2px 10px rgba(0, 0, 0, 1) !important;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95) !important;
     }
 
-    /* PRIZE BANNER */
+    /* PRIZE BANNER (Pure clean white text) */
     .giveaway-prize-display {
-      margin-top: 14px;
+      margin-top: 10px;
       font-size: 22px;
       font-weight: 900;
       letter-spacing: 1.5px;
@@ -214,7 +199,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
     }
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
@@ -400,8 +385,6 @@
       </div>
       
       <div class="reel-viewport">
-        <!-- Target Center Notch -->
-        <div class="reel-center-indicator"></div>
         <div class="reel-track" id="reelTrack"></div>
       </div>
 
@@ -414,11 +397,11 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.3</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.4</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
+    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
 
     <!-- Prize Input -->
@@ -457,11 +440,10 @@
       <button class="btn" onclick="addManualDonation()">+ Lägg till</button>
     </div>
 
-    <!-- Test Mode / Simulation -->
+    <!-- Actions -->
     <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">Växla till testläge (500 testbiljetter)</button>
     <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla biljetter</button>
 
-    <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
       Starta dragning (10s)
     </button>
@@ -482,7 +464,7 @@
     const TICKET_MILESTONE_KR = 200;
     const MAX_TICKETS_PER_USER = 5;
     const ITEM_HEIGHT = 48;
-    const VIEWPORT_HEIGHT = 240;
+    const VIEWPORT_HEIGHT = 240; // Exactly 5 slots
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
 
@@ -549,7 +531,7 @@
     const dbBossaRef = firebase.database().ref('bossa');
 
     // ========================================================
-    // 🧠 1. CASE-INSENSITIVE CUMULATIVE DONOR LOGIC
+    // 🧠 1. CASE-INSENSITIVE CUMULATIVE DONOR ENGINE
     // ========================================================
     function normalizeDonorKey(name) {
       if (!name) return "";
@@ -572,7 +554,7 @@
       }
 
       const donor = donorMap[key];
-      donor.displayName = cleanName; // Preserve casing
+      donor.displayName = cleanName;
       donor.totalAmount = (donor.totalAmount || 0) + amount;
 
       const totalMilestones = Math.floor(donor.totalAmount / TICKET_MILESTONE_KR);
@@ -635,7 +617,7 @@
       }).catch(() => {});
     }
 
-    // 🌉 AUTOMATIC TICKET BRIDGE: When a donation alert arrives in /bossa, award tickets!
+    // Auto-bridge from /bossa
     let lastObservedAlertId = 0;
     dbBossaRef.on('value', (snap) => {
       const bData = snap.val();
@@ -644,7 +626,6 @@
       if (bData.alertId && bData.alertId !== lastObservedAlertId) {
         lastObservedAlertId = bData.alertId;
 
-        // Auto-feed tickets for new donations
         if (Array.isArray(bData.alerts) && bData.alerts.length > 0) {
           bData.alerts.forEach(item => {
             if (item.donor && item.amount) recordDonation(item.donor, item.amount);
@@ -688,7 +669,7 @@
       };
     }
 
-    // 💬 TEST !BILJETT SIMULATOR IN THE DOCK
+    // 💬 TEST !BILJETT SIMULATOR IN DOCK
     function testChatCommandSimulator() {
       const input = document.getElementById('searchDonorInput');
       const box = document.getElementById('lookupOutput');
@@ -781,7 +762,7 @@
     }
 
     // ========================================================
-    // 🎰 SMOOTH PROXIMITY SCALING & BALANCED TRACK
+    // 🎰 SIZING HIERARCHY: Small ➔ Medium ➔ BIG ➔ Medium ➔ Small
     // ========================================================
     function createReelList(winnerName, startingFive = null) {
       const uniqueNames = getUniqueDonorNames();
@@ -801,7 +782,7 @@
         return chosen;
       };
 
-      // 1. Maintain starting five smoothly
+      // 1. Maintain starting five
       if (startingFive && startingFive.length === 5) {
         for (let i = 0; i < 5; i++) {
           const n = startingFive[i];
@@ -820,7 +801,7 @@
         }
       }
 
-      // 3. Fill the reel track up to index 110
+      // 3. Fill the track up to index 110
       const pool = getWeightedTicketPool().sort(() => Math.random() - 0.5);
       let pIdx = 0;
 
@@ -833,12 +814,11 @@
         }
       }
 
-      // 4. Set designate winner index at 110
+      // 4. Designate winner index
       const winnerIndex = 110;
       spinList[winnerIndex] = winnerName;
       last = winnerName;
 
-      // 5. Add buffer after winner
       for (let i = 0; i < 6; i++) {
         spinList.push(pickDifferent());
       }
@@ -849,24 +829,23 @@
     function initReelTrack() {
       const uniqueNames = getUniqueDonorNames();
       if (uniqueNames.length === 0) {
-        reelTrack.innerHTML = '<div class="reel-item" style="opacity:0.4;">Väntar på gåvor...</div>';
+        reelTrack.innerHTML = '<div class="reel-item" style="opacity:0.3;">Väntar på gåvor...</div>';
         return;
       }
 
-      // Fill 7 items so top and bottom rows are never empty
       const initial = [];
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 5; i++) {
         initial.push(uniqueNames[i % uniqueNames.length]);
       }
-      currentVisibleFive = [initial[1], initial[2], initial[3], initial[4], initial[5]];
+      currentVisibleFive = [...initial];
 
       reelTrack.style.transition = 'none';
-      reelTrack.style.transform = `translateY(-${ITEM_HEIGHT}px)`; // Center on index 3
+      reelTrack.style.transform = 'translateY(0px)';
       reelTrack.innerHTML = initial.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-      renderProximity(-ITEM_HEIGHT);
+      renderProximity(0);
     }
 
-    // 🎯 SMOOTH EVEN FADE AND SIZING HIERARCHY
+    // 🎯 DYNAMIC 5-TIER CURVE: Small ➔ Medium ➔ BIG ➔ Medium ➔ Small
     function renderProximity(currentY) {
       const viewportCenter = VIEWPORT_HEIGHT / 2; // 120px
       const items = reelTrack.children;
@@ -881,30 +860,28 @@
         const item = items[i];
         if (i < start || i > end) {
           item.style.opacity = '0.08';
-          item.style.transform = 'scale(0.70)';
+          item.style.transform = 'scale(0.65)';
           continue;
         }
 
         const itemCenterY = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) + currentY;
         const dist = Math.abs(itemCenterY - viewportCenter);
-        const norm = Math.min(1, dist / viewportCenter); // 0 at center, 1 at edges
+        const norm = Math.min(1.0, dist / (ITEM_HEIGHT * 2)); // 0.0 at center, 0.5 at medium, 1.0 at small
 
-        // Smooth non-linear curve: center sticks out big, edges shrink & fade
-        const closeness = Math.max(0, 1 - norm);
-        const scale = 0.72 + 0.48 * Math.pow(closeness, 1.4); // 0.72 -> 1.20
-        const opacity = 0.12 + 0.88 * Math.pow(closeness, 1.6); // 0.12 -> 1.00
+        // Smooth curve: Center is always scale 1.20, Medium is 0.92, Small is 0.68
+        const closeness = Math.max(0, 1.0 - norm);
+        const scale = 0.68 + (1.20 - 0.68) * Math.pow(closeness, 1.25);
+        const opacity = 0.15 + (1.00 - 0.15) * Math.pow(closeness, 1.4);
 
         item.style.transform = `scale(${scale.toFixed(3)})`;
         item.style.opacity = opacity.toFixed(3);
 
-        if (norm < 0.14) {
+        if (norm < 0.15) {
           item.style.fontWeight = '900';
           item.style.color = '#ffffff';
-          item.style.textShadow = '0 0 16px rgba(255, 255, 255, 0.75), 0 2px 8px #000';
         } else {
           item.style.fontWeight = '700';
-          item.style.color = '#d4d4d8';
-          item.style.textShadow = '0 2px 6px rgba(0,0,0,0.8)';
+          item.style.color = '#ffffff';
         }
       }
     }
@@ -1006,7 +983,7 @@
 
       holdTimeout = setTimeout(() => {
         giveawayTimerBadge.innerText = "Dragning pågår...";
-        const targetY = -(winnerIndex * ITEM_HEIGHT - 96); // Center exactly at 96px
+        const targetY = -(winnerIndex * ITEM_HEIGHT - 96); // Center on 96px
         const duration = holdDelayMs <= 5000 ? 5500 : 8500;
 
         reelTrack.style.transition = `transform ${duration}ms cubic-bezier(0.10, 0.85, 0.16, 1)`;
@@ -1028,7 +1005,7 @@
             if (claimSec > 0) {
               giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
             } else {
-              giveawayTimerBadge.innerText = "Tiden har gått ut! (Ge vidare eller dra ny)";
+              giveawayTimerBadge.innerText = "Tiden har gått ut!";
               clearInterval(claimTimerInterval);
               claimTimerInterval = null;
             }
