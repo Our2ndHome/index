@@ -107,6 +107,7 @@
       opacity: 0.95;
     }
 
+    /* Clean transparent alert banner */
     .alert-banner {
       position: absolute;
       top: 42%;
@@ -346,13 +347,13 @@
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">INSTANT-SYNC v6.4</div>
+    <div class="overlay-version-tag">MULTI-ALERT v6.5</div>
   </div>
 
   <!-- 🎛️ DOCK -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.4</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v6.5</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -362,7 +363,7 @@
       <b>0</b> biljetter fördelade på <b>0</b> givare (Totalt: <b>0 kr</b>)
     </div>
 
-    <!-- 🔄 The Instant Re-sync Button -->
+    <!-- Safe Re-sync Button -->
     <button class="btn-resync" onclick="dockRequestResync()">
       🔄 Återställ till verkligt belopp
     </button>
@@ -397,6 +398,7 @@
     const SOUNDS_FOLDER = "sounds";
     const SOUND_VOLUME = 0.8;
     const MIN_ALERT_DISPLAY_MS = 4500;
+    const PAUSE_BETWEEN_ALERTS_MS = 5000; // ⏱️ 5-second pause between sequential alerts
 
     const BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
@@ -436,7 +438,7 @@
     }
     loadSounds();
 
-    // ⚡ REAL-TIME DATABASE LISTENER
+    // ⚡ REAL-TIME MULTI-ALERT LISTENER
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -445,12 +447,27 @@
       currentTotal = newTotal;
 
       updateTotalDisplaySmooth(formatSEK(currentTotal));
-      updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
 
-      // Trigger live alert
-      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId && data.diff > 0) {
+      if (data.forceSync) {
+        updateStatusDisplay("Hämtar verkligt belopp från bössan...");
+      } else {
+        updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
+      }
+
+      // Check if new alert arrived
+      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
         lastProcessedAlertId = data.alertId;
-        enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+
+        // Process array of multiple donors
+        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
+          data.alerts.forEach(item => {
+            enqueueAlert(item.donor || "Givare", item.amount || 50, item.comment || "Tack för gåvan!");
+          });
+        } 
+        // Fallback for single manual dock alerts
+        else if (data.diff > 0) {
+          enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+        }
       } else if (initialLoad) {
         lastProcessedAlertId = data.alertId || 0;
         initialLoad = false;
@@ -475,7 +492,7 @@
         document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
 
         banner.classList.remove('show-alert');
-        void banner.offsetWidth;
+        void banner.offsetWidth; // Force CSS reflow
         banner.classList.add('show-alert');
 
         const soundPromise = playAlertSound();
@@ -485,10 +502,11 @@
         banner.classList.remove('show-alert');
       }
 
+      // ⏱️ 5-SECOND PAUSE BETWEEN ALERTS
       setTimeout(() => {
         isProcessingAlert = false;
         processAlertQueue();
-      }, 1000);
+      }, PAUSE_BETWEEN_ALERTS_MS);
     }
 
     function playAlertSound() {
@@ -522,18 +540,18 @@
       }
     }
 
-    // 🎛️ DOCK ACTIONS: Instant Reset in 0.05 seconds
+    // 🎛️ DOCK ACTIONS
     function dockRequestResync() {
       const box = document.getElementById('dockStatusBox');
       if (box) box.innerText = "Återställer till 400 kr...";
 
-      // Instantly resets Firebase back to the real 400 kr baseline and clears test alerts
       dbRef.set({
         total: 400,
         diff: 0,
         donor: "",
         comment: "",
         alertId: 0,
+        alerts: [],
         forceSync: true,
         secret: WRITE_SECRET
       }).then(() => {
@@ -546,7 +564,7 @@
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
       if (isNaN(val)) return;
-      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, forceSync: false, secret: WRITE_SECRET });
+      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET });
     }
 
     function dockSubmitManualDonation() {
@@ -560,6 +578,7 @@
         donor: donor,
         comment: comment,
         alertId: Date.now(),
+        alerts: [{ donor: donor, amount: amount, comment: comment }],
         forceSync: false,
         secret: WRITE_SECRET
       });
@@ -572,6 +591,7 @@
         donor: donor,
         comment: comment,
         alertId: Date.now(),
+        alerts: [{ donor: donor, amount: amount, comment: comment }],
         forceSync: false,
         secret: WRITE_SECRET
       });
