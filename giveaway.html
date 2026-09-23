@@ -3,16 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Overlay - Giveaway Wheel Widget</title>
+  <title>Musikhjälpen Giveaway Wheel</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <style>
     :root {
       --text-white: #ffffff;
-      --text-dim: rgba(255, 255, 255, 0.65);
-      --bg-panel: rgba(14, 14, 18, 0.97);
-      --border-subtle: rgba(255, 255, 255, 0.14);
-      --item-height: 44px;
-      --viewport-height: 220px;
+      --text-dim: #a1a1aa;
+      --dock-bg: #0b0b0d;
+      --card-bg: #141418;
+      --border: #27272a;
+      --item-height: 46px;
+      --viewport-height: 230px;
     }
 
     * { box-sizing: border-box; }
@@ -29,7 +35,17 @@
       user-select: none;
     }
 
-    /* VICTORY CONFETTI CANVAS */
+    /* 🔀 HASH ROUTER VISIBILITY */
+    body.mode-overlay #panelRoot { display: none !important; }
+    body.mode-panel #overlayRoot { display: none !important; }
+
+    body.mode-panel {
+      background-color: var(--dock-bg);
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    /* 🎉 CONFETTI CANVAS */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -40,251 +56,30 @@
       z-index: 99992;
     }
 
-    /* 🎛️ CONTROL PANEL */
-    .test-panel {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      background: var(--bg-panel);
-      border: 1px solid var(--border-subtle);
-      padding: 14px;
-      border-radius: 8px;
-      color: var(--text-white);
-      z-index: 999999;
-      width: 350px;
-      font-size: 12px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(12px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-    }
-
-    .test-panel.panel-hidden {
-      opacity: 0 !important;
-      pointer-events: none !important;
-      transform: translateY(-15px) !important;
-    }
-
-    /* OBS DOCK MODE */
-    body.dock-mode {
-      background-color: #0e0e11 !important;
-      overflow-y: auto !important;
-    }
-
-    body.dock-mode .test-panel {
-      position: relative !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      border-radius: 0 !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-
-    body.dock-mode .giveaway-widget,
-    body.dock-mode #victoryCanvas {
-      display: none !important;
-    }
-
-    /* OBS OVERLAY MODE */
-    body.overlay-mode .test-panel {
-      display: none !important;
-    }
-
-    .test-panel h4 {
-      margin: 0 0 10px 0;
-      font-size: 12px;
-      color: var(--text-white);
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      cursor: grab;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-subtle);
-      padding: 7px 10px;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .test-panel h4:active { cursor: grabbing; }
-
-    .header-icons {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .icon-btn {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border-subtle);
-      color: #fff;
-      border-radius: 4px;
-      padding: 3px 6px;
-      font-size: 10px;
-      cursor: pointer;
-      font-weight: 800;
-      font-family: inherit;
-    }
-
-    .icon-btn:hover {
-      background: #fff;
-      color: #000;
-    }
-
-    .widget-version-badge {
-      font-size: 9px;
-      background: #ffffff;
-      color: #000;
-      padding: 2px 5px;
-      border-radius: 3px;
-      font-weight: 900;
-    }
-
-    .panel-stats {
-      font-size: 11px;
-      color: var(--text-dim);
-      margin: 8px 0;
-      line-height: 1.4;
-    }
-
-    .panel-stats b {
-      color: #ffffff;
-    }
-
-    .panel-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 10px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border-subtle);
-      padding: 8px;
-      border-radius: 6px;
-    }
-
-    .control-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .control-row label {
-      font-size: 10px;
-      text-transform: uppercase;
-      font-weight: 800;
-      color: var(--text-dim);
-      letter-spacing: 0.5px;
-    }
-
-    .control-row input, .control-row textarea, .control-row select {
-      background: #18181b;
-      border: 1px solid var(--border-subtle);
-      color: #fff;
-      padding: 5px 8px;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 11px;
-    }
-
-    .control-row input:focus, .control-row textarea:focus, .control-row select:focus {
-      border-color: #ffffff;
-      outline: none;
-    }
-
-    .mode-indicator {
-      font-size: 10px;
-      font-weight: 800;
-      padding: 5px 8px;
-      border-radius: 4px;
-      text-align: center;
-      margin-bottom: 6px;
-      letter-spacing: 0.5px;
-      border: 1px solid var(--border-subtle);
-      background: rgba(255, 255, 255, 0.05);
-      color: #ffffff;
-    }
-
-    .quick-presets {
-      display: flex;
-      gap: 4px;
-      margin-top: 2px;
-    }
-
-    .panel-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .btn {
-      border: 1px solid var(--border-subtle);
-      background: rgba(255, 255, 255, 0.08);
-      color: #ffffff;
-      padding: 8px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 800;
-      font-family: inherit;
-      letter-spacing: 0.3px;
-      transition: background 0.15s ease, color 0.15s ease;
-      text-align: center;
-    }
-
-    .btn:hover:not(:disabled) {
-      background: #ffffff;
-      color: #000000;
-    }
-
-    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-    .btn-white {
-      background: #ffffff;
-      color: #000000;
-      border: none;
-    }
-
-    .btn-white:hover:not(:disabled) {
-      background: #e4e4e7;
-    }
-
-    .btn-danger {
-      border-color: rgba(255, 255, 255, 0.25);
-      color: #ffffff;
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      background: #ffffff;
-      color: #000000;
-    }
-
-    .btn-small { padding: 4px 8px; font-size: 9px; }
-
-    /* 🎁 CLEAN GIVEAWAY REEL WIDGET */
+    /* 📺 1. STREAM OVERLAY: CLEAN REEL MODAL */
     .giveaway-widget {
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
-      width: 640px;
-      height: 440px;
+      transform: translate(-50%, -50%) scale(0.9);
+      width: 680px;
+      height: 460px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 99990;
       overflow: hidden;
-      opacity: 1;
-      visibility: visible;
-      transition: opacity 0.4s ease, visibility 0.4s ease;
-    }
-
-    .giveaway-widget.faded-out {
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+    }
+
+    .giveaway-widget.active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translate(-50%, -50%) scale(1) !important;
     }
 
     .giveaway-title-container {
@@ -292,36 +87,39 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .giveaway-head-title {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 900;
-      letter-spacing: 3px;
+      letter-spacing: 4px;
       color: #ffffff;
       text-transform: uppercase;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(255, 255, 255, 0.4);
     }
 
     .giveaway-sub-title {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.5px;
       color: var(--text-dim);
       margin-top: 4px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
     }
 
     .giveaway-timer-badge {
       display: block;
-      margin-top: 8px;
-      color: #ffffff;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      min-height: 18px;
+      margin-top: 6px;
+      color: #ace600;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      min-height: 20px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
     }
 
-    /* VIEWPORT */
+    /* REEL VIEWPORT */
     .reel-viewport {
       position: relative;
       width: 100%;
@@ -330,21 +128,21 @@
 
       -webkit-mask-image: linear-gradient(
         to bottom,
-        rgba(0, 0, 0, 0.02) 0%,
-        rgba(0, 0, 0, 0.35) 20%,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.3) 15%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.35) 80%,
-        rgba(0, 0, 0, 0.02) 100%
+        rgba(0, 0, 0, 0.3) 85%,
+        rgba(0, 0, 0, 0) 100%
       );
       mask-image: linear-gradient(
         to bottom,
-        rgba(0, 0, 0, 0.02) 0%,
-        rgba(0, 0, 0, 0.35) 20%,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.3) 15%,
         rgba(0, 0, 0, 1) 40%,
         rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.35) 80%,
-        rgba(0, 0, 0, 0.02) 100%
+        rgba(0, 0, 0, 0.3) 85%,
+        rgba(0, 0, 0, 0) 100%
       );
     }
 
@@ -365,153 +163,272 @@
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 17px;
+      font-size: 18px;
       letter-spacing: 0.5px;
       white-space: nowrap;
       color: #ffffff;
       transform-origin: center center;
       will-change: transform, opacity;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
       transition: font-size 0.3s ease;
     }
 
-    /* STANDOUT WINNER ROW */
+    /* WINNER HIGHLIGHT */
     .reel-item.is-winner {
-      font-size: 24px !important;
+      font-size: 26px !important;
       font-weight: 900 !important;
-      letter-spacing: 1px;
+      color: #ffffff !important;
+      text-shadow: 0 0 16px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 1) !important;
     }
 
-    /* 🏷️ PRIZE DISPLAY (Samma storlek som GIVEAWAY-rubriken) */
+    /* PRIZE BANNER BELOW WHEEL */
     .giveaway-prize-display {
-      margin-top: 16px;
-      font-size: 26px;
+      margin-top: 14px;
+      font-size: 24px;
       font-weight: 900;
-      letter-spacing: 3px;
-      color: #ffffff;
+      letter-spacing: 2px;
+      color: #ffea00;
       text-transform: uppercase;
       text-align: center;
       max-width: 90%;
-      min-height: 32px;
+      min-height: 30px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
     }
+
+    /* 🎛️ 2. OBS DOCK CONTROLLER (BLACK & WHITE) */
+    .dock-container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111114;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .version-badge {
+      background: #ffffff;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .status-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+      margin-bottom: 8px;
+    }
+
+    .summary-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin: 0 0 10px 2px;
+    }
+    .summary-text b { color: #ffffff; }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    input[type="text"], input[type="number"], select, textarea {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+      border-color: #52525b;
+    }
+
+    .btn {
+      background: #18181c;
+      border: 1px solid var(--border);
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover:not(:disabled) {
+      background: #24242a;
+      border-color: #3f3f46;
+    }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-primary-action {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      transition: opacity 0.15s ease;
+    }
+    .btn-primary-action:hover:not(:disabled) { opacity: 0.9; }
+
+    .btn-danger {
+      background: #18181c;
+      border: 1px solid #ff453a;
+      color: #ff453a;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: #ff453a;
+      color: #ffffff;
+    }
+
+    .manual-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .manual-row input[name="name"] { flex: 2; }
+    .manual-row input[name="amount"] { flex: 1; }
+    .manual-row button { flex: 1; margin-bottom: 0; }
   </style>
 </head>
 <body>
 
-  <!-- VICTORY CONFETTI CANVAS -->
+  <!-- 🎉 VICTORY CONFETTI CANVAS -->
   <canvas id="victoryCanvas"></canvas>
 
-  <!-- CONTROL PANEL -->
-  <div class="test-panel" id="testPanel">
-    <h4 id="panelDragHeader">
-      <span>Kontrollpanel <span class="widget-version-badge">v4.4</span></span>
-      <div class="header-icons">
-        <button id="btnHidePanel" class="icon-btn" title="Dölj panelen (Tryck 'H')">Göm (H)</button>
+  <!-- ========================================================
+       📺 1. STREAM OVERLAY VIEW (#overlay)
+       ======================================================== -->
+  <div id="overlayRoot">
+    <div class="giveaway-widget" id="giveawayWidget">
+      <div class="giveaway-title-container">
+        <div class="giveaway-head-title">GIVEAWAY</div>
+        <div class="giveaway-sub-title" id="giveawaySubTitle">Totalt 0 biljetter · 0 givare</div>
+        <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
       </div>
-    </h4>
-    
-    <div id="modeIndicator" class="mode-indicator">Ansluten till bössan</div>
-    <div class="panel-stats" id="giveawayStats">0 biljetter fördelade på 0 givare</div>
-
-    <div class="panel-controls">
-      <!-- PRIZE INPUT -->
-      <div class="control-row">
-        <label for="prizeInput">Vinst / Pris:</label>
-        <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 175px;">
+      <div class="reel-viewport">
+        <div class="reel-track" id="reelTrack"></div>
       </div>
-
-      <!-- SOUND SETTINGS -->
-      <div class="control-row">
-        <label for="soundPresetSelect">Vinnarljud:</label>
-        <select id="soundPresetSelect" style="width: 175px;">
-          <option value="hype_win">Level Up / Gold Victory</option>
-          <option value="jackpot">Casino Jackpot Fanfare</option>
-          <option value="fanfare">Stadium Victory Brass</option>
-          <option value="custom">Eget ljud (URL / Fil)</option>
-        </select>
-      </div>
-      <div id="customSoundContainer" style="display: none;" class="control-row">
-        <input type="text" id="customSoundUrl" placeholder="Filnamn (winner.mp3) eller URL" style="width: 100%;">
-      </div>
-      <button id="btnTestSound" class="btn btn-small" style="width: 100%;">Provlyssna vinnarljud</button>
-
-      <!-- REAL BÖSSA INTEGRATION -->
-      <div class="control-row" style="margin-top: 4px;">
-        <label for="bossaSlugInput">Bössa ID:</label>
-        <input type="text" id="bossaSlugInput" value="our2ndhome" placeholder="our2ndhome" style="width: 140px;">
-      </div>
-      <button id="btnFetchBossa" class="btn btn-small" style="width: 100%;">Hämta gåvor från bössan</button>
-
-      <button id="btnTogglePaste" class="btn btn-small" style="width: 100%;">Klistra in gåvor manuellt</button>
-      <div id="pasteContainer" style="display: none; flex-direction: column; gap: 4px;">
-        <textarea id="pasteTextArea" rows="3" placeholder="Klistra in text här (t.ex: Greger gav 400 kr)" style="width: 100%; font-size: 10px;"></textarea>
-        <button id="btnImportPaste" class="btn btn-white btn-small">Importera text</button>
-      </div>
-
-      <div class="control-row" style="margin-top: 4px;">
-        <input type="text" id="manualNameInput" placeholder="Namn" style="flex:2;">
-        <input type="number" id="manualAmountInput" placeholder="Kr" style="flex:1; width:50px;">
-        <button id="btnAddManual" class="btn btn-small">+ Lägg till</button>
-      </div>
-
-      <div class="control-row" style="margin-top: 4px;">
-        <button id="btnSwitchTest" class="btn btn-small" style="width: 100%;">Växla till testläge</button>
-      </div>
-
-      <div id="testControlsContainer" style="display: none; flex-direction: column; gap: 6px;">
-        <div class="control-row">
-          <label for="targetTicketCount">Totalt antal biljetter:</label>
-          <input type="number" id="targetTicketCount" value="500" min="1" style="width: 65px;">
-        </div>
-        <div class="control-row">
-          <label for="maxTicketsPerUser">Max per person:</label>
-          <input type="number" id="maxTicketsPerUser" value="5" min="1" style="width: 65px;">
-        </div>
-        <div class="quick-presets">
-          <span style="font-size: 9px; color: var(--text-dim); align-self: center;">Snabbval:</span>
-          <button class="btn btn-small" onclick="setTargetTicketPreset(50)">50</button>
-          <button class="btn btn-small" onclick="setTargetTicketPreset(100)">100</button>
-          <button class="btn btn-small" onclick="setTargetTicketPreset(250)">250</button>
-          <button class="btn btn-small" onclick="setTargetTicketPreset(500)">500</button>
-          <button class="btn btn-small" onclick="setTargetTicketPreset(1000)">1000</button>
-        </div>
-      </div>
-
-      <button id="btnResetZero" class="btn btn-danger btn-small" style="margin-top: 4px;">Nollställ allt till 0</button>
-    </div>
-
-    <!-- ACTION BUTTONS -->
-    <div class="panel-actions">
-      <button id="btnStart" class="btn btn-white">Starta dragning (10s)</button>
-      <button id="btnSkip" class="btn">Dra ny vinnare (5s)</button>
-      <button id="btnClose" class="btn btn-danger">Avsluta & dela ut vinst</button>
+      <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
     </div>
   </div>
 
-  <!-- GIVEAWAY REEL WIDGET -->
-  <div class="giveaway-widget faded-out" id="giveawayWidget">
-    <div class="giveaway-title-container">
-      <div class="giveaway-head-title">GIVEAWAY</div>
-      <div class="giveaway-sub-title" id="giveawaySubTitle">Totalt 0 biljetter · 0 givare</div>
-      <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
+  <!-- ========================================================
+       🎛️ 2. OBS CONTROL DOCK (#panel - Black & White Style)
+       ======================================================== -->
+  <div id="panelRoot" class="dock-container">
+    <div class="header-box">
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.0</span></span>
+      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
-    <div class="reel-viewport">
-      <div class="reel-track" id="reelTrack"></div>
+
+    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
+    <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
+
+    <!-- Prize Input -->
+    <div class="control-row">
+      <span class="control-label">VINST / PRIS:</span>
+      <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 60%; text-align: right;">
     </div>
-    <!-- VINST / PRIS VISAS UNDER ALLT -->
-    <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
+
+    <!-- Victory Sound Preset -->
+    <div class="control-row">
+      <span class="control-label">VINNARLJUD:</span>
+      <select id="soundPresetSelect" style="width: 60%;">
+        <option value="hype_win">Level Up / Gold Victory</option>
+        <option value="jackpot">Casino Jackpot Fanfare</option>
+        <option value="fanfare">Stadium Victory Brass</option>
+      </select>
+    </div>
+    <button class="btn" style="padding:6px; font-size:11px;" onclick="playVictorySound()">Provlyssna vinnarljud</button>
+
+    <!-- Manual Donor Add (Cumulative Storage) -->
+    <div class="manual-row" style="margin-top: 10px;">
+      <input type="text" id="manualName" name="name" placeholder="Givarnamn">
+      <input type="number" id="manualAmount" name="amount" placeholder="Kr" style="width:65px;" value="200">
+      <button class="btn" onclick="addManualDonation()">+ Lägg till</button>
+    </div>
+
+    <!-- Test Mode / Simulation -->
+    <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">Växla till testläge (500 testbiljetter)</button>
+    <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla biljetter</button>
+
+    <!-- Draw Actions -->
+    <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
+      Starta dragning (10s)
+    </button>
+    <button class="btn" id="btnSkip" onclick="startDraw(5000)">
+      Dra ny vinnare (5s)
+    </button>
+    <button class="btn btn-danger" id="btnClose" onclick="claimPrizeAndClose()">
+      Avsluta & dela ut vinst
+    </button>
   </div>
 
   <script>
+    // ⚙️ FIREBASE REALTIME BACKBONE
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
     const STORAGE_KEY_PRIZE = "mh_overlay_prize_text";
-    const TICKET_MILESTONE_KR = 200;
-    const ITEM_HEIGHT = 44;
-    const VIEWPORT_HEIGHT = 220;
 
-    const syncChannel = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
+    const TICKET_MILESTONE_KR = 200;
+    const MAX_TICKETS_PER_USER = 5;
+    const ITEM_HEIGHT = 46;
+    const VIEWPORT_HEIGHT = 230;
+
+    const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
 
     const AUDIO_PRESETS = {
       hype_win: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3",
@@ -519,81 +436,54 @@
       fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"
     };
 
-    let donorTicketsMap = {};
-    let currentDrawnWinner = null;
-    let isSpinningReel = false;
+    // Global state
+    let donorMap = {};
+    let currentWinner = null;
+    let isSpinning = false;
     let isTestMode = false;
     let currentVisibleFive = null;
 
-    let giveawayHoldTimeout = null;
-    let headerCountdownInterval = null;
-    let spinAnimationTimeout = null;
-    let animationFrameId = null;
+    // Timers
+    let holdTimeout = null;
+    let countdownInterval = null;
+    let spinTimeout = null;
+    let animFrameId = null;
 
+    // Tick audio
     let lastTrackY = 0;
     let lastTickedIndex = null;
-    let lastTickTimestamp = 0;
+    let lastTickTime = 0;
 
+    // Confetti
     let confettiParticles = [];
     let confettiAnimId = null;
 
-    // DOM Elements
-    const testPanelEl = document.getElementById('testPanel');
-    const panelHeaderEl = document.getElementById('panelDragHeader');
-    const giveawayWidgetEl = document.getElementById('giveawayWidget');
-    const giveawayStatsEl = document.getElementById('giveawayStats');
-    const giveawaySubTitleEl = document.getElementById('giveawaySubTitle');
-    const giveawayTimerEl = document.getElementById('giveawayHeaderTimer');
-    const giveawayPrizeDisplayEl = document.getElementById('giveawayPrizeDisplay');
-    const prizeInputEl = document.getElementById('prizeInput');
-    const reelTrackEl = document.getElementById('reelTrack');
-    const bossaSlugInput = document.getElementById('bossaSlugInput');
-    const manualNameInput = document.getElementById('manualNameInput');
-    const manualAmountInput = document.getElementById('manualAmountInput');
-    const targetTicketsInput = document.getElementById('targetTicketCount');
-    const maxTicketsInput = document.getElementById('maxTicketsPerUser');
-    const modeIndicatorEl = document.getElementById('modeIndicator');
-    const testControlsContainer = document.getElementById('testControlsContainer');
-    const pasteContainerEl = document.getElementById('pasteContainer');
-    const pasteTextAreaEl = document.getElementById('pasteTextArea');
+    // View Routing
+    const hash = window.location.hash.toLowerCase();
+    const isPanel = hash.includes('panel') || hash.includes('dock');
+
+    if (isPanel) {
+      document.body.classList.add('mode-panel');
+    } else {
+      document.body.classList.add('mode-overlay');
+    }
+
+    // Elements
+    const giveawayWidget = document.getElementById('giveawayWidget');
+    const giveawaySubTitle = document.getElementById('giveawaySubTitle');
+    const giveawayTimerBadge = document.getElementById('giveawayHeaderTimer');
+    const giveawayPrizeDisplay = document.getElementById('giveawayPrizeDisplay');
+    const prizeInput = document.getElementById('prizeInput');
+    const reelTrack = document.getElementById('reelTrack');
+    const victoryCanvas = document.getElementById('victoryCanvas');
+    const vCtx = victoryCanvas.getContext('2d');
+    const soundPresetSelect = document.getElementById('soundPresetSelect');
+
     const btnStart = document.getElementById('btnStart');
     const btnSkip = document.getElementById('btnSkip');
     const btnClose = document.getElementById('btnClose');
-    const victoryCanvas = document.getElementById('victoryCanvas');
-    const soundPresetSelect = document.getElementById('soundPresetSelect');
-    const customSoundContainer = document.getElementById('customSoundContainer');
-    const customSoundUrl = document.getElementById('customSoundUrl');
-    const btnTestSound = document.getElementById('btnTestSound');
-    const btnHidePanel = document.getElementById('btnHidePanel');
-    const vCtx = victoryCanvas.getContext('2d');
 
-    // View Modes (#overlay or #panel)
-    function applyViewMode() {
-      const hash = window.location.hash.toLowerCase();
-      const params = new URLSearchParams(window.location.search);
-      const isOverlay = hash.includes('overlay') || params.has('overlay');
-      const isDock = hash.includes('panel') || hash.includes('dock') || params.has('panel');
-
-      if (isOverlay) {
-        document.body.classList.add('overlay-mode');
-      } else if (isDock) {
-        document.body.classList.add('dock-mode');
-      }
-    }
-    applyViewMode();
-
-    function togglePanelVisibility() {
-      testPanelEl.classList.toggle('panel-hidden');
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'h' || e.key === 'H') {
-        togglePanelVisibility();
-      }
-    });
-    btnHidePanel.addEventListener('click', togglePanelVisibility);
-
+    // Resize canvas
     function resizeCanvas() {
       victoryCanvas.width = window.innerWidth;
       victoryCanvas.height = window.innerHeight;
@@ -601,45 +491,151 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Prize Input Handler
-    function updatePrizeDisplay(text, shouldBroadcast = true) {
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbDonorsRef = firebase.database().ref('giveaway_donors');
+    const dbActionRef = firebase.database().ref('giveaway_action');
+
+    // ========================================================
+    // 🧠 1. CUMULATIVE DONATION LOGIC & TICKET CAP
+    // ========================================================
+    function recordDonation(name, amount) {
+      if (!name || !name.trim()) return;
+      const clean = name.trim();
+      if (/anonym|hemlig hjälte/i.test(clean)) return;
+
+      if (!donorMap[clean]) {
+        donorMap[clean] = {
+          totalAmount: 0,
+          milestonesClaimed: 0,
+          ticketsActive: 0
+        };
+      }
+
+      const donor = donorMap[clean];
+      donor.totalAmount += amount;
+
+      // How many 200 kr milestones total reached?
+      const totalMilestones = Math.floor(donor.totalAmount / TICKET_MILESTONE_KR);
+      const newMilestones = totalMilestones - (donor.milestonesClaimed || 0);
+
+      if (newMilestones > 0) {
+        // Add new tickets, capped at 5 max active tickets
+        donor.ticketsActive = Math.min(MAX_TICKETS_PER_USER, donor.ticketsActive + newMilestones);
+        donor.milestonesClaimed = totalMilestones;
+      }
+
+      saveDonors();
+      updateStatsUI();
+      syncDonorsToCloud();
+    }
+
+    function deductWinnerTicket(winnerName) {
+      if (!winnerName || !donorMap[winnerName]) return;
+      
+      // Winner claims prize: deduct 1 active ticket (e.g. from 5/5 down to 4/5)
+      donorMap[winnerName].ticketsActive = Math.max(0, donorMap[winnerName].ticketsActive - 1);
+
+      saveDonors();
+      updateStatsUI();
+      syncDonorsToCloud();
+    }
+
+    function getWeightedTicketPool() {
+      const pool = [];
+      for (const [name, donor] of Object.entries(donorMap)) {
+        for (let i = 0; i < (donor.ticketsActive || 0); i++) {
+          pool.push(name);
+        }
+      }
+      return pool;
+    }
+
+    function getUniqueDonorNames() {
+      return Object.keys(donorMap).filter(name => (donorMap[name].ticketsActive || 0) > 0);
+    }
+
+    function saveDonors() {
+      try {
+        localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorMap));
+      } catch (e) {}
+    }
+
+    function loadDonors() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_DONORS);
+        if (saved) donorMap = JSON.parse(saved);
+        const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
+        if (savedPrize !== null) setPrizeText(savedPrize, false);
+      } catch (e) {}
+      updateStatsUI();
+      initReelTrack();
+    }
+
+    function syncDonorsToCloud() {
+      dbDonorsRef.set({
+        map: donorMap,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      }).catch(() => {});
+    }
+
+    // Realtime Database Listener for Donors
+    dbDonorsRef.on('value', (snap) => {
+      const data = snap.val();
+      if (data && data.map && !isSpinning) {
+        donorMap = data.map;
+        saveDonors();
+        updateStatsUI();
+        initReelTrack();
+      }
+    });
+
+    // Realtime Action Listener (Spins on ALL streamers' screens simultaneously)
+    dbActionRef.on('value', (snap) => {
+      const act = snap.val();
+      if (!act) return;
+
+      if (act.type === 'START_SPIN') {
+        executeSpin(act.winner, act.delayMs || 10000);
+      } else if (act.type === 'CLAIM_CLOSE') {
+        finalizeClaimAndHide();
+      } else if (act.type === 'UPDATE_PRIZE') {
+        setPrizeText(act.prize, false);
+      }
+    });
+
+    // Local BroadcastChannel fallback
+    if (bus) {
+      bus.onmessage = (e) => {
+        const { type, payload } = e.data || {};
+        if (type === 'START_SPIN') executeSpin(payload.winner, payload.delayMs);
+        if (type === 'CLAIM_CLOSE') finalizeClaimAndHide();
+        if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
+      };
+    }
+
+    // ========================================================
+    // 🏷️ PRIZE & SOUNDS
+    // ========================================================
+    function setPrizeText(text, broadcast = true) {
       const clean = (text || '').trim();
-      giveawayPrizeDisplayEl.innerText = clean ? `Vinst: ${clean}` : '';
-      prizeInputEl.value = clean;
+      giveawayPrizeDisplay.innerText = clean ? `Vinst: ${clean}` : '';
+      if (prizeInput) prizeInput.value = clean;
       try {
         localStorage.setItem(STORAGE_KEY_PRIZE, clean);
-      } catch (err) {}
-      if (shouldBroadcast) {
-        broadcastEvent('UPDATE_PRIZE', { prize: clean });
+      } catch (e) {}
+
+      if (broadcast) {
+        dbActionRef.set({ type: 'UPDATE_PRIZE', prize: clean, secret: WRITE_SECRET });
+        if (bus) bus.postMessage({ type: 'UPDATE_PRIZE', payload: { prize: clean } });
       }
     }
 
-    prizeInputEl.addEventListener('input', () => {
-      updatePrizeDisplay(prizeInputEl.value, true);
-    });
-
-    soundPresetSelect.addEventListener('change', () => {
-      customSoundContainer.style.display = soundPresetSelect.value === 'custom' ? 'flex' : 'none';
-    });
-
-    btnTestSound.addEventListener('click', () => {
-      playModernVictorySound();
-    });
-
-    function playModernVictorySound() {
-      let soundSrc = AUDIO_PRESETS[soundPresetSelect.value] || AUDIO_PRESETS.hype_win;
-      if (soundPresetSelect.value === 'custom') {
-        const customUrl = customSoundUrl.value.trim();
-        if (customUrl) soundSrc = customUrl;
-      }
-
-      try {
-        const audio = new Audio(soundSrc);
-        audio.volume = 0.42;
-        audio.play().catch(err => console.warn("Ljudfel:", err));
-      } catch (e) {
-        console.error(e);
-      }
+    if (prizeInput) {
+      prizeInput.addEventListener('input', () => setPrizeText(prizeInput.value, true));
     }
 
     let audioCtx = null;
@@ -654,33 +650,306 @@
       return audioCtx;
     }
 
-    function playWheelClick(pitchMultiplier = 1.0) {
+    function playWheelClick(pitch = 1.0) {
       const ctx = getAudioContext();
       if (!ctx) return;
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const now = ctx.currentTime;
 
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const now = ctx.currentTime;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520 * pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(90, now + 0.016);
 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
-      osc.frequency.exponentialRampToValueAtTime(80, now + 0.018);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
 
-      gain.gain.setValueAtTime(0.12, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.02);
+        osc.start(now);
+        osc.stop(now + 0.018);
+      } catch (e) {}
     }
 
-    function triggerCleanVictory() {
-      playModernVictorySound();
+    function playVictorySound() {
+      getAudioContext();
+      const preset = soundPresetSelect ? soundPresetSelect.value : 'hype_win';
+      const soundSrc = AUDIO_PRESETS[preset] || AUDIO_PRESETS.hype_win;
 
+      try {
+        const audio = new Audio(soundSrc);
+        audio.volume = 0.55;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+
+    // ========================================================
+    // 🎰 REEL BUILDER & PROXIMITY SCALING
+    // ========================================================
+    function createReelList(winnerName, startingFive = null) {
+      const uniqueNames = getUniqueDonorNames();
+      if (uniqueNames.length === 0) return { spinList: [winnerName], winnerIndex: 0 };
+
+      const spinList = [];
+      let last = "";
+
+      const pickDifferent = () => {
+        if (uniqueNames.length === 1) return uniqueNames[0];
+        let chosen;
+        let tries = 0;
+        do {
+          chosen = uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
+          tries++;
+        } while (chosen === last && tries < 20);
+        return chosen;
+      };
+
+      if (startingFive && startingFive.length === 5) {
+        for (let i = 0; i < 5; i++) {
+          const n = startingFive[i];
+          const val = uniqueNames.includes(n) ? n : pickDifferent();
+          spinList.push(val);
+          last = val;
+        }
+      }
+
+      // Mix in pool
+      const pool = getWeightedTicketPool().sort(() => Math.random() - 0.5);
+      let pIdx = 0;
+
+      while (spinList.length < 110) {
+        const candidate = pool[pIdx % pool.length] || pickDifferent();
+        pIdx++;
+        if (candidate !== last || uniqueNames.length === 1) {
+          spinList.push(candidate);
+          last = candidate;
+        }
+      }
+
+      // Designated winner index
+      const winnerIndex = 110;
+      spinList[winnerIndex] = winnerName;
+      last = winnerName;
+
+      for (let i = 0; i < 5; i++) {
+        spinList.push(pickDifferent());
+      }
+
+      return { spinList, winnerIndex };
+    }
+
+    function initReelTrack() {
+      const uniqueNames = getUniqueDonorNames();
+      if (uniqueNames.length === 0) {
+        reelTrack.innerHTML = '<div class="reel-item">Väntar på gåvor...</div>';
+        return;
+      }
+
+      const initial = [];
+      for (let i = 0; i < 5; i++) {
+        initial.push(uniqueNames[i % uniqueNames.length]);
+      }
+      currentVisibleFive = [...initial];
+
+      reelTrack.style.transition = 'none';
+      reelTrack.style.transform = 'translateY(0px)';
+      reelTrack.innerHTML = initial.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+      renderProximity(0);
+    }
+
+    function renderProximity(currentY) {
+      const center = VIEWPORT_HEIGHT / 2;
+      const items = reelTrack.children;
+      const count = items.length;
+      if (count === 0) return;
+
+      const centerIdx = Math.round((-currentY + center - ITEM_HEIGHT / 2) / ITEM_HEIGHT);
+      const start = Math.max(0, centerIdx - 4);
+      const end = Math.min(count - 1, centerIdx + 4);
+
+      for (let i = start; i <= end; i++) {
+        const item = items[i];
+        const itemY = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) + currentY;
+        const dist = Math.abs(itemY - center);
+        const norm = Math.min(1, dist / center);
+
+        const scale = 0.75 + 0.95 * Math.pow(1 - norm, 1.5);
+        const opacity = 0.2 + 0.8 * Math.pow(1 - norm, 1.8);
+
+        item.style.transform = `scale(${scale.toFixed(3)})`;
+        item.style.opacity = opacity.toFixed(3);
+      }
+    }
+
+    function runAnimationLoop() {
+      if (!isSpinning) return;
+
+      const style = window.getComputedStyle(reelTrack);
+      const matrix = new DOMMatrix(style.transform);
+      const currentY = matrix.m42;
+      renderProximity(currentY);
+
+      const centerIdx = Math.floor((-currentY + (VIEWPORT_HEIGHT / 2)) / ITEM_HEIGHT);
+      const now = performance.now();
+
+      if (centerIdx !== lastTickedIndex && (now - lastTickTime) > 18) {
+        const speed = Math.abs(currentY - lastTrackY);
+        const pitch = Math.max(0.75, Math.min(1.35, 0.75 + speed * 0.05));
+        playWheelClick(pitch);
+        lastTickedIndex = centerIdx;
+        lastTickTime = now;
+      }
+      lastTrackY = currentY;
+
+      animFrameId = requestAnimationFrame(runAnimationLoop);
+    }
+
+    function stopTimers() {
+      if (holdTimeout) clearTimeout(holdTimeout);
+      if (spinTimeout) clearTimeout(spinTimeout);
+      if (countdownInterval) clearInterval(countdownInterval);
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      holdTimeout = null;
+      spinTimeout = null;
+      countdownInterval = null;
+      animFrameId = null;
+    }
+
+    // ========================================================
+    // 🚀 EXECUTE SPIN ANIMATION
+    // ========================================================
+    function startDraw(holdDelayMs = 10000) {
+      const pool = getWeightedTicketPool();
+      if (pool.length === 0) return alert("Inga biljetter i potten än!");
+
+      getAudioContext();
+      const winner = pool[Math.floor(Math.random() * pool.length)];
+
+      // Broadcast globally to all streamers' overlays
+      dbActionRef.set({
+        type: 'START_SPIN',
+        winner: winner,
+        delayMs: holdDelayMs,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      });
+      if (bus) bus.postMessage({ type: 'START_SPIN', payload: { winner, delayMs: holdDelayMs } });
+
+      executeSpin(winner, holdDelayMs);
+    }
+
+    function executeSpin(winnerName, holdDelayMs = 10000) {
+      getAudioContext();
+      stopTimers();
+      clearConfetti();
+
+      isSpinning = true;
+      currentWinner = winnerName;
+      setButtonsLocked(true);
+
+      giveawayWidget.classList.add('active');
+
+      const { spinList, winnerIndex } = createReelList(winnerName, currentVisibleFive);
+
+      reelTrack.style.transition = 'none';
+      reelTrack.style.transform = 'translateY(0px)';
+      reelTrack.innerHTML = spinList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
+      void reelTrack.offsetHeight;
+
+      renderProximity(0);
+      lastTrackY = 0;
+      lastTickedIndex = null;
+
+      const endAt = Date.now() + holdDelayMs;
+      const tickBadge = () => {
+        const leftSec = Math.ceil(Math.max(0, endAt - Date.now()) / 1000);
+        giveawayTimerBadge.innerText = leftSec > 0 ? `Startar om ${leftSec}s` : "Dragning pågår...";
+      };
+      tickBadge();
+
+      countdownInterval = setInterval(() => {
+        tickBadge();
+        if (Date.now() >= endAt) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+      }, 200);
+
+      holdTimeout = setTimeout(() => {
+        giveawayTimerBadge.innerText = "Dragning pågår...";
+        const targetY = -(winnerIndex * ITEM_HEIGHT - 92);
+        const duration = holdDelayMs <= 5000 ? 5500 : 8500;
+
+        reelTrack.style.transition = `transform ${duration}ms cubic-bezier(0.08, 0.85, 0.15, 1)`;
+        reelTrack.style.transform = `translateY(${targetY}px)`;
+
+        runAnimationLoop();
+
+        spinTimeout = setTimeout(() => {
+          isSpinning = false;
+          setButtonsLocked(false);
+          stopTimers();
+
+          giveawayTimerBadge.innerText = "Vill du behålla eller ge vidare?";
+          renderProximity(targetY);
+
+          const items = reelTrack.children;
+          if (items[winnerIndex]) {
+            items[winnerIndex].classList.add('is-winner');
+          }
+
+          triggerVictoryEffects();
+
+          currentVisibleFive = [
+            spinList[winnerIndex - 2] || winnerName,
+            spinList[winnerIndex - 1] || winnerName,
+            spinList[winnerIndex],
+            spinList[winnerIndex + 1] || winnerName,
+            spinList[winnerIndex + 2] || winnerName
+          ];
+        }, duration + 60);
+      }, holdDelayMs);
+    }
+
+    function claimPrizeAndClose() {
+      if (isSpinning) return;
+      if (!currentWinner) return alert("Ingen vinnare dragen än!");
+
+      // 1. Deduct 1 active ticket from winner
+      deductWinnerTicket(currentWinner);
+
+      // 2. Broadcast close command to all streamers
+      dbActionRef.set({ type: 'CLAIM_CLOSE', secret: WRITE_SECRET, timestamp: Date.now() });
+      if (bus) bus.postMessage({ type: 'CLAIM_CLOSE' });
+
+      finalizeClaimAndHide();
+    }
+
+    function finalizeClaimAndHide() {
+      stopTimers();
+      clearConfetti();
+      isSpinning = false;
+      setButtonsLocked(false);
+
+      giveawayWidget.classList.remove('active');
+
+      setTimeout(() => {
+        currentWinner = null;
+        currentVisibleFive = null;
+        initReelTrack();
+        giveawayTimerBadge.innerText = "";
+      }, 450);
+    }
+
+    // ========================================================
+    // 🎊 CONFETTI
+    // ========================================================
+    function triggerVictoryEffects() {
+      playVictorySound();
       confettiParticles = [];
-      const colors = ['#ffffff', '#e4e4e7', '#a1a1aa'];
+      const colors = ['#ffffff', '#e4e4e7', '#a1a1aa', '#ffea00'];
       const count = 120;
 
       for (let i = 0; i < count; i++) {
@@ -705,21 +974,19 @@
 
     function animateConfetti() {
       vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
-      let aliveCount = 0;
+      let alive = 0;
 
-      for (let p of confettiParticles) {
+      for (const p of confettiParticles) {
         p.x += p.vx;
         p.y += p.vy;
         p.vy += p.gravity;
         p.vx *= p.drag;
         p.rotation += p.rotSpeed;
 
-        if (p.y > window.innerHeight * 0.65) {
-          p.opacity -= 0.015;
-        }
+        if (p.y > window.innerHeight * 0.65) p.opacity -= 0.015;
 
         if (p.opacity > 0 && p.y < window.innerHeight + 50) {
-          aliveCount++;
+          alive++;
           vCtx.save();
           vCtx.translate(p.x, p.y);
           vCtx.rotate((p.rotation * Math.PI) / 180);
@@ -730,7 +997,7 @@
         }
       }
 
-      if (aliveCount > 0) {
+      if (alive > 0) {
         confettiAnimId = requestAnimationFrame(animateConfetti);
       } else {
         vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
@@ -738,7 +1005,7 @@
       }
     }
 
-    function clearVictoryEffects() {
+    function clearConfetti() {
       if (confettiAnimId) {
         cancelAnimationFrame(confettiAnimId);
         confettiAnimId = null;
@@ -746,603 +1013,110 @@
       vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
     }
 
-    // Broadcast Sync
-    if (syncChannel) {
-      syncChannel.onmessage = (event) => {
-        const { type, payload } = event.data;
-        if (type === 'START_SPIN') {
-          handleStartGiveaway(false);
-        } else if (type === 'SKIP_SPIN') {
-          handleSkipWinner(false);
-        } else if (type === 'CLOSE_CLAIM') {
-          handleCloseGiveaway(false);
-        } else if (type === 'UPDATE_DONORS') {
-          donorTicketsMap = payload.map;
-          updateGiveawayStatsUI();
-          initReelTrack();
-        } else if (type === 'RESET') {
-          handleResetEverything(false);
-        } else if (type === 'UPDATE_PRIZE') {
-          updatePrizeDisplay(payload.prize, false);
-        }
-      };
-    }
+    // ========================================================
+    // 🎛️ DOCK INTERACTIONS
+    // ========================================================
+    function updateStatsUI() {
+      const pool = getWeightedTicketPool();
+      const uniqueCount = getUniqueDonorNames().length;
 
-    function broadcastEvent(type, payload = {}) {
-      if (syncChannel) syncChannel.postMessage({ type, payload });
-    }
-
-    async function fetchRealBossaData() {
-      getAudioContext();
-      const rawSlug = bossaSlugInput.value.trim();
-      if (!rawSlug) return alert("Ange ett giltigt Böss-ID eller URL!");
-
-      const slug = rawSlug.replace(/.*bossan\.musikhjalpen\.se\//, '').replace(/\/.*/, '').trim();
-      const targetUrl = `https://bossan.musikhjalpen.se/${slug}`;
-
-      const proxies = [
-        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-        `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
-      ];
-
-      let success = false;
-      for (const proxy of proxies) {
-        try {
-          const res = await fetch(proxy);
-          if (!res.ok) continue;
-
-          let htmlText = "";
-          if (proxy.includes("allorigins")) {
-            const data = await res.json();
-            htmlText = data.contents;
-          } else {
-            htmlText = await res.text();
-          }
-
-          if (htmlText && htmlText.length > 500) {
-            const newMap = parseTextOrHTMLForDonors(htmlText);
-            if (Object.keys(newMap).length > 0) {
-              donorTicketsMap = newMap;
-              saveTicketsToStorage();
-              broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
-              switchToRealMode();
-              success = true;
-              alert(`Hämtade ${Object.keys(newMap).length} gåvor från Bössan (${slug})!`);
-              break;
-            }
-          }
-        } catch (err) {
-          console.warn("Proxy misslyckades:", proxy, err);
-        }
+      const summaryText = document.getElementById('dockSummaryText');
+      if (summaryText) {
+        summaryText.innerHTML = `<b>${pool.length}</b> biljetter fördelade på <b>${uniqueCount}</b> givare`;
       }
 
-      if (!success) {
-        alert("Kunde inte hämta automatiskt (CORS-begränsning). Använd 'Klistra in gåvor manuellt'!");
-        pasteContainerEl.style.display = "flex";
+      if (giveawaySubTitle) {
+        giveawaySubTitle.innerText = `Totalt ${pool.length} biljetter · ${uniqueCount} givare`;
+      }
+
+      const statusBox = document.getElementById('dockStatusBox');
+      if (statusBox) {
+        statusBox.innerText = isTestMode ? "Testläge aktivt (Simulerade biljetter)" : "Ansluten till databas";
       }
     }
 
-    function parseTextOrHTMLForDonors(text) {
-      const newMap = {};
-      const maxCap = parseInt(maxTicketsInput ? maxTicketsInput.value : 5) || 5;
-      const regex = /([a-zA-Z0-9_\-åäöÅÄÖ\s]{2,30}?)\s+(?:gav|skänkte|bidrog med)?\s*([\d\s]+)\s*kr/gi;
-      let match;
-
-      while ((match = regex.exec(text)) !== null) {
-        let rawName = match[1].trim();
-        const lines = rawName.split(/\r?\n/);
-        let name = lines[lines.length - 1].trim();
-        let amount = parseInt(match[2].replace(/\s+/g, '')) || 0;
-
-        const ignoreList = ["en hemlig hjälte", "senaste gåvorna", "musikhjälpen"];
-        if (name && !ignoreList.includes(name.toLowerCase()) && amount >= TICKET_MILESTONE_KR) {
-          let tickets = Math.min(maxCap, Math.floor(amount / TICKET_MILESTONE_KR));
-          if (!newMap[name]) {
-            newMap[name] = { totalAmount: amount, ticketsEarned: tickets, ticketsActive: tickets };
-          } else {
-            newMap[name].totalAmount += amount;
-            newMap[name].ticketsEarned = Math.min(maxCap, Math.floor(newMap[name].totalAmount / TICKET_MILESTONE_KR));
-            newMap[name].ticketsActive = newMap[name].ticketsEarned;
-          }
-        }
-      }
-      return newMap;
+    function setButtonsLocked(locked) {
+      if (btnStart) btnStart.disabled = locked;
+      if (btnSkip) btnSkip.disabled = locked;
     }
 
-    function importPastedText() {
-      getAudioContext();
-      const text = pasteTextAreaEl.value.trim();
-      if (!text) return alert("Klistra in texten från din Bössas sida först!");
+    function addManualDonation() {
+      const nameInput = document.getElementById('manualName');
+      const amountInput = document.getElementById('manualAmount');
 
-      const newMap = parseTextOrHTMLForDonors(text);
-      const count = Object.keys(newMap).length;
-
-      if (count === 0) {
-        return alert("Hittade inga giltiga gåvor (minst 200 kr). Exempel: 'Greger gav 400 kr'");
-      }
-
-      donorTicketsMap = newMap;
-      saveTicketsToStorage();
-      broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
-      switchToRealMode();
-      pasteTextAreaEl.value = "";
-      pasteContainerEl.style.display = "none";
-      alert(`Importerade ${count} givare!`);
-    }
-
-    function addManualDonor() {
-      getAudioContext();
-      const name = manualNameInput.value.trim();
-      const amount = parseInt(manualAmountInput.value) || TICKET_MILESTONE_KR;
-      const maxCap = parseInt(maxTicketsInput ? maxTicketsInput.value : 5) || 5;
+      const name = nameInput.value.trim();
+      const amount = parseInt(amountInput.value, 10) || 0;
 
       if (!name) return alert("Ange ett namn!");
-      if (amount < TICKET_MILESTONE_KR) return alert(`Beloppet måste vara minst ${TICKET_MILESTONE_KR} kr för 1 biljett.`);
+      if (amount <= 0) return alert("Ange ett giltigt belopp!");
 
-      let tickets = Math.min(maxCap, Math.floor(amount / TICKET_MILESTONE_KR));
+      recordDonation(name, amount);
 
-      if (!donorTicketsMap[name]) {
-        donorTicketsMap[name] = { totalAmount: amount, ticketsEarned: tickets, ticketsActive: tickets };
+      nameInput.value = "";
+      amountInput.value = "200";
+    }
+
+    function toggleTestMode() {
+      isTestMode = !isTestMode;
+      const btn = document.getElementById('btnToggleTest');
+
+      if (isTestMode) {
+        btn.innerText = "Avsluta testläge";
+        generateTestTickets(500);
       } else {
-        donorTicketsMap[name].totalAmount += amount;
-        donorTicketsMap[name].ticketsEarned = Math.min(maxCap, Math.floor(donorTicketsMap[name].totalAmount / TICKET_MILESTONE_KR));
-        donorTicketsMap[name].ticketsActive = donorTicketsMap[name].ticketsEarned;
+        btn.innerText = "Växla till testläge (500 testbiljetter)";
+        loadDonors();
       }
-
-      manualNameInput.value = "";
-      manualAmountInput.value = "";
-      saveTicketsToStorage();
-      broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
-      switchToRealMode();
-    }
-
-    function switchToRealMode() {
-      isTestMode = false;
-      modeIndicatorEl.innerText = "Ansluten till bössan";
-      testControlsContainer.style.display = "none";
-      updateGiveawayStatsUI();
+      updateStatsUI();
       initReelTrack();
     }
 
-    function switchToTestMode() {
-      getAudioContext();
-      isTestMode = true;
-      modeIndicatorEl.innerText = "Testläge aktivt";
-      testControlsContainer.style.display = "flex";
-      generateRandomizedDonors(
-        parseInt(targetTicketsInput.value) || 500,
-        parseInt(maxTicketsInput.value) || 5
-      );
-      updateGiveawayStatsUI();
-      initReelTrack();
-      broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
-    }
+    function generateTestTickets(targetTickets = 500) {
+      const prefixes = ["Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Norrlands", "Super", "Mighty", "Cosmic", "Turbo", "Vinter", "Retro", "Hyper", "Cyber"];
+      const suffixes = ["Kungen", "Gud", "Bullen", "Loover", "Svensken", "Master", "Viking", "Räven", "Hjälten", "Kompis", "Tiger", "Björn", "Liraren"];
 
-    function handleResetEverything(shouldBroadcast = true) {
-      stopAllTimers();
-      clearVictoryEffects();
-      isSpinningReel = false;
-      donorTicketsMap = {};
-      currentDrawnWinner = null;
-      currentVisibleFive = null;
-      saveTicketsToStorage();
-      updateGiveawayStatsUI();
-      initReelTrack();
-      setButtonLock(false);
-      giveawayTimerEl.innerText = "";
-      giveawayWidgetEl.classList.add('faded-out');
-      if (shouldBroadcast) broadcastEvent('RESET');
-    }
-
-    function generateRandomizedDonors(totalTicketsTarget, maxPerUser = 5) {
-      const prefixes = ["Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Bacon", "Norrlands", "Glada", "Super", "Mighty", "Cosmic", "Turbo", "Vinter", "Retro", "Hyper", "Snabb", "Mystic", "Cyber"];
-      const suffixes = ["Kungen", "Gud", "Bullen", "Loover", "Pappa", "Mamma", "Svensken", "Master", "Viking", "Räven", "Hjälten", "Kompis", "Vännen", "Tiger", "Björn", "Stjärnan", "Bonden", "Riddarn", "Tomten", "Liraren"];
-
-      const newDonorMap = {};
-      let remaining = Math.max(1, totalTicketsTarget);
-      let donorIndex = 1;
+      const testMap = {};
+      let remaining = targetTickets;
+      let idx = 1;
 
       while (remaining > 0) {
         const p = prefixes[Math.floor(Math.random() * prefixes.length)];
         const s = suffixes[Math.floor(Math.random() * suffixes.length)];
-        
-        let name = `${p}${s}`;
-        if (newDonorMap[name]) {
-          name = `${p}${s}_${donorIndex}`;
-        }
+        const name = `${p}${s}_${idx}`;
+        const tickets = Math.min(remaining, Math.floor(Math.random() * MAX_TICKETS_PER_USER) + 1);
 
-        const tickets = Math.min(remaining, Math.floor(Math.random() * maxPerUser) + 1);
-        newDonorMap[name] = {
+        testMap[name] = {
           totalAmount: tickets * TICKET_MILESTONE_KR,
-          ticketsEarned: tickets,
+          milestonesClaimed: tickets,
           ticketsActive: tickets
         };
         remaining -= tickets;
-        donorIndex++;
+        idx++;
       }
 
-      donorTicketsMap = newDonorMap;
-      saveTicketsToStorage();
+      donorMap = testMap;
+      saveDonors();
     }
 
-    function loadTicketsFromStorage() {
-      if (isSpinningReel) return;
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY_DONORS);
-        if (saved) donorTicketsMap = JSON.parse(saved);
-        const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
-        if (savedPrize !== null) updatePrizeDisplay(savedPrize, false);
-      } catch (err) {}
-      updateGiveawayStatsUI();
-    }
-
-    function saveTicketsToStorage() {
-      try {
-        localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorTicketsMap));
-      } catch (err) {}
-    }
-
-    function getWeightedTicketPool() {
-      const pool = [];
-      for (const [name, donor] of Object.entries(donorTicketsMap)) {
-        for (let i = 0; i < (donor.ticketsActive || 0); i++) pool.push(name);
-      }
-      return pool;
-    }
-
-    function getUniqueDonorNames() {
-      return Object.keys(donorTicketsMap).filter(name => (donorTicketsMap[name].ticketsActive || 0) > 0);
-    }
-
-    function setTargetTicketPreset(val) {
-      targetTicketsInput.value = val;
-      if (isTestMode) {
-        generateRandomizedDonors(val, parseInt(maxTicketsInput.value) || 5);
-        updateGiveawayStatsUI();
+    function resetAllTickets() {
+      if (confirm("Är du säker på att du vill nollställa alla biljetter och givare?")) {
+        donorMap = {};
+        saveDonors();
+        syncDonorsToCloud();
+        updateStatsUI();
         initReelTrack();
-        broadcastEvent('UPDATE_DONORS', { map: donorTicketsMap });
       }
-    }
-
-    function updateGiveawayStatsUI() {
-      const pool = getWeightedTicketPool();
-      const uniqueDonorsCount = getUniqueDonorNames().length;
-      
-      giveawayStatsEl.innerHTML = `<b>${pool.length}</b> biljetter fördelade på <b>${uniqueDonorsCount}</b> givare`;
-      giveawaySubTitleEl.innerText = `Totalt ${pool.length} biljetter · ${uniqueDonorsCount} givare`;
-    }
-
-    function setButtonLock(locked) {
-      btnStart.disabled = locked;
-      btnSkip.disabled = locked;
-    }
-
-    // 🎯 REEL TRACK BUILDER
-    function createCleanReelTrack(winnerName, startingFive = null) {
-      const uniqueNames = getUniqueDonorNames();
-      if (uniqueNames.length === 0) return { spinList: [winnerName], winnerIndex: 0 };
-
-      const spinList = [];
-      let lastAdded = "";
-
-      const getDistinctName = () => {
-        if (uniqueNames.length === 1) return uniqueNames[0];
-        let candidate;
-        let attempts = 0;
-        do {
-          candidate = uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
-          attempts++;
-        } while (candidate === lastAdded && attempts < 25);
-        return candidate;
-      };
-
-      if (startingFive && startingFive.length === 5) {
-        for (let i = 0; i < 5; i++) {
-          const name = startingFive[i];
-          const valid = uniqueNames.includes(name);
-          const chosen = valid ? name : getDistinctName();
-          spinList.push(chosen);
-          lastAdded = chosen;
-        }
-      }
-
-      const allDonorsShuffled = [...uniqueNames].sort(() => Math.random() - 0.5);
-      for (const name of allDonorsShuffled) {
-        if (name !== lastAdded) {
-          spinList.push(name);
-          lastAdded = name;
-        }
-      }
-
-      const weightedPool = getWeightedTicketPool().sort(() => Math.random() - 0.5);
-      let poolIdx = 0;
-
-      while (spinList.length < 115) {
-        const candidate = weightedPool[poolIdx % weightedPool.length] || getDistinctName();
-        poolIdx++;
-        if (candidate !== lastAdded || uniqueNames.length === 1) {
-          spinList.push(candidate);
-          lastAdded = candidate;
-        }
-      }
-
-      const winnerIndex = 115;
-      spinList[winnerIndex] = winnerName;
-      lastAdded = winnerName;
-
-      for (let i = 0; i < 5; i++) {
-        const next = getDistinctName();
-        spinList.push(next);
-      }
-
-      return { spinList, winnerIndex };
-    }
-
-    function initReelTrack() {
-      const uniqueNames = getUniqueDonorNames();
-      if (uniqueNames.length === 0) {
-        reelTrackEl.innerHTML = '<div class="reel-item">Väntar på gåvor...</div>';
-        return;
-      }
-
-      const initialList = [];
-      for (let i = 0; i < 5; i++) {
-        initialList.push(uniqueNames[i % uniqueNames.length]);
-      }
-      currentVisibleFive = [...initialList];
-
-      reelTrackEl.style.transition = 'none';
-      reelTrackEl.style.transform = 'translateY(0px)';
-      reelTrackEl.innerHTML = initialList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-      renderItemProximity(0);
-    }
-
-    function renderItemProximity(currentY) {
-      const viewportCenter = VIEWPORT_HEIGHT / 2;
-      const children = reelTrackEl.children;
-      const count = children.length;
-      if (count === 0) return;
-
-      const centerItemIdx = Math.round((-currentY + viewportCenter - ITEM_HEIGHT / 2) / ITEM_HEIGHT);
-      const startIdx = Math.max(0, centerItemIdx - 4);
-      const endIdx = Math.min(count - 1, centerItemIdx + 4);
-
-      for (let i = startIdx; i <= endIdx; i++) {
-        const item = children[i];
-        const itemCenter = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) + currentY;
-        const dist = Math.abs(itemCenter - viewportCenter);
-        const normDist = Math.min(1, dist / viewportCenter);
-
-        const scale = 0.75 + 0.95 * Math.pow(1 - normDist, 1.5);
-        const opacity = 0.22 + 0.78 * Math.pow(1 - normDist, 1.8);
-
-        item.style.transform = `scale(${scale.toFixed(3)})`;
-        item.style.opacity = opacity.toFixed(3);
-      }
-    }
-
-    function runAnimationLoop() {
-      if (!isSpinningReel) return;
-
-      const style = window.getComputedStyle(reelTrackEl);
-      const matrix = new DOMMatrix(style.transform);
-      const currentY = matrix.m42;
-      renderItemProximity(currentY);
-
-      const centerItemIdx = Math.floor((-currentY + (VIEWPORT_HEIGHT / 2)) / ITEM_HEIGHT);
-      const now = performance.now();
-      
-      if (centerItemIdx !== lastTickedIndex && (now - lastTickTimestamp) > 18) {
-        const speed = Math.abs(currentY - lastTrackY);
-        const pitch = Math.max(0.75, Math.min(1.35, 0.75 + speed * 0.05));
-        playWheelClick(pitch);
-        lastTickedIndex = centerItemIdx;
-        lastTickTimestamp = now;
-      }
-      lastTrackY = currentY;
-
-      animationFrameId = requestAnimationFrame(runAnimationLoop);
-    }
-
-    function stopAllTimers() {
-      if (giveawayHoldTimeout) clearTimeout(giveawayHoldTimeout);
-      if (spinAnimationTimeout) clearTimeout(spinAnimationTimeout);
-      if (headerCountdownInterval) clearInterval(headerCountdownInterval);
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      giveawayHoldTimeout = null;
-      spinAnimationTimeout = null;
-      headerCountdownInterval = null;
-      animationFrameId = null;
-    }
-
-    function handleStartGiveaway(shouldBroadcast = true) {
-      getAudioContext();
-      if (isSpinningReel) return;
-      const ticketPool = getWeightedTicketPool();
-      if (ticketPool.length === 0) return alert("Inga biljetter i potten än!");
-
-      clearVictoryEffects();
-      giveawayWidgetEl.classList.remove('faded-out');
-      executeReelSpinAnimation(10000);
-
-      if (shouldBroadcast) broadcastEvent('START_SPIN');
-    }
-
-    function handleSkipWinner(shouldBroadcast = true) {
-      getAudioContext();
-      clearVictoryEffects();
-      giveawayWidgetEl.classList.remove('faded-out');
-      stopAllTimers();
-      isSpinningReel = false;
-      executeReelSpinAnimation(5000);
-
-      if (shouldBroadcast) broadcastEvent('SKIP_SPIN');
-    }
-
-    // 🏆 AVSLUTA & DELA UT VINST (Med fördröjning så vinnarnamnet inte försvinner framför ögonen på tittarna!)
-    function handleCloseGiveaway(shouldBroadcast = true) {
-      stopAllTimers();
-      clearVictoryEffects();
-      isSpinningReel = false;
-      setButtonLock(false);
-
-      // 1. Dra bort biljetten direkt i datan
-      if (currentDrawnWinner && donorTicketsMap[currentDrawnWinner]) {
-        if (donorTicketsMap[currentDrawnWinner].ticketsActive > 0) {
-          donorTicketsMap[currentDrawnWinner].ticketsActive -= 1;
-        }
-      }
-
-      saveTicketsToStorage();
-      updateGiveawayStatsUI();
-
-      // 2. Tona ut widgeten först!
-      giveawayWidgetEl.classList.add('faded-out');
-
-      // 3. Vänta 500 ms (tills widgeten är 100% osynlig) innan namnet tas bort och rullen återställs!
-      setTimeout(() => {
-        currentDrawnWinner = null;
-        currentVisibleFive = null;
-        initReelTrack();
-        giveawayTimerEl.innerText = "";
-      }, 500);
-
-      if (shouldBroadcast) broadcastEvent('CLOSE_CLAIM');
-    }
-
-    function executeReelSpinAnimation(holdDelayMs = 10000) {
-      const ticketPool = getWeightedTicketPool();
-      if (ticketPool.length === 0) return;
-
-      stopAllTimers();
-      clearVictoryEffects();
-      isSpinningReel = true;
-      setButtonLock(true);
-
-      const winningIndex = Math.floor(Math.random() * ticketPool.length);
-      const winnerName = ticketPool[winningIndex];
-      currentDrawnWinner = winnerName;
-
-      const { spinList, winnerIndex } = createCleanReelTrack(winnerName, currentVisibleFive);
-
-      reelTrackEl.style.transition = 'none';
-      reelTrackEl.style.transform = 'translateY(0px)';
-      reelTrackEl.innerHTML = spinList.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-      void reelTrackEl.offsetHeight;
-
-      renderItemProximity(0);
-      lastTrackY = 0;
-      lastTickedIndex = null;
-
-      const endTime = Date.now() + holdDelayMs;
-      const updateTimerUI = () => {
-        const remainingSec = Math.ceil(Math.max(0, endTime - Date.now()) / 1000);
-        giveawayTimerEl.innerText = remainingSec > 0 ? `Startar om ${remainingSec}s` : "Dragning pågår...";
-      };
-
-      updateTimerUI();
-      headerCountdownInterval = setInterval(() => {
-        updateTimerUI();
-        if (Date.now() >= endTime) {
-          clearInterval(headerCountdownInterval);
-          headerCountdownInterval = null;
-        }
-      }, 200);
-
-      giveawayHoldTimeout = setTimeout(() => {
-        giveawayTimerEl.innerText = "Dragning pågår...";
-        const targetY = -(winnerIndex * ITEM_HEIGHT - 88);
-        const spinDuration = holdDelayMs <= 5000 ? 5500 : 8500;
-
-        reelTrackEl.style.transition = `transform ${spinDuration}ms cubic-bezier(0.08, 0.85, 0.15, 1)`;
-        reelTrackEl.style.transform = `translateY(${targetY}px)`;
-
-        runAnimationLoop();
-
-        spinAnimationTimeout = setTimeout(() => {
-          isSpinningReel = false;
-          setButtonLock(false);
-          stopAllTimers();
-
-          giveawayTimerEl.innerText = "Vill du behålla eller ge vidare?";
-          renderItemProximity(targetY);
-
-          const items = reelTrackEl.children;
-          if (items[winnerIndex]) {
-            items[winnerIndex].classList.add('is-winner');
-          }
-
-          triggerCleanVictory();
-
-          currentVisibleFive = [
-            spinList[winnerIndex - 2] || winnerName,
-            spinList[winnerIndex - 1] || winnerName,
-            spinList[winnerIndex],
-            spinList[winnerIndex + 1] || winnerName,
-            spinList[winnerIndex + 2] || winnerName
-          ];
-        }, spinDuration + 50);
-      }, holdDelayMs);
-    }
-
-    function makePanelDraggable() {
-      if (!testPanelEl || !panelHeaderEl) return;
-      let startX = 0, startY = 0, initialLeft = 0, initialTop = 0;
-
-      const onMouseMove = (e) => {
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        const maxLeft = window.innerWidth - testPanelEl.offsetWidth - 10;
-        const maxTop = window.innerHeight - testPanelEl.offsetHeight - 10;
-
-        testPanelEl.style.left = `${Math.max(10, Math.min(maxLeft, initialLeft + dx))}px`;
-        testPanelEl.style.top = `${Math.max(10, Math.min(maxTop, initialTop + dy))}px`;
-      };
-
-      const onMouseUp = () => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      };
-
-      panelHeaderEl.addEventListener('mousedown', (e) => {
-        if (document.body.classList.contains('dock-mode')) return;
-        getAudioContext();
-        e.preventDefault();
-        startX = e.clientX;
-        startY = e.clientY;
-        initialLeft = testPanelEl.offsetLeft;
-        initialTop = testPanelEl.offsetTop;
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      });
     }
 
     function escapeHTML(str) {
-      return String(str || '').replace(/[&<>'"]/g, tag => ({
+      return String(str || '').replace(/[&<>'"]/g, t => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[tag] || tag));
+      }[t] || t));
     }
 
-    // Event Listeners
-    btnStart.addEventListener('click', () => handleStartGiveaway(true));
-    btnSkip.addEventListener('click', () => handleSkipWinner(true));
-    btnClose.addEventListener('click', () => handleCloseGiveaway(true));
-    document.getElementById('btnFetchBossa').addEventListener('click', fetchRealBossaData);
-    document.getElementById('btnAddManual').addEventListener('click', addManualDonor);
-    document.getElementById('btnSwitchTest').addEventListener('click', switchToTestMode);
-    document.getElementById('btnResetZero').addEventListener('click', () => handleResetEverything(true));
-
-    document.getElementById('btnTogglePaste').addEventListener('click', () => {
-      pasteContainerEl.style.display = pasteContainerEl.style.display === "none" ? "flex" : "none";
-    });
-    document.getElementById('btnImportPaste').addEventListener('click', importPastedText);
-
     // Init
-    makePanelDraggable();
-    loadTicketsFromStorage();
+    loadDonors();
     initReelTrack();
-    setInterval(loadTicketsFromStorage, 4000);
   </script>
 </body>
 </html>
