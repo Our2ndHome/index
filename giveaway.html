@@ -44,7 +44,7 @@
       padding: 10px;
     }
 
-    /* 🎉 CONFETTI CANVAS */
+    /* 🌧️ EMOTE RAIN & CELEBRATION CANVAS */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -52,7 +52,7 @@
       width: 100vw;
       height: 100vh;
       pointer-events: none;
-      z-index: 99992;
+      z-index: 99995;
     }
 
     /* 📺 1. STREAM OVERLAY: PURE PLAIN TEXT */
@@ -61,7 +61,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 800px;
+      width: 840px;
       padding: 10px;
       background: transparent !important;
       border: none !important;
@@ -113,14 +113,14 @@
       display: block;
       margin-top: 6px;
       color: #ffffff;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      min-height: 20px;
+      min-height: 22px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 THE 5-SLOT STAGE (CENTER ANCHORED AT Y: 140px) */
+    /* 🎰 5-SLOT STAGE */
     .reel-viewport {
       position: relative;
       width: 100%;
@@ -165,11 +165,23 @@
       white-space: nowrap;
       color: #ffffff;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 1px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
       transform-origin: center center;
       will-change: transform, opacity;
       line-height: 1;
+    }
+
+    /* 💥 WINNER SLAM IMPACT */
+    @keyframes winnerImpact {
+      0% { transform: translateY(-50%) scale(1.85); filter: brightness(2.2); }
+      50% { transform: translateY(-50%) scale(1.15); filter: brightness(1.3); }
+      75% { transform: translateY(-50%) scale(1.30); }
+      100% { transform: translateY(-50%) scale(1.22); filter: brightness(1); }
+    }
+
+    .slot-item.is-winner {
+      animation: winnerImpact 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
     }
 
     /* 🏷️ TWO-ROW PRIZE DISPLAY */
@@ -372,7 +384,7 @@
 </head>
 <body>
 
-  <!-- 🎉 CONFETTI CANVAS -->
+  <!-- 🌧️ CELEBRATION EMOTE RAIN & RADIAL BLAST CANVAS -->
   <canvas id="victoryCanvas"></canvas>
 
   <!-- ========================================================
@@ -401,7 +413,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.1</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -495,8 +507,9 @@
     let lastTickIndex = null;
     let lastTickTime = 0;
 
-    let confettiParticles = [];
-    let confettiAnimId = null;
+    // 🌧️ EMOTE RAIN & EXPLOSION PARTICLES
+    let celebrationParticles = [];
+    let celebrationAnimId = null;
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -782,26 +795,23 @@
       const sign = d < 0 ? -1 : 1;
 
       let yOffset = 0;
-      let scale = 1.18; // Center size
+      let scale = 1.18;
       let opacity = 1.0;
       let fontWeight = '900';
 
       if (absD <= 1.0) {
-        // Between Center (d=0, Y=140px) and Medium (d=1)
         const t = absD; // 0 to 1
         yOffset = sign * (54 * t);
-        scale = 1.18 - (1.18 - 0.86) * t; // 1.18 -> 0.86 (~28px -> ~20px)
+        scale = 1.18 - (1.18 - 0.86) * t;
         opacity = 1.0 - (1.0 - 0.60) * t;
         fontWeight = absD < 0.25 ? '900' : '800';
       } else if (absD <= 2.0) {
-        // Between Medium (d=1) and Small (d=2)
-        const t = absD - 1.0; // 0 to 1
+        const t = absD - 1.0;
         yOffset = sign * (54 + 46 * t);
-        scale = 0.86 - (0.86 - 0.62) * t; // 0.86 -> 0.62 (~20px -> ~15px)
+        scale = 0.86 - (0.86 - 0.62) * t;
         opacity = 0.60 - (0.60 - 0.22) * t;
         fontWeight = '700';
       } else {
-        // Outer edges fade out
         const t = Math.min(1.0, absD - 2.0);
         yOffset = sign * (100 + 40 * t);
         scale = 0.62 - (0.62 - 0.45) * t;
@@ -817,7 +827,7 @@
       };
     }
 
-    function renderVirtualSlots(virtualOffset) {
+    function renderVirtualSlots(virtualOffset, isWinningFrame = false) {
       if (trackNamesList.length === 0) return;
 
       const centerIndex = Math.round(virtualOffset);
@@ -830,10 +840,11 @@
         const m = getSlotPhysicalMetrics(d);
 
         if (m.opacity > 0.01) {
+          const isWinnerCenter = isWinningFrame && Math.abs(d) < 0.05;
+          const winnerClass = isWinnerCenter ? 'slot-item is-winner' : 'slot-item';
           const transform = `translateY(-50%) scale(${m.scale.toFixed(3)})`;
-          // Base font-size 24px gives balanced ~28px center, ~20px medium, ~15px small
           const style = `top: ${m.top.toFixed(1)}px; transform: ${transform}; opacity: ${m.opacity.toFixed(3)}; font-weight: ${m.fontWeight}; font-size: 24px;`;
-          html += `<div class="slot-item" style="${style}">${escapeHTML(trackNamesList[i])}</div>`;
+          html += `<div class="${winnerClass}" style="${style}">${escapeHTML(trackNamesList[i])}</div>`;
         }
       }
 
@@ -853,7 +864,7 @@
       }
 
       currentVirtualOffset = 2.0;
-      renderVirtualSlots(currentVirtualOffset);
+      renderVirtualSlots(currentVirtualOffset, false);
     }
 
     function stopTimers() {
@@ -894,7 +905,7 @@
     function executeSpin(winnerName, holdDelayMs = 10000, spinDistance = 75) {
       getAudioContext();
       stopTimers();
-      clearConfetti();
+      clearCelebrationEffects();
 
       isSpinning = true;
       currentWinner = winnerName;
@@ -960,7 +971,7 @@
           const ease = 1 - Math.pow(1 - progress, 4.5);
           currentVirtualOffset = startOffset + (targetOffset - startOffset) * ease;
 
-          renderVirtualSlots(currentVirtualOffset);
+          renderVirtualSlots(currentVirtualOffset, false);
 
           // Audio clicks
           const currentItemIdx = Math.floor(currentVirtualOffset);
@@ -974,9 +985,9 @@
           if (progress < 1.0) {
             animFrameId = requestAnimationFrame(spinStep);
           } else {
-            // Lock dead center
+            // Lock dead center with winner slam impact
             currentVirtualOffset = targetOffset;
-            renderVirtualSlots(currentVirtualOffset);
+            renderVirtualSlots(currentVirtualOffset, true);
 
             isSpinning = false;
             setButtonsLocked(false);
@@ -997,7 +1008,8 @@
               }
             }, 1000);
 
-            triggerVictoryEffects();
+            // 🎆 TRIGGER PRO CELEBRATION (RADIAL BURST + EMOTE RAIN)
+            triggerCelebrationBurst();
           }
         }
 
@@ -1020,7 +1032,7 @@
 
     function finalizeClaimAndHide() {
       stopTimers();
-      clearConfetti();
+      clearCelebrationEffects();
       isSpinning = false;
       setButtonsLocked(false);
 
@@ -1034,71 +1046,114 @@
     }
 
     // ========================================================
-    // 🎊 CONFETTI
+    // 🌧️ CELEBRATION ENGINE: 360° RADIAL BLAST + EMOTE RAIN
     // ========================================================
-    function triggerVictoryEffects() {
+    function triggerCelebrationBurst() {
       playVictorySound();
-      confettiParticles = [];
-      const colors = ['#ffffff', '#e4e4e7', '#a1a1aa'];
-      const count = 120;
+      celebrationParticles = [];
 
-      for (let i = 0; i < count; i++) {
-        confettiParticles.push({
-          x: window.innerWidth / 2 + (Math.random() * 80 - 40),
-          y: window.innerHeight / 2 + (Math.random() * 40 - 20),
-          vx: (Math.random() - 0.5) * 22,
-          vy: (Math.random() * -16) - 5,
-          size: Math.random() * 6 + 4,
-          color: colors[Math.floor(Math.random() * colors.length)],
+      const HYPE_EMOTES = ['👑', '🎉', '🎁', '✨', '❤️', '🔥', '🏆', '⭐'];
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const cX = W / 2;
+      const cY = H / 2;
+
+      // 💥 WAVE 1: Radial 360° Blast from behind the Winner's name (50 particles)
+      for (let i = 0; i < 50; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 12 + Math.random() * 18;
+        celebrationParticles.push({
+          x: cX,
+          y: cY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 4,
+          gravity: 0.32,
+          drag: 0.94,
+          size: 26 + Math.random() * 18,
           rotation: Math.random() * 360,
-          rotSpeed: (Math.random() - 0.5) * 10,
-          opacity: 1,
-          gravity: 0.42 + Math.random() * 0.2,
-          drag: 0.985
+          rotSpeed: (Math.random() - 0.5) * 8,
+          opacity: 1.0,
+          char: HYPE_EMOTES[Math.floor(Math.random() * HYPE_EMOTES.length)],
+          sway: Math.random() * 10,
+          swaySpeed: 0.04 + Math.random() * 0.04,
+          isRain: false
         });
       }
 
-      if (confettiAnimId) cancelAnimationFrame(confettiAnimId);
-      animateConfetti();
+      // 🌧️ WAVE 2: Full-Screen Cascading Emote Rain (75 particles across 100% width)
+      for (let i = 0; i < 75; i++) {
+        celebrationParticles.push({
+          x: Math.random() * W,
+          y: -50 - Math.random() * (H * 0.8), // Staggered drop from above
+          vx: (Math.random() - 0.5) * 2,
+          vy: 3.5 + Math.random() * 5.5,
+          gravity: 0.12,
+          drag: 0.99,
+          size: 24 + Math.random() * 16,
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 5,
+          opacity: 1.0,
+          char: HYPE_EMOTES[Math.floor(Math.random() * HYPE_EMOTES.length)],
+          sway: Math.random() * 10,
+          swaySpeed: 0.03 + Math.random() * 0.03,
+          isRain: true
+        });
+      }
+
+      if (celebrationAnimId) cancelAnimationFrame(celebrationAnimId);
+      animateCelebration();
     }
 
-    function animateConfetti() {
+    function animateCelebration() {
       vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
-      let alive = 0;
+      let aliveCount = 0;
 
-      for (const p of confettiParticles) {
+      for (let p of celebrationParticles) {
+        // Physics update
         p.x += p.vx;
         p.y += p.vy;
         p.vy += p.gravity;
         p.vx *= p.drag;
         p.rotation += p.rotSpeed;
 
-        if (p.y > window.innerHeight * 0.65) p.opacity -= 0.015;
+        // Natural horizontal wind sway
+        p.sway += p.swaySpeed;
+        p.x += Math.sin(p.sway) * 1.5;
 
-        if (p.opacity > 0 && p.y < window.innerHeight + 50) {
-          alive++;
+        // Fade out gracefully toward screen bottom
+        if (p.y > window.innerHeight * 0.72) {
+          p.opacity -= 0.012;
+        }
+
+        if (p.opacity > 0.02 && p.y < window.innerHeight + 80) {
+          aliveCount++;
           vCtx.save();
           vCtx.translate(p.x, p.y);
           vCtx.rotate((p.rotation * Math.PI) / 180);
-          vCtx.globalAlpha = Math.max(0, p.opacity);
-          vCtx.fillStyle = p.color;
-          vCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.3);
+          vCtx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
+          
+          // Render High-DPI Crisp Emojis
+          vCtx.font = `${Math.round(p.size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+          vCtx.textAlign = 'center';
+          vCtx.textBaseline = 'middle';
+          vCtx.fillText(p.char, 0, 0);
+          
           vCtx.restore();
         }
       }
 
-      if (alive > 0) {
-        confettiAnimId = requestAnimationFrame(animateConfetti);
+      if (aliveCount > 0) {
+        celebrationAnimId = requestAnimationFrame(animateCelebration);
       } else {
         vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
-        confettiAnimId = null;
+        celebrationAnimId = null;
       }
     }
 
-    function clearConfetti() {
-      if (confettiAnimId) {
-        cancelAnimationFrame(confettiAnimId);
-        confettiAnimId = null;
+    function clearCelebrationEffects() {
+      if (celebrationAnimId) {
+        cancelAnimationFrame(celebrationAnimId);
+        celebrationAnimId = null;
       }
       vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
     }
