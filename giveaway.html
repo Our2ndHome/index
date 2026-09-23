@@ -17,7 +17,7 @@
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
-      --viewport-height: 280px; /* Fixed 5-slot optical window */
+      --viewport-height: 280px; /* 140px is dead center */
     }
 
     * { box-sizing: border-box; }
@@ -55,13 +55,13 @@
       z-index: 99992;
     }
 
-    /* 📺 1. STREAM OVERLAY: PURE PLAIN TEXT (NO BOXES, NO GLOW) */
+    /* 📺 1. STREAM OVERLAY: PURE PLAIN TEXT */
     .giveaway-widget {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 840px;
+      width: 800px;
       padding: 10px;
       background: transparent !important;
       border: none !important;
@@ -113,14 +113,14 @@
       display: block;
       margin-top: 6px;
       color: #ffffff;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      min-height: 22px;
+      min-height: 20px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 THE 5-SLOT STAGE (CENTER IS ANCHORED AT Y: 140px) */
+    /* 🎰 THE 5-SLOT STAGE (CENTER ANCHORED AT Y: 140px) */
     .reel-viewport {
       position: relative;
       width: 100%;
@@ -129,7 +129,6 @@
       background: transparent;
       border: none;
 
-      /* Smooth edge fade mask */
       -webkit-mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
@@ -166,28 +165,43 @@
       white-space: nowrap;
       color: #ffffff;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
       transform-origin: center center;
       will-change: transform, opacity;
       line-height: 1;
     }
 
-    /* PRIZE TEXT */
+    /* 🏷️ TWO-ROW PRIZE DISPLAY */
     .giveaway-prize-display {
-      margin-top: 12px;
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-height: 44px;
+      max-width: 90%;
+    }
+
+    .giveaway-prize-label {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      color: rgba(255, 255, 255, 0.65);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .giveaway-prize-val {
       font-size: 22px;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       color: #ffffff;
       text-transform: uppercase;
-      text-align: center;
-      max-width: 90%;
-      min-height: 28px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+      white-space: normal;
+      line-height: 1.2;
     }
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
@@ -377,6 +391,7 @@
         <div class="reel-stage" id="reelStage"></div>
       </div>
 
+      <!-- 🏷️ TWO-ROW PRIZE DISPLAY -->
       <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
     </div>
   </div>
@@ -386,7 +401,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.0</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.1</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -468,8 +483,8 @@
     let isSpinning = false;
     let isTestMode = false;
 
-    // 🎯 VIRTUAL CONTINUOUS ROLLER STATE (ZERO JUMP)
-    let currentVirtualOffset = 0.0;
+    // Continuous Rolling State
+    let currentVirtualOffset = 2.0;
     let trackNamesList = [];
 
     let holdTimeout = null;
@@ -683,11 +698,19 @@
     }
 
     // ========================================================
-    // 🏷️ PRIZE & AUDIO
+    // 🏷️ TWO-ROW PRIZE & AUDIO
     // ========================================================
     function setPrizeText(text, broadcast = true) {
       const clean = (text || '').trim();
-      giveawayPrizeDisplay.innerText = clean ? `Vinst: ${clean}` : '';
+      if (clean) {
+        giveawayPrizeDisplay.innerHTML = `
+          <span class="giveaway-prize-label">VINST:</span>
+          <span class="giveaway-prize-val">${escapeHTML(clean)}</span>
+        `;
+      } else {
+        giveawayPrizeDisplay.innerHTML = '';
+      }
+
       if (prizeInput) prizeInput.value = clean;
       try {
         localStorage.setItem(STORAGE_KEY_PRIZE, clean);
@@ -752,38 +775,37 @@
     }
 
     // ========================================================
-    // 🎯 5-SLOT OPTICAL STAGE: CENTER IS 100% FIXED AT Y = 140px!
+    // 🎯 BALANCED 5-SLOT SCALING (PROPORTIONAL SIZES)
     // ========================================================
-    // Maps signed distance in item slots (-2 to +2) to exact physical slot positions
     function getSlotPhysicalMetrics(d) {
       const absD = Math.abs(d);
       const sign = d < 0 ? -1 : 1;
 
       let yOffset = 0;
-      let scale = 1.25;
+      let scale = 1.18; // Center size
       let opacity = 1.0;
       let fontWeight = '900';
 
       if (absD <= 1.0) {
-        // Between Center (d=0, Y=140px) and Medium (d=1, Y=76px or 204px)
+        // Between Center (d=0, Y=140px) and Medium (d=1)
         const t = absD; // 0 to 1
-        yOffset = sign * (64 * t);
-        scale = 1.25 - (1.25 - 0.88) * t;
-        opacity = 1.0 - (1.0 - 0.65) * t;
-        fontWeight = absD < 0.2 ? '900' : '800';
+        yOffset = sign * (54 * t);
+        scale = 1.18 - (1.18 - 0.86) * t; // 1.18 -> 0.86 (~28px -> ~20px)
+        opacity = 1.0 - (1.0 - 0.60) * t;
+        fontWeight = absD < 0.25 ? '900' : '800';
       } else if (absD <= 2.0) {
-        // Between Medium (d=1, 64px) and Small (d=2, 118px)
+        // Between Medium (d=1) and Small (d=2)
         const t = absD - 1.0; // 0 to 1
-        yOffset = sign * (64 + 54 * t);
-        scale = 0.88 - (0.88 - 0.60) * t;
-        opacity = 0.65 - (0.65 - 0.25) * t;
+        yOffset = sign * (54 + 46 * t);
+        scale = 0.86 - (0.86 - 0.62) * t; // 0.86 -> 0.62 (~20px -> ~15px)
+        opacity = 0.60 - (0.60 - 0.22) * t;
         fontWeight = '700';
       } else {
-        // Exiting outer edge
+        // Outer edges fade out
         const t = Math.min(1.0, absD - 2.0);
-        yOffset = sign * (118 + 48 * t);
-        scale = 0.60 - (0.60 - 0.40) * t;
-        opacity = Math.max(0, 0.25 - 0.25 * t);
+        yOffset = sign * (100 + 40 * t);
+        scale = 0.62 - (0.62 - 0.45) * t;
+        opacity = Math.max(0, 0.22 - 0.22 * t);
         fontWeight = '600';
       }
 
@@ -795,7 +817,6 @@
       };
     }
 
-    // Renders the visible slots around current virtual offset
     function renderVirtualSlots(virtualOffset) {
       if (trackNamesList.length === 0) return;
 
@@ -805,12 +826,13 @@
 
       let html = '';
       for (let i = minIndex; i <= maxIndex; i++) {
-        const d = i - virtualOffset; // Distance in items from center (0 is dead center)
+        const d = i - virtualOffset;
         const m = getSlotPhysicalMetrics(d);
 
         if (m.opacity > 0.01) {
           const transform = `translateY(-50%) scale(${m.scale.toFixed(3)})`;
-          const style = `top: ${m.top.toFixed(1)}px; transform: ${transform}; opacity: ${m.opacity.toFixed(3)}; font-weight: ${m.fontWeight}; font-size: 34px;`;
+          // Base font-size 24px gives balanced ~28px center, ~20px medium, ~15px small
+          const style = `top: ${m.top.toFixed(1)}px; transform: ${transform}; opacity: ${m.opacity.toFixed(3)}; font-weight: ${m.fontWeight}; font-size: 24px;`;
           html += `<div class="slot-item" style="${style}">${escapeHTML(trackNamesList[i])}</div>`;
         }
       }
@@ -830,7 +852,7 @@
         }
       }
 
-      currentVirtualOffset = 2.0; // Center is item 2
+      currentVirtualOffset = 2.0;
       renderVirtualSlots(currentVirtualOffset);
     }
 
@@ -846,7 +868,7 @@
     }
 
     // ========================================================
-    // 🚀 SEAMLESS KINETIC ROLL (ZERO JUMP & UNMOVEABLE CENTER)
+    // 🚀 SEAMLESS KINETIC ROLL (ZERO JUMP)
     // ========================================================
     function startDraw(holdDelayMs = 10000) {
       const pool = getWeightedTicketPool();
@@ -894,7 +916,7 @@
         return chosen;
       };
 
-      // Append forward seamlessly (Zero jump, zero reset)
+      // Append forward seamlessly
       let lastAdded = trackNamesList[trackNamesList.length - 1] || "";
       while (trackNamesList.length < totalTrackNeeded) {
         const nextIdx = trackNamesList.length;
@@ -935,13 +957,12 @@
           const elapsed = now - startTime;
           const progress = Math.min(1.0, elapsed / spinDuration);
 
-          // Easing: fast spin then natural, suspenseful deceleration into the center
           const ease = 1 - Math.pow(1 - progress, 4.5);
           currentVirtualOffset = startOffset + (targetOffset - startOffset) * ease;
 
           renderVirtualSlots(currentVirtualOffset);
 
-          // Audio clicks on slot crossing
+          // Audio clicks
           const currentItemIdx = Math.floor(currentVirtualOffset);
           if (currentItemIdx !== lastTickIndex && (now - lastTickTime) > 16) {
             const speed = (1 - progress);
@@ -953,7 +974,7 @@
           if (progress < 1.0) {
             animFrameId = requestAnimationFrame(spinStep);
           } else {
-            // Spin Finished: Winner is LOCKED exactly at targetOffset (d=0, Y=140px)!
+            // Lock dead center
             currentVirtualOffset = targetOffset;
             renderVirtualSlots(currentVirtualOffset);
 
