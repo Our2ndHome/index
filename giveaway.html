@@ -61,7 +61,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 840px;
+      width: 800px;
       padding: 10px;
       background: transparent !important;
       border: none !important;
@@ -113,14 +113,14 @@
       display: block;
       margin-top: 6px;
       color: #ffffff;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      min-height: 22px;
+      min-height: 20px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 5-SLOT STAGE */
+    /* 🎰 THE 5-SLOT STAGE (CENTER ANCHORED AT Y: 140px) */
     .reel-viewport {
       position: relative;
       width: 100%;
@@ -165,23 +165,11 @@
       white-space: nowrap;
       color: #ffffff;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
       transform-origin: center center;
       will-change: transform, opacity;
       line-height: 1;
-    }
-
-    /* 💥 WINNER SLAM IMPACT */
-    @keyframes winnerImpact {
-      0% { transform: translateY(-50%) scale(1.85); filter: brightness(2.2); }
-      50% { transform: translateY(-50%) scale(1.15); filter: brightness(1.3); }
-      75% { transform: translateY(-50%) scale(1.30); }
-      100% { transform: translateY(-50%) scale(1.22); filter: brightness(1); }
-    }
-
-    .slot-item.is-winner {
-      animation: winnerImpact 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
     }
 
     /* 🏷️ TWO-ROW PRIZE DISPLAY */
@@ -384,7 +372,7 @@
 </head>
 <body>
 
-  <!-- 🌧️ CELEBRATION EMOTE RAIN & RADIAL BLAST CANVAS -->
+  <!-- 🌧️ EMOTE RAIN & RADIAL BLAST CANVAS -->
   <canvas id="victoryCanvas"></canvas>
 
   <!-- ========================================================
@@ -413,11 +401,11 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.2</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.3</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
+    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
 
     <!-- Prize Input -->
@@ -478,6 +466,10 @@
     const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
     const STORAGE_KEY_PRIZE = "mh_overlay_prize_text";
 
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
+    const EMOTES_FOLDER = "emotes"; // 📁 Reads images from /emotes on GitHub
+
     const TICKET_MILESTONE_KR = 200;
     const MAX_TICKETS_PER_USER = 5;
     const VIEWPORT_HEIGHT = 280; // 140px is dead center
@@ -507,9 +499,10 @@
     let lastTickIndex = null;
     let lastTickTime = 0;
 
-    // 🌧️ EMOTE RAIN & EXPLOSION PARTICLES
+    // 🌧️ CELEBRATION ENGINE
     let celebrationParticles = [];
     let celebrationAnimId = null;
+    let loadedEmoteImages = []; // Stores preloaded PNG/GIF/WebP Image objects
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -547,6 +540,31 @@
     const dbDonorsRef = firebase.database().ref('giveaway_donors');
     const dbActionRef = firebase.database().ref('giveaway_action');
     const dbBossaRef = firebase.database().ref('bossa');
+
+    // ========================================================
+    // 🖼️ AUTO-LOAD EMOTES FROM GITHUB /emotes FOLDER
+    // ========================================================
+    async function loadCustomEmotesFromGitHub() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
+        if (res.ok) {
+          const files = await res.json();
+          const imageFiles = files.filter(f => f.name.match(/\.(png|jpe?g|webp|gif|svg)$/i));
+
+          loadedEmoteImages = [];
+          for (const f of imageFiles) {
+            const img = new Image();
+            img.src = `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`;
+            loadedEmoteImages.push(img);
+          }
+
+          console.log(`[Giveaway] Laddade ${loadedEmoteImages.length} egna emotes från /${EMOTES_FOLDER}`);
+        }
+      } catch(e) {
+        console.log("[Giveaway] Inga egna emotes hittades, använder standard-emojis");
+      }
+    }
+    loadCustomEmotesFromGitHub();
 
     // ========================================================
     // 🧠 1. DONOR ENGINE
@@ -800,18 +818,21 @@
       let fontWeight = '900';
 
       if (absD <= 1.0) {
+        // Between Center (d=0, Y=140px) and Medium (d=1)
         const t = absD; // 0 to 1
         yOffset = sign * (54 * t);
-        scale = 1.18 - (1.18 - 0.86) * t;
-        opacity = 1.0 - (1.0 - 0.60) * t;
+        scale = 1.18 - (1.18 - 0.86) * t; // 1.18 -> 0.86 (~28px -> ~20px)
+        opacity = 1.0 - (1.0 - 0.60) * t;  // 1.00 -> 0.60
         fontWeight = absD < 0.25 ? '900' : '800';
       } else if (absD <= 2.0) {
+        // Between Medium (d=1) and Small (d=2)
         const t = absD - 1.0;
         yOffset = sign * (54 + 46 * t);
-        scale = 0.86 - (0.86 - 0.62) * t;
-        opacity = 0.60 - (0.60 - 0.22) * t;
+        scale = 0.86 - (0.86 - 0.62) * t; // 0.86 -> 0.62 (~20px -> ~15px)
+        opacity = 0.60 - (0.60 - 0.22) * t; // 0.60 -> 0.22
         fontWeight = '700';
       } else {
+        // Outer edges fade out
         const t = Math.min(1.0, absD - 2.0);
         yOffset = sign * (100 + 40 * t);
         scale = 0.62 - (0.62 - 0.45) * t;
@@ -827,7 +848,7 @@
       };
     }
 
-    function renderVirtualSlots(virtualOffset, isWinningFrame = false) {
+    function renderVirtualSlots(virtualOffset) {
       if (trackNamesList.length === 0) return;
 
       const centerIndex = Math.round(virtualOffset);
@@ -840,11 +861,9 @@
         const m = getSlotPhysicalMetrics(d);
 
         if (m.opacity > 0.01) {
-          const isWinnerCenter = isWinningFrame && Math.abs(d) < 0.05;
-          const winnerClass = isWinnerCenter ? 'slot-item is-winner' : 'slot-item';
           const transform = `translateY(-50%) scale(${m.scale.toFixed(3)})`;
           const style = `top: ${m.top.toFixed(1)}px; transform: ${transform}; opacity: ${m.opacity.toFixed(3)}; font-weight: ${m.fontWeight}; font-size: 24px;`;
-          html += `<div class="${winnerClass}" style="${style}">${escapeHTML(trackNamesList[i])}</div>`;
+          html += `<div class="slot-item" style="${style}">${escapeHTML(trackNamesList[i])}</div>`;
         }
       }
 
@@ -864,7 +883,7 @@
       }
 
       currentVirtualOffset = 2.0;
-      renderVirtualSlots(currentVirtualOffset, false);
+      renderVirtualSlots(currentVirtualOffset);
     }
 
     function stopTimers() {
@@ -971,7 +990,7 @@
           const ease = 1 - Math.pow(1 - progress, 4.5);
           currentVirtualOffset = startOffset + (targetOffset - startOffset) * ease;
 
-          renderVirtualSlots(currentVirtualOffset, false);
+          renderVirtualSlots(currentVirtualOffset);
 
           // Audio clicks
           const currentItemIdx = Math.floor(currentVirtualOffset);
@@ -985,9 +1004,9 @@
           if (progress < 1.0) {
             animFrameId = requestAnimationFrame(spinStep);
           } else {
-            // Lock dead center with winner slam impact
+            // Lock dead center
             currentVirtualOffset = targetOffset;
-            renderVirtualSlots(currentVirtualOffset, true);
+            renderVirtualSlots(currentVirtualOffset);
 
             isSpinning = false;
             setButtonsLocked(false);
@@ -1008,7 +1027,6 @@
               }
             }, 1000);
 
-            // 🎆 TRIGGER PRO CELEBRATION (RADIAL BURST + EMOTE RAIN)
             triggerCelebrationBurst();
           }
         }
@@ -1046,57 +1064,65 @@
     }
 
     // ========================================================
-    // 🌧️ CELEBRATION ENGINE: 360° RADIAL BLAST + EMOTE RAIN
+    // 🌧️ CELEBRATION ENGINE: USES GITHUB /emotes IMAGES + FALLBACK
     // ========================================================
     function triggerCelebrationBurst() {
       playVictorySound();
       celebrationParticles = [];
 
-      const HYPE_EMOTES = ['👑', '🎉', '🎁', '✨', '❤️', '🔥', '🏆', '⭐'];
+      const FALLBACK_EMOJIS = ['👑', '🎉', '🎁', '✨', '❤️', '🔥', '🏆', '⭐'];
+      const hasCustomImages = loadedEmoteImages.length > 0;
+
       const W = window.innerWidth;
       const H = window.innerHeight;
       const cX = W / 2;
       const cY = H / 2;
 
-      // 💥 WAVE 1: Radial 360° Blast from behind the Winner's name (50 particles)
-      for (let i = 0; i < 50; i++) {
+      // 💥 WAVE 1: Radial 360° Blast from behind winner (45 particles)
+      for (let i = 0; i < 45; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = 12 + Math.random() * 18;
+        const speed = 11 + Math.random() * 16;
+        const img = hasCustomImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
+        const char = hasCustomImages ? null : FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
+
         celebrationParticles.push({
           x: cX,
           y: cY,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 4,
+          vy: Math.sin(angle) * speed - 3.5,
           gravity: 0.32,
           drag: 0.94,
-          size: 26 + Math.random() * 18,
+          size: 32 + Math.random() * 20,
           rotation: Math.random() * 360,
           rotSpeed: (Math.random() - 0.5) * 8,
           opacity: 1.0,
-          char: HYPE_EMOTES[Math.floor(Math.random() * HYPE_EMOTES.length)],
+          img: img,
+          char: char,
           sway: Math.random() * 10,
-          swaySpeed: 0.04 + Math.random() * 0.04,
-          isRain: false
+          swaySpeed: 0.04 + Math.random() * 0.04
         });
       }
 
       // 🌧️ WAVE 2: Full-Screen Cascading Emote Rain (75 particles across 100% width)
       for (let i = 0; i < 75; i++) {
+        const img = hasCustomImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
+        const char = hasCustomImages ? null : FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
+
         celebrationParticles.push({
           x: Math.random() * W,
-          y: -50 - Math.random() * (H * 0.8), // Staggered drop from above
+          y: -50 - Math.random() * (H * 0.8),
           vx: (Math.random() - 0.5) * 2,
-          vy: 3.5 + Math.random() * 5.5,
+          vy: 3.5 + Math.random() * 5.0,
           gravity: 0.12,
           drag: 0.99,
-          size: 24 + Math.random() * 16,
+          size: 30 + Math.random() * 18,
           rotation: Math.random() * 360,
           rotSpeed: (Math.random() - 0.5) * 5,
           opacity: 1.0,
-          char: HYPE_EMOTES[Math.floor(Math.random() * HYPE_EMOTES.length)],
+          img: img,
+          char: char,
           sway: Math.random() * 10,
-          swaySpeed: 0.03 + Math.random() * 0.03,
-          isRain: true
+          swaySpeed: 0.03 + Math.random() * 0.03
         });
       }
 
@@ -1109,18 +1135,15 @@
       let aliveCount = 0;
 
       for (let p of celebrationParticles) {
-        // Physics update
         p.x += p.vx;
         p.y += p.vy;
         p.vy += p.gravity;
         p.vx *= p.drag;
         p.rotation += p.rotSpeed;
 
-        // Natural horizontal wind sway
         p.sway += p.swaySpeed;
         p.x += Math.sin(p.sway) * 1.5;
 
-        // Fade out gracefully toward screen bottom
         if (p.y > window.innerHeight * 0.72) {
           p.opacity -= 0.012;
         }
@@ -1131,13 +1154,17 @@
           vCtx.translate(p.x, p.y);
           vCtx.rotate((p.rotation * Math.PI) / 180);
           vCtx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
-          
-          // Render High-DPI Crisp Emojis
-          vCtx.font = `${Math.round(p.size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-          vCtx.textAlign = 'center';
-          vCtx.textBaseline = 'middle';
-          vCtx.fillText(p.char, 0, 0);
-          
+
+          // Draw real custom image if loaded, otherwise fallback emoji
+          if (p.img && p.img.complete && p.img.naturalWidth > 0) {
+            vCtx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
+          } else if (p.char) {
+            vCtx.font = `${Math.round(p.size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+            vCtx.textAlign = 'center';
+            vCtx.textBaseline = 'middle';
+            vCtx.fillText(p.char, 0, 0);
+          }
+
           vCtx.restore();
         }
       }
@@ -1176,7 +1203,9 @@
 
       const statusBox = document.getElementById('dockStatusBox');
       if (statusBox) {
-        statusBox.innerText = isTestMode ? "Testläge aktivt (Simulerade biljetter)" : "Ansluten till databas";
+        const emoteCount = loadedEmoteImages.length;
+        const emoteText = emoteCount > 0 ? ` (${emoteCount} emotes)` : '';
+        statusBox.innerText = isTestMode ? `Testläge aktivt${emoteText}` : `Ansluten till databas${emoteText}`;
       }
     }
 
