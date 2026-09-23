@@ -17,8 +17,8 @@
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
-      --item-height: 46px;
-      --viewport-height: 230px;
+      --item-height: 48px;
+      --viewport-height: 240px; /* Exactly 5 items visible */
     }
 
     * { box-sizing: border-box; }
@@ -35,6 +35,7 @@
       user-select: none;
     }
 
+    /* 🔀 HASH ROUTER */
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
 
@@ -44,6 +45,7 @@
       padding: 10px;
     }
 
+    /* 🎉 CONFETTI CANVAS */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -54,24 +56,28 @@
       z-index: 99992;
     }
 
-    /* 📺 1. STREAM OVERLAY: CLEAN REEL MODAL */
+    /* 📺 1. STREAM OVERLAY: SLEEK BLACK & WHITE MODAL */
     .giveaway-widget {
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0.9);
-      width: 680px;
-      height: 460px;
+      transform: translate(-50%, -50%) scale(0.92);
+      width: 660px;
+      padding: 24px 28px;
+      background: rgba(14, 14, 18, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9), 0 0 1px rgba(255, 255, 255, 0.1);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 99990;
-      overflow: hidden;
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
+      backdrop-filter: blur(14px);
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s;
     }
 
     .giveaway-widget.active {
@@ -85,46 +91,79 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .giveaway-head-title {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 900;
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       color: #ffffff;
       text-transform: uppercase;
-      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(255, 255, 255, 0.4);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
     }
 
     .giveaway-sub-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.5px;
       color: var(--text-dim);
       margin-top: 4px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
     }
 
     .giveaway-timer-badge {
       display: block;
       margin-top: 6px;
-      color: #ace600;
-      font-size: 15px;
-      font-weight: 900;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
       letter-spacing: 0.5px;
-      min-height: 22px;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      min-height: 20px;
     }
 
+    /* 🎰 REEL VIEWPORT WITH CENTER TARGET NOTCH */
     .reel-viewport {
       position: relative;
       width: 100%;
       height: var(--viewport-height);
       overflow: hidden;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
 
-      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 15%, rgba(0,0,0,1) 40%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0) 100%);
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 15%, rgba(0,0,0,1) 40%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0) 100%);
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.4) 15%,
+        rgba(0, 0, 0, 1) 40%,
+        rgba(0, 0, 0, 1) 60%,
+        rgba(0, 0, 0, 0.4) 85%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.4) 15%,
+        rgba(0, 0, 0, 1) 40%,
+        rgba(0, 0, 0, 1) 60%,
+        rgba(0, 0, 0, 0.4) 85%,
+        rgba(0, 0, 0, 0) 100%
+      );
+    }
+
+    /* Target bracket highlighting the center winner slot */
+    .reel-center-indicator {
+      position: absolute;
+      top: 96px; /* Exactly at (240 - 48)/2 */
+      left: 14px;
+      right: 14px;
+      height: var(--item-height);
+      border-top: 1px solid rgba(255, 255, 255, 0.28);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 5;
     }
 
     .reel-track {
@@ -143,38 +182,39 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 18px;
+      font-weight: 700;
+      font-size: 17px;
       letter-spacing: 0.5px;
       white-space: nowrap;
       color: #ffffff;
       transform-origin: center center;
       will-change: transform, opacity;
-      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
-      transition: font-size 0.3s ease;
+      transition: color 0.2s ease, text-shadow 0.2s ease;
     }
 
+    /* WINNER ROW HIGHLIGHT */
     .reel-item.is-winner {
-      font-size: 26px !important;
+      font-size: 24px !important;
       font-weight: 900 !important;
       color: #ffffff !important;
-      text-shadow: 0 0 16px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 1) !important;
+      text-shadow: 0 0 18px rgba(255, 255, 255, 0.8), 0 2px 10px rgba(0, 0, 0, 1) !important;
     }
 
+    /* PRIZE BANNER */
     .giveaway-prize-display {
       margin-top: 14px;
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 900;
-      letter-spacing: 2px;
-      color: #ffea00;
+      letter-spacing: 1.5px;
+      color: #ffffff;
       text-transform: uppercase;
       text-align: center;
       max-width: 90%;
-      min-height: 30px;
+      min-height: 28px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
     }
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
@@ -320,17 +360,26 @@
     .manual-row input[name="amount"] { flex: 1; }
     .manual-row button { flex: 1; margin-bottom: 0; }
 
-    /* Donor Search Box in Dock */
-    .lookup-result {
-      background: #1a1a20;
+    /* 🔍 !biljett Tester Box in Dock */
+    .lookup-box {
+      background: #121215;
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 6px 10px;
-      font-size: 11px;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-top: 8px;
       margin-bottom: 8px;
+    }
+
+    .lookup-output {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #e4e4e7;
+      font-weight: 700;
       display: none;
-      color: #ace600;
-      font-weight: 800;
+      padding: 6px 8px;
+      background: #1a1a20;
+      border-radius: 4px;
+      border-left: 2px solid #ffffff;
     }
   </style>
 </head>
@@ -349,9 +398,13 @@
         <div class="giveaway-sub-title" id="giveawaySubTitle">Totalt 0 biljetter · 0 givare</div>
         <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
       </div>
+      
       <div class="reel-viewport">
+        <!-- Target Center Notch -->
+        <div class="reel-center-indicator"></div>
         <div class="reel-track" id="reelTrack"></div>
       </div>
+
       <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
     </div>
   </div>
@@ -361,11 +414,11 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.2</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.3</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluten till databas</div>
+    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
 
     <!-- Prize Input -->
@@ -385,12 +438,17 @@
     </div>
     <button class="btn" style="padding:6px; font-size:11px;" onclick="playVictorySound()">Provlyssna vinnarljud</button>
 
-    <!-- 🔍 MOD TICKET SEARCH -->
-    <div class="control-row" style="margin-top: 10px;">
-      <span class="control-label">SÖK GIVARE:</span>
-      <input type="text" id="searchDonorInput" placeholder="Skriv namn..." style="width: 60%;" oninput="lookupDonorTickets()">
+    <!-- 💬 !BILJETT CHAT COMMAND TESTER -->
+    <div class="lookup-box">
+      <div style="font-size:10px; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-bottom:4px;">
+        🧪 Testa !biljett-kommando (Chat Simulator):
+      </div>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="searchDonorInput" placeholder="Skriv namn (t.ex. Marcus)..." style="flex:1;">
+        <button class="btn" style="width:auto; margin:0; padding:6px 10px;" onclick="testChatCommandSimulator()">Kör</button>
+      </div>
+      <div id="lookupOutput" class="lookup-output"></div>
     </div>
-    <div id="lookupResult" class="lookup-result"></div>
 
     <!-- Manual Donor Add (Case-Insensitive) -->
     <div class="manual-row" style="margin-top: 6px;">
@@ -399,10 +457,11 @@
       <button class="btn" onclick="addManualDonation()">+ Lägg till</button>
     </div>
 
-    <!-- Actions -->
+    <!-- Test Mode / Simulation -->
     <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">Växla till testläge (500 testbiljetter)</button>
     <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla biljetter</button>
 
+    <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
       Starta dragning (10s)
     </button>
@@ -422,8 +481,8 @@
 
     const TICKET_MILESTONE_KR = 200;
     const MAX_TICKETS_PER_USER = 5;
-    const ITEM_HEIGHT = 46;
-    const VIEWPORT_HEIGHT = 230;
+    const ITEM_HEIGHT = 48;
+    const VIEWPORT_HEIGHT = 240;
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
 
@@ -487,9 +546,10 @@
     }
     const dbDonorsRef = firebase.database().ref('giveaway_donors');
     const dbActionRef = firebase.database().ref('giveaway_action');
+    const dbBossaRef = firebase.database().ref('bossa');
 
     // ========================================================
-    // 🧠 1. CASE-INSENSITIVE CUMULATIVE DONOR ENGINE
+    // 🧠 1. CASE-INSENSITIVE CUMULATIVE DONOR LOGIC
     // ========================================================
     function normalizeDonorKey(name) {
       if (!name) return "";
@@ -575,6 +635,26 @@
       }).catch(() => {});
     }
 
+    // 🌉 AUTOMATIC TICKET BRIDGE: When a donation alert arrives in /bossa, award tickets!
+    let lastObservedAlertId = 0;
+    dbBossaRef.on('value', (snap) => {
+      const bData = snap.val();
+      if (!bData) return;
+
+      if (bData.alertId && bData.alertId !== lastObservedAlertId) {
+        lastObservedAlertId = bData.alertId;
+
+        // Auto-feed tickets for new donations
+        if (Array.isArray(bData.alerts) && bData.alerts.length > 0) {
+          bData.alerts.forEach(item => {
+            if (item.donor && item.amount) recordDonation(item.donor, item.amount);
+          });
+        } else if (bData.donor && bData.diff > 0) {
+          recordDonation(bData.donor, bData.diff);
+        }
+      }
+    });
+
     // Realtime Database Listeners
     dbDonorsRef.on('value', (snap) => {
       const data = snap.val();
@@ -608,24 +688,27 @@
       };
     }
 
-    // 🔍 LOOKUP DONOR TICKETS (For mods in chat)
-    function lookupDonorTickets() {
+    // 💬 TEST !BILJETT SIMULATOR IN THE DOCK
+    function testChatCommandSimulator() {
       const input = document.getElementById('searchDonorInput');
-      const box = document.getElementById('lookupResult');
+      const box = document.getElementById('lookupOutput');
       if (!input || !box) return;
 
-      const query = normalizeDonorKey(input.value);
-      if (!query) {
-        box.style.display = 'none';
+      const raw = input.value.trim();
+      if (!raw) {
+        box.style.display = 'block';
+        box.innerHTML = `⚠️ Skriv ett namn att testa (t.ex. <code>Marcus</code>)`;
         return;
       }
 
-      const match = donorMap[query];
+      const key = normalizeDonorKey(raw);
+      const match = donorMap[key];
       box.style.display = 'block';
+
       if (match) {
-        box.innerHTML = `${match.displayName}: <b>${match.totalAmount} kr</b> donerat · <b>${match.ticketsActive}/5</b> biljetter aktiva`;
+        box.innerHTML = `💬 <b>Bot-svar:</b> @${raw} ➔ ${match.displayName} har donerat <b>${match.totalAmount} kr</b> totalt och har <b>${match.ticketsActive}/5</b> aktiva biljetter i giveaway-hjulet! 🎁`;
       } else {
-        box.innerHTML = `<span style="color:#a1a1aa;">Inga biljetter hittades för "${input.value.trim()}".</span>`;
+        box.innerHTML = `💬 <b>Bot-svar:</b> @${raw} ➔ Inga biljetter hittades för '${raw}' än. Donera minst 200 kr till bössan för att få din första biljett! 🎟️`;
       }
     }
 
@@ -671,10 +754,10 @@
         const now = ctx.currentTime;
 
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(520 * pitch, now);
+        osc.frequency.setValueAtTime(500 * pitch, now);
         osc.frequency.exponentialRampToValueAtTime(90, now + 0.016);
 
-        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.setValueAtTime(0.14, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
 
         osc.connect(gain);
@@ -698,7 +781,7 @@
     }
 
     // ========================================================
-    // 🎰 REEL BUILDER & PROXIMITY SCALING
+    // 🎰 SMOOTH PROXIMITY SCALING & BALANCED TRACK
     // ========================================================
     function createReelList(winnerName, startingFive = null) {
       const uniqueNames = getUniqueDonorNames();
@@ -718,6 +801,7 @@
         return chosen;
       };
 
+      // 1. Maintain starting five smoothly
       if (startingFive && startingFive.length === 5) {
         for (let i = 0; i < 5; i++) {
           const n = startingFive[i];
@@ -727,6 +811,16 @@
         }
       }
 
+      // 2. Guarantee EVERY active donor appears multiple times
+      const allShuffled = [...uniqueNames].sort(() => Math.random() - 0.5);
+      for (const name of allShuffled) {
+        if (name !== last) {
+          spinList.push(name);
+          last = name;
+        }
+      }
+
+      // 3. Fill the reel track up to index 110
       const pool = getWeightedTicketPool().sort(() => Math.random() - 0.5);
       let pIdx = 0;
 
@@ -739,11 +833,13 @@
         }
       }
 
+      // 4. Set designate winner index at 110
       const winnerIndex = 110;
       spinList[winnerIndex] = winnerName;
       last = winnerName;
 
-      for (let i = 0; i < 5; i++) {
+      // 5. Add buffer after winner
+      for (let i = 0; i < 6; i++) {
         spinList.push(pickDifferent());
       }
 
@@ -753,43 +849,63 @@
     function initReelTrack() {
       const uniqueNames = getUniqueDonorNames();
       if (uniqueNames.length === 0) {
-        reelTrack.innerHTML = '<div class="reel-item">Väntar på gåvor...</div>';
+        reelTrack.innerHTML = '<div class="reel-item" style="opacity:0.4;">Väntar på gåvor...</div>';
         return;
       }
 
+      // Fill 7 items so top and bottom rows are never empty
       const initial = [];
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 7; i++) {
         initial.push(uniqueNames[i % uniqueNames.length]);
       }
-      currentVisibleFive = [...initial];
+      currentVisibleFive = [initial[1], initial[2], initial[3], initial[4], initial[5]];
 
       reelTrack.style.transition = 'none';
-      reelTrack.style.transform = 'translateY(0px)';
+      reelTrack.style.transform = `translateY(-${ITEM_HEIGHT}px)`; // Center on index 3
       reelTrack.innerHTML = initial.map(name => `<div class="reel-item">${escapeHTML(name)}</div>`).join('');
-      renderProximity(0);
+      renderProximity(-ITEM_HEIGHT);
     }
 
+    // 🎯 SMOOTH EVEN FADE AND SIZING HIERARCHY
     function renderProximity(currentY) {
-      const center = VIEWPORT_HEIGHT / 2;
+      const viewportCenter = VIEWPORT_HEIGHT / 2; // 120px
       const items = reelTrack.children;
       const count = items.length;
       if (count === 0) return;
 
-      const centerIdx = Math.round((-currentY + center - ITEM_HEIGHT / 2) / ITEM_HEIGHT);
-      const start = Math.max(0, centerIdx - 4);
-      const end = Math.min(count - 1, centerIdx + 4);
+      const centerIdx = Math.round((-currentY + viewportCenter - ITEM_HEIGHT / 2) / ITEM_HEIGHT);
+      const start = Math.max(0, centerIdx - 3);
+      const end = Math.min(count - 1, centerIdx + 3);
 
-      for (let i = start; i <= end; i++) {
+      for (let i = 0; i < count; i++) {
         const item = items[i];
-        const itemY = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) + currentY;
-        const dist = Math.abs(itemY - center);
-        const norm = Math.min(1, dist / center);
+        if (i < start || i > end) {
+          item.style.opacity = '0.08';
+          item.style.transform = 'scale(0.70)';
+          continue;
+        }
 
-        const scale = 0.75 + 0.95 * Math.pow(1 - norm, 1.5);
-        const opacity = 0.2 + 0.8 * Math.pow(1 - norm, 1.8);
+        const itemCenterY = (i * ITEM_HEIGHT) + (ITEM_HEIGHT / 2) + currentY;
+        const dist = Math.abs(itemCenterY - viewportCenter);
+        const norm = Math.min(1, dist / viewportCenter); // 0 at center, 1 at edges
+
+        // Smooth non-linear curve: center sticks out big, edges shrink & fade
+        const closeness = Math.max(0, 1 - norm);
+        const scale = 0.72 + 0.48 * Math.pow(closeness, 1.4); // 0.72 -> 1.20
+        const opacity = 0.12 + 0.88 * Math.pow(closeness, 1.6); // 0.12 -> 1.00
 
         item.style.transform = `scale(${scale.toFixed(3)})`;
         item.style.opacity = opacity.toFixed(3);
+
+        if (norm < 0.14) {
+          item.style.fontWeight = '900';
+          item.style.color = '#ffffff';
+          item.style.textShadow = '0 0 16px rgba(255, 255, 255, 0.75), 0 2px 8px #000';
+        } else {
+          item.style.fontWeight = '700';
+          item.style.color = '#d4d4d8';
+          item.style.textShadow = '0 2px 6px rgba(0,0,0,0.8)';
+        }
       }
     }
 
@@ -830,7 +946,7 @@
     }
 
     // ========================================================
-    // 🚀 EXECUTE SPIN & 60-SECOND WINNER CLAIM COUNTDOWN
+    // 🚀 EXECUTE SPIN & 60-SECOND COUNTDOWN
     // ========================================================
     function startDraw(holdDelayMs = 10000) {
       const pool = getWeightedTicketPool();
@@ -890,10 +1006,10 @@
 
       holdTimeout = setTimeout(() => {
         giveawayTimerBadge.innerText = "Dragning pågår...";
-        const targetY = -(winnerIndex * ITEM_HEIGHT - 92);
+        const targetY = -(winnerIndex * ITEM_HEIGHT - 96); // Center exactly at 96px
         const duration = holdDelayMs <= 5000 ? 5500 : 8500;
 
-        reelTrack.style.transition = `transform ${duration}ms cubic-bezier(0.08, 0.85, 0.15, 1)`;
+        reelTrack.style.transition = `transform ${duration}ms cubic-bezier(0.10, 0.85, 0.16, 1)`;
         reelTrack.style.transform = `translateY(${targetY}px)`;
 
         runAnimationLoop();
@@ -903,14 +1019,14 @@
           setButtonsLocked(false);
           stopTimers();
 
-          // ⏱️ START 60-SECOND CLAIM TIMER
-          let claimSecondsRemaining = 60;
-          giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSecondsRemaining}s`;
+          // ⏱️ 60-SECOND WINNER CLAIM COUNTDOWN
+          let claimSec = 60;
+          giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
 
           claimTimerInterval = setInterval(() => {
-            claimSecondsRemaining--;
-            if (claimSecondsRemaining > 0) {
-              giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSecondsRemaining}s`;
+            claimSec--;
+            if (claimSec > 0) {
+              giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
             } else {
               giveawayTimerBadge.innerText = "Tiden har gått ut! (Ge vidare eller dra ny)";
               clearInterval(claimTimerInterval);
@@ -973,7 +1089,7 @@
     function triggerVictoryEffects() {
       playVictorySound();
       confettiParticles = [];
-      const colors = ['#ffffff', '#e4e4e7', '#a1a1aa', '#ffea00'];
+      const colors = ['#ffffff', '#e4e4e7', '#a1a1aa'];
       const count = 120;
 
       for (let i = 0; i < count; i++) {
@@ -1038,7 +1154,7 @@
     }
 
     // ========================================================
-    // 🎛️ DOCK INTERACTIONS
+    // 🎛️ DOCK UI
     // ========================================================
     function updateStatsUI() {
       const pool = getWeightedTicketPool();
