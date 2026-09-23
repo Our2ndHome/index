@@ -35,7 +35,6 @@
       user-select: none;
     }
 
-    /* 🔀 HASH ROUTER VISIBILITY */
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
 
@@ -45,7 +44,6 @@
       padding: 10px;
     }
 
-    /* 🎉 CONFETTI CANVAS */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -112,38 +110,21 @@
       display: block;
       margin-top: 6px;
       color: #ace600;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 900;
-      letter-spacing: 1px;
-      min-height: 20px;
+      letter-spacing: 0.5px;
+      min-height: 22px;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
     }
 
-    /* REEL VIEWPORT */
     .reel-viewport {
       position: relative;
       width: 100%;
       height: var(--viewport-height);
       overflow: hidden;
 
-      -webkit-mask-image: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.3) 15%,
-        rgba(0, 0, 0, 1) 40%,
-        rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.3) 85%,
-        rgba(0, 0, 0, 0) 100%
-      );
-      mask-image: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.3) 15%,
-        rgba(0, 0, 0, 1) 40%,
-        rgba(0, 0, 0, 1) 60%,
-        rgba(0, 0, 0, 0.3) 85%,
-        rgba(0, 0, 0, 0) 100%
-      );
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 15%, rgba(0,0,0,1) 40%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0) 100%);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 15%, rgba(0,0,0,1) 40%, rgba(0,0,0,1) 60%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0) 100%);
     }
 
     .reel-track {
@@ -173,7 +154,6 @@
       transition: font-size 0.3s ease;
     }
 
-    /* WINNER HIGHLIGHT */
     .reel-item.is-winner {
       font-size: 26px !important;
       font-weight: 900 !important;
@@ -181,7 +161,6 @@
       text-shadow: 0 0 16px rgba(255, 255, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 1) !important;
     }
 
-    /* PRIZE BANNER BELOW WHEEL */
     .giveaway-prize-display {
       margin-top: 14px;
       font-size: 24px;
@@ -198,7 +177,7 @@
       text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎛️ 2. OBS DOCK CONTROLLER (BLACK & WHITE) */
+    /* 🎛️ 2. OBS DOCK CONTROLLER */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -269,7 +248,7 @@
       white-space: nowrap;
     }
 
-    input[type="text"], input[type="number"], select, textarea {
+    input[type="text"], input[type="number"], select {
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -280,7 +259,7 @@
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
       border-color: #52525b;
     }
 
@@ -340,11 +319,24 @@
     .manual-row input[name="name"] { flex: 2; }
     .manual-row input[name="amount"] { flex: 1; }
     .manual-row button { flex: 1; margin-bottom: 0; }
+
+    /* Donor Search Box in Dock */
+    .lookup-result {
+      background: #1a1a20;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 11px;
+      margin-bottom: 8px;
+      display: none;
+      color: #ace600;
+      font-weight: 800;
+    }
   </style>
 </head>
 <body>
 
-  <!-- 🎉 VICTORY CONFETTI CANVAS -->
+  <!-- 🎉 CONFETTI CANVAS -->
   <canvas id="victoryCanvas"></canvas>
 
   <!-- ========================================================
@@ -365,15 +357,15 @@
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel - Black & White Style)
+       🎛️ 2. OBS CONTROL DOCK (#panel)
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.0</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v7.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
+    <div class="status-box" id="dockStatusBox">Ansluten till databas</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
 
     <!-- Prize Input -->
@@ -382,7 +374,7 @@
       <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 60%; text-align: right;">
     </div>
 
-    <!-- Victory Sound Preset -->
+    <!-- Sound Preset -->
     <div class="control-row">
       <span class="control-label">VINNARLJUD:</span>
       <select id="soundPresetSelect" style="width: 60%;">
@@ -393,18 +385,24 @@
     </div>
     <button class="btn" style="padding:6px; font-size:11px;" onclick="playVictorySound()">Provlyssna vinnarljud</button>
 
-    <!-- Manual Donor Add (Cumulative Storage) -->
-    <div class="manual-row" style="margin-top: 10px;">
+    <!-- 🔍 MOD TICKET SEARCH -->
+    <div class="control-row" style="margin-top: 10px;">
+      <span class="control-label">SÖK GIVARE:</span>
+      <input type="text" id="searchDonorInput" placeholder="Skriv namn..." style="width: 60%;" oninput="lookupDonorTickets()">
+    </div>
+    <div id="lookupResult" class="lookup-result"></div>
+
+    <!-- Manual Donor Add (Case-Insensitive) -->
+    <div class="manual-row" style="margin-top: 6px;">
       <input type="text" id="manualName" name="name" placeholder="Givarnamn">
       <input type="number" id="manualAmount" name="amount" placeholder="Kr" style="width:65px;" value="200">
       <button class="btn" onclick="addManualDonation()">+ Lägg till</button>
     </div>
 
-    <!-- Test Mode / Simulation -->
+    <!-- Actions -->
     <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">Växla till testläge (500 testbiljetter)</button>
     <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla biljetter</button>
 
-    <!-- Draw Actions -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
       Starta dragning (10s)
     </button>
@@ -417,7 +415,6 @@
   </div>
 
   <script>
-    // ⚙️ FIREBASE REALTIME BACKBONE
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
@@ -436,29 +433,25 @@
       fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"
     };
 
-    // Global state
     let donorMap = {};
     let currentWinner = null;
     let isSpinning = false;
     let isTestMode = false;
     let currentVisibleFive = null;
 
-    // Timers
     let holdTimeout = null;
     let countdownInterval = null;
+    let claimTimerInterval = null;
     let spinTimeout = null;
     let animFrameId = null;
 
-    // Tick audio
     let lastTrackY = 0;
     let lastTickedIndex = null;
     let lastTickTime = 0;
 
-    // Confetti
     let confettiParticles = [];
     let confettiAnimId = null;
 
-    // View Routing
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
@@ -468,7 +461,6 @@
       document.body.classList.add('mode-overlay');
     }
 
-    // Elements
     const giveawayWidget = document.getElementById('giveawayWidget');
     const giveawaySubTitle = document.getElementById('giveawaySubTitle');
     const giveawayTimerBadge = document.getElementById('giveawayHeaderTimer');
@@ -483,7 +475,6 @@
     const btnSkip = document.getElementById('btnSkip');
     const btnClose = document.getElementById('btnClose');
 
-    // Resize canvas
     function resizeCanvas() {
       victoryCanvas.width = window.innerWidth;
       victoryCanvas.height = window.innerHeight;
@@ -491,7 +482,6 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Initialize Firebase
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
@@ -499,31 +489,37 @@
     const dbActionRef = firebase.database().ref('giveaway_action');
 
     // ========================================================
-    // 🧠 1. CUMULATIVE DONATION LOGIC & TICKET CAP
+    // 🧠 1. CASE-INSENSITIVE CUMULATIVE DONOR ENGINE
     // ========================================================
-    function recordDonation(name, amount) {
-      if (!name || !name.trim()) return;
-      const clean = name.trim();
-      if (/anonym|hemlig hjälte/i.test(clean)) return;
+    function normalizeDonorKey(name) {
+      if (!name) return "";
+      return name.replace(/^@+/, '').trim().toLowerCase();
+    }
 
-      if (!donorMap[clean]) {
-        donorMap[clean] = {
+    function recordDonation(rawName, amount) {
+      if (!rawName || amount < 1) return;
+      const cleanName = rawName.replace(/^@+/, '').trim();
+      const key = normalizeDonorKey(cleanName);
+      if (/anonym|hemlig hjälte/i.test(key)) return;
+
+      if (!donorMap[key]) {
+        donorMap[key] = {
+          displayName: cleanName,
           totalAmount: 0,
           milestonesClaimed: 0,
           ticketsActive: 0
         };
       }
 
-      const donor = donorMap[clean];
-      donor.totalAmount += amount;
+      const donor = donorMap[key];
+      donor.displayName = cleanName; // Preserve casing
+      donor.totalAmount = (donor.totalAmount || 0) + amount;
 
-      // How many 200 kr milestones total reached?
       const totalMilestones = Math.floor(donor.totalAmount / TICKET_MILESTONE_KR);
       const newMilestones = totalMilestones - (donor.milestonesClaimed || 0);
 
       if (newMilestones > 0) {
-        // Add new tickets, capped at 5 max active tickets
-        donor.ticketsActive = Math.min(MAX_TICKETS_PER_USER, donor.ticketsActive + newMilestones);
+        donor.ticketsActive = Math.min(MAX_TICKETS_PER_USER, (donor.ticketsActive || 0) + newMilestones);
         donor.milestonesClaimed = totalMilestones;
       }
 
@@ -532,12 +528,9 @@
       syncDonorsToCloud();
     }
 
-    function deductWinnerTicket(winnerName) {
-      if (!winnerName || !donorMap[winnerName]) return;
-      
-      // Winner claims prize: deduct 1 active ticket (e.g. from 5/5 down to 4/5)
-      donorMap[winnerName].ticketsActive = Math.max(0, donorMap[winnerName].ticketsActive - 1);
-
+    function deductWinnerTicket(winnerKey) {
+      if (!winnerKey || !donorMap[winnerKey]) return;
+      donorMap[winnerKey].ticketsActive = Math.max(0, (donorMap[winnerKey].ticketsActive || 0) - 1);
       saveDonors();
       updateStatsUI();
       syncDonorsToCloud();
@@ -545,16 +538,16 @@
 
     function getWeightedTicketPool() {
       const pool = [];
-      for (const [name, donor] of Object.entries(donorMap)) {
+      for (const [key, donor] of Object.entries(donorMap)) {
         for (let i = 0; i < (donor.ticketsActive || 0); i++) {
-          pool.push(name);
+          pool.push(donor.displayName || key);
         }
       }
       return pool;
     }
 
     function getUniqueDonorNames() {
-      return Object.keys(donorMap).filter(name => (donorMap[name].ticketsActive || 0) > 0);
+      return Object.keys(donorMap).filter(k => (donorMap[k].ticketsActive || 0) > 0).map(k => donorMap[k].displayName || k);
     }
 
     function saveDonors() {
@@ -582,7 +575,7 @@
       }).catch(() => {});
     }
 
-    // Realtime Database Listener for Donors
+    // Realtime Database Listeners
     dbDonorsRef.on('value', (snap) => {
       const data = snap.val();
       if (data && data.map && !isSpinning) {
@@ -593,7 +586,6 @@
       }
     });
 
-    // Realtime Action Listener (Spins on ALL streamers' screens simultaneously)
     dbActionRef.on('value', (snap) => {
       const act = snap.val();
       if (!act) return;
@@ -607,7 +599,6 @@
       }
     });
 
-    // Local BroadcastChannel fallback
     if (bus) {
       bus.onmessage = (e) => {
         const { type, payload } = e.data || {};
@@ -615,6 +606,27 @@
         if (type === 'CLAIM_CLOSE') finalizeClaimAndHide();
         if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
       };
+    }
+
+    // 🔍 LOOKUP DONOR TICKETS (For mods in chat)
+    function lookupDonorTickets() {
+      const input = document.getElementById('searchDonorInput');
+      const box = document.getElementById('lookupResult');
+      if (!input || !box) return;
+
+      const query = normalizeDonorKey(input.value);
+      if (!query) {
+        box.style.display = 'none';
+        return;
+      }
+
+      const match = donorMap[query];
+      box.style.display = 'block';
+      if (match) {
+        box.innerHTML = `${match.displayName}: <b>${match.totalAmount} kr</b> donerat · <b>${match.ticketsActive}/5</b> biljetter aktiva`;
+      } else {
+        box.innerHTML = `<span style="color:#a1a1aa;">Inga biljetter hittades för "${input.value.trim()}".</span>`;
+      }
     }
 
     // ========================================================
@@ -715,7 +727,6 @@
         }
       }
 
-      // Mix in pool
       const pool = getWeightedTicketPool().sort(() => Math.random() - 0.5);
       let pIdx = 0;
 
@@ -728,7 +739,6 @@
         }
       }
 
-      // Designated winner index
       const winnerIndex = 110;
       spinList[winnerIndex] = winnerName;
       last = winnerName;
@@ -810,15 +820,17 @@
       if (holdTimeout) clearTimeout(holdTimeout);
       if (spinTimeout) clearTimeout(spinTimeout);
       if (countdownInterval) clearInterval(countdownInterval);
+      if (claimTimerInterval) clearInterval(claimTimerInterval);
       if (animFrameId) cancelAnimationFrame(animFrameId);
       holdTimeout = null;
       spinTimeout = null;
       countdownInterval = null;
+      claimTimerInterval = null;
       animFrameId = null;
     }
 
     // ========================================================
-    // 🚀 EXECUTE SPIN ANIMATION
+    // 🚀 EXECUTE SPIN & 60-SECOND WINNER CLAIM COUNTDOWN
     // ========================================================
     function startDraw(holdDelayMs = 10000) {
       const pool = getWeightedTicketPool();
@@ -827,7 +839,6 @@
       getAudioContext();
       const winner = pool[Math.floor(Math.random() * pool.length)];
 
-      // Broadcast globally to all streamers' overlays
       dbActionRef.set({
         type: 'START_SPIN',
         winner: winner,
@@ -892,7 +903,21 @@
           setButtonsLocked(false);
           stopTimers();
 
-          giveawayTimerBadge.innerText = "Vill du behålla eller ge vidare?";
+          // ⏱️ START 60-SECOND CLAIM TIMER
+          let claimSecondsRemaining = 60;
+          giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSecondsRemaining}s`;
+
+          claimTimerInterval = setInterval(() => {
+            claimSecondsRemaining--;
+            if (claimSecondsRemaining > 0) {
+              giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSecondsRemaining}s`;
+            } else {
+              giveawayTimerBadge.innerText = "Tiden har gått ut! (Ge vidare eller dra ny)";
+              clearInterval(claimTimerInterval);
+              claimTimerInterval = null;
+            }
+          }, 1000);
+
           renderProximity(targetY);
 
           const items = reelTrack.children;
@@ -917,10 +942,9 @@
       if (isSpinning) return;
       if (!currentWinner) return alert("Ingen vinnare dragen än!");
 
-      // 1. Deduct 1 active ticket from winner
-      deductWinnerTicket(currentWinner);
+      const winnerKey = normalizeDonorKey(currentWinner);
+      deductWinnerTicket(winnerKey);
 
-      // 2. Broadcast close command to all streamers
       dbActionRef.set({ type: 'CLAIM_CLOSE', secret: WRITE_SECRET, timestamp: Date.now() });
       if (bus) bus.postMessage({ type: 'CLAIM_CLOSE' });
 
@@ -1082,10 +1106,12 @@
       while (remaining > 0) {
         const p = prefixes[Math.floor(Math.random() * prefixes.length)];
         const s = suffixes[Math.floor(Math.random() * suffixes.length)];
-        const name = `${p}${s}_${idx}`;
+        const rawName = `${p}${s}_${idx}`;
+        const key = normalizeDonorKey(rawName);
         const tickets = Math.min(remaining, Math.floor(Math.random() * MAX_TICKETS_PER_USER) + 1);
 
-        testMap[name] = {
+        testMap[key] = {
+          displayName: rawName,
           totalAmount: tickets * TICKET_MILESTONE_KR,
           milestonesClaimed: tickets,
           ticketsActive: tickets
@@ -1114,7 +1140,6 @@
       }[t] || t));
     }
 
-    // Init
     loadDonors();
     initReelTrack();
   </script>
