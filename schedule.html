@@ -47,7 +47,7 @@
       padding: 10px;
     }
 
-    /* 📺 1. STREAM OVERLAY: SPONSOR ROTATOR + TIMELINE BAR */
+    /* 📺 1. STREAM OVERLAY */
     #overlayRoot {
       position: absolute;
       top: 0;
@@ -158,7 +158,6 @@
       transition: width 0.3s linear;
     }
 
-    /* 🎯 REAL-TIME PROGRESS DOT WITH PULSE */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -400,7 +399,7 @@
       border: 1px solid #ff453a;
       color: #ff453a;
     }
-    .btn-danger:hover {
+    .btn-danger:hover:not(:disabled) {
       background: #ff453a;
       color: #ffffff;
     }
@@ -442,7 +441,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.0</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -474,7 +473,7 @@
 
       <div class="control-row" style="margin-top:6px;">
         <span class="control-label">TID:</span>
-        <input type="text" id="slotTimeInput" placeholder="T.ex. 18:00 - 21:00" style="width:65%;">
+        <input type="text" id="slotTimeInput" placeholder="T.ex. 18:00 - 19:00 (eller 22.00 - 00.00)" style="width:65%;">
       </div>
 
       <div class="control-row">
@@ -490,6 +489,11 @@
       <button class="btn-primary-action" onclick="saveSlotChanges()">
         💾 Spara & Uppdatera alla overlays
       </button>
+
+      <div class="grid-2" style="margin-top:4px;">
+        <button class="btn" onclick="addNewSlot()">➕ Lägg till pass</button>
+        <button class="btn btn-danger" onclick="deleteSelectedSlot()">🗑️ Ta bort pass</button>
+      </div>
     </div>
 
     <!-- 🕹️ QUICK TOOLS & CONTROLS -->
@@ -510,7 +514,6 @@
   </div>
 
   <script>
-    // ⚙️ FIREBASE REALTIME ENGINE
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const STORAGE_KEY_SCHEDULE = "mh_overlay_custom_schedule";
@@ -520,14 +523,23 @@
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
 
-    // Default Sponsors Fallback
+    // Base calendar dates for each day
+    const DAY_BASE_DATES = {
+      "MON": "2026-11-30",
+      "TUE": "2026-12-01",
+      "WED": "2026-12-02",
+      "THU": "2026-12-03",
+      "FRI": "2026-12-04",
+      "SAT": "2026-12-05",
+      "SUN": "2026-12-06"
+    };
+
     const DEFAULT_SPONSORS = [
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ace600" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">LIME GAMING</text></svg>',
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">NORDIC STREAM</text></svg>',
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">MH PARTNER</text></svg>'
     ];
 
-    // Default Musikhjälpen Schedule (30 nov - 6 dec 2026)
     const DEFAULT_SCHEDULE = [
       // MÅNDAG 30 NOV
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 12:00", end: "2026-11-30 15:00", timeText: "12:00 - 15:00", name: "Invigning & Morgongänget", giveaway: "" },
@@ -575,18 +587,16 @@
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 20:00", end: "2026-12-06 23:59", timeText: "20:00 - 23:59", name: "Avslutning & Tack!", giveaway: "" }
     ];
 
-    // Current State
     let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
     let sponsorFileList = DEFAULT_SPONSORS;
     let currentSponsorIndex = 0;
-    let scheduleMode = 'real'; // 'real' or 'test'
+    let scheduleMode = 'real';
 
     let currentDisplayedDayId = null;
     let isDayTransitioning = false;
     let isSimulationLocked = false;
     let simulationLockTimer = null;
 
-    // View Routing
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
@@ -596,19 +606,17 @@
       document.body.classList.add('mode-overlay');
     }
 
-    // Initialize Firebase Connection
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbScheduleRef = firebase.database().ref('schedule_data');
 
-    // Load Local Cache
     try {
       const cached = localStorage.getItem(STORAGE_KEY_SCHEDULE);
       if (cached) currentSchedule = JSON.parse(cached);
     } catch(e) {}
 
-    // ⚡ REAL-TIME DATABASE LISTENER (Nationwide Sync)
+    // ⚡ REAL-TIME NATIONWIDE DATABASE LISTENER
     dbScheduleRef.on('value', (snap) => {
       const data = snap.val();
       if (!data) return;
@@ -629,12 +637,40 @@
       if (statusBox) statusBox.innerText = `Live Ansluten (Synkad)`;
     });
 
-    // ==========================================
-    // 📅 SCHEDULE DATE PARSING & MAPPING
-    // ==========================================
     function parseDate(dateStr) {
       if (dateStr instanceof Date) return dateStr;
       return new Date(dateStr.replace(' ', 'T') + (dateStr.length === 16 ? ':00' : ''));
+    }
+
+    // Dynamic Time Parser & Calculator
+    function parseTimeRangeToDates(dayId, timeRangeStr) {
+      const baseDateStr = DAY_BASE_DATES[dayId] || "2026-11-30";
+      const clean = timeRangeStr.replace(/\./g, ':').trim();
+      const match = clean.match(/([0-9]{1,2}:[0-9]{2})\s*-\s*([0-9]{1,2}:[0-9]{2})/);
+      if (!match) return null;
+
+      const startClock = match[1].padStart(5, '0');
+      const endClock = match[2].padStart(5, '0');
+
+      const startISO = `${baseDateStr} ${startClock}`;
+      let endISO;
+      const isMidnight = endClock === "00:00" || endClock === "24:00";
+
+      if (isMidnight) {
+        const baseD = new Date(baseDateStr + "T00:00:00");
+        baseD.setDate(baseD.getDate() + 1);
+        const nextDayStr = baseD.toISOString().split('T')[0];
+        endISO = `${nextDayStr} 00:00`;
+      } else {
+        endISO = `${baseDateStr} ${endClock}`;
+      }
+
+      return {
+        cleanTimeText: `${startClock} - ${endClock}`,
+        start: startISO,
+        end: endISO,
+        isMidnight: isMidnight
+      };
     }
 
     function generateTestSchedule() {
@@ -665,8 +701,8 @@
         if (isOutsideDates) {
           const dayIndex = dayOrder.indexOf(ev.dayId);
           const [startStr, endStr] = ev.timeText.split(' - ').map(s => s.trim());
-          const [sh, sm] = startStr.split(':').map(Number);
-          const [eh, em] = endStr.split(':').map(Number);
+          const [sh, sm] = startStr.replace('.', ':').split(':').map(Number);
+          const [eh, em] = endStr.replace('.', ':').split(':').map(Number);
 
           const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (dayIndex !== -1 ? dayIndex : 0));
           const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), sh, sm, 0);
@@ -796,7 +832,7 @@
     }
 
     // ==========================================
-    // 🎛️ DOCK: LIVE SCHEDULE EDITOR
+    // 🎛️ DOCK: LIVE SCHEDULE EDITOR & CONTROLS
     // ==========================================
     function populateSlotsDropdown() {
       const daySelect = document.getElementById('editDaySelect');
@@ -831,6 +867,7 @@
       }
     }
 
+    // 💾 SAVE CHANGES & AUTO-PRUNE AFTER 00:00 MIDNIGHT
     function saveSlotChanges() {
       const daySelect = document.getElementById('editDaySelect');
       const slotSelect = document.getElementById('editSlotSelect');
@@ -841,46 +878,116 @@
       if (!nameIn) return alert("Ange ett namn på streamern eller passet!");
 
       const selectedDayId = daySelect.value;
+      const parsedTime = parseTimeRangeToDates(selectedDayId, timeIn);
+
+      if (!parsedTime) {
+        return alert("Ogiltigt tidsformat! Skriv t.ex. '18:00 - 19:00' eller '22.00 - 00.00'");
+      }
+
       const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
       const slotIndex = parseInt(slotSelect.value, 10);
       const targetSlot = daySlots[slotIndex];
 
       if (targetSlot) {
-        targetSlot.timeText = timeIn || targetSlot.timeText;
+        targetSlot.timeText = parsedTime.cleanTimeText;
+        targetSlot.start = parsedTime.start;
+        targetSlot.end = parsedTime.end;
         targetSlot.name = nameIn;
         targetSlot.giveaway = giveawayIn;
 
-        // Push to Firebase with secret key!
-        dbScheduleRef.update({
-          schedule: currentSchedule,
-          secret: WRITE_SECRET,
-          timestamp: Date.now()
-        }).then(() => {
-          renderSchedule();
-          populateSlotsDropdown();
-          alert("✅ Passet uppdaterades och synkades live till alla streamers!");
-        }).catch(err => {
-          alert("Fel vid synkning: " + err.message);
-        });
+        // ✂️ AUTO-PRUNE: If end time is 00:00 (midnight), delete any slots scheduled after this on that day!
+        let pruned = false;
+        if (parsedTime.isMidnight) {
+          let foundTarget = false;
+          currentSchedule = currentSchedule.filter(ev => {
+            if (ev.dayId !== selectedDayId) return true;
+            if (ev === targetSlot) {
+              foundTarget = true;
+              return true;
+            }
+            if (foundTarget) {
+              pruned = true;
+              return false; // Remove!
+            }
+            return true;
+          });
+        }
+
+        syncScheduleToFirebase(pruned ? "✅ Passet sparades! Eftersom tiden slutar 00:00 togs efterföljande pass bort." : "✅ Passet uppdaterades live!");
       }
+    }
+
+    // ➕ ADD NEW SLOT
+    function addNewSlot() {
+      const daySelect = document.getElementById('editDaySelect');
+      const selectedDayId = daySelect.value;
+      const dayName = daySelect.options[daySelect.selectedIndex].text;
+      const baseDateStr = DAY_BASE_DATES[selectedDayId] || "2026-11-30";
+
+      const newSlot = {
+        day: dayName.toUpperCase(),
+        dayId: selectedDayId,
+        start: `${baseDateStr} 20:00`,
+        end: `${baseDateStr} 22:00`,
+        timeText: "20:00 - 22:00",
+        name: "Ny Streamer",
+        giveaway: ""
+      };
+
+      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+      if (daySlots.length > 0) {
+        const lastSlot = daySlots[daySlots.length - 1];
+        const lastIdx = currentSchedule.indexOf(lastSlot);
+        currentSchedule.splice(lastIdx + 1, 0, newSlot);
+      } else {
+        currentSchedule.push(newSlot);
+      }
+
+      syncScheduleToFirebase("✅ Nytt pass lades till!");
+    }
+
+    // 🗑️ DELETE SELECTED SLOT
+    function deleteSelectedSlot() {
+      const daySelect = document.getElementById('editDaySelect');
+      const slotSelect = document.getElementById('editSlotSelect');
+      const selectedDayId = daySelect.value;
+      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+
+      if (daySlots.length <= 1) return alert("En dag måste ha minst ett pass!");
+
+      const slotIndex = parseInt(slotSelect.value, 10);
+      const targetSlot = daySlots[slotIndex];
+
+      if (confirm(`Ta bort passet "${targetSlot.timeText}: ${targetSlot.name}"?`)) {
+        const globalIdx = currentSchedule.indexOf(targetSlot);
+        if (globalIdx !== -1) {
+          currentSchedule.splice(globalIdx, 1);
+          syncScheduleToFirebase("🗑️ Passet togs bort!");
+        }
+      }
+    }
+
+    function syncScheduleToFirebase(feedbackMsg) {
+      dbScheduleRef.update({
+        schedule: currentSchedule,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      }).then(() => {
+        renderSchedule();
+        populateSlotsDropdown();
+        if (feedbackMsg) alert(feedbackMsg);
+      }).catch(err => {
+        alert("Fel vid sparande: " + err.message);
+      });
     }
 
     function resetScheduleToDefault() {
       if (confirm("Återställ hela schemat till standardschemat för alla streamers?")) {
         currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-        dbScheduleRef.update({
-          schedule: currentSchedule,
-          secret: WRITE_SECRET,
-          timestamp: Date.now()
-        }).then(() => {
-          renderSchedule();
-          populateSlotsDropdown();
-          alert("Schemat återställdes!");
-        });
+        syncScheduleToFirebase("Schemat återställdes till standard!");
       }
     }
 
-    // Quick Simulation Tools
     function simulateDaySwitch() {
       if (isDayTransitioning) return;
       const schedule = getActiveSchedule();
@@ -934,7 +1041,7 @@
     }
 
     function triggerNextSponsorLocal() {
-      if (isPanel) return; // Only overlays rotate locally; docks control manually
+      if (isPanel) return;
       currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
       updateSponsorLogo();
     }
@@ -950,12 +1057,12 @@
     }
 
     function escapeHTML(str) {
-      return String(str || '').replace(/[&<>'"]/g, t => ({
+      return String(str || '').replace(/[&<>'"]/g, tag => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[t] || t));
+      }[tag] || tag));
     }
 
-    // Init
+    // INIT
     loadSponsorsAutomatically();
     renderSchedule();
     setInterval(renderSchedule, 1000);
