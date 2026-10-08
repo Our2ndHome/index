@@ -5,14 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Musikhjälpen Schedule & Sponsors Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <style>
     :root {
       --primary-color: #ace600; /* Lime Green */
       --secondary-color: #00ff88;
       --giveaway-color: #ffea00;
       --text-white: #ffffff;
-      --bg-dark: rgba(0, 0, 0, 0.92);
-      --shadow-dark: rgba(0, 0, 0, 0.85);
+      --text-dim: #a1a1aa;
+      --dock-bg: #0b0b0d;
+      --card-bg: #141418;
+      --border: #27272a;
+      --shadow-dark: rgba(0, 0, 0, 0.9);
     }
 
     * { box-sizing: border-box; }
@@ -23,83 +31,36 @@
       background-color: transparent;
       font-family: 'Montserrat', Arial, sans-serif;
       height: 100vh;
+      width: 100vw;
       overflow: hidden;
       color: var(--text-white);
-    }
-
-    /* 🎛️ CONTROL PANEL & VERSION BADGE */
-    .test-panel {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      background: var(--bg-dark);
-      border: 2px solid var(--secondary-color);
-      padding: 12px;
-      border-radius: 10px;
-      color: var(--text-white);
-      z-index: 999999;
-      max-width: 360px;
-      font-size: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    }
-
-    .panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0, 255, 136, 0.1);
-      padding: 6px 10px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      cursor: move;
       user-select: none;
     }
 
-    .panel-header h4 {
-      margin: 0;
-      font-size: 12px;
-      color: var(--secondary-color);
-      text-transform: uppercase;
+    /* 🔀 HASH ROUTER */
+    body.mode-overlay #panelRoot { display: none !important; }
+    body.mode-panel #overlayRoot { display: none !important; }
+
+    body.mode-panel {
+      background-color: var(--dock-bg);
+      overflow-y: auto;
+      padding: 10px;
     }
 
-    .version-badge {
-      background: var(--primary-color);
-      color: #000;
-      font-size: 10px;
-      font-weight: 900;
-      padding: 2px 6px;
-      border-radius: 10px;
-      letter-spacing: 0.5px;
+    /* 📺 1. STREAM OVERLAY: SPONSOR ROTATOR + TIMELINE BAR */
+    #overlayRoot {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
     }
 
-    .test-panel button {
-      background: #222;
-      color: var(--text-white);
-      border: 1px solid var(--secondary-color);
-      padding: 6px 10px;
-      margin: 2px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: bold;
-      transition: all 0.2s ease;
-    }
-
-    .test-panel button:hover {
-      background: var(--secondary-color);
-      color: #000;
-    }
-
-    .test-panel button.active {
-      background: var(--primary-color);
-      color: #000;
-      border-color: var(--primary-color);
-    }
-
-    /* 🖼️ SPONSOR ROTATOR & FLOATING ANIMATION */
+    /* 🖼️ SPONSOR ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 88px;
+      bottom: 86px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -111,19 +72,19 @@
 
     .sponsor-logo-container {
       width: 300px;
-      height: 100px;
+      height: 90px;
       max-width: 90vw;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .sponsor-logo {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      transition: opacity 0.6s ease-in-out;
+      transition: opacity 0.5s ease-in-out;
       opacity: 1;
       animation: sponsorFloat 3.5s ease-in-out infinite;
     }
@@ -134,24 +95,22 @@
         filter: drop-shadow(0 2px 4px var(--shadow-dark));
       }
       50% {
-        transform: translateY(-6px);
+        transform: translateY(-5px);
         filter: drop-shadow(0 6px 12px var(--shadow-dark));
       }
     }
 
-    /* SPONSOR LABEL: Moved 5px down */
     .sponsor-label {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       color: var(--primary-color);
       letter-spacing: 2px;
       text-transform: uppercase;
       display: block;
-      margin-top: 5px;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR & BROADCAST FADE TRANSITION */
+    /* 📅 SCHEDULE TIMELINE BAR */
     .schedule-widget {
       position: absolute;
       bottom: 12px;
@@ -162,13 +121,12 @@
       flex-direction: column;
       align-items: center;
       z-index: 1000;
-      pointer-events: none;
     }
 
     .timeline-container {
       position: relative;
       width: 100%;
-      transition: opacity 0.8s ease-in-out; /* Broadcast Slow Fade */
+      transition: opacity 0.8s ease-in-out;
       opacity: 1;
     }
 
@@ -193,14 +151,14 @@
       left: 0;
       height: 3px;
       background: var(--primary-color);
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
       transition: width 0.3s linear;
     }
 
-    /* 🎯 REAL-TIME PROGRESS DOT */
+    /* 🎯 REAL-TIME PROGRESS DOT WITH PULSE */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -208,7 +166,7 @@
       width: 12px;
       height: 12px;
       background: var(--primary-color);
-      box-shadow: 0 0 8px var(--primary-color);
+      box-shadow: 0 0 10px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
@@ -226,7 +184,7 @@
 
     @keyframes cursorSonar {
       0% { transform: scale(0.5); opacity: 0.9; }
-      100% { transform: scale(2.0); opacity: 0; }
+      100% { transform: scale(2.2); opacity: 0; }
     }
 
     .timeline-nodes-row {
@@ -246,12 +204,12 @@
       flex: 1;
       align-items: center;
       text-align: center;
-      padding: 0 2px;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      padding: 0 4px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
     .node-time {
-      height: 24px;
+      height: 22px;
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -271,7 +229,6 @@
       justify-content: flex-start;
     }
 
-    /* ALL DIVIDER TICKS KEEP UNIFORM WHITE COLOR */
     .node-divider-tick {
       position: absolute;
       left: 0;
@@ -284,7 +241,7 @@
     }
 
     .node-streamer {
-      height: 24px;
+      height: 22px;
       display: flex;
       align-items: flex-start;
       justify-content: center;
@@ -295,54 +252,283 @@
       letter-spacing: 0.8px;
     }
 
-    .node-streamer.is-giveaway-text { color: var(--giveaway-color); }
+    .node-streamer.is-giveaway-text {
+      color: var(--giveaway-color);
+    }
 
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.95);
+    }
+
+    /* 🎛️ 2. OBS DOCK: BLACK & WHITE THEME */
+    .dock-container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111114;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .version-badge {
+      background: #ffffff;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .status-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+      margin-bottom: 8px;
+    }
+
+    .card-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    input[type="text"], select {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 11px;
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    input[type="text"]:focus, select:focus {
+      border-color: #52525b;
+    }
+
+    .btn {
+      background: #18181c;
+      border: 1px solid var(--border);
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover:not(:disabled) {
+      background: #24242a;
+      border-color: #3f3f46;
+    }
+
+    .btn-primary-action {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      transition: opacity 0.15s ease;
+    }
+    .btn-primary-action:hover { opacity: 0.9; }
+
+    .btn-danger {
+      background: #18181c;
+      border: 1px solid #ff453a;
+      color: #ff453a;
+    }
+    .btn-danger:hover {
+      background: #ff453a;
+      color: #ffffff;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
     }
   </style>
 </head>
 <body>
 
-  <!-- 🎛️ CONTROL PANEL -->
-  <div class="test-panel" id="testPanel">
-    <div class="panel-header" id="panelDragHeader">
-      <h4>📅 SCHEMA & SPONSOR PANEL</h4>
-      <span class="version-badge">v3.5.2</span>
+  <!-- ========================================================
+       📺 1. STREAM OVERLAY VIEW (#overlay)
+       ======================================================== -->
+  <div id="overlayRoot">
+    <!-- Floating Sponsor Rotator -->
+    <div class="sponsor-widget" id="sponsorWidget">
+      <div class="sponsor-logo-container">
+        <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
+      </div>
+      <span class="sponsor-label">SPONSORER</span>
     </div>
-    <div>
-      <button id="btnReal" class="active" onclick="setMode('real')">📅 SKARPT (30 nov - 6 dec)</button>
-      <button id="btnTest" onclick="setMode('test')">⚡ TEST (Realtid)</button>
-      <button onclick="simulateDaySwitch()">⏩ Simulera Dagswitch</button>
-      <button onclick="nextSponsor()">Nästa Sponsor</button>
+
+    <!-- Timeline Schedule Bar -->
+    <div class="schedule-widget" id="scheduleWidget">
+      <div class="timeline-container" id="timelineContainer">
+        <div class="timeline-line-bg"></div>
+        <div class="timeline-line-fill" id="timelineProgressFill"></div>
+        <div class="timeline-cursor" id="timelineCursor"></div>
+        <div class="timeline-nodes-row" id="scheduleEventsRow"></div>
+      </div>
     </div>
   </div>
 
-  <!-- 🖼️ SPONSOR ROTATOR -->
-  <div class="sponsor-widget" id="sponsorWidget">
-    <div class="sponsor-logo-container">
-      <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
+  <!-- ========================================================
+       🎛️ 2. OBS CONTROL DOCK (#panel - Black & White Style)
+       ======================================================== -->
+  <div id="panelRoot" class="dock-container">
+    <div class="header-box">
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.0</span></span>
+      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
-    <span class="sponsor-label">SPONSORER</span>
-  </div>
 
-  <!-- 📅 SCHEDULE TIMELINE BAR -->
-  <div class="schedule-widget" id="scheduleWidget">
-    <div class="timeline-container" id="timelineContainer">
-      <div class="timeline-line-bg"></div>
-      <div class="timeline-line-fill" id="timelineProgressFill"></div>
-      <div class="timeline-cursor" id="timelineCursor"></div>
-      <div class="timeline-nodes-row" id="scheduleEventsRow"></div>
+    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
+
+    <!-- ✏️ LIVE SCHEDULE EDITOR -->
+    <div class="card-section">
+      <span class="section-title">✏️ Live Schema-Redigerare</span>
+      
+      <div class="control-row">
+        <span class="control-label">VÄLJ DAG:</span>
+        <select id="editDaySelect" style="width:65%;" onchange="populateSlotsDropdown()">
+          <option value="MON">Måndag 30 nov</option>
+          <option value="TUE">Tisdag 1 dec</option>
+          <option value="WED">Onsdag 2 dec</option>
+          <option value="THU">Torsdag 3 dec</option>
+          <option value="FRI">Fredag 4 dec</option>
+          <option value="SAT">Lördag 5 dec</option>
+          <option value="SUN">Söndag 6 dec</option>
+        </select>
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">VÄLJ PASS:</span>
+        <select id="editSlotSelect" style="width:65%;" onchange="loadSelectedSlotData()">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <div class="control-row" style="margin-top:6px;">
+        <span class="control-label">TID:</span>
+        <input type="text" id="slotTimeInput" placeholder="T.ex. 18:00 - 21:00" style="width:65%;">
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">STREAMER:</span>
+        <input type="text" id="slotNameInput" placeholder="Streamernamn / Händelse" style="width:65%;">
+      </div>
+
+      <div class="control-row">
+        <span class="control-label">GIVEAWAY:</span>
+        <input type="text" id="slotGiveawayInput" placeholder="Valfri (t.ex. 🎁 GIVEAWAY: Mus)" style="width:65%;">
+      </div>
+
+      <button class="btn-primary-action" onclick="saveSlotChanges()">
+        💾 Spara & Uppdatera alla overlays
+      </button>
+    </div>
+
+    <!-- 🕹️ QUICK TOOLS & CONTROLS -->
+    <div class="card-section">
+      <span class="section-title">🕹️ Sponsor & Test-Verktyg</span>
+      <div class="grid-2">
+        <button class="btn" onclick="triggerNextSponsor()">⏩ Nästa Sponsor</button>
+        <button class="btn" onclick="simulateDaySwitch()">🔄 Simulera Dagswitch</button>
+      </div>
+      <div class="grid-2" style="margin-top:2px;">
+        <button class="btn" id="btnModeReal" onclick="setMode('real')">📅 Skarpt Läge</button>
+        <button class="btn" id="btnModeTest" onclick="setMode('test')">⚡ Testläge (Realtid)</button>
+      </div>
+      <button class="btn btn-danger" style="margin-top:4px;" onclick="resetScheduleToDefault()">
+        Återställ standardschema
+      </button>
     </div>
   </div>
 
   <script>
-    // ==========================================
-    // ✏️ SKARPT EVENT SCHEDULE (30 NOV - 6 DEC)
-    // ==========================================
-    const SKARPT_EVENT_SCHEDULE = [
+    // ⚙️ FIREBASE REALTIME ENGINE
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
+    const STORAGE_KEY_SCHEDULE = "mh_overlay_custom_schedule";
+
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
+    const SPONSORS_FOLDER = "sponsors";
+    const SPONSOR_ROTATE_SECONDS = 15;
+
+    // Default Sponsors Fallback
+    const DEFAULT_SPONSORS = [
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ace600" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">LIME GAMING</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">NORDIC STREAM</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">MH PARTNER</text></svg>'
+    ];
+
+    // Default Musikhjälpen Schedule (30 nov - 6 dec 2026)
+    const DEFAULT_SCHEDULE = [
       // MÅNDAG 30 NOV
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 12:00", end: "2026-11-30 15:00", timeText: "12:00 - 15:00", name: "Invigning & Morgongänget", giveaway: "" },
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 15:00", end: "2026-11-30 18:00", timeText: "15:00 - 18:00", name: "PixelPionjärerna", giveaway: "" },
@@ -384,105 +570,126 @@
 
       // SÖNDAG 6 DEC
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 00:00", end: "2026-12-06 10:00", timeText: "00:00 - 10:00", name: "Sista Natten", giveaway: "" },
-      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "15:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
+      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "10:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 15:00", end: "2026-12-06 20:00", timeText: "15:00 - 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
-      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 20:00", end: "2026-12-06 23:59", timeText: "20:00 - 00:00", name: "Avslutning & Tack!", giveaway: "" }
+      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 20:00", end: "2026-12-06 23:59", timeText: "20:00 - 23:59", name: "Avslutning & Tack!", giveaway: "" }
     ];
 
-    // ==========================================
-    // CONFIGURATION & SPONSORS
-    // ==========================================
-    const GITHUB_USERNAME = "Our2ndHome";
-    const GITHUB_REPO = "index";
-    const SPONSORS_FOLDER = "sponsors";
-    const SPONSOR_ROTATE_SECONDS = 15;
-
-    const DEFAULT_SPONSORS = [
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100"><rect width="300" height="100" rx="12" fill="%23111" stroke="%23ace600" stroke-width="2.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="22" letter-spacing="2">LIME GAMING</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100"><rect width="300" height="100" rx="12" fill="%23111" stroke="%2300ff88" stroke-width="2.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="22" letter-spacing="2">NORDIC STREAM</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100"><rect width="300" height="100" rx="12" fill="%23111" stroke="%23ffea00" stroke-width="2.5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="22" letter-spacing="2">MH PARTNER</text></svg>'
-    ];
-
+    // Current State
+    let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
     let sponsorFileList = DEFAULT_SPONSORS;
     let currentSponsorIndex = 0;
     let scheduleMode = 'real'; // 'real' or 'test'
 
-    // Transition State Tracking
     let currentDisplayedDayId = null;
     let isDayTransitioning = false;
-    let simulationLockTimer = null;
     let isSimulationLocked = false;
+    let simulationLockTimer = null;
 
-    function parseDate(dateStr) {
-      if (dateStr instanceof Date) return dateStr;
-      return new Date(dateStr.replace(' ', 'T') + ':00');
+    // View Routing
+    const hash = window.location.hash.toLowerCase();
+    const isPanel = hash.includes('panel') || hash.includes('dock');
+
+    if (isPanel) {
+      document.body.classList.add('mode-panel');
+    } else {
+      document.body.classList.add('mode-overlay');
     }
 
-    // ⚡ REAL-TIME MULTI-DAY TEST SCHEDULE GENERATOR
+    // Initialize Firebase Connection
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbScheduleRef = firebase.database().ref('schedule_data');
+
+    // Load Local Cache
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_SCHEDULE);
+      if (cached) currentSchedule = JSON.parse(cached);
+    } catch(e) {}
+
+    // ⚡ REAL-TIME DATABASE LISTENER (Nationwide Sync)
+    dbScheduleRef.on('value', (snap) => {
+      const data = snap.val();
+      if (!data) return;
+
+      if (data.schedule && Array.isArray(data.schedule)) {
+        currentSchedule = data.schedule;
+        try { localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule)); } catch(e) {}
+        renderSchedule();
+        if (isPanel) populateSlotsDropdown();
+      }
+
+      if (typeof data.sponsorIndex === 'number') {
+        currentSponsorIndex = data.sponsorIndex % sponsorFileList.length;
+        updateSponsorLogo();
+      }
+
+      const statusBox = document.getElementById('dockStatusBox');
+      if (statusBox) statusBox.innerText = `Live Ansluten (Synkad)`;
+    });
+
+    // ==========================================
+    // 📅 SCHEDULE DATE PARSING & MAPPING
+    // ==========================================
+    function parseDate(dateStr) {
+      if (dateStr instanceof Date) return dateStr;
+      return new Date(dateStr.replace(' ', 'T') + (dateStr.length === 16 ? ':00' : ''));
+    }
+
     function generateTestSchedule() {
       const now = new Date();
       const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-      const d3 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
 
       return [
-        // TEST DAY 1 (Today)
         { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 12, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 15, 0, 0), timeText: "12:00 - 15:00", name: "Invigning (Test)", giveaway: "" },
         { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 15, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 18, 0, 0), timeText: "15:00 - 18:00", name: "PixelPionjären (Test)", giveaway: "" },
         { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 18, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 21, 0, 0), timeText: "18:00 - 21:00", name: "KaffeKungen (Test)", giveaway: "🎁 TEST GIVEAWAY!" },
-        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 21, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 0, 0, 0), timeText: "21:00 - 00:00", name: "Nattstreamers (Test)", giveaway: "" },
-
-        // TEST DAY 2 (Tomorrow)
-        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 0, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 6, 0, 0), timeText: "00:00 - 06:00", name: "Nattpatrullen (Test)", giveaway: "" },
-        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 6, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 12, 0, 0), timeText: "06:00 - 12:00", name: "Morgonsolen (Test)", giveaway: "" },
-        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 12, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 18, 0, 0), timeText: "12:00 - 18:00", name: "ZeldaMästaren (Test)", giveaway: "" },
-        { day: "TISDAG (TEST)", dayId: "TEST_TUE", start: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 18, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 0, 0, 0), timeText: "18:00 - 00:00", name: "KvällsShowen (Test)", giveaway: "" },
-
-        // TEST DAY 3 (Day After Tomorrow)
-        { day: "ONSDAG (TEST)", dayId: "TEST_WED", start: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 0, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 8, 0, 0), timeText: "00:00 - 08:00", name: "NattUggan (Test)", giveaway: "" },
-        { day: "ONSDAG (TEST)", dayId: "TEST_WED", start: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 8, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 16, 0, 0), timeText: "08:00 - 16:00", name: "Speedrunners (Test)", giveaway: "" },
-        { day: "ONSDAG (TEST)", dayId: "TEST_WED", start: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 16, 0, 0), end: new Date(d3.getFullYear(), d3.getMonth(), d3.getDate(), 23, 59, 0), timeText: "16:00 - 00:00", name: "Stora Finalen (Test)", giveaway: "🎁 SLUT GIVEAWAY!" }
+        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 21, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 0, 0, 0), timeText: "21:00 - 00:00", name: "Nattstreamers (Test)", giveaway: "" }
       ];
     }
 
-    // 🔄 SCHEDULE WITH DAY-BY-DAY GROUPING
     function getActiveSchedule() {
       if (scheduleMode === 'test') {
         return generateTestSchedule();
       }
 
       const now = new Date();
-      const firstEvStart = parseDate(SKARPT_EVENT_SCHEDULE[0].start);
-      const lastEvEnd = parseDate(SKARPT_EVENT_SCHEDULE[SKARPT_EVENT_SCHEDULE.length - 1].end);
-
+      const firstEvStart = parseDate(currentSchedule[0].start);
+      const lastEvEnd = parseDate(currentSchedule[currentSchedule.length - 1].end);
       const isOutsideDates = now < firstEvStart || now > lastEvEnd;
       const dayOrder = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-      
-      return SKARPT_EVENT_SCHEDULE.map(ev => {
+
+      return currentSchedule.map(ev => {
         if (isOutsideDates) {
           const dayIndex = dayOrder.indexOf(ev.dayId);
           const [startStr, endStr] = ev.timeText.split(' - ').map(s => s.trim());
           const [sh, sm] = startStr.split(':').map(Number);
           const [eh, em] = endStr.split(':').map(Number);
 
-          const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayIndex);
-
+          const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (dayIndex !== -1 ? dayIndex : 0));
           const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), sh, sm, 0);
           let end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), eh === 0 ? 24 : eh, em, 0);
 
           if (eh < sh && eh !== 0) {
             end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + 1, eh, em, 0);
           }
-
-          return { ...ev, start: start, end: end };
+          return { ...ev, start, end };
         }
-
         return { ...ev, start: parseDate(ev.start), end: parseDate(ev.end) };
       });
     }
 
-    // 🎯 DOM UPDATE FUNCTION WITH SILENT POSITION RESET AT 0% OPACITY
-    function updateScheduleDOM(activeDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl, isReset = false) {
+    // ==========================================
+    // 🎨 DOM UPDATE & SMOOTH FADE TRANSITION
+    // ==========================================
+    function updateScheduleDOM(activeDayId, schedule, now, isReset = false) {
+      const eventsRowEl = document.getElementById('scheduleEventsRow');
+      const fillLineEl = document.getElementById('timelineProgressFill');
+      const cursorEl = document.getElementById('timelineCursor');
+      if (!eventsRowEl) return;
+
       const dayEvents = schedule.filter(ev => ev.dayId === activeDayId);
       const totalDayCount = dayEvents.length;
       let activeSlotIndex = dayEvents.findIndex(ev => now >= ev.start && now < ev.end);
@@ -497,7 +704,7 @@
           if (fillLineEl) fillLineEl.style.width = `0%`;
           if (cursorEl) cursorEl.style.left = `0%`;
           if (isReset && fillLineEl) {
-            void fillLineEl.offsetWidth; // Force instant reflow
+            void fillLineEl.offsetWidth;
             fillLineEl.style.transition = 'width 0.3s linear';
             if (cursorEl) cursorEl.style.transition = 'left 0.3s linear';
           }
@@ -509,7 +716,6 @@
 
           let slotFraction = (nowMs >= startMs && nowMs < endMs) ? (nowMs - startMs) / (endMs - startMs) : 0;
           slotFraction = Math.min(1, Math.max(0, slotFraction));
-
           const totalProgressPct = Math.min(100, Math.max(0, ((activeSlotIndex + slotFraction) / totalDayCount) * 100));
 
           if (isReset) {
@@ -519,7 +725,7 @@
           if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
           if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
           if (isReset && fillLineEl) {
-            void fillLineEl.offsetWidth; // Force instant reflow
+            void fillLineEl.offsetWidth;
             fillLineEl.style.transition = 'width 0.3s linear';
             if (cursorEl) cursorEl.style.transition = 'left 0.3s linear';
           }
@@ -543,118 +749,194 @@
       }).join('');
     }
 
-    // 🎯 SILKY-SMOOTH BROADCAST FADE TRANSITION HELPER
     function triggerDayTransition(targetDayId, schedule, now) {
       if (isDayTransitioning) return;
       isDayTransitioning = true;
 
       const containerEl = document.getElementById('timelineContainer');
-      const eventsRowEl = document.getElementById('scheduleEventsRow');
-      const fillLineEl = document.getElementById('timelineProgressFill');
-      const cursorEl = document.getElementById('timelineCursor');
-
-      if (containerEl) containerEl.classList.add('fading'); // Fade out over 0.8s
+      if (containerEl) containerEl.classList.add('fading');
 
       setTimeout(() => {
-        // Perform silent position reset & DOM update while opacity is 0
-        updateScheduleDOM(targetDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl, true);
+        updateScheduleDOM(targetDayId, schedule, now, true);
         currentDisplayedDayId = targetDayId;
 
         setTimeout(() => {
-          if (containerEl) containerEl.classList.remove('fading'); // Fade back in over 0.8s
-          setTimeout(() => {
-            isDayTransitioning = false;
-          }, 800);
-        }, 150); // Pause while invisible
-      }, 800); // 800ms fade duration
+          if (containerEl) containerEl.classList.remove('fading');
+          setTimeout(() => { isDayTransitioning = false; }, 800);
+        }, 120);
+      }, 800);
     }
 
-    // 🎯 RENDER ENGINE WITH AUTOMATIC MIDNIGHT ROLLOVER & SIMULATION LOCK
     function renderSchedule() {
       if (isDayTransitioning) return;
-
-      const eventsRowEl = document.getElementById('scheduleEventsRow');
-      const fillLineEl = document.getElementById('timelineProgressFill');
-      const cursorEl = document.getElementById('timelineCursor');
-      const containerEl = document.getElementById('timelineContainer');
-      if (!eventsRowEl || !containerEl) return;
 
       const schedule = getActiveSchedule();
       const now = new Date();
 
-      // If user is actively inspecting a simulated test day, hold that day on screen!
       if (isSimulationLocked && currentDisplayedDayId) {
-        updateScheduleDOM(currentDisplayedDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl, false);
+        updateScheduleDOM(currentDisplayedDayId, schedule, now, false);
         return;
       }
 
-      // Normal real-time day tracking:
       let activeEv = schedule.find(ev => now >= ev.start && now < ev.end);
       let activeDayId = activeEv ? activeEv.dayId : null;
-      
+
       if (!activeDayId) {
         let nextEv = schedule.find(ev => ev.start > now);
         activeDayId = nextEv ? nextEv.dayId : schedule[0].dayId;
       }
 
-      // Detect Day Switch / Reset -> Trigger Smooth Fade Transition!
       if (currentDisplayedDayId !== null && currentDisplayedDayId !== activeDayId) {
         triggerDayTransition(activeDayId, schedule, now);
         return;
       }
 
       currentDisplayedDayId = activeDayId;
-      updateScheduleDOM(activeDayId, schedule, now, eventsRowEl, fillLineEl, cursorEl, false);
+      updateScheduleDOM(activeDayId, schedule, now, false);
     }
 
-    // ⚡ SIMULATE DAY SWITCH WITH 12-SECOND INSPECTION LOCK
+    // ==========================================
+    // 🎛️ DOCK: LIVE SCHEDULE EDITOR
+    // ==========================================
+    function populateSlotsDropdown() {
+      const daySelect = document.getElementById('editDaySelect');
+      const slotSelect = document.getElementById('editSlotSelect');
+      if (!daySelect || !slotSelect) return;
+
+      const selectedDayId = daySelect.value;
+      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+
+      slotSelect.innerHTML = daySlots.map((slot, idx) => {
+        const text = `${slot.timeText}: ${slot.name}`;
+        return `<option value="${idx}">${escapeHTML(text)}</option>`;
+      }).join('');
+
+      loadSelectedSlotData();
+    }
+
+    function loadSelectedSlotData() {
+      const daySelect = document.getElementById('editDaySelect');
+      const slotSelect = document.getElementById('editSlotSelect');
+      if (!daySelect || !slotSelect) return;
+
+      const selectedDayId = daySelect.value;
+      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+      const slotIndex = parseInt(slotSelect.value, 10);
+      const slot = daySlots[slotIndex];
+
+      if (slot) {
+        document.getElementById('slotTimeInput').value = slot.timeText || '';
+        document.getElementById('slotNameInput').value = slot.name || '';
+        document.getElementById('slotGiveawayInput').value = slot.giveaway || '';
+      }
+    }
+
+    function saveSlotChanges() {
+      const daySelect = document.getElementById('editDaySelect');
+      const slotSelect = document.getElementById('editSlotSelect');
+      const timeIn = document.getElementById('slotTimeInput').value.trim();
+      const nameIn = document.getElementById('slotNameInput').value.trim();
+      const giveawayIn = document.getElementById('slotGiveawayInput').value.trim();
+
+      if (!nameIn) return alert("Ange ett namn på streamern eller passet!");
+
+      const selectedDayId = daySelect.value;
+      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+      const slotIndex = parseInt(slotSelect.value, 10);
+      const targetSlot = daySlots[slotIndex];
+
+      if (targetSlot) {
+        targetSlot.timeText = timeIn || targetSlot.timeText;
+        targetSlot.name = nameIn;
+        targetSlot.giveaway = giveawayIn;
+
+        // Push to Firebase with secret key!
+        dbScheduleRef.update({
+          schedule: currentSchedule,
+          secret: WRITE_SECRET,
+          timestamp: Date.now()
+        }).then(() => {
+          renderSchedule();
+          populateSlotsDropdown();
+          alert("✅ Passet uppdaterades och synkades live till alla streamers!");
+        }).catch(err => {
+          alert("Fel vid synkning: " + err.message);
+        });
+      }
+    }
+
+    function resetScheduleToDefault() {
+      if (confirm("Återställ hela schemat till standardschemat för alla streamers?")) {
+        currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+        dbScheduleRef.update({
+          schedule: currentSchedule,
+          secret: WRITE_SECRET,
+          timestamp: Date.now()
+        }).then(() => {
+          renderSchedule();
+          populateSlotsDropdown();
+          alert("Schemat återställdes!");
+        });
+      }
+    }
+
+    // Quick Simulation Tools
     function simulateDaySwitch() {
       if (isDayTransitioning) return;
-      
       const schedule = getActiveSchedule();
       const dayIds = [...new Set(schedule.map(ev => ev.dayId))];
-      
+
       let currentIndex = dayIds.indexOf(currentDisplayedDayId);
       let nextIndex = (currentIndex + 1) % dayIds.length;
       let targetDayId = dayIds[nextIndex];
 
-      // Lock real-time clock override for 12 seconds so you can comfortably inspect the test day!
       isSimulationLocked = true;
       if (simulationLockTimer) clearTimeout(simulationLockTimer);
-
-      simulationLockTimer = setTimeout(() => {
-        isSimulationLocked = false; // Automatically resume real-time tracking after 12 seconds
-      }, 12000);
+      simulationLockTimer = setTimeout(() => { isSimulationLocked = false; }, 12000);
 
       triggerDayTransition(targetDayId, schedule, new Date());
     }
 
-    // MODE TOGGLING
     function setMode(mode) {
       scheduleMode = mode;
-      isSimulationLocked = false; // Reset inspection lock on mode toggle
+      isSimulationLocked = false;
       if (simulationLockTimer) clearTimeout(simulationLockTimer);
-
-      currentDisplayedDayId = null; // Reset day tracking to force smooth transition
-      document.getElementById('btnReal').classList.toggle('active', mode === 'real');
-      document.getElementById('btnTest').classList.toggle('active', mode === 'test');
+      currentDisplayedDayId = null;
       renderSchedule();
     }
 
-    // SPONSOR ROTATOR
+    function triggerNextSponsor() {
+      currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
+      dbScheduleRef.update({
+        sponsorIndex: currentSponsorIndex,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      });
+      updateSponsorLogo();
+    }
+
+    // ==========================================
+    // 🖼️ SPONSOR ROTATOR ENGINE
+    // ==========================================
     async function loadSponsorsAutomatically() {
       try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}`);
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}?_t=${Date.now()}`);
         if (res.ok) {
           const files = await res.json();
-          const apiSponsors = files.filter(f => f.name.match(/\.(png|jpg|jpeg|svg|webp)$/i))
+          const apiSponsors = files.filter(f => f.name.match(/\.(png|jpe?g|svg|webp)$/i))
                                    .map(f => `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
           if (apiSponsors.length > 0) sponsorFileList = apiSponsors;
         }
       } catch(e) {}
 
       updateSponsorLogo();
-      setInterval(nextSponsor, SPONSOR_ROTATE_SECONDS * 1000);
+      setInterval(triggerNextSponsorLocal, SPONSOR_ROTATE_SECONDS * 1000);
+    }
+
+    function triggerNextSponsorLocal() {
+      if (isPanel) return; // Only overlays rotate locally; docks control manually
+      currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
+      updateSponsorLogo();
     }
 
     function updateSponsorLogo() {
@@ -664,46 +946,23 @@
       setTimeout(() => {
         img.src = sponsorFileList[currentSponsorIndex];
         img.style.opacity = '1';
-      }, 600);
-    }
-
-    function nextSponsor() {
-      currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
-      updateSponsorLogo();
-    }
-
-    // DRAGGABLE PANEL
-    function makePanelDraggable() {
-      const panel = document.getElementById('testPanel');
-      const header = document.getElementById('panelDragHeader');
-      if (!panel || !header) return;
-
-      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-      header.onmousedown = (e) => {
-        e.preventDefault();
-        pos3 = e.clientX; pos4 = e.clientY;
-        document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
-        document.onmousemove = (ev) => {
-          ev.preventDefault();
-          pos1 = pos3 - ev.clientX; pos2 = pos4 - ev.clientY;
-          pos3 = ev.clientX; pos4 = ev.clientY;
-          panel.style.top = (panel.offsetTop - pos2) + "px";
-          panel.style.left = (panel.offsetLeft - pos1) + "px";
-        };
-      };
+      }, 500);
     }
 
     function escapeHTML(str) {
-      return String(str || '').replace(/[&<>'"]/g, tag => ({
+      return String(str || '').replace(/[&<>'"]/g, t => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[tag] || tag));
+      }[t] || t));
     }
 
-    // INIT
-    makePanelDraggable();
+    // Init
     loadSponsorsAutomatically();
     renderSchedule();
     setInterval(renderSchedule, 1000);
+
+    if (isPanel) {
+      populateSlotsDropdown();
+    }
   </script>
 </body>
 </html>
