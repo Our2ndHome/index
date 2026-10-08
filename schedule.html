@@ -100,6 +100,7 @@
       }
     }
 
+    /* Clean label: color intact, no glow effects */
     .sponsor-label {
       font-size: 13px;
       font-weight: 900;
@@ -145,6 +146,7 @@
       z-index: 1;
     }
 
+    /* Line fill retains its glow */
     .timeline-line-fill {
       position: absolute;
       top: 50%;
@@ -158,6 +160,7 @@
       transition: width 0.3s linear;
     }
 
+    /* Dot cursor retains its pulse and glow */
     .timeline-cursor {
       position: absolute;
       top: 50%;
@@ -255,10 +258,11 @@
       color: var(--giveaway-color);
     }
 
+    /* ACTIVE STREAMER: Color stays green, glow effect removed */
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
-      text-shadow: 0 0 8px rgba(172, 230, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95); /* Clean drop shadow only */
     }
 
     /* 🎛️ 2. OBS DOCK: BLACK & WHITE THEME */
@@ -305,6 +309,7 @@
       font-weight: 700;
       color: #e4e4e7;
       margin-bottom: 8px;
+      transition: color 0.2s ease;
     }
 
     .card-section {
@@ -437,11 +442,11 @@
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel - Black & White Style)
+       🎛️ 2. OBS CONTROL DOCK (#panel)
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.2</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.3</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -523,7 +528,6 @@
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
 
-    // Base calendar dates for each day
     const DAY_BASE_DATES = {
       "MON": "2026-11-30",
       "TUE": "2026-12-01",
@@ -616,6 +620,15 @@
       if (cached) currentSchedule = JSON.parse(cached);
     } catch(e) {}
 
+    // Silent Dock Status Updater (No intrusive popups!)
+    function updateDockStatus(msg, isError = false) {
+      const statusBox = document.getElementById('dockStatusBox');
+      if (statusBox) {
+        statusBox.innerText = msg;
+        statusBox.style.color = isError ? "#ff453a" : "#00ff88";
+      }
+    }
+
     // ⚡ REAL-TIME NATIONWIDE DATABASE LISTENER
     dbScheduleRef.on('value', (snap) => {
       const data = snap.val();
@@ -633,8 +646,7 @@
         updateSponsorLogo();
       }
 
-      const statusBox = document.getElementById('dockStatusBox');
-      if (statusBox) statusBox.innerText = `Live Ansluten (Synkad)`;
+      updateDockStatus("Live Ansluten (Synkad)");
     });
 
     function parseDate(dateStr) {
@@ -832,7 +844,7 @@
     }
 
     // ==========================================
-    // 🎛️ DOCK: LIVE SCHEDULE EDITOR & CONTROLS
+    // 🎛️ DOCK: LIVE SCHEDULE EDITOR (NO POPUPS)
     // ==========================================
     function populateSlotsDropdown() {
       const daySelect = document.getElementById('editDaySelect');
@@ -867,7 +879,6 @@
       }
     }
 
-    // 💾 SAVE CHANGES & AUTO-PRUNE AFTER 00:00 MIDNIGHT
     function saveSlotChanges() {
       const daySelect = document.getElementById('editDaySelect');
       const slotSelect = document.getElementById('editSlotSelect');
@@ -875,13 +886,13 @@
       const nameIn = document.getElementById('slotNameInput').value.trim();
       const giveawayIn = document.getElementById('slotGiveawayInput').value.trim();
 
-      if (!nameIn) return alert("Ange ett namn på streamern eller passet!");
+      if (!nameIn) return updateDockStatus("⚠️ Ange ett namn på streamern!", true);
 
       const selectedDayId = daySelect.value;
       const parsedTime = parseTimeRangeToDates(selectedDayId, timeIn);
 
       if (!parsedTime) {
-        return alert("Ogiltigt tidsformat! Skriv t.ex. '18:00 - 19:00' eller '22.00 - 00.00'");
+        return updateDockStatus("⚠️ Ogiltigt tidsformat! (t.ex. 18:00 - 19:00)", true);
       }
 
       const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
@@ -895,7 +906,7 @@
         targetSlot.name = nameIn;
         targetSlot.giveaway = giveawayIn;
 
-        // ✂️ AUTO-PRUNE: If end time is 00:00 (midnight), delete any slots scheduled after this on that day!
+        // Auto-prune lingering slots if ending at midnight 00:00
         let pruned = false;
         if (parsedTime.isMidnight) {
           let foundTarget = false;
@@ -907,17 +918,16 @@
             }
             if (foundTarget) {
               pruned = true;
-              return false; // Remove!
+              return false;
             }
             return true;
           });
         }
 
-        syncScheduleToFirebase(pruned ? "✅ Passet sparades! Eftersom tiden slutar 00:00 togs efterföljande pass bort." : "✅ Passet uppdaterades live!");
+        syncScheduleToFirebase(pruned ? "✅ Passet sparades & efterföljande pass togs bort!" : "✅ Passet uppdaterades live!");
       }
     }
 
-    // ➕ ADD NEW SLOT
     function addNewSlot() {
       const daySelect = document.getElementById('editDaySelect');
       const selectedDayId = daySelect.value;
@@ -946,28 +956,26 @@
       syncScheduleToFirebase("✅ Nytt pass lades till!");
     }
 
-    // 🗑️ DELETE SELECTED SLOT
     function deleteSelectedSlot() {
       const daySelect = document.getElementById('editDaySelect');
       const slotSelect = document.getElementById('editSlotSelect');
       const selectedDayId = daySelect.value;
       const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
 
-      if (daySlots.length <= 1) return alert("En dag måste ha minst ett pass!");
+      if (daySlots.length <= 1) return updateDockStatus("⚠️ En dag måste ha minst ett pass!", true);
 
       const slotIndex = parseInt(slotSelect.value, 10);
       const targetSlot = daySlots[slotIndex];
 
-      if (confirm(`Ta bort passet "${targetSlot.timeText}: ${targetSlot.name}"?`)) {
-        const globalIdx = currentSchedule.indexOf(targetSlot);
-        if (globalIdx !== -1) {
-          currentSchedule.splice(globalIdx, 1);
-          syncScheduleToFirebase("🗑️ Passet togs bort!");
-        }
+      const globalIdx = currentSchedule.indexOf(targetSlot);
+      if (globalIdx !== -1) {
+        currentSchedule.splice(globalIdx, 1);
+        syncScheduleToFirebase("🗑️ Passet togs bort!");
       }
     }
 
     function syncScheduleToFirebase(feedbackMsg) {
+      updateDockStatus("Synkar till Firebase...");
       dbScheduleRef.update({
         schedule: currentSchedule,
         secret: WRITE_SECRET,
@@ -975,17 +983,15 @@
       }).then(() => {
         renderSchedule();
         populateSlotsDropdown();
-        if (feedbackMsg) alert(feedbackMsg);
+        if (feedbackMsg) updateDockStatus(feedbackMsg);
       }).catch(err => {
-        alert("Fel vid sparande: " + err.message);
+        updateDockStatus("❌ Fel vid sparande: " + err.message, true);
       });
     }
 
     function resetScheduleToDefault() {
-      if (confirm("Återställ hela schemat till standardschemat för alla streamers?")) {
-        currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-        syncScheduleToFirebase("Schemat återställdes till standard!");
-      }
+      currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+      syncScheduleToFirebase("🔄 Schemat återställdes till standard!");
     }
 
     function simulateDaySwitch() {
@@ -1002,6 +1008,7 @@
       simulationLockTimer = setTimeout(() => { isSimulationLocked = false; }, 12000);
 
       triggerDayTransition(targetDayId, schedule, new Date());
+      updateDockStatus(`Visar ${targetDayId} (Simulering 12s)`);
     }
 
     function setMode(mode) {
@@ -1010,6 +1017,7 @@
       if (simulationLockTimer) clearTimeout(simulationLockTimer);
       currentDisplayedDayId = null;
       renderSchedule();
+      updateDockStatus(mode === 'real' ? "📅 Skarpt läge aktivt" : "⚡ Testläge aktivt");
     }
 
     function triggerNextSponsor() {
@@ -1020,6 +1028,7 @@
         timestamp: Date.now()
       });
       updateSponsorLogo();
+      updateDockStatus(`Sponsor: ${currentSponsorIndex + 1}/${sponsorFileList.length}`);
     }
 
     // ==========================================
