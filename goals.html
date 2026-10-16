@@ -61,14 +61,13 @@
     .goals-widget-container {
       position: absolute;
       top: 50%;
-      left: 36px; /* Pinned cleanly to left side of stream */
+      left: 36px;
       transform: translateY(-50%);
       display: flex;
       flex-direction: column;
       z-index: 1000;
     }
 
-    /* Clean header without emojis or extra subtext */
     .goals-header {
       font-size: 14px;
       font-weight: 900;
@@ -85,7 +84,7 @@
       height: var(--ladder-height);
       width: 320px;
       display: flex;
-      flex-direction: column-reverse; /* Bottom is 0 kr, climbs upwards! */
+      flex-direction: column-reverse; /* Climbs upwards from 0 kr */
       justify-content: space-between;
     }
 
@@ -306,7 +305,7 @@
 
     textarea {
       width: 100%;
-      height: 130px;
+      height: 140px;
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -375,16 +374,6 @@
     }
     .btn-primary-action:hover { opacity: 0.9; }
 
-    .btn-danger {
-      background: #18181c;
-      border: 1px solid #ff453a;
-      color: #ff453a;
-    }
-    .btn-danger:hover {
-      background: #ff453a;
-      color: #ffffff;
-    }
-
     .hint-text {
       font-size: 10px;
       color: var(--text-dim);
@@ -416,7 +405,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.1</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -431,17 +420,18 @@
         <input type="text" id="streamerNameInput" placeholder="T.ex. LordBaconeer" style="width:65%;">
       </div>
 
-      <button class="btn-resync" onclick="startNewStreamerShift()">
-        ⏱️ Starta pass för denna streamer
-      </button>
-
       <div class="control-row" style="margin-top:4px;">
         <span class="control-label">STARTBELOPP:</span>
         <div style="display:flex; gap:4px; width:65%;">
-          <input type="number" id="manualBaselineInput" placeholder="Kr" style="width:100%;">
+          <input type="number" id="manualBaselineInput" value="0" placeholder="0 kr" style="width:100%;">
           <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="setCustomBaseline()">Sätt</button>
+          <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="setBaselineToCurrentTotal()" title="Sätt till nuvarande bössa">Bössa</button>
         </div>
       </div>
+
+      <button class="btn-resync" style="margin-top:6px;" onclick="startNewStreamerShift()">
+        ⏱️ Starta pass med detta startbelopp
+      </button>
     </div>
 
     <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
@@ -456,14 +446,6 @@
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara & Uppdatera alla overlays
       </button>
-
-      <button class="btn" style="margin-top:6px;" onclick="loadPresetGoals()">
-        ⚡ Ladda standardmall (500 kr - 10 000 kr)
-      </button>
-
-      <button class="btn btn-danger" style="margin-top:4px;" onclick="resetGoalsToDefault()">
-        Återställ till standard
-      </button>
     </div>
   </div>
 
@@ -476,13 +458,6 @@
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
-    const DEFAULT_GOALS_TEXT = 
-`500 kr - Äta stark sås
-1000 kr - Spela skräckspel
-2500 kr - Hårfärgning
-5000 kr - 12h Stream förlängning
-10000 kr - Slutmål`;
-
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
@@ -494,10 +469,10 @@
 
     let parsedGoals = [];
     let currentGlobalTotal = 400;
-    let sessionBaseline = 0;
+    let sessionBaseline = 0; // Defaults strictly to 0 kr!
     let currentStreamerName = "Streamer";
 
-    // Load saved preferences from this computer's local memory
+    // Load saved preferences from this computer's local memory (defaults to 0 if not set)
     try {
       const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
       if (savedStreamer) currentStreamerName = savedStreamer;
@@ -505,8 +480,12 @@
       const savedBaseline = localStorage.getItem(STORAGE_KEY_BASELINE);
       if (savedBaseline !== null && !isNaN(parseInt(savedBaseline, 10))) {
         sessionBaseline = parseInt(savedBaseline, 10);
+      } else {
+        sessionBaseline = 0;
       }
-    } catch(e) {}
+    } catch(e) {
+      sessionBaseline = 0;
+    }
 
     // Firebase Init
     if (!firebase.apps.length) {
@@ -556,7 +535,7 @@
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER (NO "Pass: +XXX kr" TEXT)
+    // 🎨 RENDER VERTICAL LADDER (DEFAULTS TO 0 KR BASELINE)
     // ========================================================
     function renderGoalsLadder() {
       const ladder = document.getElementById('goalsLadder');
@@ -569,7 +548,7 @@
 
       if (parsedGoals.length === 0) return;
 
-      // Calculate progress relative to current streamer's shift baseline
+      // Calculate progress relative to baseline (0 kr default)
       const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
 
       parsedGoals.forEach((goal) => {
@@ -632,7 +611,7 @@
 
     function updateDockSessionStatus() {
       const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
-      updateDockStatus(`${currentStreamerName}: +${formatSEK(sessionEarned)} (Start: ${formatSEK(sessionBaseline)} · Bössa: ${formatSEK(currentGlobalTotal)})`);
+      updateDockStatus(`${currentStreamerName}: ${formatSEK(sessionEarned)} insamlat (Start: ${formatSEK(sessionBaseline)} · Bössa: ${formatSEK(currentGlobalTotal)})`);
 
       const nameInput = document.getElementById('streamerNameInput');
       if (nameInput && !isFocusingInput && currentStreamerName) {
@@ -641,7 +620,7 @@
 
       const baselineInput = document.getElementById('manualBaselineInput');
       if (baselineInput && !isFocusingInput) {
-        baselineInput.placeholder = `${sessionBaseline} kr`;
+        baselineInput.value = sessionBaseline;
       }
     }
 
@@ -669,7 +648,7 @@
       }
     });
 
-    // Auto-suggest streamer name from live schedule if none saved yet
+    // Auto-suggest streamer name from live schedule if none set
     dbScheduleRef.on('value', (snap) => {
       const sData = snap.val();
       if (sData && sData.schedule && (!currentStreamerName || currentStreamerName === "Streamer")) {
@@ -711,7 +690,10 @@
     function startNewStreamerShift() {
       const nameIn = document.getElementById('streamerNameInput').value.trim() || "Streamer";
       currentStreamerName = nameIn;
-      sessionBaseline = currentGlobalTotal;
+      
+      const input = document.getElementById('manualBaselineInput');
+      const val = parseInt(input.value, 10);
+      sessionBaseline = isNaN(val) ? 0 : Math.max(0, val);
 
       try {
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
@@ -725,15 +707,14 @@
         bus.postMessage({ type: 'SESSION_BASELINE_UPDATED', baseline: sessionBaseline, streamer: currentStreamerName });
       }
 
-      updateDockStatus(`✅ Pass startat för ${currentStreamerName}! Målen nollställdes från ${formatSEK(sessionBaseline)}.`);
+      updateDockStatus(`✅ Pass startat för ${currentStreamerName} med startbelopp ${formatSEK(sessionBaseline)}.`);
     }
 
     function setCustomBaseline() {
       const input = document.getElementById('manualBaselineInput');
       const val = parseInt(input.value, 10);
-      if (isNaN(val) || val < 0) return updateDockStatus("⚠️ Ange ett giltigt startbelopp!", true);
+      sessionBaseline = isNaN(val) ? 0 : Math.max(0, val);
 
-      sessionBaseline = val;
       try {
         localStorage.setItem(STORAGE_KEY_BASELINE, sessionBaseline.toString());
       } catch(e) {}
@@ -746,7 +727,12 @@
       }
 
       updateDockStatus(`✅ Startbelopp manuellt satt till ${formatSEK(sessionBaseline)}.`);
-      input.value = "";
+    }
+
+    function setBaselineToCurrentTotal() {
+      const input = document.getElementById('manualBaselineInput');
+      input.value = currentGlobalTotal;
+      setCustomBaseline();
     }
 
     function saveGoalsFromTextarea() {
@@ -772,33 +758,19 @@
       });
     }
 
-    function loadPresetGoals() {
-      const area = document.getElementById('goalsInputArea');
-      if (area) area.value = DEFAULT_GOALS_TEXT;
-      saveGoalsFromTextarea();
-    }
-
-    function resetGoalsToDefault() {
-      const area = document.getElementById('goalsInputArea');
-      if (area) area.value = DEFAULT_GOALS_TEXT;
-      saveGoalsFromTextarea();
-    }
-
     function escapeHTML(str) {
       return String(str || '').replace(/[&<>'"]/g, t => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
       }[t] || t));
     }
 
-    // Load initial cached or default
+    // Load initial cached goals
     try {
-      const cached = localStorage.getItem(STORAGE_KEY_GOALS) || DEFAULT_GOALS_TEXT;
+      const cached = localStorage.getItem(STORAGE_KEY_GOALS) || "";
       parsedGoals = parseLinesToGoalObjects(cached);
       const area = document.getElementById('goalsInputArea');
-      if (area) area.value = cached;
-    } catch(e) {
-      parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS_TEXT);
-    }
+      if (area && cached) area.value = cached;
+    } catch(e) {}
 
     renderGoalsLadder();
   </script>
