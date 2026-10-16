@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Vertical Goals Widget</title>
+  <title>Musikhjälpen Milstolpar</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- Firebase Realtime Engine -->
@@ -14,7 +14,6 @@
     :root {
       --primary: #ace600; /* Lime Green */
       --secondary: #00ff88;
-      --giveaway: #ffea00;
       --text-white: #ffffff;
       --text-dim: #a1a1aa;
       --dock-bg: #0b0b0d;
@@ -48,7 +47,7 @@
     }
 
     /* ========================================================
-       📺 1. STREAM OVERLAY: VERTICAL GOAL LADDER
+       📺 1. STREAM OVERLAY: VERTICAL MILESTONES LADDER
        ======================================================== */
     #overlayRoot {
       position: absolute;
@@ -70,16 +69,23 @@
     }
 
     .goals-header {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    }
+
+    .goals-session-sub {
+      font-size: 11px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 1px;
+      margin-top: -10px;
+      margin-bottom: 14px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
     /* VERTICAL LADDER TRACK */
@@ -88,22 +94,20 @@
       height: var(--ladder-height);
       width: 320px;
       display: flex;
-      flex-direction: column-reverse; /* Bottom is 0 kr, climbs up! */
+      flex-direction: column-reverse; /* Bottom is 0 kr, climbs upwards! */
       justify-content: space-between;
     }
 
-    /* Background Line */
     .ladder-line-bg {
       position: absolute;
       top: 0;
       bottom: 0;
-      left: 78px; /* Aligned between amount and label */
+      left: 78px;
       width: 2px;
       background: rgba(255, 255, 255, 0.22);
       z-index: 1;
     }
 
-    /* Glowing Fill Line */
     .ladder-line-fill {
       position: absolute;
       bottom: 0;
@@ -116,7 +120,6 @@
       transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Pulsing Sonar Cursor Dot */
     .ladder-cursor {
       position: absolute;
       bottom: 0%;
@@ -191,11 +194,7 @@
       gap: 6px;
     }
 
-    .node-label.is-giveaway {
-      color: var(--giveaway);
-    }
-
-    /* Reached Goal Milestone Styling */
+    /* Reached Goal Milestone */
     .ladder-node.reached .node-amount {
       color: var(--primary);
     }
@@ -282,9 +281,41 @@
       display: block;
     }
 
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    input[type="number"] {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 11px;
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    input[type="number"]:focus {
+      border-color: #52525b;
+    }
+
     textarea {
       width: 100%;
-      height: 140px;
+      height: 130px;
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -318,6 +349,23 @@
       background: #24242a;
       border-color: #3f3f46;
     }
+
+    .btn-resync {
+      background: #18181c;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      border-radius: 4px;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 6px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-resync:hover { background: #00ff88; color: #000000; }
 
     .btn-primary-action {
       background: #ffffff;
@@ -361,7 +409,8 @@
        ======================================================== -->
   <div id="overlayRoot">
     <div class="goals-widget-container">
-      <div class="goals-header">🎯 DELMÅL</div>
+      <div class="goals-header">MILSTOLPAR</div>
+      <div class="goals-session-sub" id="sessionProgressSub">Pass: +0 kr</div>
 
       <div class="vertical-ladder" id="goalsLadder">
         <div class="ladder-line-bg"></div>
@@ -377,21 +426,40 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">DELMÅL KONTROLL <span class="version-badge">v1.0</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.0</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
 
-    <!-- ✏️ LINE-BY-LINE GOAL EDITOR -->
+    <!-- ⏱️ STREAMER SESSION / SHIFT CONTROL -->
     <div class="card-section">
-      <span class="section-title">✏️ Redigera delmål (En rad per mål)</span>
+      <span class="section-title">⏱️ Streamer Pass-Kontroll</span>
       <div class="hint-text">
-        Skriv ett delmål per rad. Format: <code>Belopp - Beskrivning</code><br>
-        Tips: Inkludera <code>🎁</code> eller <code>Giveaway</code> för gul markering!
+        Klicka när du startar din stream för att nollställa framstegen till ditt eget pass.
+      </div>
+
+      <button class="btn-resync" onclick="startNewStreamerShift()">
+        ⏱️ Starta mitt pass (Nollställ för min stream)
+      </button>
+
+      <div class="control-row" style="margin-top:4px;">
+        <span class="control-label">STARTBELOPP FÖR PASS:</span>
+        <div style="display:flex; gap:4px; width:55%;">
+          <input type="number" id="manualBaselineInput" placeholder="Kr" style="width:100%;">
+          <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="setCustomBaseline()">Sätt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
+    <div class="card-section">
+      <span class="section-title">✏️ Redigera milstolpar (En rad per mål)</span>
+      <div class="hint-text">
+        Skriv ett mål per rad. Format: <code>Belopp - Beskrivning</code>
       </div>
       
-      <textarea id="goalsInputArea" placeholder="500 kr - Äta stark sås&#10;1000 kr - Spela skräckspel&#10;2500 kr - 🎁 Giveaway: Gamingmus&#10;5000 kr - 12h Stream förlängning&#10;10000 kr - Slutmål: Hårfärgning"></textarea>
+      <textarea id="goalsInputArea" placeholder="500 kr - Äta stark sås&#10;1000 kr - Spela skräckspel&#10;2500 kr - Hårfärgning&#10;5000 kr - 12h Stream förlängning&#10;10000 kr - Slutmål"></textarea>
 
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara & Uppdatera alla overlays
@@ -411,13 +479,16 @@
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const STORAGE_KEY_GOALS = "mh_overlay_custom_goals";
+    const STORAGE_KEY_BASELINE = "mh_goals_session_baseline";
+
+    const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
     const DEFAULT_GOALS_TEXT = 
 `500 kr - Äta stark sås
 1000 kr - Spela skräckspel
-2500 kr - 🎁 Giveaway: Gamingmus
+2500 kr - Hårfärgning
 5000 kr - 12h Stream förlängning
-10000 kr - Slutmål: Hårfärgning`;
+10000 kr - Slutmål`;
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -429,7 +500,16 @@
     }
 
     let parsedGoals = [];
-    let currentLiveTotal = 400; // Will sync with Firebase
+    let currentGlobalTotal = 400;
+    let sessionBaseline = 0; // The starting amount when current streamer began
+
+    // Load saved session baseline from computer's local memory
+    try {
+      const savedBaseline = localStorage.getItem(STORAGE_KEY_BASELINE);
+      if (savedBaseline !== null && !isNaN(parseInt(savedBaseline, 10))) {
+        sessionBaseline = parseInt(savedBaseline, 10);
+      }
+    } catch(e) {}
 
     // Firebase Init
     if (!firebase.apps.length) {
@@ -451,7 +531,7 @@
     }
 
     // ========================================================
-    // 🧠 LINE-BY-LINE PARSER ENGINE
+    // 🧠 LINE-BY-LINE PARSER (NO GIVEAWAYS)
     // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
@@ -469,24 +549,23 @@
           const label = match[2].trim();
 
           if (!isNaN(amount) && amount > 0 && label) {
-            const isGiveaway = /giveaway|🎁|lottning/i.test(label);
-            list.push({ amount, label, isGiveaway });
+            list.push({ amount, label });
           }
         }
       }
 
-      // Sort ascending (lower goals at bottom, higher goals at top)
       list.sort((a, b) => a.amount - b.amount);
       return list;
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER & LIVE FILL
+    // 🎨 RENDER VERTICAL LADDER (MEASURES SESSION GAINS)
     // ========================================================
     function renderGoalsLadder() {
       const ladder = document.getElementById('goalsLadder');
       const fillEl = document.getElementById('ladderFill');
       const cursorEl = document.getElementById('ladderCursor');
+      const sessionSub = document.getElementById('sessionProgressSub');
       if (!ladder) return;
 
       // Keep only line elements, remove old nodes
@@ -495,12 +574,16 @@
 
       if (parsedGoals.length === 0) return;
 
-      const totalNodes = parsedGoals.length;
-      
+      // Calculate how much was donated under THIS streamer's session
+      const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
+
+      if (sessionSub) {
+        sessionSub.innerText = `Pass: +${formatSEK(sessionEarned)}`;
+      }
+
       // Build Nodes
-      parsedGoals.forEach((goal, idx) => {
-        const isReached = currentLiveTotal >= goal.amount;
-        const giveawayClass = goal.isGiveaway ? 'is-giveaway' : '';
+      parsedGoals.forEach((goal) => {
+        const isReached = sessionEarned >= goal.amount;
 
         const nodeEl = document.createElement('div');
         nodeEl.className = `ladder-node ${isReached ? 'reached' : ''}`;
@@ -509,7 +592,7 @@
           <div class="node-tick-wrapper">
             <div class="node-divider-tick"></div>
           </div>
-          <div class="node-label ${giveawayClass}">
+          <div class="node-label">
             <span class="node-check">✓</span>
             <span>${escapeHTML(goal.label)}</span>
           </div>
@@ -518,35 +601,31 @@
         ladder.appendChild(nodeEl);
       });
 
-      // Calculate fill progress & cursor position along ladder
-      calculateLadderProgress(fillEl, cursorEl);
+      calculateLadderProgress(fillEl, cursorEl, sessionEarned);
     }
 
-    function calculateLadderProgress(fillEl, cursorEl) {
+    function calculateLadderProgress(fillEl, cursorEl, sessionEarned) {
       if (!fillEl || !cursorEl || parsedGoals.length === 0) return;
 
       const totalNodes = parsedGoals.length;
-      const minAmount = 0;
       const maxAmount = parsedGoals[totalNodes - 1].amount;
 
       let progressPct = 0;
 
-      if (currentLiveTotal <= 0) {
+      if (sessionEarned <= 0) {
         progressPct = 0;
-      } else if (currentLiveTotal >= maxAmount) {
+      } else if (sessionEarned >= maxAmount) {
         progressPct = 100;
       } else {
-        // Multi-segment smooth interpolation between milestones
         let prevAmount = 0;
         let prevPct = 0;
 
         for (let i = 0; i < totalNodes; i++) {
           const currentGoalAmount = parsedGoals[i].amount;
-          // Each node represents an even fraction of ladder height
           const currentGoalPct = ((i + 0.5) / totalNodes) * 100;
 
-          if (currentLiveTotal <= currentGoalAmount) {
-            const fraction = (currentLiveTotal - prevAmount) / (currentGoalAmount - prevAmount);
+          if (sessionEarned <= currentGoalAmount) {
+            const fraction = (sessionEarned - prevAmount) / (currentGoalAmount - prevAmount);
             progressPct = prevPct + (fraction * (currentGoalPct - prevPct));
             break;
           }
@@ -561,10 +640,19 @@
       cursorEl.style.bottom = `${progressPct}%`;
     }
 
+    function updateDockSessionStatus() {
+      const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
+      updateDockStatus(`Pass: +${formatSEK(sessionEarned)} (Start: ${formatSEK(sessionBaseline)} · Bössa: ${formatSEK(currentGlobalTotal)})`);
+
+      const input = document.getElementById('manualBaselineInput');
+      if (input && !isFocusingTextarea) {
+        input.placeholder = `${sessionBaseline} kr`;
+      }
+    }
+
     // ========================================================
     // ⚡ REAL-TIME DATABASE LISTENERS
     // ========================================================
-    // Listen for custom goal lines
     dbGoalsRef.on('value', (snap) => {
       const data = snap.val();
       if (data && data.text) {
@@ -574,18 +662,28 @@
 
         const area = document.getElementById('goalsInputArea');
         if (area && !isFocusingTextarea) area.value = data.text;
-        updateDockStatus(`Live Ansluten (${parsedGoals.length} mål synkade)`);
       }
     });
 
-    // Listen for live donation total updates from /bossa
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
       if (data && typeof data.total === 'number') {
-        currentLiveTotal = data.total;
+        currentGlobalTotal = data.total;
         renderGoalsLadder();
+        updateDockSessionStatus();
       }
     });
+
+    // Local BroadcastChannel for instant dock-to-overlay session changes
+    if (bus) {
+      bus.onmessage = (e) => {
+        const { type, baseline } = e.data || {};
+        if (type === 'SESSION_BASELINE_UPDATED') {
+          sessionBaseline = baseline;
+          renderGoalsLadder();
+        }
+      };
+    }
 
     // ========================================================
     // 🎛️ DOCK ACTIONS
@@ -597,15 +695,53 @@
       inputArea.addEventListener('blur', () => { isFocusingTextarea = false; });
     }
 
+    // Start a new shift for the current streamer
+    function startNewStreamerShift() {
+      sessionBaseline = currentGlobalTotal;
+      try {
+        localStorage.setItem(STORAGE_KEY_BASELINE, sessionBaseline.toString());
+      } catch(e) {}
+
+      renderGoalsLadder();
+      updateDockSessionStatus();
+
+      if (bus) {
+        bus.postMessage({ type: 'SESSION_BASELINE_UPDATED', baseline: sessionBaseline });
+      }
+
+      updateDockStatus(`✅ Nytt pass startat! Målen nollställdes från ${formatSEK(sessionBaseline)}.`);
+    }
+
+    function setCustomBaseline() {
+      const input = document.getElementById('manualBaselineInput');
+      const val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 0) return updateDockStatus("⚠️ Ange ett giltigt startbelopp!", true);
+
+      sessionBaseline = val;
+      try {
+        localStorage.setItem(STORAGE_KEY_BASELINE, sessionBaseline.toString());
+      } catch(e) {}
+
+      renderGoalsLadder();
+      updateDockSessionStatus();
+
+      if (bus) {
+        bus.postMessage({ type: 'SESSION_BASELINE_UPDATED', baseline: sessionBaseline });
+      }
+
+      updateDockStatus(`✅ Startbelopp manuellt satt till ${formatSEK(sessionBaseline)}.`);
+      input.value = "";
+    }
+
     function saveGoalsFromTextarea() {
       const text = document.getElementById('goalsInputArea').value;
       const goals = parseLinesToGoalObjects(text);
 
       if (goals.length === 0) {
-        return updateDockStatus("⚠️ Hittade inga giltiga mål! Se exempel.", true);
+        return updateDockStatus("⚠️ Hittade inga giltiga milstolpar! Se format.", true);
       }
 
-      updateDockStatus("Synkar mål till alla overlays...");
+      updateDockStatus("Synkar milstolpar till alla overlays...");
 
       dbGoalsRef.set({
         text: text,
@@ -614,9 +750,9 @@
       }).then(() => {
         parsedGoals = goals;
         renderGoalsLadder();
-        updateDockStatus(`✅ Sparade och synkade ${goals.length} delmål live!`);
+        updateDockStatus(`✅ Sparade och synkade ${goals.length} milstolpar live!`);
       }).catch(err => {
-        updateDockStatus("❌ Fel: " + err.message, true);
+        updateDockStatus("❌ Fel vid sparande: " + err.message, true);
       });
     }
 
