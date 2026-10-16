@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Vertical Goals Widget</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root {
+      --primary: #ace600; /* Lime Green */
+      --secondary: #00ff88;
+      --giveaway: #ffea00;
+      --text-white: #ffffff;
+      --text-dim: #a1a1aa;
+      --dock-bg: #0b0b0d;
+      --card-bg: #141418;
+      --border: #27272a;
+      --ladder-height: 520px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      color: var(--text-white);
+      user-select: none;
+    }
+
+    /* 🔀 HASH ROUTER */
+    body.mode-overlay #panelRoot { display: none !important; }
+    body.mode-panel #overlayRoot { display: none !important; }
+
+    body.mode-panel {
+      background-color: var(--dock-bg);
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    /* ========================================================
+       📺 1. STREAM OVERLAY: VERTICAL GOAL LADDER
+       ======================================================== */
+    #overlayRoot {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+
+    .goals-widget-container {
+      position: absolute;
+      top: 50%;
+      left: 36px; /* Pinned cleanly to left side of stream */
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+    }
+
+    .goals-header {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--primary);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* VERTICAL LADDER TRACK */
+    .vertical-ladder {
+      position: relative;
+      height: var(--ladder-height);
+      width: 320px;
+      display: flex;
+      flex-direction: column-reverse; /* Bottom is 0 kr, climbs up! */
+      justify-content: space-between;
+    }
+
+    /* Background Line */
+    .ladder-line-bg {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 78px; /* Aligned between amount and label */
+      width: 2px;
+      background: rgba(255, 255, 255, 0.22);
+      z-index: 1;
+    }
+
+    /* Glowing Fill Line */
+    .ladder-line-fill {
+      position: absolute;
+      bottom: 0;
+      left: 77.5px;
+      width: 3px;
+      background: var(--primary);
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.85);
+      z-index: 2;
+      height: 0%;
+      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Pulsing Sonar Cursor Dot */
+    .ladder-cursor {
+      position: absolute;
+      bottom: 0%;
+      left: 79px;
+      width: 12px;
+      height: 12px;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+      transform: translate(-50%, 50%);
+      z-index: 5;
+      border-radius: 50%;
+      transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ladder-cursor::after {
+      content: '';
+      position: absolute;
+      top: -4px; left: -4px; right: -4px; bottom: -4px;
+      border: 1.5px solid var(--primary);
+      border-radius: 50%;
+      animation: cursorSonar 1.8s infinite ease-out;
+    }
+
+    @keyframes cursorSonar {
+      0% { transform: scale(0.5); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    /* MILESTONE NODES */
+    .ladder-node {
+      position: relative;
+      display: flex;
+      align-items: center;
+      z-index: 3;
+      min-height: 26px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+      transition: opacity 0.3s ease;
+    }
+
+    .node-amount {
+      width: 70px;
+      text-align: right;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.6);
+      white-space: nowrap;
+    }
+
+    .node-tick-wrapper {
+      position: relative;
+      width: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .node-divider-tick {
+      width: 10px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .node-label {
+      font-size: 14px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.85);
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .node-label.is-giveaway {
+      color: var(--giveaway);
+    }
+
+    /* Reached Goal Milestone Styling */
+    .ladder-node.reached .node-amount {
+      color: var(--primary);
+    }
+
+    .ladder-node.reached .node-label {
+      color: #ffffff;
+      font-weight: 900;
+    }
+
+    .node-check {
+      display: none;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .ladder-node.reached .node-check {
+      display: inline-block;
+    }
+
+    /* ========================================================
+       🎛️ 2. OBS DOCK CONTROLLER (BLACK & WHITE THEME)
+       ======================================================== */
+    .dock-container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111114;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .version-badge {
+      background: #ffffff;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .status-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+      margin-bottom: 8px;
+    }
+
+    .card-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      height: 140px;
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.5;
+      outline: none;
+      resize: vertical;
+      margin-bottom: 6px;
+    }
+    textarea:focus { border-color: #52525b; }
+
+    .btn {
+      background: #18181c;
+      border: 1px solid var(--border);
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover:not(:disabled) {
+      background: #24242a;
+      border-color: #3f3f46;
+    }
+
+    .btn-primary-action {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      transition: opacity 0.15s ease;
+    }
+    .btn-primary-action:hover { opacity: 0.9; }
+
+    .btn-danger {
+      background: #18181c;
+      border: 1px solid #ff453a;
+      color: #ff453a;
+    }
+    .btn-danger:hover {
+      background: #ff453a;
+      color: #ffffff;
+    }
+
+    .hint-text {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================
+       📺 1. STREAM OVERLAY VIEW (#overlay)
+       ======================================================== -->
+  <div id="overlayRoot">
+    <div class="goals-widget-container">
+      <div class="goals-header">🎯 DELMÅL</div>
+
+      <div class="vertical-ladder" id="goalsLadder">
+        <div class="ladder-line-bg"></div>
+        <div class="ladder-line-fill" id="ladderFill"></div>
+        <div class="ladder-cursor" id="ladderCursor"></div>
+        <!-- Milestone nodes populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       🎛️ 2. OBS CONTROL DOCK (#panel - Black & White)
+       ======================================================== -->
+  <div id="panelRoot" class="dock-container">
+    <div class="header-box">
+      <span class="header-title">DELMÅL KONTROLL <span class="version-badge">v1.0</span></span>
+      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
+    </div>
+
+    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
+
+    <!-- ✏️ LINE-BY-LINE GOAL EDITOR -->
+    <div class="card-section">
+      <span class="section-title">✏️ Redigera delmål (En rad per mål)</span>
+      <div class="hint-text">
+        Skriv ett delmål per rad. Format: <code>Belopp - Beskrivning</code><br>
+        Tips: Inkludera <code>🎁</code> eller <code>Giveaway</code> för gul markering!
+      </div>
+      
+      <textarea id="goalsInputArea" placeholder="500 kr - Äta stark sås&#10;1000 kr - Spela skräckspel&#10;2500 kr - 🎁 Giveaway: Gamingmus&#10;5000 kr - 12h Stream förlängning&#10;10000 kr - Slutmål: Hårfärgning"></textarea>
+
+      <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
+        💾 Spara & Uppdatera alla overlays
+      </button>
+
+      <button class="btn" style="margin-top:6px;" onclick="loadPresetGoals()">
+        ⚡ Ladda standardmall (500 kr - 10 000 kr)
+      </button>
+
+      <button class="btn btn-danger" style="margin-top:4px;" onclick="resetGoalsToDefault()">
+        Återställ till standard
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
+    const STORAGE_KEY_GOALS = "mh_overlay_custom_goals";
+
+    const DEFAULT_GOALS_TEXT = 
+`500 kr - Äta stark sås
+1000 kr - Spela skräckspel
+2500 kr - 🎁 Giveaway: Gamingmus
+5000 kr - 12h Stream förlängning
+10000 kr - Slutmål: Hårfärgning`;
+
+    const hash = window.location.hash.toLowerCase();
+    const isPanel = hash.includes('panel') || hash.includes('dock');
+
+    if (isPanel) {
+      document.body.classList.add('mode-panel');
+    } else {
+      document.body.classList.add('mode-overlay');
+    }
+
+    let parsedGoals = [];
+    let currentLiveTotal = 400; // Will sync with Firebase
+
+    // Firebase Init
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbGoalsRef = firebase.database().ref('goals_data');
+    const dbBossaRef = firebase.database().ref('bossa');
+
+    function formatSEK(num) {
+      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
+    }
+
+    function updateDockStatus(msg, isError = false) {
+      const box = document.getElementById('dockStatusBox');
+      if (box) {
+        box.innerText = msg;
+        box.style.color = isError ? "#ff453a" : "#00ff88";
+      }
+    }
+
+    // ========================================================
+    // 🧠 LINE-BY-LINE PARSER ENGINE
+    // ========================================================
+    function parseLinesToGoalObjects(text) {
+      if (!text || !text.trim()) return [];
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      const list = [];
+
+      for (const line of lines) {
+        // Matches amount at start (e.g. "500", "500 kr", "1 000:-")
+        const match = line.match(/^([0-9\s]+)(?:kr|:-)?\s*[-:–—]\s*(.+)$/i)
+                   || line.match(/^([0-9\s]+)\s+(.+)$/);
+
+        if (match) {
+          const rawAmt = match[1].replace(/[^0-9]/g, '');
+          const amount = parseInt(rawAmt, 10);
+          const label = match[2].trim();
+
+          if (!isNaN(amount) && amount > 0 && label) {
+            const isGiveaway = /giveaway|🎁|lottning/i.test(label);
+            list.push({ amount, label, isGiveaway });
+          }
+        }
+      }
+
+      // Sort ascending (lower goals at bottom, higher goals at top)
+      list.sort((a, b) => a.amount - b.amount);
+      return list;
+    }
+
+    // ========================================================
+    // 🎨 RENDER VERTICAL LADDER & LIVE FILL
+    // ========================================================
+    function renderGoalsLadder() {
+      const ladder = document.getElementById('goalsLadder');
+      const fillEl = document.getElementById('ladderFill');
+      const cursorEl = document.getElementById('ladderCursor');
+      if (!ladder) return;
+
+      // Keep only line elements, remove old nodes
+      const oldNodes = ladder.querySelectorAll('.ladder-node');
+      oldNodes.forEach(n => n.remove());
+
+      if (parsedGoals.length === 0) return;
+
+      const totalNodes = parsedGoals.length;
+      
+      // Build Nodes
+      parsedGoals.forEach((goal, idx) => {
+        const isReached = currentLiveTotal >= goal.amount;
+        const giveawayClass = goal.isGiveaway ? 'is-giveaway' : '';
+
+        const nodeEl = document.createElement('div');
+        nodeEl.className = `ladder-node ${isReached ? 'reached' : ''}`;
+        nodeEl.innerHTML = `
+          <div class="node-amount">${formatSEK(goal.amount)}</div>
+          <div class="node-tick-wrapper">
+            <div class="node-divider-tick"></div>
+          </div>
+          <div class="node-label ${giveawayClass}">
+            <span class="node-check">✓</span>
+            <span>${escapeHTML(goal.label)}</span>
+          </div>
+        `;
+
+        ladder.appendChild(nodeEl);
+      });
+
+      // Calculate fill progress & cursor position along ladder
+      calculateLadderProgress(fillEl, cursorEl);
+    }
+
+    function calculateLadderProgress(fillEl, cursorEl) {
+      if (!fillEl || !cursorEl || parsedGoals.length === 0) return;
+
+      const totalNodes = parsedGoals.length;
+      const minAmount = 0;
+      const maxAmount = parsedGoals[totalNodes - 1].amount;
+
+      let progressPct = 0;
+
+      if (currentLiveTotal <= 0) {
+        progressPct = 0;
+      } else if (currentLiveTotal >= maxAmount) {
+        progressPct = 100;
+      } else {
+        // Multi-segment smooth interpolation between milestones
+        let prevAmount = 0;
+        let prevPct = 0;
+
+        for (let i = 0; i < totalNodes; i++) {
+          const currentGoalAmount = parsedGoals[i].amount;
+          // Each node represents an even fraction of ladder height
+          const currentGoalPct = ((i + 0.5) / totalNodes) * 100;
+
+          if (currentLiveTotal <= currentGoalAmount) {
+            const fraction = (currentLiveTotal - prevAmount) / (currentGoalAmount - prevAmount);
+            progressPct = prevPct + (fraction * (currentGoalPct - prevPct));
+            break;
+          }
+
+          prevAmount = currentGoalAmount;
+          prevPct = currentGoalPct;
+        }
+      }
+
+      progressPct = Math.min(100, Math.max(0, progressPct));
+      fillEl.style.height = `${progressPct}%`;
+      cursorEl.style.bottom = `${progressPct}%`;
+    }
+
+    // ========================================================
+    // ⚡ REAL-TIME DATABASE LISTENERS
+    // ========================================================
+    // Listen for custom goal lines
+    dbGoalsRef.on('value', (snap) => {
+      const data = snap.val();
+      if (data && data.text) {
+        try { localStorage.setItem(STORAGE_KEY_GOALS, data.text); } catch(e) {}
+        parsedGoals = parseLinesToGoalObjects(data.text);
+        renderGoalsLadder();
+
+        const area = document.getElementById('goalsInputArea');
+        if (area && !isFocusingTextarea) area.value = data.text;
+        updateDockStatus(`Live Ansluten (${parsedGoals.length} mål synkade)`);
+      }
+    });
+
+    // Listen for live donation total updates from /bossa
+    dbBossaRef.on('value', (snap) => {
+      const data = snap.val();
+      if (data && typeof data.total === 'number') {
+        currentLiveTotal = data.total;
+        renderGoalsLadder();
+      }
+    });
+
+    // ========================================================
+    // 🎛️ DOCK ACTIONS
+    // ========================================================
+    let isFocusingTextarea = false;
+    const inputArea = document.getElementById('goalsInputArea');
+    if (inputArea) {
+      inputArea.addEventListener('focus', () => { isFocusingTextarea = true; });
+      inputArea.addEventListener('blur', () => { isFocusingTextarea = false; });
+    }
+
+    function saveGoalsFromTextarea() {
+      const text = document.getElementById('goalsInputArea').value;
+      const goals = parseLinesToGoalObjects(text);
+
+      if (goals.length === 0) {
+        return updateDockStatus("⚠️ Hittade inga giltiga mål! Se exempel.", true);
+      }
+
+      updateDockStatus("Synkar mål till alla overlays...");
+
+      dbGoalsRef.set({
+        text: text,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      }).then(() => {
+        parsedGoals = goals;
+        renderGoalsLadder();
+        updateDockStatus(`✅ Sparade och synkade ${goals.length} delmål live!`);
+      }).catch(err => {
+        updateDockStatus("❌ Fel: " + err.message, true);
+      });
+    }
+
+    function loadPresetGoals() {
+      const area = document.getElementById('goalsInputArea');
+      if (area) area.value = DEFAULT_GOALS_TEXT;
+      saveGoalsFromTextarea();
+    }
+
+    function resetGoalsToDefault() {
+      const area = document.getElementById('goalsInputArea');
+      if (area) area.value = DEFAULT_GOALS_TEXT;
+      saveGoalsFromTextarea();
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, t => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[t] || t));
+    }
+
+    // Load initial cached or default
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_GOALS) || DEFAULT_GOALS_TEXT;
+      parsedGoals = parseLinesToGoalObjects(cached);
+      const area = document.getElementById('goalsInputArea');
+      if (area) area.value = cached;
+    } catch(e) {
+      parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS_TEXT);
+    }
+
+    renderGoalsLadder();
+  </script>
+</body>
+</html>
