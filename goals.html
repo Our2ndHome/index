@@ -47,7 +47,7 @@
     }
 
     /* ========================================================
-       📺 1. STREAM OVERLAY: CLEAN VERTICAL LADDER
+       📺 1. STREAM OVERLAY: BOLD WHITE VERTICAL LADDER
        ======================================================== */
     #overlayRoot {
       position: absolute;
@@ -75,16 +75,16 @@
       color: var(--primary);
       text-transform: uppercase;
       margin-bottom: 16px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
     }
 
     /* VERTICAL LADDER TRACK */
     .vertical-ladder {
       position: relative;
       height: var(--ladder-height);
-      width: 320px;
+      width: 340px;
       display: flex;
-      flex-direction: column-reverse; /* Climbs upwards from 0 kr */
+      flex-direction: column-reverse;
       justify-content: space-between;
     }
 
@@ -92,16 +92,16 @@
       position: absolute;
       top: 0;
       bottom: 0;
-      left: 78px;
+      left: 82px;
       width: 2px;
-      background: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.3);
       z-index: 1;
     }
 
     .ladder-line-fill {
       position: absolute;
       bottom: 0;
-      left: 77.5px;
+      left: 81.5px;
       width: 3px;
       background: var(--primary);
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.85);
@@ -113,7 +113,7 @@
     .ladder-cursor {
       position: absolute;
       bottom: 0%;
-      left: 79px;
+      left: 83px;
       width: 12px;
       height: 12px;
       background: var(--primary);
@@ -138,25 +138,25 @@
       100% { transform: scale(2.2); opacity: 0; }
     }
 
-    /* MILESTONE NODES */
+    /* MILESTONE NODES (BOLD PURE WHITE) */
     .ladder-node {
       position: relative;
       display: flex;
       align-items: center;
       z-index: 3;
-      min-height: 26px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+      min-height: 28px;
       transition: opacity 0.3s ease;
     }
 
     .node-amount {
-      width: 70px;
+      width: 74px;
       text-align: right;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 900;
       letter-spacing: 0.5px;
-      color: rgba(255, 255, 255, 0.6);
+      color: #ffffff !important;
       white-space: nowrap;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
     }
 
     .node-tick-wrapper {
@@ -170,34 +170,32 @@
     .node-divider-tick {
       width: 10px;
       height: 2px;
-      background: rgba(255, 255, 255, 0.4);
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     }
 
     .node-label {
-      font-size: 14px;
-      font-weight: 800;
-      color: rgba(255, 255, 255, 0.85);
+      font-size: 15px;
+      font-weight: 900;
+      color: #ffffff !important;
       white-space: nowrap;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
       gap: 6px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
     }
 
-    /* Reached Goal Milestone */
+    /* REACHED MILESTONES */
     .ladder-node.reached .node-amount {
-      color: var(--primary);
-    }
-
-    .ladder-node.reached .node-label {
-      color: #ffffff;
-      font-weight: 900;
+      color: var(--primary) !important;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 8px rgba(172, 230, 0, 0.6);
     }
 
     .node-check {
       display: none;
       color: var(--primary);
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 900;
     }
 
@@ -205,9 +203,7 @@
       display: inline-block;
     }
 
-    /* ========================================================
-       🎛️ 2. OBS DOCK CONTROLLER (BLACK & WHITE)
-       ======================================================== */
+    /* 🎛️ 2. OBS DOCK CONTROLLER */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -395,7 +391,7 @@
         <div class="ladder-line-bg"></div>
         <div class="ladder-line-fill" id="ladderFill"></div>
         <div class="ladder-cursor" id="ladderCursor"></div>
-        <!-- Milestone nodes populated dynamically -->
+        <!-- Milestones dynamically built here -->
       </div>
     </div>
   </div>
@@ -405,13 +401,13 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.2</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.3</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
 
-    <!-- ⏱️ STREAMER SESSION & NAME TRACKING -->
+    <!-- ⏱️ STREAMER SESSION TRACKING -->
     <div class="card-section">
       <span class="section-title">⏱️ Streamer Pass-Kontroll</span>
       
@@ -434,25 +430,25 @@
       </button>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (LOCAL STORAGE - NO CONFLICTS) -->
     <div class="card-section">
-      <span class="section-title">✏️ Redigera milstolpar (En rad per mål)</span>
+      <span class="section-title">✏️ Redigera dina milstolpar (Sparas i ditt OBS)</span>
       <div class="hint-text">
-        Format: <code>Belopp - Beskrivning</code>
+        Format: <code>Belopp - Beskrivning</code><br>
+        Dina milstolpar sparas lokalt i ditt eget OBS och krockar inte med andra streamers.
       </div>
       
       <textarea id="goalsInputArea" placeholder="500 kr - Äta stark sås&#10;1000 kr - Spela skräckspel&#10;2500 kr - Hårfärgning&#10;5000 kr - 12h Stream förlängning&#10;10000 kr - Slutmål"></textarea>
 
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
-        💾 Spara & Uppdatera alla overlays
+        💾 Spara mina milstolpar
       </button>
     </div>
   </div>
 
   <script>
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
-    const WRITE_SECRET = "Our2ndHomeSecret2026!";
-    const STORAGE_KEY_GOALS = "mh_overlay_custom_goals";
+    const STORAGE_KEY_GOALS = "mh_overlay_local_goals";
     const STORAGE_KEY_BASELINE = "mh_goals_session_baseline";
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
 
@@ -469,10 +465,10 @@
 
     let parsedGoals = [];
     let currentGlobalTotal = 400;
-    let sessionBaseline = 0; // Defaults strictly to 0 kr!
+    let sessionBaseline = 0; // Starts strictly at 0 kr
     let currentStreamerName = "Streamer";
 
-    // Load saved preferences from this computer's local memory (defaults to 0 if not set)
+    // Load local streamer settings
     try {
       const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
       if (savedStreamer) currentStreamerName = savedStreamer;
@@ -487,11 +483,10 @@
       sessionBaseline = 0;
     }
 
-    // Firebase Init
+    // Firebase Init (Only listens to live total - does not overwrite goals)
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
-    const dbGoalsRef = firebase.database().ref('goals_data');
     const dbBossaRef = firebase.database().ref('bossa');
     const dbScheduleRef = firebase.database().ref('schedule_data');
 
@@ -535,7 +530,7 @@
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER (DEFAULTS TO 0 KR BASELINE)
+    // 🎨 RENDER VERTICAL LADDER (SOLID BOLD WHITE)
     // ========================================================
     function renderGoalsLadder() {
       const ladder = document.getElementById('goalsLadder');
@@ -548,7 +543,6 @@
 
       if (parsedGoals.length === 0) return;
 
-      // Calculate progress relative to baseline (0 kr default)
       const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
 
       parsedGoals.forEach((goal) => {
@@ -625,20 +619,8 @@
     }
 
     // ========================================================
-    // ⚡ DATABASE LISTENERS
+    // ⚡ REAL-TIME TOTAL LISTENER
     // ========================================================
-    dbGoalsRef.on('value', (snap) => {
-      const data = snap.val();
-      if (data && data.text) {
-        try { localStorage.setItem(STORAGE_KEY_GOALS, data.text); } catch(e) {}
-        parsedGoals = parseLinesToGoalObjects(data.text);
-        renderGoalsLadder();
-
-        const area = document.getElementById('goalsInputArea');
-        if (area && !isFocusingInput) area.value = data.text;
-      }
-    });
-
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
       if (data && typeof data.total === 'number') {
@@ -648,7 +630,6 @@
       }
     });
 
-    // Auto-suggest streamer name from live schedule if none set
     dbScheduleRef.on('value', (snap) => {
       const sData = snap.val();
       if (sData && sData.schedule && (!currentStreamerName || currentStreamerName === "Streamer")) {
@@ -666,20 +647,24 @@
       }
     });
 
+    // Local BroadcastChannel: Syncs dock to overlay inside the same Portable OBS
     if (bus) {
       bus.onmessage = (e) => {
-        const { type, baseline, streamer } = e.data || {};
+        const { type, baseline, streamer, text } = e.data || {};
         if (type === 'SESSION_BASELINE_UPDATED') {
           sessionBaseline = baseline;
           currentStreamerName = streamer || currentStreamerName;
           renderGoalsLadder();
           updateDockSessionStatus();
+        } else if (type === 'LOCAL_GOALS_UPDATED') {
+          parsedGoals = parseLinesToGoalObjects(text);
+          renderGoalsLadder();
         }
       };
     }
 
     // ========================================================
-    // 🎛️ DOCK ACTIONS
+    // 🎛️ DOCK ACTIONS (LOCAL ONLY)
     // ========================================================
     let isFocusingInput = false;
     document.addEventListener('focusin', (e) => {
@@ -726,7 +711,7 @@
         bus.postMessage({ type: 'SESSION_BASELINE_UPDATED', baseline: sessionBaseline, streamer: currentStreamerName });
       }
 
-      updateDockStatus(`✅ Startbelopp manuellt satt till ${formatSEK(sessionBaseline)}.`);
+      updateDockStatus(`✅ Startbelopp satt till ${formatSEK(sessionBaseline)}.`);
     }
 
     function setBaselineToCurrentTotal() {
@@ -735,6 +720,7 @@
       setCustomBaseline();
     }
 
+    // 💾 SAVES STRICTLY TO LOCAL OBS (NEVER OVERWRITES OTHER STREAMERS)
     function saveGoalsFromTextarea() {
       const text = document.getElementById('goalsInputArea').value;
       const goals = parseLinesToGoalObjects(text);
@@ -743,19 +729,18 @@
         return updateDockStatus("⚠️ Hittade inga giltiga milstolpar!", true);
       }
 
-      updateDockStatus("Synkar milstolpar...");
+      try {
+        localStorage.setItem(STORAGE_KEY_GOALS, text);
+      } catch(e) {}
 
-      dbGoalsRef.set({
-        text: text,
-        secret: WRITE_SECRET,
-        timestamp: Date.now()
-      }).then(() => {
-        parsedGoals = goals;
-        renderGoalsLadder();
-        updateDockStatus(`✅ Sparade och synkade ${goals.length} milstolpar live!`);
-      }).catch(err => {
-        updateDockStatus("❌ Fel vid sparande: " + err.message, true);
-      });
+      parsedGoals = goals;
+      renderGoalsLadder();
+
+      if (bus) {
+        bus.postMessage({ type: 'LOCAL_GOALS_UPDATED', text: text });
+      }
+
+      updateDockStatus(`✅ Sparade dina ${goals.length} milstolpar lokalt!`);
     }
 
     function escapeHTML(str) {
@@ -764,7 +749,7 @@
       }[t] || t));
     }
 
-    // Load initial cached goals
+    // Load initial local goals
     try {
       const cached = localStorage.getItem(STORAGE_KEY_GOALS) || "";
       parsedGoals = parseLinesToGoalObjects(cached);
