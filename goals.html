@@ -556,8 +556,7 @@
 
     // 🛡️ MATHEMATICALLY BULLETPROOF: Zero duplicate counting across OBS windows
     function getLiveSessionEarned() {
-      if (streamerBaseline <= 0) return 0;
-      return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
+      return Math.max(0, (currentGlobalTotal - sessionBaseline) + manualAdjustment);
     }
 
     // ========================================================
