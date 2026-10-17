@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Twitch Chat Widget</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         * {
             margin: 0;
@@ -17,69 +17,93 @@
             height: 100%;
             overflow: hidden;
             background: transparent;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
 
+        /* 1000px x 300px Maximum Boundary */
         #chat-container {
             position: absolute;
-            bottom: 24px;
-            left: 24px;
-            max-width: 440px;
-            width: calc(100% - 48px);
+            bottom: 16px;
+            left: 16px;
+            max-width: 1000px;
+            max-height: 300px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
+            align-items: flex-start;
         }
 
-        /* Message Card */
+        /* Twitch Chat Bubble */
         .chat-card {
-            background: rgba(18, 18, 24, 0.90);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-left: 5px solid #9146ff;
-            border-radius: 12px;
-            padding: 12px 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            max-width: 1000px;
+            max-height: 300px;
+            width: fit-content;
+            overflow: hidden;
+            background: rgba(24, 24, 27, 0.95); /* Native Twitch Dark #18181b */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            font-size: 18px;
+            line-height: 1.5;
+            color: #efeff1;
             word-break: break-word;
+            overflow-wrap: break-word;
         }
 
-        .chat-header {
-            margin-bottom: 6px;
+        /* Badges */
+        .chat-badges {
+            display: inline;
         }
 
+        .chat-badge {
+            display: inline-block;
+            vertical-align: -3px;
+            height: 18px;
+            width: 18px;
+            margin-right: 4px;
+            border-radius: 2px;
+        }
+
+        /* Username & Colon */
         .chat-username {
             font-weight: 700;
-            font-size: 15px;
             letter-spacing: -0.2px;
         }
 
-        .chat-message {
+        .chat-colon {
             color: #efeff1;
-            font-size: 15px;
-            font-weight: 600;
-            line-height: 1.45;
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        /* Message Text */
+        .chat-message {
+            display: inline;
+            font-weight: 400;
+            color: #efeff1;
         }
 
         /* Twitch Emotes */
         .chat-message img.emote {
             vertical-align: middle;
             height: 28px;
-            margin: -2px 2px;
+            margin: -4px 2px;
         }
 
         /* Animations */
         .animate-in {
-            animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: popIn 0.30s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .animate-out {
-            animation: slideOut 0.35s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+            animation: slideOut 0.30s cubic-bezier(0.7, 0, 0.84, 0) forwards;
         }
 
         @keyframes popIn {
             0% {
                 opacity: 0;
-                transform: translateY(20px) scale(0.92);
+                transform: translateY(16px) scale(0.96);
             }
             100% {
                 opacity: 1;
@@ -94,7 +118,7 @@
             }
             100% {
                 opacity: 0;
-                transform: translateY(-16px) scale(0.95);
+                transform: translateY(-12px) scale(0.98);
             }
         }
     </style>
@@ -107,12 +131,24 @@
         // ================= CONFIGURATION =================
         const BASE_DISPLAY_TIME = 2500;  // Normal message display time (ms)
         const FAST_DISPLAY_TIME = 1000;  // Speed if chat is active (queue > 2) (ms)
-        const ANIMATION_DURATION = 350;  // Matches CSS animation speed (ms)
-        const PAUSE_BETWEEN_MSGS = 250;  // Gap between messages (ms)
-        const MAX_QUEUE_LIMIT = 15;      // Max queued backlog
+        const ANIMATION_DURATION = 300;  // Matches CSS animation speed (ms)
+        const PAUSE_BETWEEN_MSGS = 200;  // Pause before showing next message (ms)
+        const MAX_QUEUE_LIMIT = 15;      // Max queued messages
         // =================================================
 
-        // Reads ?channel=name from URL, defaults to 'our2ndhome'
+        // Badge CDN image map
+        const BADGE_MAP = {
+            'broadcaster': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1',
+            'moderator': 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1',
+            'vip': 'https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/1',
+            'founder': 'https://static-cdn.jtvnw.net/badges/v1/511b78a9-ab37-472f-9569-457753bbe7d3/1',
+            'partner': 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/1',
+            'premium': 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/1',
+            'turbo': 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4bf9-91f4-af1e3428d80f/1',
+            'staff': 'https://static-cdn.jtvnw.net/badges/v1/d97c37bd-a6f5-4c38-8f57-4e4bef88af34/1',
+            'subscriber': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2aa4b609622d/1'
+        };
+
         const urlParams = new URLSearchParams(window.location.search);
         const channel = (urlParams.get('channel') || 'our2ndhome').toLowerCase().trim();
 
@@ -146,10 +182,7 @@
                 }
             };
 
-            ws.onclose = () => {
-                setTimeout(connectToTwitch, 3000);
-            };
-
+            ws.onclose = () => setTimeout(connectToTwitch, 3000);
             ws.onerror = () => ws.close();
         }
 
@@ -172,10 +205,18 @@
             if (text.startsWith('!')) return; // Ignore !commands
 
             const username = tags['display-name'] || 'User';
-            const color = tags['color'] || '#9146FF';
-            const formattedHtml = parseEmotes(text, tags['emotes']);
+            let color = tags['color'] || '#a970ff';
+            if (color === '#000000') color = '#a970ff'; // Guard against black text on dark background
 
-            messageQueue.push({ name: username, color: color, html: formattedHtml });
+            const badgesHtml = parseBadges(tags['badges']);
+            const messageHtml = parseEmotes(text, tags['emotes']);
+
+            messageQueue.push({
+                name: username,
+                color: color,
+                badges: badgesHtml,
+                html: messageHtml
+            });
 
             if (messageQueue.length > MAX_QUEUE_LIMIT) {
                 messageQueue.shift();
@@ -184,6 +225,19 @@
             if (!isDisplaying) {
                 showNextMessage();
             }
+        }
+
+        function parseBadges(badgesTag) {
+            if (!badgesTag) return '';
+            let badgesHtml = '';
+            const items = badgesTag.split(',');
+            for (const item of items) {
+                const badgeName = item.split('/')[0];
+                if (BADGE_MAP[badgeName]) {
+                    badgesHtml += `<img class="chat-badge" src="${BADGE_MAP[badgeName]}" alt="${badgeName}">`;
+                }
+            }
+            return badgesHtml;
         }
 
         function parseEmotes(text, emotesTag) {
@@ -226,12 +280,12 @@
             const currentDuration = messageQueue.length > 2 ? FAST_DISPLAY_TIME : BASE_DISPLAY_TIME;
             const container = document.getElementById('chat-container');
 
+            // Render exact Twitch inline layout: [Badges] Username: Message
             container.innerHTML = `
-                <div class="chat-card animate-in" style="border-left-color: ${msg.color}">
-                    <div class="chat-header">
-                        <span class="chat-username" style="color: ${msg.color}">${escapeHtml(msg.name)}</span>
-                    </div>
-                    <div class="chat-message">${msg.html}</div>
+                <div class="chat-card animate-in">
+                    <span class="chat-badges">${msg.badges}</span>
+                    <span class="chat-username" style="color: ${msg.color}">${escapeHtml(msg.name)}</span><span class="chat-colon">:</span>
+                    <span class="chat-message">${msg.html}</span>
                 </div>
             `;
 
