@@ -114,7 +114,7 @@
 
         // Get channel from URL param: ?channel=yourchannel
         const urlParams = new URLSearchParams(window.location.search);
-        const channel = (urlParams.get('channel') || 'our2ndhome').toLowerCase().trim();
+        const channel = (urlParams.get('channel') || 'YOUR_CHANNEL_NAME').toLowerCase().trim();
 
         const messageQueue = [];
         let isDisplaying = false;
