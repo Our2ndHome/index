@@ -186,12 +186,15 @@
       font-size: 15px;
       font-weight: 900;
       color: #ffffff !important;
-      white-space: nowrap;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
       gap: 6px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .ladder-node.reached .node-amount {
@@ -308,7 +311,7 @@
 
     textarea {
       width: 100%;
-      height: 140px;
+      height: 130px;
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -403,6 +406,25 @@
       color: #ffffff;
     }
 
+    .btn-danger.confirm-state {
+      background: #ff453a !important;
+      color: #ffffff !important;
+      font-weight: 900;
+      animation: pulseAlert 0.8s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+      from { opacity: 0.8; }
+      to { opacity: 1; }
+    }
+
+    .btn-sm {
+      padding: 4px 6px;
+      font-size: 10px;
+      width: auto;
+      margin-bottom: 0;
+    }
+
     .hint-text {
       font-size: 10px;
       color: var(--text-dim);
@@ -439,7 +461,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PORTABLE</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.0</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -468,9 +490,21 @@
           <button class="btn" onclick="loadSavedStreamerPass()">
             🔄 Läs in sparat pass
           </button>
-          <button class="btn btn-danger" onclick="clearStreamerPass()">
+          <!-- Safe Two-Step Button (Never Freezes OBS CEF) -->
+          <button class="btn btn-danger" id="btnClearPassBtn" onclick="handleClearPassClick()">
             🗑️ Rensa pass
           </button>
+        </div>
+      </div>
+
+      <!-- Quick Manual Offset Adjustments -->
+      <div style="margin-top:8px; border-top:1px solid #1f1f24; padding-top:6px;">
+        <span class="section-title" style="margin-bottom:4px;">⚡ Manuell Justering (+ / - kr)</span>
+        <div style="display:flex; gap:4px;">
+          <button class="btn btn-sm" onclick="adjustManualTotal(50)">+50 kr</button>
+          <button class="btn btn-sm" onclick="adjustManualTotal(100)">+100 kr</button>
+          <button class="btn btn-sm" onclick="adjustManualTotal(500)">+500 kr</button>
+          <button class="btn btn-sm btn-danger" onclick="resetManualAdjustment()">Nolla offset</button>
         </div>
       </div>
     </div>
@@ -506,6 +540,11 @@
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
+    // Checks URL parameters & hash for hardcoded streamer names: ?streamer=Name or #overlay?streamer=Name
+    const fullUrl = window.location.href;
+    const streamerMatch = fullUrl.match(/[?&]streamer=([^&#]+)/i);
+    const streamerFromUrl = streamerMatch ? decodeURIComponent(streamerMatch[1]) : null;
+
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
@@ -519,15 +558,16 @@
     let currentGlobalTotal = 0;
     let streamerBaseline = 0;
     let manualAdjustment = 0;
-    let currentStreamerName = "Streamer";
+    let currentStreamerName = streamerFromUrl ? streamerFromUrl.trim() : "Streamer";
     let isGoalsHidden = false;
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
 
-    // Load saved settings for this portable OBS instance
     try {
-      const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
-      if (savedStreamer) currentStreamerName = savedStreamer;
+      if (!streamerFromUrl) {
+        const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
+        if (savedStreamer) currentStreamerName = savedStreamer;
+      }
       isGoalsHidden = localStorage.getItem(STORAGE_KEY_HIDDEN) === 'true';
     } catch(e) {
       isGoalsHidden = false;
@@ -535,14 +575,12 @@
 
     applyVisibilityState();
 
-    // Firebase Init
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbStreamersRef = firebase.database().ref('streamers');
     const dbBossaRef = firebase.database().ref('bossa');
 
-    // Connection Status
     firebase.database().ref('.info/connected').on('value', (snap) => {
       if (snap.val() === true) {
         updateDockDisplay();
@@ -568,7 +606,6 @@
       return clean.length > 0 ? clean : "streamer";
     }
 
-    // 🛡️ Zero pass = 0 kr earned
     function getLiveSessionEarned() {
       if (!streamerBaseline || streamerBaseline <= 0) {
         return 0;
@@ -646,7 +683,7 @@
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER
+    // 🎨 RENDER VERTICAL LADDER (WITH 0 KR ANCHOR BASE)
     // ========================================================
     function renderGoalsLadder() {
       const ladder = document.getElementById('goalsLadder');
@@ -666,6 +703,21 @@
 
       const liveEarned = getLiveSessionEarned();
 
+      // 1. Bottom Anchor (0 kr Base) - Ensures the 0 to Goal 1 segment has proportional height
+      const startNodeEl = document.createElement('div');
+      startNodeEl.className = 'ladder-node start-base reached';
+      startNodeEl.innerHTML = `
+        <div class="node-amount">0 kr</div>
+        <div class="node-tick-wrapper">
+          <div class="node-divider-tick"></div>
+        </div>
+        <div class="node-label">
+          <span style="opacity:0.6; font-size:12px;">Start</span>
+        </div>
+      `;
+      ladder.appendChild(startNodeEl);
+
+      // 2. Goal Nodes
       parsedGoals.forEach((goal) => {
         const isReached = liveEarned >= goal.amount;
 
@@ -678,7 +730,7 @@
           </div>
           <div class="node-label">
             <span class="node-check">✓</span>
-            <span>${escapeHTML(goal.label)}</span>
+            <span title="${escapeHTML(goal.label)}">${escapeHTML(goal.label)}</span>
           </div>
         `;
 
@@ -697,31 +749,36 @@
       if (!ladder || !fillEl || !cursorEl || parsedGoals.length === 0) return;
 
       const nodes = Array.from(ladder.querySelectorAll('.ladder-node'));
-      if (nodes.length !== parsedGoals.length) return;
+      if (nodes.length !== (parsedGoals.length + 1)) return; // +1 includes start-base
 
       const ladderRect = ladder.getBoundingClientRect();
       if (ladderRect.height <= 0) return;
 
+      // Extract pixel heights from bottom for each node (Index 0 = Start Base, Index 1+ = Goals)
       const nodePixelYs = nodes.map(nodeEl => {
         const tick = nodeEl.querySelector('.node-divider-tick') || nodeEl;
         const tickRect = tick.getBoundingClientRect();
         return Math.max(0, ladderRect.bottom - (tickRect.top + tickRect.height / 2));
       });
 
-      const totalNodes = parsedGoals.length;
-      let targetPixelY = 0;
+      const startY = nodePixelYs[0]; // Pixel location of 0 kr tick
+      const topGoalAmount = parsedGoals[parsedGoals.length - 1].amount;
+      const topGoalY = nodePixelYs[nodePixelYs.length - 1];
+
+      let targetPixelY = startY;
 
       if (liveEarned <= 0) {
-        targetPixelY = 0;
-      } else if (liveEarned >= parsedGoals[totalNodes - 1].amount) {
-        targetPixelY = nodePixelYs[totalNodes - 1];
+        targetPixelY = startY;
+      } else if (liveEarned >= topGoalAmount) {
+        targetPixelY = topGoalY;
       } else {
+        // Interpolate along the milestones
         let prevAmount = 0;
-        let prevY = 0;
+        let prevY = startY;
 
-        for (let i = 0; i < totalNodes; i++) {
+        for (let i = 0; i < parsedGoals.length; i++) {
           const goalAmount = parsedGoals[i].amount;
-          const currentY = nodePixelYs[i];
+          const currentY = nodePixelYs[i + 1];
 
           if (liveEarned <= goalAmount) {
             const denom = goalAmount - prevAmount;
@@ -744,7 +801,8 @@
       if (!streamerBaseline || streamerBaseline <= 0) {
         updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Klicka på "Starta nytt pass".`);
       } else {
-        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
+        const offsetNote = manualAdjustment !== 0 ? ` (Justering: ${manualAdjustment > 0 ? '+' : ''}${manualAdjustment} kr)` : '';
+        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat${offsetNote}`);
       }
 
       const nameInput = document.getElementById('streamerNameInput');
@@ -795,7 +853,7 @@
 
       if (raw !== null) {
         const parsed = parseInt(String(raw).replace(/[^0-9]/g, ''), 10);
-        if (!isNaN(parsed)) {
+        if (!isNaN(parsed) && parsed > 0) {
           currentGlobalTotal = parsed;
           renderGoalsLadder();
           updateDockDisplay();
@@ -803,7 +861,6 @@
       }
     });
 
-    // Sync between Dock and Overlay in Portable OBS
     if (bus) {
       bus.onmessage = (e) => {
         const { type, text, hidden, baseline, streamer } = e.data || {};
@@ -822,7 +879,6 @@
       };
     }
 
-    // Local Storage backup sync
     window.addEventListener('storage', (e) => {
       if (e.key === STORAGE_KEY_GOALS && e.newValue) {
         parsedGoals = parseLinesToGoalObjects(e.newValue);
@@ -845,8 +901,13 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // 🟢 START PASS (Resets counter to 0 kr for this streamer)
+    // 🟢 START PASS (Protected against 0-total startup race condition)
     function startFreshPassZero() {
+      if (currentGlobalTotal <= 0) {
+        updateDockStatus("⚠️ Vänta, hämtar aktuell total från Musikhjälpen...", true);
+        return;
+      }
+
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
       currentStreamerName = inputVal || currentStreamerName || "Streamer";
@@ -928,10 +989,25 @@
       });
     }
 
-    // 🗑️ CLEAR PASS
-    function clearStreamerPass() {
-      const key = getStreamerKey(currentStreamerName);
-      if (confirm(`Rensa passet för ${currentStreamerName}? Mätaren återställs till 0 kr.`)) {
+    // 🗑️ TWO-STEP CONFIRM CLEAR PASS (CEF Safe)
+    let clearConfirmTimeout = null;
+    function handleClearPassClick() {
+      const btn = document.getElementById('btnClearPassBtn');
+      if (!btn) return;
+
+      if (!btn.classList.contains('confirm-state')) {
+        btn.classList.add('confirm-state');
+        btn.innerText = "⚠️ Klicka igen för att rensa!";
+        clearConfirmTimeout = setTimeout(() => {
+          btn.classList.remove('confirm-state');
+          btn.innerText = "🗑️ Rensa pass";
+        }, 4000);
+      } else {
+        clearTimeout(clearConfirmTimeout);
+        btn.classList.remove('confirm-state');
+        btn.innerText = "🗑️ Rensa pass";
+
+        const key = getStreamerKey(currentStreamerName);
         streamerBaseline = 0;
         manualAdjustment = 0;
 
@@ -939,11 +1015,41 @@
           renderGoalsLadder();
           updateDockDisplay();
           if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: 0, streamer: currentStreamerName });
-          updateDockStatus(`Rensade passet för ${currentStreamerName}.`);
+          updateDockStatus(`Passet för ${currentStreamerName} är rensat.`);
         }).catch(err => {
           updateDockStatus("❌ Fel: " + err.message, true);
         });
       }
+    }
+
+    // ⚡ MANUAL ADJUSTMENTS
+    function adjustManualTotal(diff) {
+      if (!streamerBaseline || streamerBaseline <= 0) {
+        updateDockStatus("⚠️ Starta ett pass först innan du justerar!", true);
+        return;
+      }
+      manualAdjustment += diff;
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        manualAdjustment: manualAdjustment,
+        secret: WRITE_SECRET
+      }).catch(() => {});
+
+      renderGoalsLadder();
+      updateDockDisplay();
+    }
+
+    function resetManualAdjustment() {
+      if (!streamerBaseline || streamerBaseline <= 0) return;
+      manualAdjustment = 0;
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        manualAdjustment: 0,
+        secret: WRITE_SECRET
+      }).catch(() => {});
+
+      renderGoalsLadder();
+      updateDockDisplay();
     }
 
     // 💾 SAVE MILESTONES
@@ -986,6 +1092,17 @@
       document.fonts.ready.then(() => {
         renderGoalsLadder();
       });
+    }
+
+    // 🎯 OBS Scene Switch & Visibility Observer
+    if (window.ResizeObserver) {
+      const ladderContainer = document.getElementById('goalsLadder');
+      if (ladderContainer) {
+        const ro = new ResizeObserver(() => {
+          renderGoalsLadder();
+        });
+        ro.observe(ladderContainer);
+      }
     }
 
     // Load initial local goals with fallback
