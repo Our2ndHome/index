@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Twitch Chat Widget</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        #chat-container {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            max-width: 440px;
+            width: calc(100% - 48px);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        /* Message Card */
+        .chat-card {
+            background: rgba(18, 18, 24, 0.90);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-left: 5px solid #9146ff; /* Accent border matching chatter's color */
+            border-radius: 12px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            word-break: break-word;
+        }
+
+        .chat-header {
+            margin-bottom: 6px;
+        }
+
+        .chat-username {
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: -0.2px;
+        }
+
+        .chat-message {
+            color: #efeff1;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.45;
+        }
+
+        /* Twitch Emotes */
+        .chat-message img.emote {
+            vertical-align: middle;
+            height: 28px;
+            margin: -2px 2px;
+        }
+
+        /* --- Animations --- */
+        .animate-in {
+            animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-out {
+            animation: slideOut 0.35s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.92);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slideOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-16px) scale(0.95);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="chat-container"></div>
+
+    <script>
+        // ================= CONFIGURATION =================
+        const BASE_DISPLAY_TIME = 2500;  // Normal message display time (ms)
+        const FAST_DISPLAY_TIME = 1000;  // Speed if chat is fast (queue > 2) (ms)
+        const ANIMATION_DURATION = 350;  // Must match CSS animation speed (ms)
+        const PAUSE_BETWEEN_MSGS = 250;  // Gap between messages (ms)
+        const MAX_QUEUE_LIMIT = 15;      // Discard older messages if queue overflows
+        // =================================================
+
+        // Get channel from URL param: ?channel=yourchannel
+        const urlParams = new URLSearchParams(window.location.search);
+        const channel = (urlParams.get('channel') || 'YOUR_CHANNEL_NAME').toLowerCase().trim();
+
+        const messageQueue = [];
+        let isDisplaying = false;
+
+        // --- Twitch IRC WebSocket Connection ---
+        function connectToTwitch() {
+            const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+            ws.onopen = () => {
+                ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+                const randomId = Math.floor(10000 + Math.random() * 90000);
+                ws.send('PASS SCHMOOPIE');
+                ws.send(`NICK justinfan${randomId}`);
+                ws.send(`JOIN #${channel}`);
+            };
+
+            ws.onmessage = (event) => {
+                const lines = event.data.split('\r\n');
+                for (const line of lines) {
+                    if (!line) continue;
+
+                    // Respond to Twitch heartbeat
+                    if (line.startsWith('PING')) {
+                        ws.send('PONG :tmi.twitch.tv');
+                        continue;
+                    }
+
+                    if (line.includes(`PRIVMSG #${channel}`)) {
+                        parseTwitchMessage(line);
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                // Auto-reconnect if connection drops
+                setTimeout(connectToTwitch, 3000);
+            };
+
+            ws.onerror = () => ws.close();
+        }
+
+        // --- Parse Tags, User, Color, Emotes ---
+        function parseTwitchMessage(raw) {
+            const spaceIdx = raw.indexOf(' ');
+            const rawTags = raw.slice(1, spaceIdx);
+            const rest = raw.slice(spaceIdx + 1);
+
+            const tags = {};
+            rawTags.split(';').forEach(tag => {
+                const eq = tag.indexOf('=');
+                if (eq !== -1) tags[tag.slice(0, eq)] = tag.slice(eq + 1);
+            });
+
+            const marker = `PRIVMSG #${channel} :`;
+            const msgIdx = rest.indexOf(marker);
+            if (msgIdx === -1) return;
+
+            const text = rest.slice(msgIdx + marker.length);
+            if (text.startsWith('!')) return; // Ignore bot commands
+
+            const username = tags['display-name'] || 'User';
+            const color = tags['color'] || '#9146FF';
+            const formattedHtml = parseEmotes(text, tags['emotes']);
+
+            messageQueue.push({ name: username, color: color, html: formattedHtml });
+
+            if (messageQueue.length > MAX_QUEUE_LIMIT) {
+                messageQueue.shift();
+            }
+
+            if (!isDisplaying) {
+                showNextMessage();
+            }
+        }
+
+        // --- Render Twitch Emotes Directly ---
+        function parseEmotes(text, emotesTag) {
+            if (!emotesTag) return escapeHtml(text);
+
+            const emoteRanges = [];
+            emotesTag.split('/').forEach(item => {
+                const [id, ranges] = item.split(':');
+                if (!id || !ranges) return;
+                ranges.split(',').forEach(range => {
+                    const [start, end] = range.split('-').map(Number);
+                    emoteRanges.push({ id, start, end });
+                });
+            });
+
+            emoteRanges.sort((a, b) => a.start - b.start);
+
+            const chars = Array.from(text);
+            let result = '';
+            let lastIndex = 0;
+
+            for (const { id, start, end } of emoteRanges) {
+                result += escapeHtml(chars.slice(lastIndex, start).join(''));
+                const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`;
+                result += `<img class="emote" src="${emoteUrl}" alt="emote">`;
+                lastIndex = end + 1;
+            }
+            result += escapeHtml(chars.slice(lastIndex).join(''));
+            return result;
+        }
+
+        // --- Queue & Animation Controller ---
+        function showNextMessage() {
+            if (messageQueue.length === 0) {
+                isDisplaying = false;
+                return;
+            }
+
+            isDisplaying = true;
+            const msg = messageQueue.shift();
+            const currentDuration = messageQueue.length > 2 ? FAST_DISPLAY_TIME : BASE_DISPLAY_TIME;
+            const container = document.getElementById('chat-container');
+
+            container.innerHTML = `
+                <div class="chat-card animate-in" style="border-left-color: ${msg.color}">
+                    <div class="chat-header">
+                        <span class="chat-username" style="color: ${msg.color}">${escapeHtml(msg.name)}</span>
+                    </div>
+                    <div class="chat-message">${msg.html}</div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const card = container.querySelector('.chat-card');
+                if (card) {
+                    card.classList.remove('animate-in');
+                    card.classList.add('animate-out');
+                }
+
+                setTimeout(() => {
+                    container.innerHTML = '';
+                    setTimeout(showNextMessage, PAUSE_BETWEEN_MSGS);
+                }, ANIMATION_DURATION);
+
+            }, currentDuration);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        connectToTwitch();
+    </script>
+</body>
+</html>
