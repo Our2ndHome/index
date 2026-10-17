@@ -291,7 +291,7 @@
       white-space: nowrap;
     }
 
-    input[type="text"], input[type="number"] {
+    input[type="text"] {
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -302,7 +302,7 @@
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus, input[type="number"]:focus {
+    input[type="text"]:focus {
       border-color: #52525b;
     }
 
@@ -439,7 +439,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v3.2</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v3.3</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -498,7 +498,7 @@
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
 
-    const DEFAULT_GOALS_TEXT = 
+    const DEFAULT_GOALS = 
       "200 kr - Äta stark sås\n" +
       "500 kr - Spela skräckspel\n" +
       "1000 kr - Hårfärgning\n" +
@@ -521,9 +521,9 @@
     let manualAdjustment = 0;
     let currentStreamerName = "Streamer";
     let isGoalsHidden = false;
-    let activeStreamerRef = null;
+    let isFocusingInput = false;
 
-    // Load local settings & visibility
+    // Load saved settings
     try {
       const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
       if (savedStreamer) currentStreamerName = savedStreamer;
@@ -559,8 +559,12 @@
       return clean.length > 0 ? clean : "streamer";
     }
 
-    // Fixed: accurately calculates pass total using streamerBaseline
+    // 🛡️ CRITICAL FIX: If no pass is started (streamerBaseline <= 0), liveEarned is 0 kr.
+    // This stops the widget from counting Musikhjälpen's multi-million global total before your shift starts.
     function getLiveSessionEarned() {
+      if (!streamerBaseline || streamerBaseline <= 0) {
+        return 0;
+      }
       return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
     }
 
@@ -616,13 +620,12 @@
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        // Supports: "200 kr - Text", "200kr Text", "200:- Text", "200 - Text"
-        const match = line.match(/^([\d\s]+)\s*(?:kr|:-|sek)?\s*[-:–—]?\s*(.+)$/i);
+        const match = line.match(/^([0-9\s]+)(?:kr|:-|sek)?\s*[-:–—]?\s*(.+)$/i);
 
         if (match) {
           const rawAmt = match[1].replace(/[^0-9]/g, '');
           const amount = parseInt(rawAmt, 10);
-          let label = match[2].trim().replace(/^[-:–—]\s*/, '');
+          const label = match[2].trim().replace(/^[-:–—]\s*/, '');
 
           if (!isNaN(amount) && amount > 0 && label) {
             list.push({ id: `goal_${amount}_${i}`, amount, label });
@@ -730,7 +733,11 @@
 
     function updateDockDisplay() {
       const earned = getLiveSessionEarned();
-      updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
+      if (!streamerBaseline || streamerBaseline <= 0) {
+        updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Klicka på "Starta nytt pass".`);
+      } else {
+        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
+      }
 
       const nameInput = document.getElementById('streamerNameInput');
       if (nameInput && !isFocusingInput && currentStreamerName && currentStreamerName !== "Streamer") {
@@ -739,29 +746,16 @@
     }
 
     // ========================================================
-    // ⚡ REAL-TIME DATABASE LISTENERS & SUBSCRIPTION
+    // ⚡ REAL-TIME DATABASE LISTENERS
     // ========================================================
-    function subscribeToStreamer(streamerName) {
-      if (!streamerName) return;
-      const key = getStreamerKey(streamerName);
-
-      if (activeStreamerRef) {
-        activeStreamerRef.off();
-      }
-
-      activeStreamerRef = dbStreamersRef.child(key);
-      activeStreamerRef.on('value', (snap) => {
+    function listenToStreamer(key) {
+      if (!key) return;
+      dbStreamersRef.child(key).on('value', (snap) => {
         const data = snap.val();
+        // Only update if valid baseline data exists
         if (data && typeof data.baseline === 'number') {
           streamerBaseline = data.baseline;
           manualAdjustment = data.manualAdjustment || 0;
-          if (data.displayName) currentStreamerName = data.displayName;
-          renderGoalsLadder();
-          updateDockDisplay();
-        } else if (!data) {
-          // Pass was cleared or not yet created
-          streamerBaseline = 0;
-          manualAdjustment = 0;
           renderGoalsLadder();
           updateDockDisplay();
         }
@@ -770,16 +764,8 @@
 
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
-      let raw = null;
-
-      if (typeof data === 'number' || typeof data === 'string') {
-        raw = data;
-      } else if (data && typeof data === 'object') {
-        raw = data.total ?? data.amount ?? data.current;
-      }
-
-      if (raw !== null) {
-        const parsed = parseInt(String(raw).replace(/[^0-9]/g, ''), 10);
+      if (data && (typeof data.total === 'number' || typeof data.total === 'string')) {
+        const parsed = parseInt(String(data.total).replace(/[^0-9]/g, ''), 10);
         if (!isNaN(parsed)) {
           currentGlobalTotal = parsed;
           renderGoalsLadder();
@@ -790,29 +776,27 @@
 
     dbScheduleRef.on('value', (snap) => {
       const sData = snap.val();
-      if (sData && Array.isArray(sData.schedule) && (!currentStreamerName || currentStreamerName === "Streamer")) {
+      if (sData && sData.schedule && (!currentStreamerName || currentStreamerName === "Streamer")) {
         const now = new Date();
-        const activeSlot = sData.schedule.find(ev => {
+        const list = Array.isArray(sData.schedule) ? sData.schedule : Object.values(sData.schedule);
+        const activeSlot = list.find(ev => {
           if (!ev || !ev.start || !ev.end) return false;
           try {
             const s = new Date(ev.start.replace(' ', 'T'));
             const e = new Date(ev.end.replace(' ', 'T'));
             return !isNaN(s) && !isNaN(e) && now >= s && now < e;
-          } catch(err) {
-            return false;
-          }
+          } catch(e) { return false; }
         });
 
         if (activeSlot && activeSlot.name) {
-          currentStreamerName = activeSlot.name;
           const input = document.getElementById('streamerNameInput');
-          if (input) input.value = activeSlot.name;
-          subscribeToStreamer(currentStreamerName);
+          if (input && !isFocusingInput) input.value = activeSlot.name;
+          loadSavedStreamerPass(activeSlot.name);
         }
       }
     });
 
-    // Cross-tab synchronization via BroadcastChannel
+    // Cross-window BroadcastChannel Sync
     if (bus) {
       bus.onmessage = (e) => {
         const { type, text, hidden, baseline, streamer } = e.data || {};
@@ -825,14 +809,13 @@
         } else if (type === 'STREAMER_PASS_SYNC') {
           streamerBaseline = baseline;
           currentStreamerName = streamer;
-          subscribeToStreamer(currentStreamerName);
           renderGoalsLadder();
           updateDockDisplay();
         }
       };
     }
 
-    // Redundant cross-window fallback via StorageEvent
+    // Redundant Storage Event listener for OBS CEF
     window.addEventListener('storage', (e) => {
       if (e.key === STORAGE_KEY_GOALS && e.newValue) {
         parsedGoals = parseLinesToGoalObjects(e.newValue);
@@ -843,31 +826,25 @@
         isGoalsHidden = e.newValue === 'true';
         applyVisibilityState();
       } else if (e.key === STORAGE_KEY_STREAMER && e.newValue) {
-        currentStreamerName = e.newValue;
-        subscribeToStreamer(currentStreamerName);
+        loadSavedStreamerPass(e.newValue);
       }
     });
 
     // ========================================================
     // 🎛️ DOCK ACTIONS
     // ========================================================
-    let isFocusingInput = false;
     document.addEventListener('focusin', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isFocusingInput = true;
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    const streamerInputEl = document.getElementById('streamerNameInput');
-    if (streamerInputEl) {
-      streamerInputEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') loadSavedStreamerPass();
-      });
-    }
-
+    // 🟢 START PASS (Locks baseline to current total)
     function startFreshPassZero() {
       const inputEl = document.getElementById('streamerNameInput');
-      const nameIn = (inputEl ? inputEl.value : "").trim() || "Streamer";
-      currentStreamerName = nameIn;
+      const inputVal = inputEl ? inputEl.value.trim() : "";
+      currentStreamerName = inputVal || currentStreamerName || "Streamer";
+      if (inputEl) inputEl.value = currentStreamerName;
+
       const key = getStreamerKey(currentStreamerName);
 
       streamerBaseline = currentGlobalTotal;
@@ -886,7 +863,7 @@
         secret: WRITE_SECRET,
         timestamp: Date.now()
       }).then(() => {
-        subscribeToStreamer(currentStreamerName);
+        listenToStreamer(key);
         renderGoalsLadder();
         updateDockDisplay();
         if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
@@ -896,16 +873,23 @@
       });
     }
 
-    function loadSavedStreamerPass() {
+    // 🔄 LOAD SAVED PASS
+    function loadSavedStreamerPass(optionalTargetName) {
       const inputEl = document.getElementById('streamerNameInput');
-      const nameIn = (inputEl ? inputEl.value : "").trim() || "Streamer";
-      currentStreamerName = nameIn;
-      const key = getStreamerKey(currentStreamerName);
+      const inputVal = inputEl ? inputEl.value.trim() : "";
+      
+      const target = (optionalTargetName || inputVal || currentStreamerName || "Streamer").trim();
+      currentStreamerName = target;
+
+      if (inputEl && !isFocusingInput) {
+        inputEl.value = currentStreamerName;
+      }
 
       try {
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
       } catch(e) {}
 
+      const key = getStreamerKey(currentStreamerName);
       updateDockStatus(`Läser in pass för ${currentStreamerName}...`);
 
       dbStreamersRef.child(key).once('value').then((snap) => {
@@ -913,13 +897,12 @@
         if (data && typeof data.baseline === 'number') {
           streamerBaseline = data.baseline;
           manualAdjustment = data.manualAdjustment || 0;
-          subscribeToStreamer(currentStreamerName);
+          listenToStreamer(key);
           renderGoalsLadder();
           updateDockDisplay();
           if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-          updateDockStatus(`✅ Läste in pass för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
+          updateDockStatus(`✅ Sparat pass inläst för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
         } else {
-          subscribeToStreamer(currentStreamerName);
           updateDockStatus(`Inget sparat pass hittat för ${currentStreamerName}. Starta ett nytt.`);
         }
       }).catch(err => {
@@ -927,9 +910,10 @@
       });
     }
 
+    // 🗑️ CLEAR PASS
     function clearStreamerPass() {
       const key = getStreamerKey(currentStreamerName);
-      if (confirm(`Rensa passet för ${currentStreamerName}?`)) {
+      if (confirm(`Rensa passet för ${currentStreamerName}? Mätaren återställs till 0 kr.`)) {
         streamerBaseline = 0;
         manualAdjustment = 0;
 
@@ -944,6 +928,7 @@
       }
     }
 
+    // 💾 SAVE MILESTONES LOCALLY
     function saveGoalsFromTextarea() {
       const area = document.getElementById('goalsInputArea');
       const text = area ? area.value : "";
@@ -973,27 +958,26 @@
       }[t] || t));
     }
 
-    // Load initial local goals with default fallback
+    // Load initial local goals with fallback
     try {
       let cached = localStorage.getItem(STORAGE_KEY_GOALS);
-      if (!cached) {
-        cached = DEFAULT_GOALS_TEXT;
-        localStorage.setItem(STORAGE_KEY_GOALS, cached);
+      if (!cached || !cached.trim()) {
+        cached = DEFAULT_GOALS;
       }
       parsedGoals = parseLinesToGoalObjects(cached);
       const area = document.getElementById('goalsInputArea');
       if (area) area.value = cached;
     } catch(e) {
-      parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS_TEXT);
+      parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS);
     }
 
-    // Initialize layout & profile subscription
+    // Initial render
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
+    // Initial load for known streamer
     if (currentStreamerName && currentStreamerName !== "Streamer") {
-      subscribeToStreamer(currentStreamerName);
-      loadSavedStreamerPass();
+      loadSavedStreamerPass(currentStreamerName);
     }
   </script>
 </body>
