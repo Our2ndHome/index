@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OBS Button Deck</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background-color: #18181b;
+            color: #efeff1;
+            font-family: 'Inter', sans-serif;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        /* Top Status Bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #adadb8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #eb0400; /* Red when disconnected */
+        }
+
+        .dot.connected {
+            background-color: #00f593; /* Green when connected */
+        }
+
+        /* Button Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+        }
+
+        /* Stream-Deck Style Buttons */
+        .deck-btn {
+            background: #26262c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 3px solid #1f1f23;
+            border-radius: 8px;
+            color: #efeff1;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 16px 8px;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.1s ease;
+        }
+
+        .deck-btn:hover {
+            background: #323239;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .deck-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        /* Color tag on top of the button */
+        .deck-btn .tag {
+            width: 24px;
+            height: 4px;
+            border-radius: 2px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-bar">
+        <span>Controls</span>
+        <div class="status-indicator">
+            <span class="dot" id="dot"></span>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </div>
+
+    <!-- Buttons Render Here -->
+    <div class="grid" id="button-grid"></div>
+
+    <script>
+        // ================= BUTTON CONFIGURATION =================
+        // Edit or add buttons below!
+        // "source": Name of the Scene or Source in OBS that has the filter.
+        // "filter": The exact name of your Move Filter.
+        const BUTTONS = [
+            { label: "Zoom Cam",    source: "Camera",       filter: "Move Zoom",    color: "#9146FF" },
+            { label: "Reset Cam",   source: "Camera",       filter: "Move Reset",   color: "#00b5ad" },
+            { label: "Move Scene",  source: "Main Scene",   filter: "Move Layout",  color: "#f2711c" }
+        ];
+        // ========================================================
+
+        let ws = null;
+        let isConnected = false;
+
+        function connectOBS() {
+            // OBS WebSocket default address
+            ws = new WebSocket('ws://127.0.0.1:4455');
+
+            ws.onopen = () => {};
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+
+                // OpCode 0: Hello from OBS
+                if (msg.op === 0) {
+                    // Send Identify (OpCode 1)
+                    ws.send(JSON.stringify({
+                        op: 1,
+                        d: { rpcVersion: 1 }
+                    }));
+                }
+
+                // OpCode 2: Identified & ready
+                if (msg.op === 2) {
+                    isConnected = true;
+                    document.getElementById('dot').classList.add('connected');
+                    document.getElementById('status-text').textContent = "Ready";
+                }
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                document.getElementById('dot').classList.remove('connected');
+                document.getElementById('status-text').textContent = "Offline";
+                setTimeout(connectOBS, 3000); // Auto reconnect
+            };
+
+            ws.onerror = () => ws.close();
+        }
+
+        // Triggers the Move Filter via OBS WebSocket
+        function triggerFilter(sourceName, filterName) {
+            if (!isConnected) return;
+
+            // To guarantee the move animation triggers every time,
+            // we toggle it false then immediately true:
+            ws.send(JSON.stringify({
+                op: 6,
+                d: {
+                    requestType: "SetSourceFilterEnabled",
+                    requestId: "req-" + Date.now(),
+                    requestData: {
+                        sourceName: sourceName,
+                        filterName: filterName,
+                        filterEnabled: false
+                    }
+                }
+            }));
+
+            setTimeout(() => {
+                ws.send(JSON.stringify({
+                    op: 6,
+                    d: {
+                        requestType: "SetSourceFilterEnabled",
+                        requestId: "req-" + Date.now(),
+                        requestData: {
+                            sourceName: sourceName,
+                            filterName: filterName,
+                            filterEnabled: true
+                        }
+                    }
+                }));
+            }, 30);
+        }
+
+        // Render buttons onto screen
+        function renderButtons() {
+            const grid = document.getElementById('button-grid');
+            grid.innerHTML = '';
+
+            BUTTONS.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.className = 'deck-btn';
+                buttonEl.innerHTML = `
+                    <div class="tag" style="background-color: ${btn.color || '#9146FF'}"></div>
+                    <span>${btn.label}</span>
+                `;
+                buttonEl.onclick = () => triggerFilter(btn.source, btn.filter);
+                grid.appendChild(buttonEl);
+            });
+        }
+
+        renderButtons();
+        connectOBS();
+    </script>
+</body>
+</html>
