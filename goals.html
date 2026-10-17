@@ -235,7 +235,7 @@
     }
 
     .version-badge {
-      background: #ffffff;
+      background: #00ff88;
       color: #000000;
       font-size: 9px;
       font-weight: 900;
@@ -439,7 +439,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v3.3</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PORTABLE</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -448,7 +448,7 @@
       👁️ Göm milstolpar på stream
     </button>
 
-    <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
+    <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
 
     <!-- ⏱️ STREAMER PASS CONTROLS -->
     <div class="card-section">
@@ -522,8 +522,9 @@
     let currentStreamerName = "Streamer";
     let isGoalsHidden = false;
     let isFocusingInput = false;
+    let currentActiveStreamerRef = null;
 
-    // Load saved settings
+    // Load saved settings for this portable OBS instance
     try {
       const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
       if (savedStreamer) currentStreamerName = savedStreamer;
@@ -540,7 +541,15 @@
     }
     const dbStreamersRef = firebase.database().ref('streamers');
     const dbBossaRef = firebase.database().ref('bossa');
-    const dbScheduleRef = firebase.database().ref('schedule_data');
+
+    // Connection Status
+    firebase.database().ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        updateDockDisplay();
+      } else {
+        updateDockStatus("⚠️ Ansluter till Musikhjälpen...", true);
+      }
+    });
 
     function formatSEK(num) {
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
@@ -559,8 +568,7 @@
       return clean.length > 0 ? clean : "streamer";
     }
 
-    // 🛡️ CRITICAL FIX: If no pass is started (streamerBaseline <= 0), liveEarned is 0 kr.
-    // This stops the widget from counting Musikhjälpen's multi-million global total before your shift starts.
+    // 🛡️ Zero pass = 0 kr earned
     function getLiveSessionEarned() {
       if (!streamerBaseline || streamerBaseline <= 0) {
         return 0;
@@ -750,22 +758,43 @@
     // ========================================================
     function listenToStreamer(key) {
       if (!key) return;
-      dbStreamersRef.child(key).on('value', (snap) => {
+
+      if (currentActiveStreamerRef) {
+        currentActiveStreamerRef.off();
+      }
+
+      currentActiveStreamerRef = dbStreamersRef.child(key);
+      currentActiveStreamerRef.on('value', (snap) => {
         const data = snap.val();
-        // Only update if valid baseline data exists
         if (data && typeof data.baseline === 'number') {
           streamerBaseline = data.baseline;
           manualAdjustment = data.manualAdjustment || 0;
+          if (data.displayName) currentStreamerName = data.displayName;
+
+          if (data.goalsText && typeof data.goalsText === 'string') {
+            parsedGoals = parseLinesToGoalObjects(data.goalsText);
+            const area = document.getElementById('goalsInputArea');
+            if (area && !isFocusingInput) area.value = data.goalsText;
+          }
+
           renderGoalsLadder();
           updateDockDisplay();
         }
       });
     }
 
+    // Musikhjälpen global donation counter
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
-      if (data && (typeof data.total === 'number' || typeof data.total === 'string')) {
-        const parsed = parseInt(String(data.total).replace(/[^0-9]/g, ''), 10);
+      let raw = null;
+      if (typeof data === 'number' || typeof data === 'string') {
+        raw = data;
+      } else if (data && typeof data === 'object') {
+        raw = data.total ?? data.amount ?? data.current;
+      }
+
+      if (raw !== null) {
+        const parsed = parseInt(String(raw).replace(/[^0-9]/g, ''), 10);
         if (!isNaN(parsed)) {
           currentGlobalTotal = parsed;
           renderGoalsLadder();
@@ -774,29 +803,7 @@
       }
     });
 
-    dbScheduleRef.on('value', (snap) => {
-      const sData = snap.val();
-      if (sData && sData.schedule && (!currentStreamerName || currentStreamerName === "Streamer")) {
-        const now = new Date();
-        const list = Array.isArray(sData.schedule) ? sData.schedule : Object.values(sData.schedule);
-        const activeSlot = list.find(ev => {
-          if (!ev || !ev.start || !ev.end) return false;
-          try {
-            const s = new Date(ev.start.replace(' ', 'T'));
-            const e = new Date(ev.end.replace(' ', 'T'));
-            return !isNaN(s) && !isNaN(e) && now >= s && now < e;
-          } catch(e) { return false; }
-        });
-
-        if (activeSlot && activeSlot.name) {
-          const input = document.getElementById('streamerNameInput');
-          if (input && !isFocusingInput) input.value = activeSlot.name;
-          loadSavedStreamerPass(activeSlot.name);
-        }
-      }
-    });
-
-    // Cross-window BroadcastChannel Sync
+    // Sync between Dock and Overlay in Portable OBS
     if (bus) {
       bus.onmessage = (e) => {
         const { type, text, hidden, baseline, streamer } = e.data || {};
@@ -815,7 +822,7 @@
       };
     }
 
-    // Redundant Storage Event listener for OBS CEF
+    // Local Storage backup sync
     window.addEventListener('storage', (e) => {
       if (e.key === STORAGE_KEY_GOALS && e.newValue) {
         parsedGoals = parseLinesToGoalObjects(e.newValue);
@@ -838,7 +845,7 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // 🟢 START PASS (Locks baseline to current total)
+    // 🟢 START PASS (Resets counter to 0 kr for this streamer)
     function startFreshPassZero() {
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -846,7 +853,6 @@
       if (inputEl) inputEl.value = currentStreamerName;
 
       const key = getStreamerKey(currentStreamerName);
-
       streamerBaseline = currentGlobalTotal;
       manualAdjustment = 0;
 
@@ -856,10 +862,14 @@
 
       updateDockStatus(`Startar pass för ${currentStreamerName}...`);
 
+      const area = document.getElementById('goalsInputArea');
+      const goalsText = area ? area.value : "";
+
       dbStreamersRef.child(key).set({
         displayName: currentStreamerName,
         baseline: streamerBaseline,
         manualAdjustment: 0,
+        goalsText: goalsText,
         secret: WRITE_SECRET,
         timestamp: Date.now()
       }).then(() => {
@@ -897,12 +907,20 @@
         if (data && typeof data.baseline === 'number') {
           streamerBaseline = data.baseline;
           manualAdjustment = data.manualAdjustment || 0;
+
+          if (data.goalsText && typeof data.goalsText === 'string') {
+            parsedGoals = parseLinesToGoalObjects(data.goalsText);
+            const area = document.getElementById('goalsInputArea');
+            if (area) area.value = data.goalsText;
+          }
+
           listenToStreamer(key);
           renderGoalsLadder();
           updateDockDisplay();
           if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
           updateDockStatus(`✅ Sparat pass inläst för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
         } else {
+          listenToStreamer(key);
           updateDockStatus(`Inget sparat pass hittat för ${currentStreamerName}. Starta ett nytt.`);
         }
       }).catch(err => {
@@ -928,7 +946,7 @@
       }
     }
 
-    // 💾 SAVE MILESTONES LOCALLY
+    // 💾 SAVE MILESTONES
     function saveGoalsFromTextarea() {
       const area = document.getElementById('goalsInputArea');
       const text = area ? area.value : "";
@@ -949,6 +967,12 @@
         bus.postMessage({ type: 'LOCAL_GOALS_UPDATED', text: text });
       }
 
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        goalsText: text,
+        secret: WRITE_SECRET
+      }).catch(() => {});
+
       updateDockStatus(`✅ Sparade dina ${goals.length} milstolpar!`);
     }
 
@@ -956,6 +980,12 @@
       return String(str || '').replace(/[&<>'"]/g, t => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
       }[t] || t));
+    }
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        renderGoalsLadder();
+      });
     }
 
     // Load initial local goals with fallback
