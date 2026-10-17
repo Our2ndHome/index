@@ -20,29 +20,28 @@
             font-family: 'Inter', "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
 
-        /* Anchors the widget to the bottom-left with max 600px width */
+        /* Anchors the widget with max 1200px width and 200px height */
         #chat-container {
             position: absolute;
             bottom: 20px;
             left: 20px;
-            max-width: 600px;
-            max-height: 300px;
+            max-width: 1200px;
+            max-height: 200px;
             pointer-events: none;
         }
 
         /* 
            Flat black background with 0.9 opacity.
-           No border, no shadow, no glow.
-           Expands up to 600px wide.
+           Expands up to 1200px wide and 200px tall.
         */
         .chat-card {
             display: inline-block;
             width: fit-content;
             height: auto;
-            max-width: 600px;
-            max-height: 300px;
+            max-width: 1200px;
+            max-height: 200px;
             overflow: hidden;
-            background: rgba(0, 0, 0, 0.90); /* Pure black at 0.9 opacity */
+            background: rgba(0, 0, 0, 0.90);
             border: none;
             border-radius: 6px;
             padding: 8px 12px;
@@ -131,8 +130,8 @@
 
     <script>
         // ================= CONFIGURATION =================
-        const BASE_DISPLAY_TIME = 2500;  // Normal message display duration (ms)
-        const FAST_DISPLAY_TIME = 1000;  // Speed if chat active (queue > 2) (ms)
+        const BASE_DISPLAY_TIME = 3000;  // 3 seconds per message (ms)
+        const FAST_DISPLAY_TIME = 1500;  // Accelerated time if chat is backed up (ms)
         const ANIMATION_DURATION = 300;  // CSS animation speed (ms)
         const PAUSE_BETWEEN_MSGS = 200;  // Pause before showing next message (ms)
         const MAX_QUEUE_LIMIT = 15;      // Max queued backlog
