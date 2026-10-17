@@ -90,9 +90,9 @@
     .vertical-ladder {
       position: relative;
       height: var(--ladder-height);
-      width: 340px;
+      width: 360px;
       display: flex;
-      flex-direction: column-reverse; /* Bottom is lowest goal, climbs to top! */
+      flex-direction: column-reverse; /* Bottom is lowest milestone */
       justify-content: space-between;
     }
 
@@ -114,19 +114,19 @@
       background: var(--primary);
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.85);
       z-index: 2;
-      height: 0%;
+      height: 0px; /* Measured precisely in px */
       transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .ladder-cursor {
       position: absolute;
-      bottom: 0%;
+      bottom: 0px; /* Measured precisely in px */
       left: 83px;
       width: 12px;
       height: 12px;
       background: var(--primary);
       box-shadow: 0 0 10px var(--primary);
-      transform: translate(-50%, 50%);
+      transform: translate(-50%, 50%); /* Centers the dot exactly on the coordinate */
       z-index: 5;
       border-radius: 50%;
       transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
@@ -425,7 +425,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.4</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.5</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -436,7 +436,7 @@
 
     <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
 
-    <!-- ⏱️ STREAMER SHIFT TRACKING (Saves per streamer) -->
+    <!-- ⏱️ STREAMER SHIFT TRACKING -->
     <div class="card-section">
       <span class="section-title">⏱️ Streamer Pass-Kontroll</span>
       
@@ -459,7 +459,7 @@
       </button>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (NATURAL ORDER: LOWEST FIRST) -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (LOCAL STORAGE) -->
     <div class="card-section">
       <span class="section-title">✏️ Redigera dina milstolpar (Sparas i ditt OBS)</span>
       <div class="hint-text">
@@ -494,12 +494,12 @@
     }
 
     let parsedGoals = [];
-    let currentGlobalTotal = 400;
-    let sessionBaseline = 0; // Starts strictly at 0 kr
+    let currentGlobalTotal = 0; // Starts strictly at 0 (no fake defaults)
+    let sessionBaseline = 0;    // Starts strictly at 0 kr
     let currentStreamerName = "Streamer";
     let isGoalsHidden = false;
 
-    // Load local settings & visibility
+    // Load local storage preferences
     try {
       const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
       if (savedStreamer) currentStreamerName = savedStreamer;
@@ -517,7 +517,6 @@
       isGoalsHidden = false;
     }
 
-    // Apply visibility immediately
     applyVisibilityState();
 
     // Firebase Init
@@ -582,7 +581,7 @@
     }
 
     // ========================================================
-    // 🧠 LINE-BY-LINE PARSER (LOWEST GOAL AT BOTTOM, CLIMBS TO TOP)
+    // 🧠 LINE-BY-LINE PARSER (LOWEST GOAL AT BOTTOM, CLIMBS UP)
     // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
@@ -605,12 +604,11 @@
         }
       }
 
-      // Sort ascending so lowest amount is at the bottom, highest at top
+      // Sort ascending so lowest amount sits at the bottom
       list.sort((a, b) => a.amount - b.amount);
       return list;
     }
 
-    // Helper: Streamer Persistent Reached Goals
     function getStreamerReachedGoalsKey() {
       return `mh_reached_goals_${currentStreamerName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     }
@@ -634,12 +632,10 @@
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER (SOLID BOLD WHITE)
+    // 🎨 RENDER LADDER WITH EXACT PIXEL-PERFECT TICK CENTERING
     // ========================================================
     function renderGoalsLadder() {
       const ladder = document.getElementById('goalsLadder');
-      const fillEl = document.getElementById('ladderFill');
-      const cursorEl = document.getElementById('ladderCursor');
       if (!ladder) return;
 
       const oldNodes = ladder.querySelectorAll('.ladder-node');
@@ -647,12 +643,10 @@
 
       if (parsedGoals.length === 0) return;
 
-      // Only count what came in under this streamer's shift!
       const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
       const reachedIds = loadReachedGoalIds();
 
       parsedGoals.forEach((goal) => {
-        // A goal is reached if live session passed it OR if saved in this streamer's memory
         const isReached = sessionEarned >= goal.amount || reachedIds.includes(goal.id);
 
         if (isReached && !reachedIds.includes(goal.id)) {
@@ -675,43 +669,62 @@
         ladder.appendChild(nodeEl);
       });
 
-      calculateLadderProgress(fillEl, cursorEl, sessionEarned);
+      // Align dot and fill line to exact tick mark pixels on next animation frame
+      requestAnimationFrame(() => {
+        updateLadderProgressPixels(sessionEarned);
+      });
     }
 
-    function calculateLadderProgress(fillEl, cursorEl, sessionEarned) {
-      if (!fillEl || !cursorEl || parsedGoals.length === 0) return;
+    // 🎯 PIXEL-PERFECT ALIGNMENT: Measures direct bounding boxes from DOM
+    function updateLadderProgressPixels(sessionEarned) {
+      const ladder = document.getElementById('goalsLadder');
+      const fillEl = document.getElementById('ladderFill');
+      const cursorEl = document.getElementById('ladderCursor');
+      if (!ladder || !fillEl || !cursorEl || parsedGoals.length === 0) return;
+
+      const nodes = Array.from(ladder.querySelectorAll('.ladder-node'));
+      if (nodes.length !== parsedGoals.length) return;
+
+      const ladderRect = ladder.getBoundingClientRect();
+      const ladderHeight = ladderRect.height;
+      if (ladderHeight <= 0) return;
+
+      // Extract the exact vertical center of every divider tick mark relative to ladder bottom
+      const nodePixelYs = nodes.map(nodeEl => {
+        const tick = nodeEl.querySelector('.node-divider-tick') || nodeEl;
+        const tickRect = tick.getBoundingClientRect();
+        return Math.max(0, ladderRect.bottom - (tickRect.top + tickRect.height / 2));
+      });
 
       const totalNodes = parsedGoals.length;
-      const maxAmount = parsedGoals[totalNodes - 1].amount;
-
-      let progressPct = 0;
+      let targetPixelY = 0;
 
       if (sessionEarned <= 0) {
-        progressPct = 0;
-      } else if (sessionEarned >= maxAmount) {
-        progressPct = 100;
+        targetPixelY = 0;
+      } else if (sessionEarned >= parsedGoals[totalNodes - 1].amount) {
+        targetPixelY = nodePixelYs[totalNodes - 1]; // Center on top milestone
       } else {
         let prevAmount = 0;
-        let prevPct = 0;
+        let prevY = 0;
 
         for (let i = 0; i < totalNodes; i++) {
-          const currentGoalAmount = parsedGoals[i].amount;
-          const currentGoalPct = ((i + 0.5) / totalNodes) * 100;
+          const goalAmount = parsedGoals[i].amount;
+          const currentY = nodePixelYs[i];
 
-          if (sessionEarned <= currentGoalAmount) {
-            const fraction = (sessionEarned - prevAmount) / (currentGoalAmount - prevAmount);
-            progressPct = prevPct + (fraction * (currentGoalPct - prevPct));
+          if (sessionEarned <= goalAmount) {
+            const ratio = (sessionEarned - prevAmount) / (goalAmount - prevAmount);
+            targetPixelY = prevY + (currentY - prevY) * ratio;
             break;
           }
 
-          prevAmount = currentGoalAmount;
-          prevPct = currentGoalPct;
+          prevAmount = goalAmount;
+          prevY = currentY;
         }
       }
 
-      progressPct = Math.min(100, Math.max(0, progressPct));
-      fillEl.style.height = `${progressPct}%`;
-      cursorEl.style.bottom = `${progressPct}%`;
+      // Apply exact pixel heights
+      fillEl.style.height = `${targetPixelY.toFixed(1)}px`;
+      cursorEl.style.bottom = `${targetPixelY.toFixed(1)}px`;
     }
 
     function updateDockSessionStatus() {
@@ -734,10 +747,13 @@
     // ========================================================
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
-      if (data && typeof data.total === 'number') {
-        currentGlobalTotal = data.total;
-        renderGoalsLadder();
-        updateDockSessionStatus();
+      if (data && (typeof data.total === 'number' || typeof data.total === 'string')) {
+        const parsed = parseInt(data.total, 10);
+        if (!isNaN(parsed)) {
+          currentGlobalTotal = parsed;
+          renderGoalsLadder();
+          updateDockSessionStatus();
+        }
       }
     });
 
@@ -758,7 +774,6 @@
       }
     });
 
-    // Local BroadcastChannel (Syncs dock to overlay inside the same OBS)
     if (bus) {
       bus.onmessage = (e) => {
         const { type, baseline, streamer, text, hidden } = e.data || {};
@@ -797,7 +812,6 @@
       try {
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
         localStorage.setItem(STORAGE_KEY_BASELINE, sessionBaseline.toString());
-        // Reset reached goals memory for this streamer's new shift
         localStorage.setItem(getStreamerReachedGoalsKey(), JSON.stringify([]));
       } catch(e) {}
 
@@ -827,7 +841,7 @@
         bus.postMessage({ type: 'SESSION_BASELINE_UPDATED', baseline: sessionBaseline, streamer: currentStreamerName });
       }
 
-      updateDockStatus(`✅ Startbelopp manuellt satt till ${formatSEK(sessionBaseline)}.`);
+      updateDockStatus(`✅ Startbelopp satt till ${formatSEK(sessionBaseline)}.`);
     }
 
     function setBaselineToCurrentTotal() {
@@ -864,7 +878,7 @@
       }[t] || t));
     }
 
-    // Load initial cached local goals
+    // Load initial local goals
     try {
       const cached = localStorage.getItem(STORAGE_KEY_GOALS) || "";
       parsedGoals = parseLinesToGoalObjects(cached);
@@ -873,6 +887,7 @@
     } catch(e) {}
 
     renderGoalsLadder();
+    window.addEventListener('resize', renderGoalsLadder);
   </script>
 </body>
 </html>
