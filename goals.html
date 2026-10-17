@@ -58,7 +58,7 @@
       pointer-events: none;
     }
 
-    /* DEFAULT (LEFT SIDE): 20px from canvas edge, vertically centered */
+    /* DEFAULT (LEFT SIDE): 20px from left canvas edge, vertically centered */
     .goals-widget-container {
       position: absolute;
       top: 50%;
@@ -68,7 +68,7 @@
       display: flex;
       flex-direction: column;
       z-index: 1000;
-      transition: opacity 0.35s ease, visibility 0.35s ease;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
       opacity: 1;
       visibility: visible;
     }
@@ -84,7 +84,7 @@
       visibility: hidden !important;
     }
 
-    /* MILSTOLPAR HEADER: Dead-center aligned with the vertical line */
+    /* MILSTOLPAR HEADER: Centered dead-on over the vertical line */
     .goals-header {
       position: relative;
       left: 83px;
@@ -98,12 +98,13 @@
       text-transform: uppercase;
       margin-bottom: 16px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+      transition: left 0.25s ease;
     }
 
+    /* In reversed mode, container is 360px wide and line is at 360px - 83px = 277px */
     .goals-widget-container.is-reversed .goals-header {
-      left: auto;
-      right: 83px;
-      transform: translateX(50%);
+      left: calc(360px - 83px);
+      transform: translateX(-50%);
     }
 
     /* VERTICAL LADDER TRACK */
@@ -511,17 +512,17 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.5</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.6</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- 👁️ HIDE / SHOW & ↔️ HORIZONTAL REVERSE DOCK BUTTONS -->
+    <!-- 👁️ HIDE / SHOW & ↔️ SPEGLA DOCK BUTTONS -->
     <div style="display:flex; gap:6px; margin-bottom:8px;">
       <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
         👁️ Göm milstolpar
       </button>
       <button id="btnToggleReverse" class="btn-toggle-view" onclick="toggleReverseLayout()">
-        ↔️ Flytta till höger
+        ↔️ Spegla (Höger)
       </button>
     </div>
 
@@ -636,7 +637,7 @@
     }
 
     applyVisibilityState();
-    applyReversedState();
+    applyReversedState(false); // Initial instantaneous render (no fade)
 
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
@@ -719,13 +720,51 @@
     }
 
     // ========================================================
-    // ↔️ HORIZONTAL REVERSE & POSITION CONTROLLER
+    // ↔️ HORIZONTAL REVERSE & POSITION CONTROLLER (WITH FADE)
     // ========================================================
-    function applyReversedState() {
+    function updateReverseButtonUI() {
+      const btn = document.getElementById('btnToggleReverse');
+      if (btn) {
+        if (isReversed) {
+          btn.innerText = "↔️ Spegla (Vänster)";
+          btn.style.borderColor = "#00ff88";
+          btn.style.color = "#00ff88";
+        } else {
+          btn.innerText = "↔️ Spegla (Höger)";
+          btn.style.borderColor = "#3a3a44";
+          btn.style.color = "#ffffff";
+        }
+      }
+    }
+
+    function applyReversedState(withFade = false) {
       const container = document.getElementById('goalsWidgetContainer');
       const ladder = document.getElementById('goalsLadder');
 
-      if (container && ladder) {
+      if (!container || !ladder) return;
+
+      if (withFade && !isGoalsHidden) {
+        // 1. Smooth Fade Out
+        container.style.opacity = '0';
+
+        setTimeout(() => {
+          // 2. Flip position and classes while invisible
+          if (isReversed) {
+            container.classList.add('is-reversed');
+            ladder.classList.add('is-reversed');
+          } else {
+            container.classList.remove('is-reversed');
+            ladder.classList.remove('is-reversed');
+          }
+          renderGoalsLadder();
+
+          // 3. Smooth Fade Back In
+          requestAnimationFrame(() => {
+            container.style.opacity = '1';
+          });
+        }, 260);
+      } else {
+        // Direct instant apply (on load or when hidden)
         if (isReversed) {
           container.classList.add('is-reversed');
           ladder.classList.add('is-reversed');
@@ -733,22 +772,11 @@
           container.classList.remove('is-reversed');
           ladder.classList.remove('is-reversed');
         }
+        container.style.opacity = isGoalsHidden ? '0' : '1';
+        renderGoalsLadder();
       }
 
-      const btn = document.getElementById('btnToggleReverse');
-      if (btn) {
-        if (isReversed) {
-          btn.innerText = "↔️ Placering: Höger";
-          btn.style.borderColor = "#00ff88";
-          btn.style.color = "#00ff88";
-        } else {
-          btn.innerText = "↔️ Placering: Vänster";
-          btn.style.borderColor = "#3a3a44";
-          btn.style.color = "#ffffff";
-        }
-      }
-
-      renderGoalsLadder();
+      updateReverseButtonUI();
     }
 
     function toggleReverseLayout() {
@@ -757,13 +785,13 @@
         localStorage.setItem(STORAGE_KEY_REVERSED, isReversed ? 'true' : 'false');
       } catch(e) {}
 
-      applyReversedState();
+      applyReversedState(true);
 
       if (bus) {
         bus.postMessage({ type: 'GOALS_REVERSED_TOGGLED', reversed: isReversed });
       }
 
-      updateDockStatus(isReversed ? "➡️ Widget flyttad till höger sida (speglad)" : "⬅️ Widget flyttad till vänster sida (standard)");
+      updateDockStatus(isReversed ? "➡️ Widget flyttad till höger (speglad)" : "⬅️ Widget flyttad till vänster (standard)");
     }
 
     // ========================================================
@@ -991,7 +1019,7 @@
           applyVisibilityState();
         } else if (type === 'GOALS_REVERSED_TOGGLED') {
           isReversed = reversed;
-          applyReversedState();
+          applyReversedState(true);
         } else if (type === 'STREAMER_PASS_SYNC') {
           streamerBaseline = baseline;
           currentStreamerName = streamer;
@@ -1012,7 +1040,7 @@
         applyVisibilityState();
       } else if (e.key === STORAGE_KEY_REVERSED) {
         isReversed = e.newValue === 'true';
-        applyReversedState();
+        applyReversedState(true);
       } else if (e.key === STORAGE_KEY_STREAMER && e.newValue) {
         loadSavedStreamerPass(e.newValue);
       }
