@@ -66,6 +66,14 @@
       display: flex;
       flex-direction: column;
       z-index: 1000;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .goals-widget-container.is-hidden {
+      opacity: 0 !important;
+      visibility: hidden !important;
     }
 
     .goals-header {
@@ -84,7 +92,7 @@
       height: var(--ladder-height);
       width: 340px;
       display: flex;
-      flex-direction: column-reverse;
+      flex-direction: column-reverse; /* Bottom is lowest goal, climbs to top! */
       justify-content: space-between;
     }
 
@@ -186,7 +194,7 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
     }
 
-    /* REACHED MILESTONES */
+    /* REACHED MILESTONES (PERMANENT CHECKMARK) */
     .ladder-node.reached .node-amount {
       color: var(--primary) !important;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 8px rgba(172, 230, 0, 0.6);
@@ -353,6 +361,22 @@
     }
     .btn-resync:hover { background: #00ff88; color: #000000; }
 
+    .btn-toggle-view {
+      background: #1e1e24;
+      border: 1px solid #3a3a44;
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .btn-toggle-view:hover { background: #2c2c36; }
+
     .btn-primary-action {
       background: #ffffff;
       color: #000000;
@@ -384,14 +408,14 @@
        📺 1. STREAM OVERLAY VIEW (#overlay)
        ======================================================== -->
   <div id="overlayRoot">
-    <div class="goals-widget-container">
+    <div class="goals-widget-container" id="goalsWidgetContainer">
       <div class="goals-header">MILSTOLPAR</div>
 
       <div class="vertical-ladder" id="goalsLadder">
         <div class="ladder-line-bg"></div>
         <div class="ladder-line-fill" id="ladderFill"></div>
         <div class="ladder-cursor" id="ladderCursor"></div>
-        <!-- Milestones dynamically built here -->
+        <!-- Milestones populated dynamically from bottom to top -->
       </div>
     </div>
   </div>
@@ -401,13 +425,18 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.3</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v2.4</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
+    <!-- 👁️ HIDE / SHOW GOALS TOGGLE BUTTON -->
+    <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
+      👁️ Göm milstolpar på stream
+    </button>
+
     <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
 
-    <!-- ⏱️ STREAMER SESSION TRACKING -->
+    <!-- ⏱️ STREAMER SHIFT TRACKING (Saves per streamer) -->
     <div class="card-section">
       <span class="section-title">⏱️ Streamer Pass-Kontroll</span>
       
@@ -426,16 +455,16 @@
       </div>
 
       <button class="btn-resync" style="margin-top:6px;" onclick="startNewStreamerShift()">
-        ⏱️ Starta pass med detta startbelopp
+        ⏱️ Starta pass för denna streamer
       </button>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (LOCAL STORAGE - NO CONFLICTS) -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (NATURAL ORDER: LOWEST FIRST) -->
     <div class="card-section">
       <span class="section-title">✏️ Redigera dina milstolpar (Sparas i ditt OBS)</span>
       <div class="hint-text">
-        Format: <code>Belopp - Beskrivning</code><br>
-        Dina milstolpar sparas lokalt i ditt eget OBS och krockar inte med andra streamers.
+        Skriv det <b>lägsta målet överst</b> och det högsta underst.<br>
+        Format: <code>Belopp - Beskrivning</code>
       </div>
       
       <textarea id="goalsInputArea" placeholder="500 kr - Äta stark sås&#10;1000 kr - Spela skräckspel&#10;2500 kr - Hårfärgning&#10;5000 kr - 12h Stream förlängning&#10;10000 kr - Slutmål"></textarea>
@@ -451,6 +480,7 @@
     const STORAGE_KEY_GOALS = "mh_overlay_local_goals";
     const STORAGE_KEY_BASELINE = "mh_goals_session_baseline";
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
+    const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
@@ -467,8 +497,9 @@
     let currentGlobalTotal = 400;
     let sessionBaseline = 0; // Starts strictly at 0 kr
     let currentStreamerName = "Streamer";
+    let isGoalsHidden = false;
 
-    // Load local streamer settings
+    // Load local settings & visibility
     try {
       const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
       if (savedStreamer) currentStreamerName = savedStreamer;
@@ -479,11 +510,17 @@
       } else {
         sessionBaseline = 0;
       }
+
+      isGoalsHidden = localStorage.getItem(STORAGE_KEY_HIDDEN) === 'true';
     } catch(e) {
       sessionBaseline = 0;
+      isGoalsHidden = false;
     }
 
-    // Firebase Init (Only listens to live total - does not overwrite goals)
+    // Apply visibility immediately
+    applyVisibilityState();
+
+    // Firebase Init
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
@@ -503,14 +540,57 @@
     }
 
     // ========================================================
-    // 🧠 LINE-BY-LINE PARSER
+    // 👁️ VISIBILITY CONTROLLER
+    // ========================================================
+    function applyVisibilityState() {
+      const container = document.getElementById('goalsWidgetContainer');
+      if (container) {
+        if (isGoalsHidden) {
+          container.classList.add('is-hidden');
+        } else {
+          container.classList.remove('is-hidden');
+        }
+      }
+
+      const btn = document.getElementById('btnToggleVisibility');
+      if (btn) {
+        if (isGoalsHidden) {
+          btn.innerText = "👁️ Visa milstolpar på stream";
+          btn.style.borderColor = "#00ff88";
+          btn.style.color = "#00ff88";
+        } else {
+          btn.innerText = "👁️ Göm milstolpar på stream";
+          btn.style.borderColor = "#3a3a44";
+          btn.style.color = "#ffffff";
+        }
+      }
+    }
+
+    function toggleGoalsVisibility() {
+      isGoalsHidden = !isGoalsHidden;
+      try {
+        localStorage.setItem(STORAGE_KEY_HIDDEN, isGoalsHidden ? 'true' : 'false');
+      } catch(e) {}
+
+      applyVisibilityState();
+
+      if (bus) {
+        bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
+      }
+
+      updateDockStatus(isGoalsHidden ? "🙈 Milstolpar döljs på din stream" : "👀 Milstolpar visas på din stream");
+    }
+
+    // ========================================================
+    // 🧠 LINE-BY-LINE PARSER (LOWEST GOAL AT BOTTOM, CLIMBS TO TOP)
     // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
       const list = [];
 
-      for (const line of lines) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
         const match = line.match(/^([0-9\s]+)(?:kr|:-)?\s*[-:–—]\s*(.+)$/i)
                    || line.match(/^([0-9\s]+)\s+(.+)$/);
 
@@ -520,13 +600,37 @@
           const label = match[2].trim();
 
           if (!isNaN(amount) && amount > 0 && label) {
-            list.push({ amount, label });
+            list.push({ id: `goal_${amount}_${i}`, amount, label });
           }
         }
       }
 
+      // Sort ascending so lowest amount is at the bottom, highest at top
       list.sort((a, b) => a.amount - b.amount);
       return list;
+    }
+
+    // Helper: Streamer Persistent Reached Goals
+    function getStreamerReachedGoalsKey() {
+      return `mh_reached_goals_${currentStreamerName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    }
+
+    function loadReachedGoalIds() {
+      try {
+        return JSON.parse(localStorage.getItem(getStreamerReachedGoalsKey()) || '[]');
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function saveReachedGoalId(goalId) {
+      try {
+        const list = loadReachedGoalIds();
+        if (!list.includes(goalId)) {
+          list.push(goalId);
+          localStorage.setItem(getStreamerReachedGoalsKey(), JSON.stringify(list));
+        }
+      } catch(e) {}
     }
 
     // ========================================================
@@ -543,10 +647,17 @@
 
       if (parsedGoals.length === 0) return;
 
+      // Only count what came in under this streamer's shift!
       const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
+      const reachedIds = loadReachedGoalIds();
 
       parsedGoals.forEach((goal) => {
-        const isReached = sessionEarned >= goal.amount;
+        // A goal is reached if live session passed it OR if saved in this streamer's memory
+        const isReached = sessionEarned >= goal.amount || reachedIds.includes(goal.id);
+
+        if (isReached && !reachedIds.includes(goal.id)) {
+          saveReachedGoalId(goal.id);
+        }
 
         const nodeEl = document.createElement('div');
         nodeEl.className = `ladder-node ${isReached ? 'reached' : ''}`;
@@ -605,7 +716,7 @@
 
     function updateDockSessionStatus() {
       const sessionEarned = Math.max(0, currentGlobalTotal - sessionBaseline);
-      updateDockStatus(`${currentStreamerName}: ${formatSEK(sessionEarned)} insamlat (Start: ${formatSEK(sessionBaseline)} · Bössa: ${formatSEK(currentGlobalTotal)})`);
+      updateDockStatus(`${currentStreamerName}: +${formatSEK(sessionEarned)} insamlat (Start: ${formatSEK(sessionBaseline)} · Bössa: ${formatSEK(currentGlobalTotal)})`);
 
       const nameInput = document.getElementById('streamerNameInput');
       if (nameInput && !isFocusingInput && currentStreamerName) {
@@ -647,10 +758,10 @@
       }
     });
 
-    // Local BroadcastChannel: Syncs dock to overlay inside the same Portable OBS
+    // Local BroadcastChannel (Syncs dock to overlay inside the same OBS)
     if (bus) {
       bus.onmessage = (e) => {
-        const { type, baseline, streamer, text } = e.data || {};
+        const { type, baseline, streamer, text, hidden } = e.data || {};
         if (type === 'SESSION_BASELINE_UPDATED') {
           sessionBaseline = baseline;
           currentStreamerName = streamer || currentStreamerName;
@@ -659,12 +770,15 @@
         } else if (type === 'LOCAL_GOALS_UPDATED') {
           parsedGoals = parseLinesToGoalObjects(text);
           renderGoalsLadder();
+        } else if (type === 'GOALS_VISIBILITY_TOGGLED') {
+          isGoalsHidden = hidden;
+          applyVisibilityState();
         }
       };
     }
 
     // ========================================================
-    // 🎛️ DOCK ACTIONS (LOCAL ONLY)
+    // 🎛️ DOCK ACTIONS
     // ========================================================
     let isFocusingInput = false;
     document.addEventListener('focusin', (e) => {
@@ -683,6 +797,8 @@
       try {
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
         localStorage.setItem(STORAGE_KEY_BASELINE, sessionBaseline.toString());
+        // Reset reached goals memory for this streamer's new shift
+        localStorage.setItem(getStreamerReachedGoalsKey(), JSON.stringify([]));
       } catch(e) {}
 
       renderGoalsLadder();
@@ -711,7 +827,7 @@
         bus.postMessage({ type: 'SESSION_BASELINE_UPDATED', baseline: sessionBaseline, streamer: currentStreamerName });
       }
 
-      updateDockStatus(`✅ Startbelopp satt till ${formatSEK(sessionBaseline)}.`);
+      updateDockStatus(`✅ Startbelopp manuellt satt till ${formatSEK(sessionBaseline)}.`);
     }
 
     function setBaselineToCurrentTotal() {
@@ -720,7 +836,6 @@
       setCustomBaseline();
     }
 
-    // 💾 SAVES STRICTLY TO LOCAL OBS (NEVER OVERWRITES OTHER STREAMERS)
     function saveGoalsFromTextarea() {
       const text = document.getElementById('goalsInputArea').value;
       const goals = parseLinesToGoalObjects(text);
@@ -749,7 +864,7 @@
       }[t] || t));
     }
 
-    // Load initial local goals
+    // Load initial cached local goals
     try {
       const cached = localStorage.getItem(STORAGE_KEY_GOALS) || "";
       parsedGoals = parseLinesToGoalObjects(cached);
