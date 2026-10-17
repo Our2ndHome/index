@@ -92,7 +92,7 @@
       height: var(--ladder-height);
       width: 360px;
       display: flex;
-      flex-direction: column-reverse; /* Bottom is lowest milestone */
+      flex-direction: column-reverse; /* Lowest milestone at bottom */
       justify-content: space-between;
     }
 
@@ -430,7 +430,7 @@
         <div class="ladder-line-bg"></div>
         <div class="ladder-line-fill" id="ladderFill"></div>
         <div class="ladder-cursor" id="ladderCursor"></div>
-        <!-- Milestones dynamically built from bottom to top -->
+        <!-- Milestones built dynamically from bottom to top -->
       </div>
     </div>
   </div>
@@ -440,7 +440,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v3.0</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v3.1</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -451,7 +451,7 @@
 
     <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
 
-    <!-- ⏱️ STREAMER PASS CONTROLS (CLOUD SYNCED) -->
+    <!-- ⏱️ STREAMER PASS CONTROLS (CLOUD SYNCED & SAFE) -->
     <div class="card-section">
       <span class="section-title">⏱️ Streamer Live-Pass</span>
       
@@ -461,30 +461,24 @@
       </div>
 
       <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
-        <button class="btn-resync" onclick="startStreamerLivePass()">
-          🟢 Starta pass (Läs in från databas)
+        <!-- Starts a fresh pass starting at 0 kr -->
+        <button class="btn-resync" onclick="startFreshPassZero()">
+          🟢 Starta nytt pass (Nollställ till 0 kr)
         </button>
 
         <div class="grid-2">
-          <button class="btn" onclick="fetchStreamerFromDatabase()">
-            🔄 Synka från databas
+          <!-- Loads saved pass from database -->
+          <button class="btn" onclick="loadSavedStreamerPass()">
+            🔄 Läs in sparat pass
           </button>
-          <button class="btn btn-danger" onclick="resetStreamerPassToZero()">
-            🗑️ Nollställ pass (0 kr)
+          <button class="btn btn-danger" onclick="clearStreamerPass()">
+            🗑️ Rensa pass
           </button>
-        </div>
-      </div>
-
-      <div class="control-row" style="margin-top:8px;">
-        <span class="control-label">SÄTT BELOPP:</span>
-        <div style="display:flex; gap:4px; width:65%;">
-          <input type="number" id="manualAmountInput" placeholder="Kr" style="width:100%;">
-          <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="setCustomPassAmount()">Sätt</button>
         </div>
       </div>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (LOCAL STORAGE) -->
     <div class="card-section">
       <span class="section-title">✏️ Redigera dina milstolpar</span>
       <div class="hint-text">
@@ -519,11 +513,13 @@
     }
 
     let parsedGoals = [];
-    let currentLiveEarned = 0; // Strictly what this streamer has earned during their pass!
+    let currentGlobalTotal = 0;
+    let streamerBaseline = 0;   // The starting total when this streamer began
+    let manualAdjustment = 0;   // Manual offset if needed
     let currentStreamerName = "Streamer";
     let isGoalsHidden = false;
 
-    // Load saved streamer name & visibility
+    // Load local settings & visibility
     try {
       const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
       if (savedStreamer) currentStreamerName = savedStreamer;
@@ -556,6 +552,12 @@
 
     function getStreamerKey(name) {
       return (name || "streamer").trim().toLowerCase().replace(/[^a-z0-9åäö]/gi, '');
+    }
+
+    // 🛡️ MATHEMATICALLY BULLETPROOF: Zero duplicate counting across OBS windows
+    function getLiveSessionEarned() {
+      if (streamerBaseline <= 0) return 0;
+      return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
     }
 
     // ========================================================
@@ -601,7 +603,7 @@
     }
 
     // ========================================================
-    // 🧠 LINE-BY-LINE PARSER
+    // 🧠 LINE-BY-LINE PARSER (LOWEST GOAL AT BOTTOM, CLIMBS TO TOP)
     // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
@@ -624,6 +626,7 @@
         }
       }
 
+      // Lowest amount sits at the bottom of the ladder
       list.sort((a, b) => a.amount - b.amount);
       return list;
     }
@@ -640,8 +643,10 @@
 
       if (parsedGoals.length === 0) return;
 
+      const liveEarned = getLiveSessionEarned();
+
       parsedGoals.forEach((goal) => {
-        const isReached = currentLiveEarned >= goal.amount;
+        const isReached = liveEarned >= goal.amount;
 
         const nodeEl = document.createElement('div');
         nodeEl.className = `ladder-node ${isReached ? 'reached' : ''}`;
@@ -660,11 +665,12 @@
       });
 
       requestAnimationFrame(() => {
-        updateLadderProgressPixels();
+        updateLadderProgressPixels(liveEarned);
       });
     }
 
-    function updateLadderProgressPixels() {
+    // 🎯 PIXEL-PERFECT ALIGNMENT: Directly measures DOM bounding boxes
+    function updateLadderProgressPixels(liveEarned) {
       const ladder = document.getElementById('goalsLadder');
       const fillEl = document.getElementById('ladderFill');
       const cursorEl = document.getElementById('ladderCursor');
@@ -676,6 +682,7 @@
       const ladderRect = ladder.getBoundingClientRect();
       if (ladderRect.height <= 0) return;
 
+      // Extract exact pixel coordinate of every tick mark from the bottom
       const nodePixelYs = nodes.map(nodeEl => {
         const tick = nodeEl.querySelector('.node-divider-tick') || nodeEl;
         const tickRect = tick.getBoundingClientRect();
@@ -685,10 +692,10 @@
       const totalNodes = parsedGoals.length;
       let targetPixelY = 0;
 
-      if (currentLiveEarned <= 0) {
+      if (liveEarned <= 0) {
         targetPixelY = 0;
-      } else if (currentLiveEarned >= parsedGoals[totalNodes - 1].amount) {
-        targetPixelY = nodePixelYs[totalNodes - 1]; // Tops out exactly at highest goal
+      } else if (liveEarned >= parsedGoals[totalNodes - 1].amount) {
+        targetPixelY = nodePixelYs[totalNodes - 1]; // Exactly centers on top goal
       } else {
         let prevAmount = 0;
         let prevY = 0;
@@ -697,8 +704,8 @@
           const goalAmount = parsedGoals[i].amount;
           const currentY = nodePixelYs[i];
 
-          if (currentLiveEarned <= goalAmount) {
-            const ratio = (currentLiveEarned - prevAmount) / (goalAmount - prevAmount);
+          if (liveEarned <= goalAmount) {
+            const ratio = (liveEarned - prevAmount) / (goalAmount - prevAmount);
             targetPixelY = prevY + (currentY - prevY) * ratio;
             break;
           }
@@ -713,7 +720,8 @@
     }
 
     function updateDockDisplay() {
-      updateDockStatus(`${currentStreamerName}: ${formatSEK(currentLiveEarned)} insamlat under detta pass`);
+      const earned = getLiveSessionEarned();
+      updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
 
       const nameInput = document.getElementById('streamerNameInput');
       if (nameInput && !isFocusingInput && currentStreamerName) {
@@ -722,38 +730,20 @@
     }
 
     // ========================================================
-    // ⚡ REAL-TIME DATABASE: INCOMING DONATIONS ACCUMULATOR
+    // ⚡ REAL-TIME DATABASE LISTENERS
     // ========================================================
-    // Listens to incoming live donations from /bossa and increments the streamer's balance
-    let lastObservedAlertId = 0;
-    let initialBossaLoad = true;
-
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
-      if (!data) return;
-
-      if (!initialBossaLoad && data.alertId && data.alertId !== lastObservedAlertId) {
-        lastObservedAlertId = data.alertId;
-
-        // Calculate incoming donation amount
-        let incomingAmount = 0;
-        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
-          incomingAmount = data.alerts.reduce((sum, a) => sum + (parseInt(a.amount, 10) || 0), 0);
-        } else if (data.diff > 0) {
-          incomingAmount = parseInt(data.diff, 10);
+      if (data && (typeof data.total === 'number' || typeof data.total === 'string')) {
+        const parsed = parseInt(data.total, 10);
+        if (!isNaN(parsed)) {
+          currentGlobalTotal = parsed;
+          renderGoalsLadder();
+          updateDockDisplay();
         }
-
-        if (incomingAmount > 0) {
-          // Increment streamer's database record live!
-          incrementStreamerPass(incomingAmount);
-        }
-      } else if (initialBossaLoad) {
-        lastObservedAlertId = data.alertId || 0;
-        initialBossaLoad = false;
       }
     });
 
-    // Auto-detect streamer name from schedule
     dbScheduleRef.on('value', (snap) => {
       const sData = snap.val();
       if (sData && sData.schedule && (!currentStreamerName || currentStreamerName === "Streamer")) {
@@ -771,27 +761,27 @@
       }
     });
 
-    // Local BroadcastChannel sync across the streamer's local OBS
+    // Local BroadcastChannel sync across local OBS
     if (bus) {
       bus.onmessage = (e) => {
-        const { type, amount, streamer, text, hidden } = e.data || {};
-        if (type === 'STREAMER_PASS_UPDATED') {
-          currentLiveEarned = amount;
-          currentStreamerName = streamer || currentStreamerName;
-          renderGoalsLadder();
-          updateDockDisplay();
-        } else if (type === 'LOCAL_GOALS_UPDATED') {
+        const { type, text, hidden, baseline, streamer } = e.data || {};
+        if (type === 'LOCAL_GOALS_UPDATED') {
           parsedGoals = parseLinesToGoalObjects(text);
           renderGoalsLadder();
         } else if (type === 'GOALS_VISIBILITY_TOGGLED') {
           isGoalsHidden = hidden;
           applyVisibilityState();
+        } else if (type === 'STREAMER_PASS_SYNC') {
+          streamerBaseline = baseline;
+          currentStreamerName = streamer;
+          renderGoalsLadder();
+          updateDockDisplay();
         }
       };
     }
 
     // ========================================================
-    // 🎛️ DOCK ACTIONS: PURE STREAMER SHIFT ENGINE
+    // 🎛️ DOCK ACTIONS: SECURE, DESYNC-PROOF SHIFT CONTROLLER
     // ========================================================
     let isFocusingInput = false;
     document.addEventListener('focusin', (e) => {
@@ -799,116 +789,77 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // 🟢 START PASS (Reads stored amount from database)
-    function startStreamerLivePass() {
+    // 🟢 START PASS (Nollställ till 0 kr för detta pass)
+    function startFreshPassZero() {
       const nameIn = document.getElementById('streamerNameInput').value.trim() || "Streamer";
       currentStreamerName = nameIn;
       const key = getStreamerKey(currentStreamerName);
+
+      // Lock baseline to current total so the pass starts at 0 kr
+      streamerBaseline = currentGlobalTotal;
+      manualAdjustment = 0;
 
       try {
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
       } catch(e) {}
 
-      updateDockStatus(`Hämtar data för ${currentStreamerName}...`);
-
-      dbStreamersRef.child(key).once('value').then((snap) => {
-        const data = snap.val();
-        currentLiveEarned = (data && typeof data.amount === 'number') ? data.amount : 0;
-
-        renderGoalsLadder();
-        updateDockDisplay();
-
-        if (bus) {
-          bus.postMessage({ type: 'STREAMER_PASS_UPDATED', amount: currentLiveEarned, streamer: currentStreamerName });
-        }
-
-        updateDockStatus(`✅ Pass aktivt för ${currentStreamerName}! Läste in ${formatSEK(currentLiveEarned)} från databasen.`);
-      }).catch(err => {
-        updateDockStatus("❌ Fel: " + err.message, true);
-      });
-    }
-
-    // 🔄 RE-SYNC FROM DATABASE
-    function fetchStreamerFromDatabase() {
-      startStreamerLivePass();
-    }
-
-    // 🗑️ RESET PASS TO 0 KR IN DATABASE
-    function resetStreamerPassToZero() {
-      const key = getStreamerKey(currentStreamerName);
-      if (confirm(`Nollställ pass-beloppet för ${currentStreamerName} till 0 kr i databasen?`)) {
-        currentLiveEarned = 0;
-
-        dbStreamersRef.child(key).set({
-          displayName: currentStreamerName,
-          amount: 0,
-          secret: WRITE_SECRET,
-          timestamp: Date.now()
-        }).then(() => {
-          renderGoalsLadder();
-          updateDockDisplay();
-
-          if (bus) {
-            bus.postMessage({ type: 'STREAMER_PASS_UPDATED', amount: 0, streamer: currentStreamerName });
-          }
-
-          updateDockStatus(`✅ Passet för ${currentStreamerName} nollställdes till 0 kr.`);
-        });
-      }
-    }
-
-    // SÄTT BELOPP MANUELLT
-    function setCustomPassAmount() {
-      const input = document.getElementById('manualAmountInput');
-      const val = parseInt(input.value, 10);
-      if (isNaN(val) || val < 0) return updateDockStatus("⚠️ Ange ett giltigt belopp!", true);
-
-      const key = getStreamerKey(currentStreamerName);
-      currentLiveEarned = val;
+      updateDockStatus(`Startar pass för ${currentStreamerName}...`);
 
       dbStreamersRef.child(key).set({
         displayName: currentStreamerName,
-        amount: currentLiveEarned,
+        baseline: streamerBaseline,
+        manualAdjustment: 0,
         secret: WRITE_SECRET,
         timestamp: Date.now()
       }).then(() => {
         renderGoalsLadder();
         updateDockDisplay();
-
-        if (bus) {
-          bus.postMessage({ type: 'STREAMER_PASS_UPDATED', amount: currentLiveEarned, streamer: currentStreamerName });
-        }
-
-        updateDockStatus(`✅ Passbelopp satt till ${formatSEK(currentLiveEarned)}.`);
+        if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
+        updateDockStatus(`✅ Nytt pass startat för ${currentStreamerName}! Mätaren är 0 kr.`);
+      }).catch(err => {
+        updateDockStatus("❌ Fel: " + err.message, true);
       });
-      input.value = "";
     }
 
-    // Accumulates live incoming donations to the streamer's database record
-    function incrementStreamerPass(amount) {
+    // 🔄 LÄS IN SPARAT PASS FRÅN DATABAS
+    function loadSavedStreamerPass() {
+      const nameIn = document.getElementById('streamerNameInput').value.trim() || "Streamer";
+      currentStreamerName = nameIn;
       const key = getStreamerKey(currentStreamerName);
 
-      dbStreamersRef.child(key).transaction((current) => {
-        const item = current || { displayName: currentStreamerName, amount: 0 };
-        item.displayName = currentStreamerName;
-        item.amount = (item.amount || 0) + amount;
-        item.secret = WRITE_SECRET;
-        item.timestamp = Date.now();
-        return item;
-      }, (error, committed, snapshot) => {
-        if (committed && snapshot) {
-          const val = snapshot.val();
-          if (val && typeof val.amount === 'number') {
-            currentLiveEarned = val.amount;
-            renderGoalsLadder();
-            updateDockDisplay();
+      updateDockStatus(`Läser in pass för ${currentStreamerName}...`);
 
-            if (bus) {
-              bus.postMessage({ type: 'STREAMER_PASS_UPDATED', amount: currentLiveEarned, streamer: currentStreamerName });
-            }
-          }
+      dbStreamersRef.child(key).once('value').then((snap) => {
+        const data = snap.val();
+        if (data && typeof data.baseline === 'number') {
+          streamerBaseline = data.baseline;
+          manualAdjustment = data.manualAdjustment || 0;
+          renderGoalsLadder();
+          updateDockDisplay();
+          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
+          updateDockStatus(`✅ Läste in sparat pass för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
+        } else {
+          updateDockStatus(`Hittade inget sparat pass. Starta ett nytt med knappen ovan.`);
         }
+      }).catch(err => {
+        updateDockStatus("❌ Fel: " + err.message, true);
       });
+    }
+
+    // 🗑️ RENSA PASS
+    function clearStreamerPass() {
+      const key = getStreamerKey(currentStreamerName);
+      if (confirm(`Rensa passet för ${currentStreamerName}?`)) {
+        streamerBaseline = 0;
+        manualAdjustment = 0;
+
+        dbStreamersRef.child(key).remove().then(() => {
+          renderGoalsLadder();
+          updateDockDisplay();
+          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: 0, streamer: currentStreamerName });
+          updateDockStatus(`Rensade passet för ${currentStreamerName}.`);
+        });
+      }
     }
 
     // 💾 SAVES CUSTOM MILESTONES LOCALLY
@@ -940,7 +891,7 @@
       }[t] || t));
     }
 
-    // Initial load
+    // Load initial local goals
     try {
       const cached = localStorage.getItem(STORAGE_KEY_GOALS) || "";
       parsedGoals = parseLinesToGoalObjects(cached);
@@ -951,9 +902,9 @@
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
-    // Initial fetch of streamer data if saved
+    // Initial check for streamer profile
     if (currentStreamerName && currentStreamerName !== "Streamer") {
-      startStreamerLivePass();
+      loadSavedStreamerPass();
     }
   </script>
 </body>
