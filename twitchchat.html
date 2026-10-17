@@ -36,7 +36,7 @@
             background: rgba(18, 18, 24, 0.90);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.12);
-            border-left: 5px solid #9146ff; /* Accent border matching chatter's color */
+            border-left: 5px solid #9146ff;
             border-radius: 12px;
             padding: 12px 16px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
@@ -67,7 +67,7 @@
             margin: -2px 2px;
         }
 
-        /* --- Animations --- */
+        /* Animations */
         .animate-in {
             animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
@@ -106,20 +106,19 @@
     <script>
         // ================= CONFIGURATION =================
         const BASE_DISPLAY_TIME = 2500;  // Normal message display time (ms)
-        const FAST_DISPLAY_TIME = 1000;  // Speed if chat is fast (queue > 2) (ms)
-        const ANIMATION_DURATION = 350;  // Must match CSS animation speed (ms)
+        const FAST_DISPLAY_TIME = 1000;  // Speed if chat is active (queue > 2) (ms)
+        const ANIMATION_DURATION = 350;  // Matches CSS animation speed (ms)
         const PAUSE_BETWEEN_MSGS = 250;  // Gap between messages (ms)
-        const MAX_QUEUE_LIMIT = 15;      // Discard older messages if queue overflows
+        const MAX_QUEUE_LIMIT = 15;      // Max queued backlog
         // =================================================
 
-        // Get channel from URL param: ?channel=yourchannel
+        // Reads ?channel=name from URL, defaults to 'our2ndhome'
         const urlParams = new URLSearchParams(window.location.search);
-        const channel = (urlParams.get('channel') || 'YOUR_CHANNEL_NAME').toLowerCase().trim();
+        const channel = (urlParams.get('channel') || 'our2ndhome').toLowerCase().trim();
 
         const messageQueue = [];
         let isDisplaying = false;
 
-        // --- Twitch IRC WebSocket Connection ---
         function connectToTwitch() {
             const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
@@ -136,7 +135,6 @@
                 for (const line of lines) {
                     if (!line) continue;
 
-                    // Respond to Twitch heartbeat
                     if (line.startsWith('PING')) {
                         ws.send('PONG :tmi.twitch.tv');
                         continue;
@@ -149,14 +147,12 @@
             };
 
             ws.onclose = () => {
-                // Auto-reconnect if connection drops
                 setTimeout(connectToTwitch, 3000);
             };
 
             ws.onerror = () => ws.close();
         }
 
-        // --- Parse Tags, User, Color, Emotes ---
         function parseTwitchMessage(raw) {
             const spaceIdx = raw.indexOf(' ');
             const rawTags = raw.slice(1, spaceIdx);
@@ -173,7 +169,7 @@
             if (msgIdx === -1) return;
 
             const text = rest.slice(msgIdx + marker.length);
-            if (text.startsWith('!')) return; // Ignore bot commands
+            if (text.startsWith('!')) return; // Ignore !commands
 
             const username = tags['display-name'] || 'User';
             const color = tags['color'] || '#9146FF';
@@ -190,7 +186,6 @@
             }
         }
 
-        // --- Render Twitch Emotes Directly ---
         function parseEmotes(text, emotesTag) {
             if (!emotesTag) return escapeHtml(text);
 
@@ -220,7 +215,6 @@
             return result;
         }
 
-        // --- Queue & Animation Controller ---
         function showNextMessage() {
             if (messageQueue.length === 0) {
                 isDisplaying = false;
