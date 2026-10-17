@@ -58,10 +58,12 @@
       pointer-events: none;
     }
 
+    /* DEFAULT (LEFT SIDE): 20px from canvas edge, vertically centered */
     .goals-widget-container {
       position: absolute;
       top: 50%;
-      left: 36px;
+      left: 20px;
+      right: auto;
       transform: translateY(-50%);
       display: flex;
       flex-direction: column;
@@ -71,12 +73,24 @@
       visibility: visible;
     }
 
+    /* REVERSED (RIGHT SIDE): 20px from right canvas edge, vertically centered */
+    .goals-widget-container.is-reversed {
+      left: auto !important;
+      right: 20px !important;
+    }
+
     .goals-widget-container.is-hidden {
       opacity: 0 !important;
       visibility: hidden !important;
     }
 
+    /* MILSTOLPAR HEADER: Dead-center aligned with the vertical line */
     .goals-header {
+      position: relative;
+      left: 83px;
+      transform: translateX(-50%);
+      width: max-content;
+      text-align: center;
       font-size: 14px;
       font-weight: 900;
       letter-spacing: 2.5px;
@@ -84,6 +98,12 @@
       text-transform: uppercase;
       margin-bottom: 16px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+    }
+
+    .goals-widget-container.is-reversed .goals-header {
+      left: auto;
+      right: 83px;
+      transform: translateX(50%);
     }
 
     /* VERTICAL LADDER TRACK */
@@ -96,19 +116,23 @@
       justify-content: space-between;
     }
 
+    /* Track line background (bottom and height set dynamically to span only between - and -) */
     .ladder-line-bg {
       position: absolute;
-      top: 0;
-      bottom: 0;
       left: 82px;
       width: 2px;
       background: rgba(255, 255, 255, 0.3);
       z-index: 1;
+      height: 0px;
+    }
+
+    .vertical-ladder.is-reversed .ladder-line-bg {
+      left: auto;
+      right: 82px;
     }
 
     .ladder-line-fill {
       position: absolute;
-      bottom: 0;
       left: 81.5px;
       width: 3px;
       background: var(--primary);
@@ -118,9 +142,13 @@
       transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    .vertical-ladder.is-reversed .ladder-line-fill {
+      left: auto;
+      right: 81.5px;
+    }
+
     .ladder-cursor {
       position: absolute;
-      bottom: 0px;
       left: 83px;
       width: 12px;
       height: 12px;
@@ -130,6 +158,12 @@
       z-index: 5;
       border-radius: 50%;
       transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .vertical-ladder.is-reversed .ladder-cursor {
+      left: auto;
+      right: 83px;
+      transform: translate(50%, 50%);
     }
 
     .ladder-cursor::after {
@@ -146,7 +180,7 @@
       100% { transform: scale(2.2); opacity: 0; }
     }
 
-    /* MILESTONE NODES */
+    /* MILESTONE NODES (NORMAL: [Amount] [-] [Label]) */
     .ladder-node {
       position: relative;
       display: flex;
@@ -211,6 +245,22 @@
 
     .ladder-node.reached .node-check {
       display: inline-block;
+    }
+
+    /* REVERSED NODE LAYOUT: ([Label] [-] [Amount]) */
+    .vertical-ladder.is-reversed .ladder-node {
+      flex-direction: row-reverse;
+      justify-content: flex-start;
+    }
+
+    .vertical-ladder.is-reversed .node-amount {
+      text-align: left;
+    }
+
+    .vertical-ladder.is-reversed .node-label {
+      flex-direction: row-reverse;
+      text-align: right;
+      justify-content: flex-start;
     }
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
@@ -375,7 +425,7 @@
       cursor: pointer;
       width: 100%;
       text-align: center;
-      margin-bottom: 8px;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
     .btn-toggle-view:hover { background: #2c2c36; }
 
@@ -461,14 +511,19 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.0</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.5</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- 👁️ HIDE / SHOW GOALS TOGGLE -->
-    <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
-      👁️ Göm milstolpar på stream
-    </button>
+    <!-- 👁️ HIDE / SHOW & ↔️ HORIZONTAL REVERSE DOCK BUTTONS -->
+    <div style="display:flex; gap:6px; margin-bottom:8px;">
+      <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
+        👁️ Göm milstolpar
+      </button>
+      <button id="btnToggleReverse" class="btn-toggle-view" onclick="toggleReverseLayout()">
+        ↔️ Flytta till höger
+      </button>
+    </div>
 
     <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
 
@@ -490,7 +545,6 @@
           <button class="btn" onclick="loadSavedStreamerPass()">
             🔄 Läs in sparat pass
           </button>
-          <!-- Safe Two-Step Button (Never Freezes OBS CEF) -->
           <button class="btn btn-danger" id="btnClearPassBtn" onclick="handleClearPassClick()">
             🗑️ Rensa pass
           </button>
@@ -531,6 +585,7 @@
     const STORAGE_KEY_GOALS = "mh_overlay_local_goals";
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
+    const STORAGE_KEY_REVERSED = "mh_goals_is_reversed";
 
     const DEFAULT_GOALS = 
       "200 kr - Äta stark sås\n" +
@@ -540,10 +595,13 @@
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
-    // Checks URL parameters & hash for hardcoded streamer names: ?streamer=Name or #overlay?streamer=Name
+    // Checks URL parameters & hash: ?streamer=Name, ?side=right, etc.
     const fullUrl = window.location.href;
     const streamerMatch = fullUrl.match(/[?&]streamer=([^&#]+)/i);
     const streamerFromUrl = streamerMatch ? decodeURIComponent(streamerMatch[1]) : null;
+
+    const sideMatch = fullUrl.match(/[?&](side|align|pos)=([^&#]+)/i);
+    const sideFromUrl = sideMatch ? decodeURIComponent(sideMatch[2]).toLowerCase() : null;
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -560,20 +618,25 @@
     let manualAdjustment = 0;
     let currentStreamerName = streamerFromUrl ? streamerFromUrl.trim() : "Streamer";
     let isGoalsHidden = false;
+    let isReversed = false;
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
 
+    // Load saved settings
     try {
       if (!streamerFromUrl) {
         const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
         if (savedStreamer) currentStreamerName = savedStreamer;
       }
       isGoalsHidden = localStorage.getItem(STORAGE_KEY_HIDDEN) === 'true';
+      isReversed = (sideFromUrl === 'right' || sideFromUrl === 'reversed') || (localStorage.getItem(STORAGE_KEY_REVERSED) === 'true');
     } catch(e) {
       isGoalsHidden = false;
+      isReversed = false;
     }
 
     applyVisibilityState();
+    applyReversedState();
 
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
@@ -629,11 +692,11 @@
       const btn = document.getElementById('btnToggleVisibility');
       if (btn) {
         if (isGoalsHidden) {
-          btn.innerText = "👁️ Visa milstolpar på stream";
+          btn.innerText = "👁️ Visa milstolpar";
           btn.style.borderColor = "#00ff88";
           btn.style.color = "#00ff88";
         } else {
-          btn.innerText = "👁️ Göm milstolpar på stream";
+          btn.innerText = "👁️ Göm milstolpar";
           btn.style.borderColor = "#3a3a44";
           btn.style.color = "#ffffff";
         }
@@ -652,7 +715,55 @@
         bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
       }
 
-      updateDockStatus(isGoalsHidden ? "🙈 Milstolpar döljs på din stream" : "👀 Milstolpar visas på din stream");
+      updateDockStatus(isGoalsHidden ? "🙈 Milstolpar döljs på stream" : "👀 Milstolpar visas på stream");
+    }
+
+    // ========================================================
+    // ↔️ HORIZONTAL REVERSE & POSITION CONTROLLER
+    // ========================================================
+    function applyReversedState() {
+      const container = document.getElementById('goalsWidgetContainer');
+      const ladder = document.getElementById('goalsLadder');
+
+      if (container && ladder) {
+        if (isReversed) {
+          container.classList.add('is-reversed');
+          ladder.classList.add('is-reversed');
+        } else {
+          container.classList.remove('is-reversed');
+          ladder.classList.remove('is-reversed');
+        }
+      }
+
+      const btn = document.getElementById('btnToggleReverse');
+      if (btn) {
+        if (isReversed) {
+          btn.innerText = "↔️ Placering: Höger";
+          btn.style.borderColor = "#00ff88";
+          btn.style.color = "#00ff88";
+        } else {
+          btn.innerText = "↔️ Placering: Vänster";
+          btn.style.borderColor = "#3a3a44";
+          btn.style.color = "#ffffff";
+        }
+      }
+
+      renderGoalsLadder();
+    }
+
+    function toggleReverseLayout() {
+      isReversed = !isReversed;
+      try {
+        localStorage.setItem(STORAGE_KEY_REVERSED, isReversed ? 'true' : 'false');
+      } catch(e) {}
+
+      applyReversedState();
+
+      if (bus) {
+        bus.postMessage({ type: 'GOALS_REVERSED_TOGGLED', reversed: isReversed });
+      }
+
+      updateDockStatus(isReversed ? "➡️ Widget flyttad till höger sida (speglad)" : "⬅️ Widget flyttad till vänster sida (standard)");
     }
 
     // ========================================================
@@ -683,7 +794,7 @@
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER (WITH 0 KR ANCHOR BASE)
+    // 🎨 RENDER VERTICAL LADDER
     // ========================================================
     function renderGoalsLadder() {
       const ladder = document.getElementById('goalsLadder');
@@ -694,16 +805,18 @@
 
       const fillEl = document.getElementById('ladderFill');
       const cursorEl = document.getElementById('ladderCursor');
+      const bgLine = ladder.querySelector('.ladder-line-bg');
 
       if (parsedGoals.length === 0) {
         if (fillEl) fillEl.style.height = '0px';
         if (cursorEl) cursorEl.style.bottom = '0px';
+        if (bgLine) bgLine.style.height = '0px';
         return;
       }
 
       const liveEarned = getLiveSessionEarned();
 
-      // 1. Bottom Anchor (0 kr Base) - Ensures the 0 to Goal 1 segment has proportional height
+      // 1. Bottom Anchor (0 kr Base)
       const startNodeEl = document.createElement('div');
       startNodeEl.className = 'ladder-node start-base reached';
       startNodeEl.innerHTML = `
@@ -742,11 +855,13 @@
       });
     }
 
+    // 🎯 PIXEL-PERFECT MEASUREMENT: Starts & ends dead-center on the '-' ticks
     function updateLadderProgressPixels(liveEarned) {
       const ladder = document.getElementById('goalsLadder');
       const fillEl = document.getElementById('ladderFill');
       const cursorEl = document.getElementById('ladderCursor');
-      if (!ladder || !fillEl || !cursorEl || parsedGoals.length === 0) return;
+      const bgLine = ladder ? ladder.querySelector('.ladder-line-bg') : null;
+      if (!ladder || !fillEl || !cursorEl || !bgLine || parsedGoals.length === 0) return;
 
       const nodes = Array.from(ladder.querySelectorAll('.ladder-node'));
       if (nodes.length !== (parsedGoals.length + 1)) return; // +1 includes start-base
@@ -754,17 +869,22 @@
       const ladderRect = ladder.getBoundingClientRect();
       if (ladderRect.height <= 0) return;
 
-      // Extract pixel heights from bottom for each node (Index 0 = Start Base, Index 1+ = Goals)
+      // Extract pixel center of every '-' tick mark from the container bottom
       const nodePixelYs = nodes.map(nodeEl => {
         const tick = nodeEl.querySelector('.node-divider-tick') || nodeEl;
         const tickRect = tick.getBoundingClientRect();
         return Math.max(0, ladderRect.bottom - (tickRect.top + tickRect.height / 2));
       });
 
-      const startY = nodePixelYs[0]; // Pixel location of 0 kr tick
-      const topGoalAmount = parsedGoals[parsedGoals.length - 1].amount;
-      const topGoalY = nodePixelYs[nodePixelYs.length - 1];
+      const startY = nodePixelYs[0]; // Vertical center of the 0 kr tick '-'
+      const topGoalY = nodePixelYs[nodePixelYs.length - 1]; // Vertical center of top goal tick '-'
+      const totalTrackHeight = Math.max(0, topGoalY - startY);
 
+      // 📏 REMOVES EXTRA PIXELS: Background line starts at 0 kr (-) and stops at top goal (-)
+      bgLine.style.bottom = `${startY.toFixed(1)}px`;
+      bgLine.style.height = `${totalTrackHeight.toFixed(1)}px`;
+
+      const topGoalAmount = parsedGoals[parsedGoals.length - 1].amount;
       let targetPixelY = startY;
 
       if (liveEarned <= 0) {
@@ -772,7 +892,6 @@
       } else if (liveEarned >= topGoalAmount) {
         targetPixelY = topGoalY;
       } else {
-        // Interpolate along the milestones
         let prevAmount = 0;
         let prevY = startY;
 
@@ -792,7 +911,8 @@
         }
       }
 
-      fillEl.style.height = `${targetPixelY.toFixed(1)}px`;
+      fillEl.style.bottom = `${startY.toFixed(1)}px`;
+      fillEl.style.height = `${Math.max(0, targetPixelY - startY).toFixed(1)}px`;
       cursorEl.style.bottom = `${targetPixelY.toFixed(1)}px`;
     }
 
@@ -841,7 +961,6 @@
       });
     }
 
-    // Musikhjälpen global donation counter
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
       let raw = null;
@@ -863,13 +982,16 @@
 
     if (bus) {
       bus.onmessage = (e) => {
-        const { type, text, hidden, baseline, streamer } = e.data || {};
+        const { type, text, hidden, reversed, baseline, streamer } = e.data || {};
         if (type === 'LOCAL_GOALS_UPDATED') {
           parsedGoals = parseLinesToGoalObjects(text);
           renderGoalsLadder();
         } else if (type === 'GOALS_VISIBILITY_TOGGLED') {
           isGoalsHidden = hidden;
           applyVisibilityState();
+        } else if (type === 'GOALS_REVERSED_TOGGLED') {
+          isReversed = reversed;
+          applyReversedState();
         } else if (type === 'STREAMER_PASS_SYNC') {
           streamerBaseline = baseline;
           currentStreamerName = streamer;
@@ -888,6 +1010,9 @@
       } else if (e.key === STORAGE_KEY_HIDDEN) {
         isGoalsHidden = e.newValue === 'true';
         applyVisibilityState();
+      } else if (e.key === STORAGE_KEY_REVERSED) {
+        isReversed = e.newValue === 'true';
+        applyReversedState();
       } else if (e.key === STORAGE_KEY_STREAMER && e.newValue) {
         loadSavedStreamerPass(e.newValue);
       }
@@ -989,7 +1114,7 @@
       });
     }
 
-    // 🗑️ TWO-STEP CONFIRM CLEAR PASS (CEF Safe)
+    // 🗑️ TWO-STEP CONFIRM CLEAR PASS
     let clearConfirmTimeout = null;
     function handleClearPassClick() {
       const btn = document.getElementById('btnClearPassBtn');
