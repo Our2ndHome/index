@@ -47,7 +47,7 @@
     }
 
     /* ========================================================
-       📺 1. STREAM OVERLAY: BOLD WHITE VERTICAL LADDER
+       📺 1. STREAM OVERLAY: VERTICAL LADDER
        ======================================================== */
     #overlayRoot {
       position: absolute;
@@ -146,7 +146,7 @@
       100% { transform: scale(2.2); opacity: 0; }
     }
 
-    /* MILESTONE NODES (BOLD PURE WHITE) */
+    /* MILESTONE NODES */
     .ladder-node {
       position: relative;
       display: flex;
@@ -430,7 +430,6 @@
         <div class="ladder-line-bg"></div>
         <div class="ladder-line-fill" id="ladderFill"></div>
         <div class="ladder-cursor" id="ladderCursor"></div>
-        <!-- Milestones built dynamically from bottom to top -->
       </div>
     </div>
   </div>
@@ -440,7 +439,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v3.1</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">v3.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -451,7 +450,7 @@
 
     <div class="status-box" id="dockStatusBox">Ansluter till databas...</div>
 
-    <!-- ⏱️ STREAMER PASS CONTROLS (CLOUD SYNCED & SAFE) -->
+    <!-- ⏱️ STREAMER PASS CONTROLS -->
     <div class="card-section">
       <span class="section-title">⏱️ Streamer Live-Pass</span>
       
@@ -461,13 +460,11 @@
       </div>
 
       <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
-        <!-- Starts a fresh pass starting at 0 kr -->
         <button class="btn-resync" onclick="startFreshPassZero()">
           🟢 Starta nytt pass (Nollställ till 0 kr)
         </button>
 
         <div class="grid-2">
-          <!-- Loads saved pass from database -->
           <button class="btn" onclick="loadSavedStreamerPass()">
             🔄 Läs in sparat pass
           </button>
@@ -478,7 +475,7 @@
       </div>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (LOCAL STORAGE) -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
     <div class="card-section">
       <span class="section-title">✏️ Redigera dina milstolpar</span>
       <div class="hint-text">
@@ -501,6 +498,12 @@
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
 
+    const DEFAULT_GOALS_TEXT = 
+      "200 kr - Äta stark sås\n" +
+      "500 kr - Spela skräckspel\n" +
+      "1000 kr - Hårfärgning\n" +
+      "2500 kr - 12h Stream";
+
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
     const hash = window.location.hash.toLowerCase();
@@ -514,10 +517,11 @@
 
     let parsedGoals = [];
     let currentGlobalTotal = 0;
-    let streamerBaseline = 0;   // The starting total when this streamer began
-    let manualAdjustment = 0;   // Manual offset if needed
+    let streamerBaseline = 0;
+    let manualAdjustment = 0;
     let currentStreamerName = "Streamer";
     let isGoalsHidden = false;
+    let activeStreamerRef = null;
 
     // Load local settings & visibility
     try {
@@ -551,12 +555,13 @@
     }
 
     function getStreamerKey(name) {
-      return (name || "streamer").trim().toLowerCase().replace(/[^a-z0-9åäö]/gi, '');
+      const clean = (name || "streamer").trim().toLowerCase().replace(/[^a-z0-9åäö]/gi, '');
+      return clean.length > 0 ? clean : "streamer";
     }
 
-    // 🛡️ MATHEMATICALLY BULLETPROOF: Zero duplicate counting across OBS windows
+    // Fixed: accurately calculates pass total using streamerBaseline
     function getLiveSessionEarned() {
-      return Math.max(0, (currentGlobalTotal - sessionBaseline) + manualAdjustment);
+      return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
     }
 
     // ========================================================
@@ -602,7 +607,7 @@
     }
 
     // ========================================================
-    // 🧠 LINE-BY-LINE PARSER (LOWEST GOAL AT BOTTOM, CLIMBS TO TOP)
+    // 🧠 LINE-BY-LINE PARSER
     // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
@@ -611,13 +616,13 @@
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        const match = line.match(/^([0-9\s]+)(?:kr|:-)?\s*[-:–—]\s*(.+)$/i)
-                   || line.match(/^([0-9\s]+)\s+(.+)$/);
+        // Supports: "200 kr - Text", "200kr Text", "200:- Text", "200 - Text"
+        const match = line.match(/^([\d\s]+)\s*(?:kr|:-|sek)?\s*[-:–—]?\s*(.+)$/i);
 
         if (match) {
           const rawAmt = match[1].replace(/[^0-9]/g, '');
           const amount = parseInt(rawAmt, 10);
-          const label = match[2].trim();
+          let label = match[2].trim().replace(/^[-:–—]\s*/, '');
 
           if (!isNaN(amount) && amount > 0 && label) {
             list.push({ id: `goal_${amount}_${i}`, amount, label });
@@ -625,13 +630,12 @@
         }
       }
 
-      // Lowest amount sits at the bottom of the ladder
       list.sort((a, b) => a.amount - b.amount);
       return list;
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER (PIXEL-PERFECT ACCURACY)
+    // 🎨 RENDER VERTICAL LADDER
     // ========================================================
     function renderGoalsLadder() {
       const ladder = document.getElementById('goalsLadder');
@@ -640,7 +644,14 @@
       const oldNodes = ladder.querySelectorAll('.ladder-node');
       oldNodes.forEach(n => n.remove());
 
-      if (parsedGoals.length === 0) return;
+      const fillEl = document.getElementById('ladderFill');
+      const cursorEl = document.getElementById('ladderCursor');
+
+      if (parsedGoals.length === 0) {
+        if (fillEl) fillEl.style.height = '0px';
+        if (cursorEl) cursorEl.style.bottom = '0px';
+        return;
+      }
 
       const liveEarned = getLiveSessionEarned();
 
@@ -668,7 +679,6 @@
       });
     }
 
-    // 🎯 PIXEL-PERFECT ALIGNMENT: Directly measures DOM bounding boxes
     function updateLadderProgressPixels(liveEarned) {
       const ladder = document.getElementById('goalsLadder');
       const fillEl = document.getElementById('ladderFill');
@@ -681,7 +691,6 @@
       const ladderRect = ladder.getBoundingClientRect();
       if (ladderRect.height <= 0) return;
 
-      // Extract exact pixel coordinate of every tick mark from the bottom
       const nodePixelYs = nodes.map(nodeEl => {
         const tick = nodeEl.querySelector('.node-divider-tick') || nodeEl;
         const tickRect = tick.getBoundingClientRect();
@@ -694,7 +703,7 @@
       if (liveEarned <= 0) {
         targetPixelY = 0;
       } else if (liveEarned >= parsedGoals[totalNodes - 1].amount) {
-        targetPixelY = nodePixelYs[totalNodes - 1]; // Exactly centers on top goal
+        targetPixelY = nodePixelYs[totalNodes - 1];
       } else {
         let prevAmount = 0;
         let prevY = 0;
@@ -704,7 +713,8 @@
           const currentY = nodePixelYs[i];
 
           if (liveEarned <= goalAmount) {
-            const ratio = (liveEarned - prevAmount) / (goalAmount - prevAmount);
+            const denom = goalAmount - prevAmount;
+            const ratio = denom > 0 ? (liveEarned - prevAmount) / denom : 1;
             targetPixelY = prevY + (currentY - prevY) * ratio;
             break;
           }
@@ -723,18 +733,53 @@
       updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
 
       const nameInput = document.getElementById('streamerNameInput');
-      if (nameInput && !isFocusingInput && currentStreamerName) {
+      if (nameInput && !isFocusingInput && currentStreamerName && currentStreamerName !== "Streamer") {
         nameInput.value = currentStreamerName;
       }
     }
 
     // ========================================================
-    // ⚡ REAL-TIME DATABASE LISTENERS
+    // ⚡ REAL-TIME DATABASE LISTENERS & SUBSCRIPTION
     // ========================================================
+    function subscribeToStreamer(streamerName) {
+      if (!streamerName) return;
+      const key = getStreamerKey(streamerName);
+
+      if (activeStreamerRef) {
+        activeStreamerRef.off();
+      }
+
+      activeStreamerRef = dbStreamersRef.child(key);
+      activeStreamerRef.on('value', (snap) => {
+        const data = snap.val();
+        if (data && typeof data.baseline === 'number') {
+          streamerBaseline = data.baseline;
+          manualAdjustment = data.manualAdjustment || 0;
+          if (data.displayName) currentStreamerName = data.displayName;
+          renderGoalsLadder();
+          updateDockDisplay();
+        } else if (!data) {
+          // Pass was cleared or not yet created
+          streamerBaseline = 0;
+          manualAdjustment = 0;
+          renderGoalsLadder();
+          updateDockDisplay();
+        }
+      });
+    }
+
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
-      if (data && (typeof data.total === 'number' || typeof data.total === 'string')) {
-        const parsed = parseInt(data.total, 10);
+      let raw = null;
+
+      if (typeof data === 'number' || typeof data === 'string') {
+        raw = data;
+      } else if (data && typeof data === 'object') {
+        raw = data.total ?? data.amount ?? data.current;
+      }
+
+      if (raw !== null) {
+        const parsed = parseInt(String(raw).replace(/[^0-9]/g, ''), 10);
         if (!isNaN(parsed)) {
           currentGlobalTotal = parsed;
           renderGoalsLadder();
@@ -745,22 +790,29 @@
 
     dbScheduleRef.on('value', (snap) => {
       const sData = snap.val();
-      if (sData && sData.schedule && (!currentStreamerName || currentStreamerName === "Streamer")) {
+      if (sData && Array.isArray(sData.schedule) && (!currentStreamerName || currentStreamerName === "Streamer")) {
         const now = new Date();
         const activeSlot = sData.schedule.find(ev => {
-          const s = new Date(ev.start.replace(' ', 'T'));
-          const e = new Date(ev.end.replace(' ', 'T'));
-          return now >= s && now < e;
+          if (!ev || !ev.start || !ev.end) return false;
+          try {
+            const s = new Date(ev.start.replace(' ', 'T'));
+            const e = new Date(ev.end.replace(' ', 'T'));
+            return !isNaN(s) && !isNaN(e) && now >= s && now < e;
+          } catch(err) {
+            return false;
+          }
         });
 
         if (activeSlot && activeSlot.name) {
+          currentStreamerName = activeSlot.name;
           const input = document.getElementById('streamerNameInput');
-          if (input && !input.value) input.value = activeSlot.name;
+          if (input) input.value = activeSlot.name;
+          subscribeToStreamer(currentStreamerName);
         }
       }
     });
 
-    // Local BroadcastChannel sync across local OBS
+    // Cross-tab synchronization via BroadcastChannel
     if (bus) {
       bus.onmessage = (e) => {
         const { type, text, hidden, baseline, streamer } = e.data || {};
@@ -773,14 +825,31 @@
         } else if (type === 'STREAMER_PASS_SYNC') {
           streamerBaseline = baseline;
           currentStreamerName = streamer;
+          subscribeToStreamer(currentStreamerName);
           renderGoalsLadder();
           updateDockDisplay();
         }
       };
     }
 
+    // Redundant cross-window fallback via StorageEvent
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY_GOALS && e.newValue) {
+        parsedGoals = parseLinesToGoalObjects(e.newValue);
+        const area = document.getElementById('goalsInputArea');
+        if (area) area.value = e.newValue;
+        renderGoalsLadder();
+      } else if (e.key === STORAGE_KEY_HIDDEN) {
+        isGoalsHidden = e.newValue === 'true';
+        applyVisibilityState();
+      } else if (e.key === STORAGE_KEY_STREAMER && e.newValue) {
+        currentStreamerName = e.newValue;
+        subscribeToStreamer(currentStreamerName);
+      }
+    });
+
     // ========================================================
-    // 🎛️ DOCK ACTIONS: SECURE, DESYNC-PROOF SHIFT CONTROLLER
+    // 🎛️ DOCK ACTIONS
     // ========================================================
     let isFocusingInput = false;
     document.addEventListener('focusin', (e) => {
@@ -788,13 +857,19 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // 🟢 START PASS (Nollställ till 0 kr för detta pass)
+    const streamerInputEl = document.getElementById('streamerNameInput');
+    if (streamerInputEl) {
+      streamerInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') loadSavedStreamerPass();
+      });
+    }
+
     function startFreshPassZero() {
-      const nameIn = document.getElementById('streamerNameInput').value.trim() || "Streamer";
+      const inputEl = document.getElementById('streamerNameInput');
+      const nameIn = (inputEl ? inputEl.value : "").trim() || "Streamer";
       currentStreamerName = nameIn;
       const key = getStreamerKey(currentStreamerName);
 
-      // Lock baseline to current total so the pass starts at 0 kr
       streamerBaseline = currentGlobalTotal;
       manualAdjustment = 0;
 
@@ -811,6 +886,7 @@
         secret: WRITE_SECRET,
         timestamp: Date.now()
       }).then(() => {
+        subscribeToStreamer(currentStreamerName);
         renderGoalsLadder();
         updateDockDisplay();
         if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
@@ -820,11 +896,15 @@
       });
     }
 
-    // 🔄 LÄS IN SPARAT PASS FRÅN DATABAS
     function loadSavedStreamerPass() {
-      const nameIn = document.getElementById('streamerNameInput').value.trim() || "Streamer";
+      const inputEl = document.getElementById('streamerNameInput');
+      const nameIn = (inputEl ? inputEl.value : "").trim() || "Streamer";
       currentStreamerName = nameIn;
       const key = getStreamerKey(currentStreamerName);
+
+      try {
+        localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
+      } catch(e) {}
 
       updateDockStatus(`Läser in pass för ${currentStreamerName}...`);
 
@@ -833,19 +913,20 @@
         if (data && typeof data.baseline === 'number') {
           streamerBaseline = data.baseline;
           manualAdjustment = data.manualAdjustment || 0;
+          subscribeToStreamer(currentStreamerName);
           renderGoalsLadder();
           updateDockDisplay();
           if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-          updateDockStatus(`✅ Läste in sparat pass för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
+          updateDockStatus(`✅ Läste in pass för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
         } else {
-          updateDockStatus(`Hittade inget sparat pass. Starta ett nytt med knappen ovan.`);
+          subscribeToStreamer(currentStreamerName);
+          updateDockStatus(`Inget sparat pass hittat för ${currentStreamerName}. Starta ett nytt.`);
         }
       }).catch(err => {
         updateDockStatus("❌ Fel: " + err.message, true);
       });
     }
 
-    // 🗑️ RENSA PASS
     function clearStreamerPass() {
       const key = getStreamerKey(currentStreamerName);
       if (confirm(`Rensa passet för ${currentStreamerName}?`)) {
@@ -857,13 +938,15 @@
           updateDockDisplay();
           if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: 0, streamer: currentStreamerName });
           updateDockStatus(`Rensade passet för ${currentStreamerName}.`);
+        }).catch(err => {
+          updateDockStatus("❌ Fel: " + err.message, true);
         });
       }
     }
 
-    // 💾 SAVES CUSTOM MILESTONES LOCALLY
     function saveGoalsFromTextarea() {
-      const text = document.getElementById('goalsInputArea').value;
+      const area = document.getElementById('goalsInputArea');
+      const text = area ? area.value : "";
       const goals = parseLinesToGoalObjects(text);
 
       if (goals.length === 0) {
@@ -881,7 +964,7 @@
         bus.postMessage({ type: 'LOCAL_GOALS_UPDATED', text: text });
       }
 
-      updateDockStatus(`✅ Sparade dina ${goals.length} milstolpar lokalt!`);
+      updateDockStatus(`✅ Sparade dina ${goals.length} milstolpar!`);
     }
 
     function escapeHTML(str) {
@@ -890,19 +973,26 @@
       }[t] || t));
     }
 
-    // Load initial local goals
+    // Load initial local goals with default fallback
     try {
-      const cached = localStorage.getItem(STORAGE_KEY_GOALS) || "";
+      let cached = localStorage.getItem(STORAGE_KEY_GOALS);
+      if (!cached) {
+        cached = DEFAULT_GOALS_TEXT;
+        localStorage.setItem(STORAGE_KEY_GOALS, cached);
+      }
       parsedGoals = parseLinesToGoalObjects(cached);
       const area = document.getElementById('goalsInputArea');
-      if (area && cached) area.value = cached;
-    } catch(e) {}
+      if (area) area.value = cached;
+    } catch(e) {
+      parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS_TEXT);
+    }
 
+    // Initialize layout & profile subscription
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
-    // Initial check for streamer profile
     if (currentStreamerName && currentStreamerName !== "Streamer") {
+      subscribeToStreamer(currentStreamerName);
       loadSavedStreamerPass();
     }
   </script>
