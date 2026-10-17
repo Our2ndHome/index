@@ -20,27 +20,29 @@
             font-family: 'Inter', "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
 
-        /* 1000px x 300px Maximum Boundary */
+        /* Anchors the widget to the bottom-left */
         #chat-container {
             position: absolute;
-            bottom: 16px;
-            left: 16px;
+            bottom: 20px;
+            left: 20px;
             max-width: 1000px;
             max-height: 300px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: flex-start;
+            pointer-events: none;
         }
 
-        /* Twitch Chat Bubble */
+        /* 
+           Hugs content on short messages.
+           Expands up to 1000px wide and 300px high on long messages.
+        */
         .chat-card {
+            display: inline-block;
+            width: fit-content;
+            height: auto;
             max-width: 1000px;
             max-height: 300px;
-            width: fit-content;
             overflow: hidden;
-            background: rgba(24, 24, 27, 0.95); /* Native Twitch Dark #18181b */
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(24, 24, 27, 0.95); /* Twitch Dark Mode */
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 8px;
             padding: 10px 14px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
@@ -48,7 +50,7 @@
             line-height: 1.5;
             color: #efeff1;
             word-break: break-word;
-            overflow-wrap: break-word;
+            overflow-wrap: anywhere; /* Wraps continuous strings like sdfffffff... */
         }
 
         /* Badges */
@@ -77,7 +79,7 @@
             margin-right: 6px;
         }
 
-        /* Message Text */
+        /* Message */
         .chat-message {
             display: inline;
             font-weight: 400;
@@ -129,14 +131,14 @@
 
     <script>
         // ================= CONFIGURATION =================
-        const BASE_DISPLAY_TIME = 2500;  // Normal message display time (ms)
-        const FAST_DISPLAY_TIME = 1000;  // Speed if chat is active (queue > 2) (ms)
-        const ANIMATION_DURATION = 300;  // Matches CSS animation speed (ms)
+        const BASE_DISPLAY_TIME = 2500;  // Normal message display duration (ms)
+        const FAST_DISPLAY_TIME = 1000;  // Speed if chat active (queue > 2) (ms)
+        const ANIMATION_DURATION = 300;  // CSS animation speed (ms)
         const PAUSE_BETWEEN_MSGS = 200;  // Pause before showing next message (ms)
-        const MAX_QUEUE_LIMIT = 15;      // Max queued messages
+        const MAX_QUEUE_LIMIT = 15;      // Max queued backlog
         // =================================================
 
-        // Badge CDN image map
+        // Verified working Twitch Badge CDN URLs
         const BADGE_MAP = {
             'broadcaster': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1',
             'moderator': 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1',
@@ -146,7 +148,8 @@
             'premium': 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/1',
             'turbo': 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4bf9-91f4-af1e3428d80f/1',
             'staff': 'https://static-cdn.jtvnw.net/badges/v1/d97c37bd-a6f5-4c38-8f57-4e4bef88af34/1',
-            'subscriber': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2aa4b609622d/1'
+            'artist-badge': 'https://static-cdn.jtvnw.net/badges/v1/4300a897-03dc-4e83-8c0e-c332fee7057f/1',
+            'subscriber': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/1'
         };
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -206,7 +209,7 @@
 
             const username = tags['display-name'] || 'User';
             let color = tags['color'] || '#a970ff';
-            if (color === '#000000') color = '#a970ff'; // Guard against black text on dark background
+            if (color === '#000000') color = '#a970ff';
 
             const badgesHtml = parseBadges(tags['badges']);
             const messageHtml = parseEmotes(text, tags['emotes']);
@@ -234,7 +237,8 @@
             for (const item of items) {
                 const badgeName = item.split('/')[0];
                 if (BADGE_MAP[badgeName]) {
-                    badgesHtml += `<img class="chat-badge" src="${BADGE_MAP[badgeName]}" alt="${badgeName}">`;
+                    // onerror="this.remove()" guarantees no broken image icon ever shows
+                    badgesHtml += `<img class="chat-badge" src="${BADGE_MAP[badgeName]}" alt="" onerror="this.remove()">`;
                 }
             }
             return badgesHtml;
@@ -262,7 +266,8 @@
             for (const { id, start, end } of emoteRanges) {
                 result += escapeHtml(chars.slice(lastIndex, start).join(''));
                 const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`;
-                result += `<img class="emote" src="${emoteUrl}" alt="emote">`;
+                // onerror="this.remove()" guarantees missing emotes vanish cleanly
+                result += `<img class="emote" src="${emoteUrl}" alt="" onerror="this.remove()">`;
                 lastIndex = end + 1;
             }
             result += escapeHtml(chars.slice(lastIndex).join(''));
@@ -280,7 +285,7 @@
             const currentDuration = messageQueue.length > 2 ? FAST_DISPLAY_TIME : BASE_DISPLAY_TIME;
             const container = document.getElementById('chat-container');
 
-            // Render exact Twitch inline layout: [Badges] Username: Message
+            // Compact single inline card: [Badges] Username: Message
             container.innerHTML = `
                 <div class="chat-card animate-in">
                     <span class="chat-badges">${msg.badges}</span>
