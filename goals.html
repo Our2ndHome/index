@@ -117,7 +117,7 @@
       justify-content: space-between;
     }
 
-    /* Track line background (bottom and height set dynamically to span only between - and -) */
+    /* Track line background (spans strictly between bottom tick and top tick) */
     .ladder-line-bg {
       position: absolute;
       left: 82px;
@@ -469,13 +469,6 @@
       to { opacity: 1; }
     }
 
-    .btn-sm {
-      padding: 4px 6px;
-      font-size: 10px;
-      width: auto;
-      margin-bottom: 0;
-    }
-
     .hint-text {
       font-size: 10px;
       color: var(--text-dim);
@@ -512,7 +505,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.6</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.7</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -549,17 +542,6 @@
           <button class="btn btn-danger" id="btnClearPassBtn" onclick="handleClearPassClick()">
             🗑️ Rensa pass
           </button>
-        </div>
-      </div>
-
-      <!-- Quick Manual Offset Adjustments -->
-      <div style="margin-top:8px; border-top:1px solid #1f1f24; padding-top:6px;">
-        <span class="section-title" style="margin-bottom:4px;">⚡ Manuell Justering (+ / - kr)</span>
-        <div style="display:flex; gap:4px;">
-          <button class="btn btn-sm" onclick="adjustManualTotal(50)">+50 kr</button>
-          <button class="btn btn-sm" onclick="adjustManualTotal(100)">+100 kr</button>
-          <button class="btn btn-sm" onclick="adjustManualTotal(500)">+500 kr</button>
-          <button class="btn btn-sm btn-danger" onclick="resetManualAdjustment()">Nolla offset</button>
         </div>
       </div>
     </div>
@@ -908,7 +890,7 @@
       const topGoalY = nodePixelYs[nodePixelYs.length - 1]; // Vertical center of top goal tick '-'
       const totalTrackHeight = Math.max(0, topGoalY - startY);
 
-      // 📏 REMOVES EXTRA PIXELS: Background line starts at 0 kr (-) and stops at top goal (-)
+      // 📏 Background line starts at 0 kr (-) and stops at top goal (-)
       bgLine.style.bottom = `${startY.toFixed(1)}px`;
       bgLine.style.height = `${totalTrackHeight.toFixed(1)}px`;
 
@@ -949,8 +931,7 @@
       if (!streamerBaseline || streamerBaseline <= 0) {
         updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Klicka på "Starta nytt pass".`);
       } else {
-        const offsetNote = manualAdjustment !== 0 ? ` (Justering: ${manualAdjustment > 0 ? '+' : ''}${manualAdjustment} kr)` : '';
-        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat${offsetNote}`);
+        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
       }
 
       const nameInput = document.getElementById('streamerNameInput');
@@ -1173,36 +1154,6 @@
           updateDockStatus("❌ Fel: " + err.message, true);
         });
       }
-    }
-
-    // ⚡ MANUAL ADJUSTMENTS
-    function adjustManualTotal(diff) {
-      if (!streamerBaseline || streamerBaseline <= 0) {
-        updateDockStatus("⚠️ Starta ett pass först innan du justerar!", true);
-        return;
-      }
-      manualAdjustment += diff;
-      const key = getStreamerKey(currentStreamerName);
-      dbStreamersRef.child(key).update({
-        manualAdjustment: manualAdjustment,
-        secret: WRITE_SECRET
-      }).catch(() => {});
-
-      renderGoalsLadder();
-      updateDockDisplay();
-    }
-
-    function resetManualAdjustment() {
-      if (!streamerBaseline || streamerBaseline <= 0) return;
-      manualAdjustment = 0;
-      const key = getStreamerKey(currentStreamerName);
-      dbStreamersRef.child(key).update({
-        manualAdjustment: 0,
-        secret: WRITE_SECRET
-      }).catch(() => {});
-
-      renderGoalsLadder();
-      updateDockDisplay();
     }
 
     // 💾 SAVE MILESTONES
