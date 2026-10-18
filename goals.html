@@ -112,20 +112,20 @@
       text-shadow: 0 2px 4px #000, 0 0 2px #000;
     }
 
-    /* Horizontal Track System */
+    /* Horizontal Track System: Pinned to flex-start so tick height never shifts */
     .horizontal-track {
       position: relative;
       width: 100%;
       min-height: 86px;
       height: auto;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      padding-top: 4px;
     }
 
     .track-nodes-container {
       position: relative;
       width: 100%;
-      height: 100%;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -140,19 +140,19 @@
       padding-left: 20px;
     }
 
-    /* Background line: Aligned dead-center with the tick crosshair at Y=36px */
+    /* Background line: Locked at Y=36px passing through the middle of the tick */
     .track-line-bg {
       position: absolute;
-      top: 35px;
+      top: 36px;
       height: 2px;
-      background: rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.3);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
       z-index: 1;
     }
 
     .track-line-fill {
       position: absolute;
-      top: 34px;
+      top: 35px;
       height: 4px;
       background: var(--primary);
       box-shadow: 0 0 12px rgba(172, 230, 0, 0.9);
@@ -161,10 +161,10 @@
       transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Cursor centered dead-on the track line at Y=36px */
+    /* Cursor centered dead-on the track line at Y=37px */
     .track-cursor {
       position: absolute;
-      top: 36px;
+      top: 37px;
       width: 12px;
       height: 12px;
       background: var(--primary);
@@ -201,7 +201,7 @@
       text-align: center;
     }
 
-    /* Amount text: 14px bold, generous 12px clearance above the line */
+    /* Fixed 16px height + 10px margin = tick wrapper always starts at 26px */
     .h-node-amount {
       font-size: 14px;
       font-weight: 900;
@@ -210,11 +210,12 @@
       white-space: nowrap;
       text-shadow: 0 2px 4px #000, 0 0 3px #000;
       line-height: 16px;
-      margin-bottom: 12px;
+      height: 16px;
+      margin-bottom: 10px;
       transition: color 0.3s ease;
     }
 
-    /* Crosshair Tick: 14px tall, centered symmetrically across the 2px horizontal track line */
+    /* Crosshair Tick: 14px tall centered in 16px wrapper (center Y = 37px) */
     .h-node-tick-wrapper {
       position: relative;
       height: 16px;
@@ -225,15 +226,16 @@
       z-index: 3;
     }
 
+    /* Ticks with muted opacity (not stark white) */
     .h-node-tick {
       width: 2px;
-      height: 14px;
-      background: #ffffff;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 1);
+      height: 12px;
+      background: rgba(255, 255, 255, 0.45);
+      box-shadow: none;
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Milestone Label: 12px extra bold for stream readability */
+    /* Milestone Label: Grows downwards below the tick */
     .h-node-label {
       font-size: 12px;
       font-weight: 800;
@@ -262,7 +264,7 @@
     }
 
     .h-node.reached .h-node-tick {
-      background: var(--primary);
+      background: var(--primary) !important;
       box-shadow: 0 0 8px rgba(172, 230, 0, 0.9);
     }
 
@@ -577,7 +579,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v6.1</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v6.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -621,7 +623,7 @@
         Format: <code>Belopp - Beskrivning</code>
       </div>
       
-      <textarea id="goalsInputArea" placeholder="100 kr - Äter en banan.&#10;200 kr - Äter 2 bananer.&#10;300 kr - Äter en melon.&#10;400 kr - Dansar.&#10;500 kr - Hoppar."></textarea>
+      <textarea id="goalsInputArea" placeholder="50 kr - Sill bit&#10;100 kr - Sill bit&#10;150 kr - Sill bit&#10;200 kr - Sill bit&#10;250 kr - Sill bit med ketchup&#10;350 kr - Sill bit&#10;400 kr - Äter 2 bananer.&#10;500 kr - Äter en melon på 2 ben.&#10;600 kr - Dansar.&#10;700 kr - Hoppar på 4 ben och tre armar."></textarea>
 
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara mina milstolpar
@@ -637,11 +639,16 @@
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
 
     const DEFAULT_GOALS = 
-      "100 kr - Äter en banan.\n" +
-      "200 kr - Äter 2 bananer.\n" +
-      "300 kr - Äter en melon.\n" +
-      "400 kr - Dansar.\n" +
-      "500 kr - Hoppar.";
+      "50 kr - Sill bit\n" +
+      "100 kr - Sill bit\n" +
+      "150 kr - Sill bit\n" +
+      "200 kr - Sill bit\n" +
+      "250 kr - Sill bit med ketchup\n" +
+      "350 kr - Sill bit\n" +
+      "400 kr - Äter 2 bananer.\n" +
+      "500 kr - Äter en melon på 2 ben.\n" +
+      "600 kr - Dansar.\n" +
+      "700 kr - Hoppar på 4 ben och tre armar.";
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
