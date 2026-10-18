@@ -57,10 +57,10 @@
       pointer-events: none;
     }
 
-    /* 🖼️ SPONSOR ROTATOR (ROUNDED CARD, NO WHITE BORDER) */
+    /* 🖼️ SPONSOR ROTATOR */
     .sponsor-widget {
       position: absolute;
-      bottom: 125px; /* Added spacing from schedule */
+      bottom: 86px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -68,11 +68,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: rgba(0, 0, 0, 0.9);
-      border-radius: 16px;
-      border: none; /* No white border */
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      padding: 22px 24px 12px 24px; /* Space added at top */
     }
 
     .sponsor-logo-container {
@@ -82,7 +77,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 8px;
+      margin-bottom: 9px; /* Moved image 5px up, text remains in place */
     }
 
     .sponsor-logo {
@@ -108,24 +103,20 @@
     .sponsor-label {
       font-size: 13px;
       font-weight: 900;
-      color: #ace600; /* #ace600 as requested */
+      color: var(--primary-color);
       letter-spacing: 2px;
       text-transform: uppercase;
       display: block;
-      text-shadow: none;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR (FULL-WIDTH 1920px, STRAIGHT SIDES, NO WHITE BORDER) */
+    /* 📅 SCHEDULE TIMELINE BAR */
     .schedule-widget {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100vw;
-      background: rgba(0, 0, 0, 0.9);
-      border-radius: 0; /* Straight edges */
-      border: none;     /* No white border */
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
-      padding: 16px 30px 14px 30px;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96vw;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -160,6 +151,7 @@
       left: 0;
       height: 3px;
       background: var(--primary-color);
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.8);
       transform: translateY(-50%);
       z-index: 2;
       width: 0%;
@@ -173,6 +165,7 @@
       width: 12px;
       height: 12px;
       background: var(--primary-color);
+      box-shadow: 0 0 10px var(--primary-color);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
@@ -211,7 +204,7 @@
       align-items: center;
       text-align: center;
       padding: 0 4px;
-      text-shadow: none;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
     .node-time {
@@ -221,10 +214,9 @@
       justify-content: center;
       font-size: 13px;
       font-weight: 800;
-      color: #ffffff; /* Clean white */
+      color: #e6e6e6;
       white-space: nowrap;
       letter-spacing: 1px;
-      text-shadow: none;
     }
 
     .node-tick-wrapper {
@@ -254,22 +246,19 @@
       justify-content: center;
       font-size: 14px;
       font-weight: 900;
-      color: #ffffff; /* Clean white */
+      color: var(--text-white);
       white-space: nowrap;
       letter-spacing: 0.8px;
-      text-shadow: none;
     }
 
     .node-streamer.is-giveaway-text {
-      color: #ffffff; /* Clean white */
-      text-shadow: none;
+      color: var(--giveaway-color);
     }
 
-    /* Only the active/marked slot receives #ace600 */
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
-      text-shadow: none;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
     /* 🎛️ 2. OBS DOCK: BLACK & WHITE THEME */
@@ -449,11 +438,11 @@
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel)
+       🎛️ 2. OBS CONTROL DOCK (#panel - Black & White Style)
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.9</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.4</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -635,7 +624,7 @@
       }
     }
 
-    // ⚡ REAL-TIME DATABASE LISTENER
+    // ⚡ REAL-TIME NATIONWIDE DATABASE LISTENER
     dbScheduleRef.on('value', (snap) => {
       const data = snap.val();
       if (!data) return;
@@ -849,7 +838,7 @@
     }
 
     // ==========================================
-    // 🎛️ DOCK: LIVE SCHEDULE EDITOR
+    // 🎛️ DOCK: LIVE SCHEDULE EDITOR (NO POPUPS)
     // ==========================================
     function populateSlotsDropdown() {
       const daySelect = document.getElementById('editDaySelect');
@@ -911,6 +900,7 @@
         targetSlot.name = nameIn;
         targetSlot.giveaway = giveawayIn;
 
+        // Auto-prune lingering slots if ending at midnight 00:00
         let pruned = false;
         if (parsedTime.isMidnight) {
           let foundTarget = false;
@@ -1036,7 +1026,7 @@
     }
 
     // ==========================================
-    // 🖼️ SPONSOR ROTATOR (ORIGINAL GITHUB LOADER)
+    // 🖼️ SPONSOR ROTATOR ENGINE
     // ==========================================
     async function loadSponsorsAutomatically() {
       try {
