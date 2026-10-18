@@ -57,7 +57,7 @@
       pointer-events: none;
     }
 
-    /* 🖼️ SPONSOR ROTATOR (ROUNDED CARD, ZERO WHITE BORDERS) */
+    /* 🖼️ SPONSOR ROTATOR (NARROWER CARD, MORE SPACING) */
     .sponsor-widget {
       position: absolute;
       bottom: 125px;
@@ -72,17 +72,17 @@
       border-radius: 16px;
       border: none;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      padding: 22px 24px 12px 24px;
+      padding: 24px 18px 14px 18px; /* Top border follows image move, narrower sides */
     }
 
     .sponsor-logo-container {
-      width: 300px;
-      height: 90px;
-      max-width: 90vw;
+      width: 255px; /* Narrower width */
+      height: 85px;
+      max-width: 85vw;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 8px;
+      margin-bottom: 16px; /* Generous gap between image and text */
     }
 
     .sponsor-logo {
@@ -90,7 +90,7 @@
       max-height: 100%;
       object-fit: contain;
       transition: opacity 0.4s ease-in-out;
-      opacity: 0; /* Starts hidden until real image loads */
+      opacity: 0;
       animation: sponsorFloat 3.5s ease-in-out infinite;
     }
 
@@ -452,7 +452,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.0</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.1</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -650,7 +650,6 @@
         if (isPanel) populateSlotsDropdown();
       }
 
-      // Automatically syncs the discovered GitHub sponsors across machines
       if (Array.isArray(data.autoSponsors) && data.autoSponsors.length > 0) {
         sponsorFileList = data.autoSponsors;
         try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsorFileList)); } catch(e) {}
@@ -1054,7 +1053,6 @@
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}?_t=${Date.now()}`);
         if (res.ok) {
           const files = await res.json();
-          // Uses GitHub direct raw download URL so images always load anywhere
           const apiSponsors = files
             .filter(f => f.name && f.name.match(/\.(png|jpe?g|svg|webp)$/i))
             .map(f => f.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
@@ -1063,7 +1061,6 @@
             sponsorFileList = apiSponsors;
             try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch(e) {}
             
-            // Auto-backup to Firebase so future rate-limits won't block the overlay
             dbScheduleRef.update({
               autoSponsors: apiSponsors,
               secret: WRITE_SECRET
@@ -1104,7 +1101,6 @@
       }[tag] || tag));
     }
 
-    // Immediately show any cached sponsor image on startup
     if (sponsorFileList.length > 0) {
       updateSponsorLogo();
     }
