@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Milstolpar</title>
+  <title>Musikhjälpen Milstolpar - Top Split</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- Firebase Realtime Engine -->
@@ -19,7 +19,6 @@
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
-      --ladder-height: 520px;
     }
 
     * { box-sizing: border-box; }
@@ -47,7 +46,7 @@
     }
 
     /* ========================================================
-       📺 1. STREAM OVERLAY: VERTICAL LADDER
+       📺 1. STREAM OVERLAY: HORIZONTAL TOP-SPLIT BAR
        ======================================================== */
     #overlayRoot {
       position: absolute;
@@ -58,116 +57,97 @@
       pointer-events: none;
     }
 
-    /* DEFAULT (LEFT SIDE): 20px from left canvas edge, vertically centered */
-    .goals-widget-container {
+    /* 1920px container pinned to the top edge */
+    .top-goals-container {
       position: absolute;
-      top: 50%;
-      left: 20px;
-      right: auto;
-      transform: translateY(-50%);
+      top: 14px;
+      left: 0;
+      width: 1920px;
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0 20px;
       z-index: 1000;
-      transition: opacity 0.25s ease, visibility 0.25s ease;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
       opacity: 1;
       visibility: visible;
     }
 
-    /* REVERSED (RIGHT SIDE): 20px from right canvas edge, vertically centered */
-    .goals-widget-container.is-reversed {
-      left: auto !important;
-      right: 20px !important;
-    }
-
-    .goals-widget-container.is-hidden {
+    .top-goals-container.is-hidden {
       opacity: 0 !important;
       visibility: hidden !important;
     }
 
-    /* MILSTOLPAR HEADER: Centered dead-on over the vertical line */
-    .goals-header {
+    /* Left and Right Wings (720px each) */
+    .goal-wing {
       position: relative;
-      left: 83px;
-      transform: translateX(-50%);
-      width: max-content;
-      text-align: center;
-      font-size: 14px;
+      width: 720px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Center clearance gap for your 400px middle widget */
+    .center-obstacle-spacer {
+      width: 440px; /* 400px widget + 20px padding on each side */
+      height: 80px;
+      flex-shrink: 0;
+    }
+
+    .wing-header {
+      font-size: 11px;
       font-weight: 900;
-      letter-spacing: 2.5px;
+      letter-spacing: 2px;
       color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 16px;
+      margin-bottom: 6px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
-      transition: left 0.25s ease;
     }
 
-    /* In reversed mode, container is 360px wide and line is at 360px - 83px = 277px */
-    .goals-widget-container.is-reversed .goals-header {
-      left: calc(360px - 83px);
-      transform: translateX(-50%);
-    }
-
-    /* VERTICAL LADDER TRACK */
-    .vertical-ladder {
+    /* Horizontal Track System */
+    .horizontal-track {
       position: relative;
-      height: var(--ladder-height);
-      width: 360px;
+      width: 100%;
+      height: 68px;
       display: flex;
-      flex-direction: column-reverse; /* Lowest milestone at bottom */
       justify-content: space-between;
+      align-items: center;
     }
 
-    /* Track line background (spans strictly between bottom tick and top tick) */
-    .ladder-line-bg {
+    /* Background line starts at first tick and ends at last tick */
+    .track-line-bg {
       position: absolute;
-      left: 82px;
-      width: 2px;
-      background: rgba(255, 255, 255, 0.3);
+      top: 26px; /* Centered with tick */
+      height: 2px;
+      background: rgba(255, 255, 255, 0.25);
       z-index: 1;
-      height: 0px;
     }
 
-    .vertical-ladder.is-reversed .ladder-line-bg {
-      left: auto;
-      right: 82px;
-    }
-
-    .ladder-line-fill {
+    .track-line-fill {
       position: absolute;
-      left: 81.5px;
-      width: 3px;
+      top: 25.5px;
+      height: 3px;
       background: var(--primary);
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.85);
       z-index: 2;
-      height: 0px;
-      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 0px;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .vertical-ladder.is-reversed .ladder-line-fill {
-      left: auto;
-      right: 81.5px;
-    }
-
-    .ladder-cursor {
+    .track-cursor {
       position: absolute;
-      left: 83px;
+      top: 27px;
       width: 12px;
       height: 12px;
       background: var(--primary);
       box-shadow: 0 0 10px var(--primary);
-      transform: translate(-50%, 50%);
+      transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
-      transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+      opacity: 0;
     }
 
-    .vertical-ladder.is-reversed .ladder-cursor {
-      left: auto;
-      right: 83px;
-      transform: translate(50%, 50%);
-    }
-
-    .ladder-cursor::after {
+    .track-cursor::after {
       content: '';
       position: absolute;
       top: -4px; left: -4px; right: -4px; bottom: -4px;
@@ -181,87 +161,79 @@
       100% { transform: scale(2.2); opacity: 0; }
     }
 
-    /* MILESTONE NODES (NORMAL: [Amount] [-] [Label]) */
-    .ladder-node {
+    /* HORIZONTAL NODE: Amount on top, Tick in middle, Label on bottom */
+    .h-node {
       position: relative;
       display: flex;
+      flex-direction: column;
       align-items: center;
       z-index: 3;
-      min-height: 28px;
-      transition: opacity 0.3s ease;
+      min-width: 60px;
     }
 
-    .node-amount {
-      width: 74px;
-      text-align: right;
-      font-size: 14px;
+    .h-node-amount {
+      font-size: 13px;
       font-weight: 900;
       letter-spacing: 0.5px;
-      color: #ffffff !important;
+      color: #ffffff;
       white-space: nowrap;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+      margin-bottom: 4px;
+      transition: color 0.3s ease;
     }
 
-    .node-tick-wrapper {
+    .h-node-tick-wrapper {
       position: relative;
-      width: 18px;
+      height: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .node-divider-tick {
-      width: 10px;
-      height: 2px;
+    .h-node-tick {
+      width: 2px;
+      height: 10px;
       background: #ffffff;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .node-label {
-      font-size: 15px;
-      font-weight: 900;
-      color: #ffffff !important;
-      letter-spacing: 0.5px;
+    .h-node-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
-      max-width: 250px;
+      max-width: 140px;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      margin-top: 4px;
+      text-align: center;
     }
 
-    .ladder-node.reached .node-amount {
+    .h-node.reached .h-node-amount {
       color: var(--primary) !important;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 8px rgba(172, 230, 0, 0.6);
     }
 
-    .node-check {
+    .h-node.reached .h-node-tick {
+      background: var(--primary);
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.8);
+    }
+
+    .h-node .node-check {
       display: none;
       color: var(--primary);
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 900;
     }
 
-    .ladder-node.reached .node-check {
+    .h-node.reached .node-check {
       display: inline-block;
-    }
-
-    /* REVERSED NODE LAYOUT: ([Label] [-] [Amount]) */
-    .vertical-ladder.is-reversed .ladder-node {
-      flex-direction: row-reverse;
-      justify-content: flex-start;
-    }
-
-    .vertical-ladder.is-reversed .node-amount {
-      text-align: left;
-    }
-
-    .vertical-ladder.is-reversed .node-label {
-      flex-direction: row-reverse;
-      text-align: right;
-      justify-content: flex-start;
     }
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
@@ -426,6 +398,7 @@
       cursor: pointer;
       width: 100%;
       text-align: center;
+      margin-bottom: 8px;
       transition: background 0.15s ease, border-color 0.15s ease;
     }
     .btn-toggle-view:hover { background: #2c2c36; }
@@ -486,17 +459,34 @@
 <body>
 
   <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW (#overlay)
+       📺 1. STREAM OVERLAY VIEW: HORIZONTAL TOP-SPLIT BAR
        ======================================================== -->
   <div id="overlayRoot">
-    <div class="goals-widget-container" id="goalsWidgetContainer">
-      <div class="goals-header">MILSTOLPAR</div>
-
-      <div class="vertical-ladder" id="goalsLadder">
-        <div class="ladder-line-bg"></div>
-        <div class="ladder-line-fill" id="ladderFill"></div>
-        <div class="ladder-cursor" id="ladderCursor"></div>
+    <div class="top-goals-container" id="goalsWidgetContainer">
+      
+      <!-- LEFT WING (720px) -->
+      <div class="goal-wing" id="leftWing">
+        <div class="wing-header">MILSTOLPAR</div>
+        <div class="horizontal-track" id="leftTrack">
+          <div class="track-line-bg"></div>
+          <div class="track-line-fill" id="leftFill"></div>
+          <div class="track-cursor" id="leftCursor"></div>
+        </div>
       </div>
+
+      <!-- 440px GAP FOR CENTER WIDGET -->
+      <div class="center-obstacle-spacer"></div>
+
+      <!-- RIGHT WING (720px) -->
+      <div class="goal-wing" id="rightWing">
+        <div class="wing-header">NÄSTA MÅL</div>
+        <div class="horizontal-track" id="rightTrack">
+          <div class="track-line-bg"></div>
+          <div class="track-line-fill" id="rightFill"></div>
+          <div class="track-cursor" id="rightCursor"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -505,19 +495,14 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v4.7</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">TOPP-SPLIT v5.0</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- 👁️ HIDE / SHOW & ↔️ SPEGLA DOCK BUTTONS -->
-    <div style="display:flex; gap:6px; margin-bottom:8px;">
-      <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
-        👁️ Göm milstolpar
-      </button>
-      <button id="btnToggleReverse" class="btn-toggle-view" onclick="toggleReverseLayout()">
-        ↔️ Spegla (Höger)
-      </button>
-    </div>
+    <!-- 👁️ HIDE / SHOW GOALS TOGGLE -->
+    <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
+      👁️ Göm milstolpar på stream
+    </button>
 
     <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
 
@@ -568,7 +553,6 @@
     const STORAGE_KEY_GOALS = "mh_overlay_local_goals";
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
-    const STORAGE_KEY_REVERSED = "mh_goals_is_reversed";
 
     const DEFAULT_GOALS = 
       "200 kr - Äta stark sås\n" +
@@ -578,13 +562,10 @@
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
-    // Checks URL parameters & hash: ?streamer=Name, ?side=right, etc.
+    // Checks URL parameter for hardcoded streamer names: ?streamer=LordBaconeer
     const fullUrl = window.location.href;
     const streamerMatch = fullUrl.match(/[?&]streamer=([^&#]+)/i);
     const streamerFromUrl = streamerMatch ? decodeURIComponent(streamerMatch[1]) : null;
-
-    const sideMatch = fullUrl.match(/[?&](side|align|pos)=([^&#]+)/i);
-    const sideFromUrl = sideMatch ? decodeURIComponent(sideMatch[2]).toLowerCase() : null;
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -601,7 +582,6 @@
     let manualAdjustment = 0;
     let currentStreamerName = streamerFromUrl ? streamerFromUrl.trim() : "Streamer";
     let isGoalsHidden = false;
-    let isReversed = false;
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
 
@@ -612,14 +592,11 @@
         if (savedStreamer) currentStreamerName = savedStreamer;
       }
       isGoalsHidden = localStorage.getItem(STORAGE_KEY_HIDDEN) === 'true';
-      isReversed = (sideFromUrl === 'right' || sideFromUrl === 'reversed') || (localStorage.getItem(STORAGE_KEY_REVERSED) === 'true');
     } catch(e) {
       isGoalsHidden = false;
-      isReversed = false;
     }
 
     applyVisibilityState();
-    applyReversedState(false); // Initial instantaneous render (no fade)
 
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
@@ -675,11 +652,11 @@
       const btn = document.getElementById('btnToggleVisibility');
       if (btn) {
         if (isGoalsHidden) {
-          btn.innerText = "👁️ Visa milstolpar";
+          btn.innerText = "👁️ Visa milstolpar på stream";
           btn.style.borderColor = "#00ff88";
           btn.style.color = "#00ff88";
         } else {
-          btn.innerText = "👁️ Göm milstolpar";
+          btn.innerText = "👁️ Göm milstolpar på stream";
           btn.style.borderColor = "#3a3a44";
           btn.style.color = "#ffffff";
         }
@@ -699,81 +676,6 @@
       }
 
       updateDockStatus(isGoalsHidden ? "🙈 Milstolpar döljs på stream" : "👀 Milstolpar visas på stream");
-    }
-
-    // ========================================================
-    // ↔️ HORIZONTAL REVERSE & POSITION CONTROLLER (WITH FADE)
-    // ========================================================
-    function updateReverseButtonUI() {
-      const btn = document.getElementById('btnToggleReverse');
-      if (btn) {
-        if (isReversed) {
-          btn.innerText = "↔️ Spegla (Vänster)";
-          btn.style.borderColor = "#00ff88";
-          btn.style.color = "#00ff88";
-        } else {
-          btn.innerText = "↔️ Spegla (Höger)";
-          btn.style.borderColor = "#3a3a44";
-          btn.style.color = "#ffffff";
-        }
-      }
-    }
-
-    function applyReversedState(withFade = false) {
-      const container = document.getElementById('goalsWidgetContainer');
-      const ladder = document.getElementById('goalsLadder');
-
-      if (!container || !ladder) return;
-
-      if (withFade && !isGoalsHidden) {
-        // 1. Smooth Fade Out
-        container.style.opacity = '0';
-
-        setTimeout(() => {
-          // 2. Flip position and classes while invisible
-          if (isReversed) {
-            container.classList.add('is-reversed');
-            ladder.classList.add('is-reversed');
-          } else {
-            container.classList.remove('is-reversed');
-            ladder.classList.remove('is-reversed');
-          }
-          renderGoalsLadder();
-
-          // 3. Smooth Fade Back In
-          requestAnimationFrame(() => {
-            container.style.opacity = '1';
-          });
-        }, 260);
-      } else {
-        // Direct instant apply (on load or when hidden)
-        if (isReversed) {
-          container.classList.add('is-reversed');
-          ladder.classList.add('is-reversed');
-        } else {
-          container.classList.remove('is-reversed');
-          ladder.classList.remove('is-reversed');
-        }
-        container.style.opacity = isGoalsHidden ? '0' : '1';
-        renderGoalsLadder();
-      }
-
-      updateReverseButtonUI();
-    }
-
-    function toggleReverseLayout() {
-      isReversed = !isReversed;
-      try {
-        localStorage.setItem(STORAGE_KEY_REVERSED, isReversed ? 'true' : 'false');
-      } catch(e) {}
-
-      applyReversedState(true);
-
-      if (bus) {
-        bus.postMessage({ type: 'GOALS_REVERSED_TOGGLED', reversed: isReversed });
-      }
-
-      updateDockStatus(isReversed ? "➡️ Widget flyttad till höger (speglad)" : "⬅️ Widget flyttad till vänster (standard)");
     }
 
     // ========================================================
@@ -804,126 +706,162 @@
     }
 
     // ========================================================
-    // 🎨 RENDER VERTICAL LADDER
+    // 🎨 RENDER TOP-SPLIT HORIZONTAL LADDERS
     // ========================================================
     function renderGoalsLadder() {
-      const ladder = document.getElementById('goalsLadder');
-      if (!ladder) return;
+      const leftTrack = document.getElementById('leftTrack');
+      const rightTrack = document.getElementById('rightTrack');
+      const rightWing = document.getElementById('rightWing');
+      if (!leftTrack || !rightTrack) return;
 
-      const oldNodes = ladder.querySelectorAll('.ladder-node');
-      oldNodes.forEach(n => n.remove());
-
-      const fillEl = document.getElementById('ladderFill');
-      const cursorEl = document.getElementById('ladderCursor');
-      const bgLine = ladder.querySelector('.ladder-line-bg');
+      // Clean old nodes
+      leftTrack.querySelectorAll('.h-node').forEach(n => n.remove());
+      rightTrack.querySelectorAll('.h-node').forEach(n => n.remove());
 
       if (parsedGoals.length === 0) {
-        if (fillEl) fillEl.style.height = '0px';
-        if (cursorEl) cursorEl.style.bottom = '0px';
-        if (bgLine) bgLine.style.height = '0px';
+        document.getElementById('leftFill').style.width = '0px';
+        document.getElementById('rightFill').style.width = '0px';
+        document.getElementById('leftCursor').style.opacity = '0';
+        document.getElementById('rightCursor').style.opacity = '0';
         return;
       }
 
+      // Split goals between left wing and right wing
+      const mid = Math.ceil(parsedGoals.length / 2);
+      const leftGoals = parsedGoals.slice(0, mid);
+      const rightGoals = parsedGoals.slice(mid);
+
       const liveEarned = getLiveSessionEarned();
 
-      // 1. Bottom Anchor (0 kr Base)
-      const startNodeEl = document.createElement('div');
-      startNodeEl.className = 'ladder-node start-base reached';
-      startNodeEl.innerHTML = `
-        <div class="node-amount">0 kr</div>
-        <div class="node-tick-wrapper">
-          <div class="node-divider-tick"></div>
-        </div>
-        <div class="node-label">
-          <span style="opacity:0.6; font-size:12px;">Start</span>
-        </div>
-      `;
-      ladder.appendChild(startNodeEl);
+      // --- 1. BUILD LEFT WING (0 kr -> Mid Goal) ---
+      const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0);
+      leftTrack.appendChild(leftStartEl);
 
-      // 2. Goal Nodes
-      parsedGoals.forEach((goal) => {
-        const isReached = liveEarned >= goal.amount;
-
-        const nodeEl = document.createElement('div');
-        nodeEl.className = `ladder-node ${isReached ? 'reached' : ''}`;
-        nodeEl.innerHTML = `
-          <div class="node-amount">${formatSEK(goal.amount)}</div>
-          <div class="node-tick-wrapper">
-            <div class="node-divider-tick"></div>
-          </div>
-          <div class="node-label">
-            <span class="node-check">✓</span>
-            <span title="${escapeHTML(goal.label)}">${escapeHTML(goal.label)}</span>
-          </div>
-        `;
-
-        ladder.appendChild(nodeEl);
+      leftGoals.forEach(g => {
+        const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount);
+        leftTrack.appendChild(el);
       });
 
+      // --- 2. BUILD RIGHT WING (Mid Goal -> Top Goal) ---
+      if (rightGoals.length > 0) {
+        if (rightWing) rightWing.style.display = 'flex';
+        const handoverAmount = leftGoals[leftGoals.length - 1].amount;
+        
+        // Handover anchor on right side
+        const rightStartEl = createNodeEl(handoverAmount, "Bas", liveEarned >= handoverAmount);
+        rightTrack.appendChild(rightStartEl);
+
+        rightGoals.forEach(g => {
+          const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount);
+          rightTrack.appendChild(el);
+        });
+      } else {
+        if (rightWing) rightWing.style.display = 'none';
+      }
+
       requestAnimationFrame(() => {
-        updateLadderProgressPixels(liveEarned);
+        updateHorizontalProgress(liveEarned, leftGoals, rightGoals);
       });
     }
 
-    // 🎯 PIXEL-PERFECT MEASUREMENT: Starts & ends dead-center on the '-' ticks
-    function updateLadderProgressPixels(liveEarned) {
-      const ladder = document.getElementById('goalsLadder');
-      const fillEl = document.getElementById('ladderFill');
-      const cursorEl = document.getElementById('ladderCursor');
-      const bgLine = ladder ? ladder.querySelector('.ladder-line-bg') : null;
-      if (!ladder || !fillEl || !cursorEl || !bgLine || parsedGoals.length === 0) return;
+    function createNodeEl(amount, label, isReached) {
+      const el = document.createElement('div');
+      el.className = `h-node ${isReached ? 'reached' : ''}`;
+      el.innerHTML = `
+        <div class="h-node-amount">${formatSEK(amount)}</div>
+        <div class="h-node-tick-wrapper">
+          <div class="h-node-tick"></div>
+        </div>
+        <div class="h-node-label">
+          <span class="node-check">✓</span>
+          <span title="${escapeHTML(label)}">${escapeHTML(label)}</span>
+        </div>
+      `;
+      return el;
+    }
 
-      const nodes = Array.from(ladder.querySelectorAll('.ladder-node'));
-      if (nodes.length !== (parsedGoals.length + 1)) return; // +1 includes start-base
+    // 🎯 PIXEL-PERFECT HORIZONTAL TRACK PROGRESSION
+    function updateHorizontalProgress(liveEarned, leftGoals, rightGoals) {
+      const leftTrack = document.getElementById('leftTrack');
+      const leftFill = document.getElementById('leftFill');
+      const leftCursor = document.getElementById('leftCursor');
 
-      const ladderRect = ladder.getBoundingClientRect();
-      if (ladderRect.height <= 0) return;
+      const rightTrack = document.getElementById('rightTrack');
+      const rightFill = document.getElementById('rightFill');
+      const rightCursor = document.getElementById('rightCursor');
 
-      // Extract pixel center of every '-' tick mark from the container bottom
-      const nodePixelYs = nodes.map(nodeEl => {
-        const tick = nodeEl.querySelector('.node-divider-tick') || nodeEl;
+      if (!leftTrack || !leftFill || !leftCursor) return;
+
+      const leftThreshold = leftGoals[leftGoals.length - 1].amount;
+      const leftNodes = Array.from(leftTrack.querySelectorAll('.h-node'));
+
+      // 1. Update Left Wing
+      updateWingPhysics(leftTrack, leftFill, leftCursor, leftNodes, leftGoals, liveEarned, 0, leftThreshold, liveEarned > leftThreshold);
+
+      // 2. Update Right Wing
+      if (rightGoals.length > 0 && rightTrack && rightFill && rightCursor) {
+        const rightMax = rightGoals[rightGoals.length - 1].amount;
+        const rightNodes = Array.from(rightTrack.querySelectorAll('.h-node'));
+        updateWingPhysics(rightTrack, rightFill, rightCursor, rightNodes, rightGoals, liveEarned, leftThreshold, rightMax, false);
+      }
+    }
+
+    function updateWingPhysics(trackEl, fillEl, cursorEl, nodes, goals, currentEarned, baseAmount, maxAmount, isHandedOffToNext) {
+      const bgLine = trackEl.querySelector('.track-line-bg');
+      const trackRect = trackEl.getBoundingClientRect();
+      if (trackRect.width <= 0 || nodes.length < 2) return;
+
+      // Extract pixel center coordinates of every tick '|'
+      const nodeXs = nodes.map(nodeEl => {
+        const tick = nodeEl.querySelector('.h-node-tick') || nodeEl;
         const tickRect = tick.getBoundingClientRect();
-        return Math.max(0, ladderRect.bottom - (tickRect.top + tickRect.height / 2));
+        return Math.max(0, (tickRect.left + tickRect.width / 2) - trackRect.left);
       });
 
-      const startY = nodePixelYs[0]; // Vertical center of the 0 kr tick '-'
-      const topGoalY = nodePixelYs[nodePixelYs.length - 1]; // Vertical center of top goal tick '-'
-      const totalTrackHeight = Math.max(0, topGoalY - startY);
+      const startX = nodeXs[0];
+      const endX = nodeXs[nodeXs.length - 1];
+      const totalTrackSpan = Math.max(0, endX - startX);
 
-      // 📏 Background line starts at 0 kr (-) and stops at top goal (-)
-      bgLine.style.bottom = `${startY.toFixed(1)}px`;
-      bgLine.style.height = `${totalTrackHeight.toFixed(1)}px`;
+      // 📏 TRIMS LINE: Starts and ends strictly on the '|' ticks
+      if (bgLine) {
+        bgLine.style.left = `${startX.toFixed(1)}px`;
+        bgLine.style.width = `${totalTrackSpan.toFixed(1)}px`;
+      }
 
-      const topGoalAmount = parsedGoals[parsedGoals.length - 1].amount;
-      let targetPixelY = startY;
+      let targetX = startX;
+      let showCursor = false;
 
-      if (liveEarned <= 0) {
-        targetPixelY = startY;
-      } else if (liveEarned >= topGoalAmount) {
-        targetPixelY = topGoalY;
+      if (currentEarned <= baseAmount) {
+        targetX = startX;
+        showCursor = (baseAmount === 0); // only show at 0 kr start
+      } else if (currentEarned >= maxAmount) {
+        targetX = endX;
+        showCursor = !isHandedOffToNext; // park cursor on final goal
       } else {
-        let prevAmount = 0;
-        let prevY = startY;
+        showCursor = true;
+        let prevAmt = baseAmount;
+        let prevX = startX;
 
-        for (let i = 0; i < parsedGoals.length; i++) {
-          const goalAmount = parsedGoals[i].amount;
-          const currentY = nodePixelYs[i + 1];
+        for (let i = 0; i < goals.length; i++) {
+          const goalAmt = goals[i].amount;
+          const currentX = nodeXs[i + 1];
 
-          if (liveEarned <= goalAmount) {
-            const denom = goalAmount - prevAmount;
-            const ratio = denom > 0 ? (liveEarned - prevAmount) / denom : 1;
-            targetPixelY = prevY + (currentY - prevY) * ratio;
+          if (currentEarned <= goalAmt) {
+            const denom = goalAmt - prevAmt;
+            const ratio = denom > 0 ? (currentEarned - prevAmt) / denom : 1;
+            targetX = prevX + (currentX - prevX) * ratio;
             break;
           }
 
-          prevAmount = goalAmount;
-          prevY = currentY;
+          prevAmt = goalAmt;
+          prevX = currentX;
         }
       }
 
-      fillEl.style.bottom = `${startY.toFixed(1)}px`;
-      fillEl.style.height = `${Math.max(0, targetPixelY - startY).toFixed(1)}px`;
-      cursorEl.style.bottom = `${targetPixelY.toFixed(1)}px`;
+      fillEl.style.left = `${startX.toFixed(1)}px`;
+      fillEl.style.width = `${Math.max(0, targetX - startX).toFixed(1)}px`;
+      cursorEl.style.left = `${targetX.toFixed(1)}px`;
+      cursorEl.style.opacity = showCursor ? '1' : '0';
     }
 
     function updateDockDisplay() {
@@ -991,16 +929,13 @@
 
     if (bus) {
       bus.onmessage = (e) => {
-        const { type, text, hidden, reversed, baseline, streamer } = e.data || {};
+        const { type, text, hidden, baseline, streamer } = e.data || {};
         if (type === 'LOCAL_GOALS_UPDATED') {
           parsedGoals = parseLinesToGoalObjects(text);
           renderGoalsLadder();
         } else if (type === 'GOALS_VISIBILITY_TOGGLED') {
           isGoalsHidden = hidden;
           applyVisibilityState();
-        } else if (type === 'GOALS_REVERSED_TOGGLED') {
-          isReversed = reversed;
-          applyReversedState(true);
         } else if (type === 'STREAMER_PASS_SYNC') {
           streamerBaseline = baseline;
           currentStreamerName = streamer;
@@ -1019,9 +954,6 @@
       } else if (e.key === STORAGE_KEY_HIDDEN) {
         isGoalsHidden = e.newValue === 'true';
         applyVisibilityState();
-      } else if (e.key === STORAGE_KEY_REVERSED) {
-        isReversed = e.newValue === 'true';
-        applyReversedState(true);
       } else if (e.key === STORAGE_KEY_STREAMER && e.newValue) {
         loadSavedStreamerPass(e.newValue);
       }
@@ -1200,12 +1132,12 @@
 
     // 🎯 OBS Scene Switch & Visibility Observer
     if (window.ResizeObserver) {
-      const ladderContainer = document.getElementById('goalsLadder');
-      if (ladderContainer) {
+      const container = document.getElementById('goalsWidgetContainer');
+      if (container) {
         const ro = new ResizeObserver(() => {
           renderGoalsLadder();
         });
-        ro.observe(ladderContainer);
+        ro.observe(container);
       }
     }
 
