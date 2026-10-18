@@ -81,7 +81,7 @@
       visibility: hidden !important;
     }
 
-    /* Left and Right Wings (720px each with #000000 at 0.9 opacity) */
+    /* Left and Right Wings: Pure background only (all border effects & shadows removed) */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
@@ -90,8 +90,9 @@
       background: rgba(0, 0, 0, 0.9);
       padding: 10px 16px 10px 16px;
       border-radius: 8px;
-      border: 1px solid #18181c;
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.85);
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
     }
 
     /* 440px spacer = 400px middle widget + exact 20px gap on each side */
@@ -131,6 +132,7 @@
       z-index: 4;
     }
 
+    /* Tight runway to middle widget matching the 20px grid rhythm */
     .left-track .track-nodes-container {
       padding-right: 20px;
     }
@@ -570,7 +572,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.8</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.9</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -837,7 +839,6 @@
       const liveEarned = getLiveSessionEarned();
 
       // --- 1. LEFT WING ---
-      // Start node is marked isFirstNode (flush to left edge)
       const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0, false, true);
       leftNodesContainer.appendChild(leftStartEl);
 
@@ -852,7 +853,6 @@
         if (rightWing) rightWing.style.display = 'flex';
         rightGoals.forEach((g, i) => {
           const isLastOfAll = (i === rightGoals.length - 1);
-          // Final goal of right wing is marked isLastGoal (flush to right edge)
           const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
           rightNodesContainer.appendChild(el);
         });
