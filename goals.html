@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Milstolpar - Top Split Balanced</title>
+  <title>Musikhjälpen Milstolpar - Top Split</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- Firebase Realtime Engine -->
@@ -19,6 +19,10 @@
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
+      
+      /* Exact 20px Grid Variables */
+      --wing-width: 770px;
+      --center-spacer-width: 340px; /* 300px countdown widget + 20px gap on each side */
     }
 
     * { box-sizing: border-box; }
@@ -57,12 +61,12 @@
       pointer-events: none;
     }
 
-    /* 1880px wide container (1920px minus 20px left and 20px right margins) */
+    /* Pinned 20px from top and sides */
     .top-goals-container {
       position: absolute;
-      top: 20px; /* Exactly 20px from top canvas edge */
-      left: 20px; /* Exactly 20px from left canvas edge */
-      width: 1880px;
+      top: 20px;
+      left: 20px;
+      width: 1880px; /* 1920px - 20px left - 20px right */
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -77,10 +81,10 @@
       visibility: hidden !important;
     }
 
-    /* Left and Right Wings (720px each with #000000 at 0.9 opacity) */
+    /* Left and Right Wings (770px each with #000000 at 0.9 opacity) */
     .goal-wing {
       position: relative;
-      width: 720px;
+      width: var(--wing-width);
       display: flex;
       flex-direction: column;
       background: rgba(0, 0, 0, 0.9);
@@ -90,9 +94,9 @@
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
 
-    /* 440px spacer = 400px middle widget + exactly 20px gap on each side */
+    /* 340px spacer = ~300px countdown widget + exact 20px gap on each side */
     .center-obstacle-spacer {
-      width: 440px;
+      width: var(--center-spacer-width);
       height: 80px;
       flex-shrink: 0;
     }
@@ -126,7 +130,7 @@
       z-index: 4;
     }
 
-    /* Tightened 20px runway to middle widget matching the 20px grid rhythm */
+    /* Tight runway to middle widget matching the 20px grid rhythm */
     .left-track .track-nodes-container {
       padding-right: 20px;
     }
@@ -135,12 +139,13 @@
       padding-left: 20px;
     }
 
-    /* Background line */
+    /* Background line (visible, clear track) */
     .track-line-bg {
       position: absolute;
       top: 26px;
       height: 2px;
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
       z-index: 1;
     }
 
@@ -486,7 +491,7 @@
   <div id="overlayRoot">
     <div class="top-goals-container" id="goalsWidgetContainer">
       
-      <!-- LEFT WING: [0 kr Start] ---- [Goal 1] ---- [Goal 2] --------> -->
+      <!-- LEFT WING -->
       <div class="goal-wing" id="leftWing">
         <div class="wing-header">MILSTOLPAR</div>
         <div class="horizontal-track left-track" id="leftTrack">
@@ -497,10 +502,10 @@
         </div>
       </div>
 
-      <!-- EXACT 440px GAP FOR CENTER WIDGET (400px + 20px gap on each side) -->
+      <!-- CENTER CLEARANCE GAP (340px = 300px widget + 20px on each side) -->
       <div class="center-obstacle-spacer"></div>
 
-      <!-- RIGHT WING: --------> [Goal 3] ---- [Goal 4] ---- [Goal 5] -->
+      <!-- RIGHT WING -->
       <div class="goal-wing" id="rightWing">
         <div class="wing-header">NÄSTA MÅL</div>
         <div class="horizontal-track right-track" id="rightTrack">
@@ -519,7 +524,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.4</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.5</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -563,7 +568,7 @@
         Format: <code>Belopp - Beskrivning</code>
       </div>
       
-      <textarea id="goalsInputArea" placeholder="200 kr - Äta stark sås&#10;500 kr - Spela skräckspel&#10;1000 kr - Hårfärgning&#10;2500 kr - 12h Stream&#10;5000 kr - 24h Stream"></textarea>
+      <textarea id="goalsInputArea" placeholder="100 kr - Äter en banan.&#10;200 kr - Äter 2 bananer.&#10;300 kr - Äter en melon.&#10;400 kr - Dansar.&#10;500 kr - Hoppar."></textarea>
 
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara mina milstolpar
@@ -579,11 +584,11 @@
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
 
     const DEFAULT_GOALS = 
-      "200 kr - Äta stark sås\n" +
-      "500 kr - Spela skräckspel\n" +
-      "1000 kr - Hårfärgning\n" +
-      "2500 kr - 12h Stream\n" +
-      "5000 kr - 24h Stream";
+      "100 kr - Äter en banan.\n" +
+      "200 kr - Äter 2 bananer.\n" +
+      "300 kr - Äter en melon.\n" +
+      "400 kr - Dansar.\n" +
+      "500 kr - Hoppar.";
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
@@ -749,14 +754,15 @@
         return;
       }
 
-      // ⚖️ BALANCED SPLIT: Counts the "Start" node as an item so wings are balanced
+      // ⚖️ BALANCED SPLIT: Counts the "Start" node so wings are equal
+      // e.g. 5 goals = 3 on left (Start + 2 goals) & 3 on right (3 goals)
       const leftGoalsCount = Math.max(1, Math.floor(parsedGoals.length / 2));
       const leftGoals = parsedGoals.slice(0, leftGoalsCount);
       const rightGoals = parsedGoals.slice(leftGoalsCount);
 
       const liveEarned = getLiveSessionEarned();
 
-      // --- 1. LEFT WING: [0 kr Start] ---- [Goal 1] ---- [Goal 2] --------> ---
+      // --- 1. LEFT WING ---
       const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0);
       leftNodesContainer.appendChild(leftStartEl);
 
@@ -765,7 +771,7 @@
         leftNodesContainer.appendChild(el);
       });
 
-      // --- 2. RIGHT WING: --------> [Goal 3] ---- [Goal 4] ---- [Goal 5] ---
+      // --- 2. RIGHT WING ---
       if (rightGoals.length > 0) {
         if (rightWing) rightWing.style.display = 'flex';
         rightGoals.forEach(g => {
@@ -797,7 +803,7 @@
       return el;
     }
 
-    // 🎯 BRIDGE PROGRESSION: Flows across full-width wings and center widget
+    // 🎯 BRIDGE PROGRESSION
     function updateBridgeProgress(liveEarned, leftGoals, rightGoals) {
       const leftTrack = document.getElementById('leftTrack');
       const leftFill = document.getElementById('leftFill');
@@ -823,11 +829,10 @@
         return Math.max(0, (tickRect.left + tickRect.width / 2) - leftTrackRect.left);
       });
 
-      const leftStartX = leftXs[0]; // Center of 0 kr tick
-      const lastGoalLeftX = leftXs[leftXs.length - 1]; // Center of last left goal tick
-      const leftTrackEndX = leftTrackRect.width - 2; // Right edge of left track
+      const leftStartX = leftXs[0];
+      const lastGoalLeftX = leftXs[leftXs.length - 1];
+      const leftTrackEndX = leftTrackRect.width - 2;
 
-      // Left track extends into the middle gap if right goals exist
       const leftLineEndX = rightGoals.length > 0 ? leftTrackEndX : lastGoalLeftX;
       leftBg.style.left = `${leftStartX.toFixed(1)}px`;
       leftBg.style.width = `${Math.max(0, leftLineEndX - leftStartX).toFixed(1)}px`;
@@ -887,9 +892,9 @@
           return Math.max(0, (tickRect.left + tickRect.width / 2) - rightTrackRect.left);
         });
 
-        const rightTrackStartX = 2; // Left edge of right track
-        const firstGoalRightX = rightXs[0]; // Center of first right goal tick
-        const lastGoalRightX = rightXs[rightXs.length - 1]; // Center of final top goal tick
+        const rightTrackStartX = 2;
+        const firstGoalRightX = rightXs[0];
+        const lastGoalRightX = rightXs[rightXs.length - 1];
 
         rightBg.style.left = `${rightTrackStartX.toFixed(1)}px`;
         rightBg.style.width = `${Math.max(0, lastGoalRightX - rightTrackStartX).toFixed(1)}px`;
@@ -1043,7 +1048,6 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // 🟢 START PASS (Protected against 0-total startup race condition)
     function startFreshPassZero() {
       if (currentGlobalTotal <= 0) {
         updateDockStatus("⚠️ Vänta, hämtar aktuell total från Musikhjälpen...", true);
@@ -1086,7 +1090,6 @@
       });
     }
 
-    // 🔄 LOAD SAVED PASS
     function loadSavedStreamerPass(optionalTargetName) {
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -1131,7 +1134,6 @@
       });
     }
 
-    // 🗑️ TWO-STEP CONFIRM CLEAR PASS
     let clearConfirmTimeout = null;
     function handleClearPassClick() {
       const btn = document.getElementById('btnClearPassBtn');
@@ -1164,7 +1166,6 @@
       }
     }
 
-    // 💾 SAVE MILESTONES
     function saveGoalsFromTextarea() {
       const area = document.getElementById('goalsInputArea');
       const text = area ? area.value : "";
@@ -1206,7 +1207,6 @@
       });
     }
 
-    // 🎯 OBS Scene Switch & Visibility Observer
     if (window.ResizeObserver) {
       const container = document.getElementById('goalsWidgetContainer');
       if (container) {
@@ -1217,7 +1217,6 @@
       }
     }
 
-    // Load initial local goals with fallback
     try {
       let cached = localStorage.getItem(STORAGE_KEY_GOALS);
       if (!cached || !cached.trim()) {
@@ -1230,11 +1229,9 @@
       parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS);
     }
 
-    // Initial render
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
-    // Initial load for known streamer
     if (currentStreamerName && currentStreamerName !== "Streamer") {
       loadSavedStreamerPass(currentStreamerName);
     }
