@@ -81,17 +81,17 @@
       visibility: hidden !important;
     }
 
-    /* Left and Right Wings (Sleek dark border & pure dark shadow) */
+    /* Left and Right Wings (720px each with #000000 at 0.9 opacity) */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
       display: flex;
       flex-direction: column;
       background: rgba(0, 0, 0, 0.9);
-      padding: 10px 16px 8px 16px;
+      padding: 10px 16px 10px 16px;
       border-radius: 8px;
-      border: 1px solid #18181c; /* Pure dark border with zero white */
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.85); /* Deep dark shadow */
+      border: 1px solid #18181c;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.85);
     }
 
     /* 440px spacer = 400px middle widget + exact 20px gap on each side */
@@ -115,7 +115,8 @@
     .horizontal-track {
       position: relative;
       width: 100%;
-      height: 68px;
+      min-height: 74px;
+      height: auto;
       display: flex;
       align-items: center;
     }
@@ -126,11 +127,10 @@
       height: 100%;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       z-index: 4;
     }
 
-    /* Tight runway to middle widget matching the 20px grid rhythm */
     .left-track .track-nodes-container {
       padding-right: 20px;
     }
@@ -195,7 +195,8 @@
       flex-direction: column;
       align-items: center;
       z-index: 4;
-      min-width: 60px;
+      min-width: 50px;
+      text-align: center;
     }
 
     .h-node-amount {
@@ -212,6 +213,7 @@
     .h-node-tick-wrapper {
       position: relative;
       height: 14px;
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -229,17 +231,22 @@
       font-size: 11px;
       font-weight: 800;
       color: #ffffff;
-      white-space: nowrap;
+      line-height: 1.3;
       letter-spacing: 0.3px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 4px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
-      max-width: 160px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      max-width: 180px;
       margin-top: 4px;
       text-align: center;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .node-label-text {
+      display: inline-block;
+      text-align: inherit;
     }
 
     .h-node.reached .h-node-amount {
@@ -257,10 +264,49 @@
       color: var(--primary);
       font-size: 12px;
       font-weight: 900;
+      line-height: 1.1;
     }
 
     .h-node.reached .node-check {
       display: inline-block;
+    }
+
+    /* 🎯 FLUSH ALIGNMENTS: First node to left edge, Final node to right edge */
+    .h-node.is-first-node {
+      align-items: flex-start !important;
+      text-align: left !important;
+    }
+    .h-node.is-first-node .h-node-amount {
+      text-align: left !important;
+      align-self: flex-start;
+    }
+    .h-node.is-first-node .h-node-tick-wrapper {
+      justify-content: flex-start;
+    }
+    .h-node.is-first-node .h-node-label {
+      text-align: left !important;
+      justify-content: flex-start;
+      align-self: flex-start;
+    }
+
+    .h-node.is-last-goal {
+      align-items: flex-end !important;
+      text-align: right !important;
+    }
+    .h-node.is-last-goal .h-node-amount {
+      text-align: right !important;
+      align-self: flex-end;
+    }
+    .h-node.is-last-goal .h-node-tick-wrapper {
+      justify-content: flex-end;
+    }
+    .h-node.is-last-goal .h-node-label {
+      text-align: right !important;
+      justify-content: flex-end;
+      align-self: flex-end;
+    }
+    .h-node.is-last-goal .node-label-text {
+      text-align: right !important;
     }
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
@@ -524,7 +570,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.7</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.8</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -708,7 +754,7 @@
     }
 
     // ========================================================
-    // 🧠 LINE-BY-LINE PARSER
+    // 🧠 LINE-BY-LINE PARSER & 25-CHAR TEXT FORMATTER
     // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
@@ -732,6 +778,35 @@
 
       list.sort((a, b) => a.amount - b.amount);
       return list;
+    }
+
+    // Wraps text into a new row if line exceeds 25 characters
+    function formatMilestoneLabel(rawText, maxCharsPerLine = 25) {
+      if (!rawText) return '';
+      const text = rawText.trim();
+      if (text.length <= maxCharsPerLine) {
+        return escapeHTML(text);
+      }
+
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+
+      for (const word of words) {
+        if (!currentLine) {
+          currentLine = word;
+        } else if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+          currentLine += ' ' + word;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      return lines.map(l => escapeHTML(l)).join('<br>');
     }
 
     // ========================================================
@@ -762,19 +837,23 @@
       const liveEarned = getLiveSessionEarned();
 
       // --- 1. LEFT WING ---
-      const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0);
+      // Start node is marked isFirstNode (flush to left edge)
+      const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0, false, true);
       leftNodesContainer.appendChild(leftStartEl);
 
-      leftGoals.forEach(g => {
-        const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount);
+      leftGoals.forEach((g, i) => {
+        const isLastOfAll = (rightGoals.length === 0 && i === leftGoals.length - 1);
+        const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
         leftNodesContainer.appendChild(el);
       });
 
       // --- 2. RIGHT WING ---
       if (rightGoals.length > 0) {
         if (rightWing) rightWing.style.display = 'flex';
-        rightGoals.forEach(g => {
-          const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount);
+        rightGoals.forEach((g, i) => {
+          const isLastOfAll = (i === rightGoals.length - 1);
+          // Final goal of right wing is marked isLastGoal (flush to right edge)
+          const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
           rightNodesContainer.appendChild(el);
         });
       } else {
@@ -786,9 +865,12 @@
       });
     }
 
-    function createNodeEl(amount, label, isReached) {
+    function createNodeEl(amount, label, isReached, isLastGoal = false, isFirstNode = false) {
       const el = document.createElement('div');
-      el.className = `h-node ${isReached ? 'reached' : ''}`;
+      el.className = `h-node ${isReached ? 'reached' : ''} ${isLastGoal ? 'is-last-goal' : ''} ${isFirstNode ? 'is-first-node' : ''}`;
+      
+      const formattedLabel = formatMilestoneLabel(label, 25);
+
       el.innerHTML = `
         <div class="h-node-amount">${formatSEK(amount)}</div>
         <div class="h-node-tick-wrapper">
@@ -796,7 +878,7 @@
         </div>
         <div class="h-node-label">
           <span class="node-check">✓</span>
-          <span title="${escapeHTML(label)}">${escapeHTML(label)}</span>
+          <span class="node-label-text" title="${escapeHTML(label)}">${formattedLabel}</span>
         </div>
       `;
       return el;
