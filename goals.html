@@ -81,7 +81,7 @@
       visibility: hidden !important;
     }
 
-    /* Left and Right Wings (720px each with #000000 at 0.9 opacity) */
+    /* Left and Right Wings (Sleek dark border & pure dark shadow) */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
@@ -90,8 +90,8 @@
       background: rgba(0, 0, 0, 0.9);
       padding: 10px 16px 8px 16px;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      border: 1px solid #18181c; /* Pure dark border with zero white */
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.85); /* Deep dark shadow */
     }
 
     /* 440px spacer = 400px middle widget + exact 20px gap on each side */
@@ -524,7 +524,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.6</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.7</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
