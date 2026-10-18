@@ -78,12 +78,17 @@
       visibility: hidden !important;
     }
 
-    /* Left and Right Wings (720px each) */
+    /* Left and Right Wings (720px each with #000000 at 0.9 opacity) */
     .goal-wing {
       position: relative;
       width: 720px;
       display: flex;
       flex-direction: column;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 10px 18px 8px 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
 
     /* Center clearance gap for your 400px middle widget */
@@ -495,7 +500,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">TOPP-SPLIT v5.0</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">TOPP-SPLIT v5.1</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -833,10 +838,10 @@
 
       if (currentEarned <= baseAmount) {
         targetX = startX;
-        showCursor = (baseAmount === 0); // only show at 0 kr start
+        showCursor = (baseAmount === 0);
       } else if (currentEarned >= maxAmount) {
         targetX = endX;
-        showCursor = !isHandedOffToNext; // park cursor on final goal
+        showCursor = !isHandedOffToNext;
       } else {
         showCursor = true;
         let prevAmt = baseAmount;
