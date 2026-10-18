@@ -88,7 +88,7 @@
       display: flex;
       flex-direction: column;
       background: rgba(0, 0, 0, 0.9);
-      padding: 10px 16px 12px 16px;
+      padding: 12px 18px 12px 18px;
       border-radius: 8px;
       border: none !important;
       outline: none !important;
@@ -103,20 +103,20 @@
     }
 
     .wing-header {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 900;
       letter-spacing: 2px;
       color: var(--primary);
       text-transform: uppercase;
       margin-bottom: 6px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+      text-shadow: 0 2px 4px #000, 0 0 2px #000;
     }
 
     /* Horizontal Track System */
     .horizontal-track {
       position: relative;
       width: 100%;
-      min-height: 80px;
+      min-height: 86px;
       height: auto;
       display: flex;
       align-items: center;
@@ -132,7 +132,6 @@
       z-index: 4;
     }
 
-    /* Runway to middle widget */
     .left-track .track-nodes-container {
       padding-right: 20px;
     }
@@ -141,35 +140,35 @@
       padding-left: 20px;
     }
 
-    /* Background line (lowered to top: 32px to create breathing room from amount) */
+    /* Background line: Aligned dead-center with the tick crosshair at Y=36px */
     .track-line-bg {
       position: absolute;
-      top: 32px;
+      top: 35px;
       height: 2px;
-      background: rgba(255, 255, 255, 0.35);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+      background: rgba(255, 255, 255, 0.45);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
       z-index: 1;
     }
 
     .track-line-fill {
       position: absolute;
-      top: 31.5px;
-      height: 3px;
+      top: 34px;
+      height: 4px;
       background: var(--primary);
-      box-shadow: 0 0 10px rgba(172, 230, 0, 0.85);
+      box-shadow: 0 0 12px rgba(172, 230, 0, 0.9);
       z-index: 2;
       width: 0px;
       transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Cursor lowered to top: 33px so the dot never overlaps the amount above */
+    /* Cursor centered dead-on the track line at Y=36px */
     .track-cursor {
       position: absolute;
-      top: 33px;
+      top: 36px;
       width: 12px;
       height: 12px;
       background: var(--primary);
-      box-shadow: 0 0 10px var(--primary);
+      box-shadow: 0 0 12px var(--primary);
       transform: translate(-50%, -50%);
       z-index: 5;
       border-radius: 50%;
@@ -191,7 +190,7 @@
       100% { transform: scale(2.2); opacity: 0; }
     }
 
-    /* HORIZONTAL NODE: Amount on top, Tick in middle, Label on bottom */
+    /* HORIZONTAL NODE */
     .h-node {
       position: relative;
       display: flex;
@@ -202,47 +201,51 @@
       text-align: center;
     }
 
-    /* Increased margin-bottom to 10px so numbers sit cleanly above the cursor */
+    /* Amount text: 14px bold, generous 12px clearance above the line */
     .h-node-amount {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 900;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.8px;
       color: #ffffff;
       white-space: nowrap;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
-      margin-bottom: 10px;
+      text-shadow: 0 2px 4px #000, 0 0 3px #000;
+      line-height: 16px;
+      margin-bottom: 12px;
       transition: color 0.3s ease;
     }
 
+    /* Crosshair Tick: 14px tall, centered symmetrically across the 2px horizontal track line */
     .h-node-tick-wrapper {
       position: relative;
-      height: 14px;
+      height: 16px;
       width: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 3;
     }
 
     .h-node-tick {
       width: 2px;
-      height: 10px;
+      height: 14px;
       background: #ffffff;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 1);
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
+    /* Milestone Label: 12px extra bold for stream readability */
     .h-node-label {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 800;
       color: #ffffff;
-      line-height: 1.3;
-      letter-spacing: 0.3px;
+      line-height: 1.35;
+      letter-spacing: 0.4px;
       display: flex;
       align-items: flex-start;
-      gap: 4px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+      gap: 5px;
+      text-shadow: 0 2px 4px #000, 0 0 3px #000;
       max-width: 180px;
-      margin-top: 6px;
+      margin-top: 8px;
       text-align: center;
       white-space: normal;
       word-break: break-word;
@@ -255,18 +258,18 @@
 
     .h-node.reached .h-node-amount {
       color: var(--primary) !important;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 8px rgba(172, 230, 0, 0.6);
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
     }
 
     .h-node.reached .h-node-tick {
       background: var(--primary);
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.8);
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.9);
     }
 
     .h-node .node-check {
       display: none;
       color: var(--primary);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 900;
       line-height: 1.1;
     }
@@ -574,7 +577,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v6.0</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v6.1</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -784,7 +787,6 @@
       return list;
     }
 
-    // Wraps text into a new row if line exceeds 25 characters
     function formatMilestoneLabel(rawText, maxCharsPerLine = 25) {
       if (!rawText) return '';
       const text = rawText.trim();
