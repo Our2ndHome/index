@@ -57,10 +57,10 @@
       pointer-events: none;
     }
 
-    /* 🖼️ SPONSOR ROTATOR (ROUNDED CARD, NO WHITE BORDER) */
+    /* 🖼️ SPONSOR ROTATOR (ROUNDED CARD, ZERO WHITE BORDERS) */
     .sponsor-widget {
       position: absolute;
-      bottom: 125px; /* Added spacing from schedule */
+      bottom: 125px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -70,9 +70,9 @@
       align-items: center;
       background: rgba(0, 0, 0, 0.9);
       border-radius: 16px;
-      border: none; /* No white border */
+      border: none;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      padding: 22px 24px 12px 24px; /* Space added at top */
+      padding: 22px 24px 12px 24px;
     }
 
     .sponsor-logo-container {
@@ -89,8 +89,8 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      transition: opacity 0.5s ease-in-out;
-      opacity: 1;
+      transition: opacity 0.4s ease-in-out;
+      opacity: 0; /* Starts hidden until real image loads */
       animation: sponsorFloat 3.5s ease-in-out infinite;
     }
 
@@ -100,7 +100,7 @@
         filter: drop-shadow(0 2px 4px var(--shadow-dark));
       }
       50% {
-        transform: translateY(-5px);
+        transform: translateY(-4px);
         filter: drop-shadow(0 6px 12px var(--shadow-dark));
       }
     }
@@ -108,22 +108,22 @@
     .sponsor-label {
       font-size: 13px;
       font-weight: 900;
-      color: #ace600; /* #ace600 as requested */
+      color: #ace600;
       letter-spacing: 2px;
       text-transform: uppercase;
       display: block;
       text-shadow: none;
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR (FULL-WIDTH 1920px, STRAIGHT SIDES, NO WHITE BORDER) */
+    /* 📅 SCHEDULE TIMELINE BAR (1920px FULL-WIDTH, STRAIGHT SIDES) */
     .schedule-widget {
       position: absolute;
       bottom: 0;
       left: 0;
       width: 100vw;
       background: rgba(0, 0, 0, 0.9);
-      border-radius: 0; /* Straight edges */
-      border: none;     /* No white border */
+      border-radius: 0;
+      border: none;
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
       padding: 16px 30px 14px 30px;
       display: flex;
@@ -221,7 +221,7 @@
       justify-content: center;
       font-size: 13px;
       font-weight: 800;
-      color: #ffffff; /* Clean white */
+      color: #ffffff;
       white-space: nowrap;
       letter-spacing: 1px;
       text-shadow: none;
@@ -254,18 +254,17 @@
       justify-content: center;
       font-size: 14px;
       font-weight: 900;
-      color: #ffffff; /* Clean white */
+      color: #ffffff;
       white-space: nowrap;
       letter-spacing: 0.8px;
       text-shadow: none;
     }
 
     .node-streamer.is-giveaway-text {
-      color: #ffffff; /* Clean white */
+      color: #ffffff;
       text-shadow: none;
     }
 
-    /* Only the active/marked slot receives #ace600 */
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
@@ -449,11 +448,11 @@
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel)
+       🎛️ 2. OBS CONTROL DOCK (#panel - Clean & Original)
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.9</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.0</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -485,7 +484,7 @@
 
       <div class="control-row" style="margin-top:6px;">
         <span class="control-label">TID:</span>
-        <input type="text" id="slotTimeInput" placeholder="T.ex. 18:00 - 19:00 (eller 22.00 - 00.00)" style="width:65%;">
+        <input type="text" id="slotTimeInput" placeholder="T.ex. 18:00 - 19:00" style="width:65%;">
       </div>
 
       <div class="control-row">
@@ -529,6 +528,7 @@
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const STORAGE_KEY_SCHEDULE = "mh_overlay_custom_schedule";
+    const STORAGE_KEY_SPONSORS = "mh_overlay_cached_sponsors";
 
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
@@ -544,12 +544,6 @@
       "SAT": "2026-12-05",
       "SUN": "2026-12-06"
     };
-
-    const DEFAULT_SPONSORS = [
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ace600" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">LIME GAMING</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">NORDIC STREAM</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">MH PARTNER</text></svg>'
-    ];
 
     const DEFAULT_SCHEDULE = [
       // MÅNDAG 30 NOV
@@ -599,7 +593,7 @@
     ];
 
     let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-    let sponsorFileList = DEFAULT_SPONSORS;
+    let sponsorFileList = [];
     let currentSponsorIndex = 0;
     let scheduleMode = 'real';
 
@@ -607,6 +601,15 @@
     let isDayTransitioning = false;
     let isSimulationLocked = false;
     let simulationLockTimer = null;
+
+    // ⚡ 1. Auto-load cached sponsors from previous session instantly
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_SPONSORS);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) sponsorFileList = parsed;
+      }
+    } catch(e) {}
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -623,8 +626,8 @@
     const dbScheduleRef = firebase.database().ref('schedule_data');
 
     try {
-      const cached = localStorage.getItem(STORAGE_KEY_SCHEDULE);
-      if (cached) currentSchedule = JSON.parse(cached);
+      const cachedSched = localStorage.getItem(STORAGE_KEY_SCHEDULE);
+      if (cachedSched) currentSchedule = JSON.parse(cachedSched);
     } catch(e) {}
 
     function updateDockStatus(msg, isError = false) {
@@ -647,7 +650,14 @@
         if (isPanel) populateSlotsDropdown();
       }
 
-      if (typeof data.sponsorIndex === 'number') {
+      // Automatically syncs the discovered GitHub sponsors across machines
+      if (Array.isArray(data.autoSponsors) && data.autoSponsors.length > 0) {
+        sponsorFileList = data.autoSponsors;
+        try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsorFileList)); } catch(e) {}
+        updateSponsorLogo();
+      }
+
+      if (typeof data.sponsorIndex === 'number' && sponsorFileList.length > 0) {
         currentSponsorIndex = data.sponsorIndex % sponsorFileList.length;
         updateSponsorLogo();
       }
@@ -1025,6 +1035,7 @@
     }
 
     function triggerNextSponsor() {
+      if (sponsorFileList.length === 0) return;
       currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
       dbScheduleRef.update({
         sponsorIndex: currentSponsorIndex,
@@ -1036,16 +1047,30 @@
     }
 
     // ==========================================
-    // 🖼️ SPONSOR ROTATOR (ORIGINAL GITHUB LOADER)
+    // 🖼️ AUTOMATIC GITHUB SPONSOR ENGINE
     // ==========================================
     async function loadSponsorsAutomatically() {
       try {
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}?_t=${Date.now()}`);
         if (res.ok) {
           const files = await res.json();
-          const apiSponsors = files.filter(f => f.name.match(/\.(png|jpe?g|svg|webp)$/i))
-                                   .map(f => `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
-          if (apiSponsors.length > 0) sponsorFileList = apiSponsors;
+          // Uses GitHub direct raw download URL so images always load anywhere
+          const apiSponsors = files
+            .filter(f => f.name && f.name.match(/\.(png|jpe?g|svg|webp)$/i))
+            .map(f => f.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
+
+          if (apiSponsors.length > 0) {
+            sponsorFileList = apiSponsors;
+            try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch(e) {}
+            
+            // Auto-backup to Firebase so future rate-limits won't block the overlay
+            dbScheduleRef.update({
+              autoSponsors: apiSponsors,
+              secret: WRITE_SECRET
+            }).catch(() => {});
+
+            updateSponsorLogo();
+          }
         }
       } catch(e) {}
 
@@ -1054,7 +1079,7 @@
     }
 
     function triggerNextSponsorLocal() {
-      if (isPanel) return;
+      if (isPanel || sponsorFileList.length === 0) return;
       currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
       updateSponsorLogo();
     }
@@ -1062,17 +1087,26 @@
     function updateSponsorLogo() {
       const img = document.getElementById('sponsorLogo');
       if (!img || sponsorFileList.length === 0) return;
+
+      const targetSrc = sponsorFileList[currentSponsorIndex % sponsorFileList.length];
+      if (!targetSrc) return;
+
       img.style.opacity = '0';
       setTimeout(() => {
-        img.src = sponsorFileList[currentSponsorIndex];
-        img.style.opacity = '1';
-      }, 500);
+        img.src = targetSrc;
+        img.onload = () => { img.style.opacity = '1'; };
+      }, 250);
     }
 
     function escapeHTML(str) {
       return String(str || '').replace(/[&<>'"]/g, tag => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
       }[tag] || tag));
+    }
+
+    // Immediately show any cached sponsor image on startup
+    if (sponsorFileList.length > 0) {
+      updateSponsorLogo();
     }
 
     // INIT
