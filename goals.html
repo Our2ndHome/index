@@ -57,16 +57,15 @@
       pointer-events: none;
     }
 
-    /* 1920px container pinned to the top edge */
+    /* 1880px wide container (1920px minus 20px left and 20px right margins) */
     .top-goals-container {
       position: absolute;
-      top: 14px;
-      left: 0;
-      width: 1920px;
+      top: 20px; /* Exactly 20px from top canvas edge */
+      left: 20px; /* Exactly 20px from left canvas edge */
+      width: 1880px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      padding: 0 20px;
       z-index: 1000;
       transition: opacity 0.3s ease, visibility 0.3s ease;
       opacity: 1;
@@ -85,15 +84,15 @@
       display: flex;
       flex-direction: column;
       background: rgba(0, 0, 0, 0.9);
-      padding: 10px 18px 8px 18px;
+      padding: 10px 16px 8px 16px;
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
 
-    /* Center clearance gap for your 400px middle widget */
+    /* 440px spacer = 400px middle widget + exactly 20px gap on each side */
     .center-obstacle-spacer {
-      width: 440px; /* 400px widget + 20px padding on each side */
+      width: 440px;
       height: 80px;
       flex-shrink: 0;
     }
@@ -127,13 +126,13 @@
       z-index: 4;
     }
 
-    /* Line runway towards/from middle widget without crushing node width */
+    /* Tightened 20px runway to middle widget matching the 20px grid rhythm */
     .left-track .track-nodes-container {
-      padding-right: 44px;
+      padding-right: 20px;
     }
 
     .right-track .track-nodes-container {
-      padding-left: 44px;
+      padding-left: 20px;
     }
 
     /* Background line */
@@ -487,7 +486,7 @@
   <div id="overlayRoot">
     <div class="top-goals-container" id="goalsWidgetContainer">
       
-      <!-- LEFT WING: -->
+      <!-- LEFT WING: [0 kr Start] ---- [Goal 1] ---- [Goal 2] --------> -->
       <div class="goal-wing" id="leftWing">
         <div class="wing-header">MILSTOLPAR</div>
         <div class="horizontal-track left-track" id="leftTrack">
@@ -498,10 +497,10 @@
         </div>
       </div>
 
-      <!-- 440px GAP FOR CENTER WIDGET -->
+      <!-- EXACT 440px GAP FOR CENTER WIDGET (400px + 20px gap on each side) -->
       <div class="center-obstacle-spacer"></div>
 
-      <!-- RIGHT WING: -->
+      <!-- RIGHT WING: --------> [Goal 3] ---- [Goal 4] ---- [Goal 5] -->
       <div class="goal-wing" id="rightWing">
         <div class="wing-header">NÄSTA MÅL</div>
         <div class="horizontal-track right-track" id="rightTrack">
@@ -520,7 +519,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">BALANSERAD v5.3</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v5.4</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -564,7 +563,7 @@
         Format: <code>Belopp - Beskrivning</code>
       </div>
       
-      <textarea id="goalsInputArea" placeholder="200 kr - Äta stark sås&#10;500 kr - Spela skräckspel&#10;1000 kr - Hårfärgning&#10;2500 kr - 12h Stream"></textarea>
+      <textarea id="goalsInputArea" placeholder="200 kr - Äta stark sås&#10;500 kr - Spela skräckspel&#10;1000 kr - Hårfärgning&#10;2500 kr - 12h Stream&#10;5000 kr - 24h Stream"></textarea>
 
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara mina milstolpar
@@ -751,7 +750,6 @@
       }
 
       // ⚖️ BALANCED SPLIT: Counts the "Start" node as an item so wings are balanced
-      // e.g. 5 goals = 3 on left (Start + 2 goals) & 3 on right (3 goals)
       const leftGoalsCount = Math.max(1, Math.floor(parsedGoals.length / 2));
       const leftGoals = parsedGoals.slice(0, leftGoalsCount);
       const rightGoals = parsedGoals.slice(leftGoalsCount);
@@ -827,7 +825,7 @@
 
       const leftStartX = leftXs[0]; // Center of 0 kr tick
       const lastGoalLeftX = leftXs[leftXs.length - 1]; // Center of last left goal tick
-      const leftTrackEndX = leftTrackRect.width - 4; // Right edge of left track
+      const leftTrackEndX = leftTrackRect.width - 2; // Right edge of left track
 
       // Left track extends into the middle gap if right goals exist
       const leftLineEndX = rightGoals.length > 0 ? leftTrackEndX : lastGoalLeftX;
@@ -846,7 +844,6 @@
         leftTargetX = leftStartX;
         showLeftCursor = true;
       } else if (liveEarned <= lastLeftAmount) {
-        // Interpolate through Left Wing nodes
         showLeftCursor = true;
         let prevAmt = 0;
         let prevX = leftStartX;
@@ -866,12 +863,10 @@
           prevX = currentX;
         }
       } else if (rightGoals.length > 0 && liveEarned <= bridgeMidAmount) {
-        // Flows into the middle widget
         showLeftCursor = true;
         const ratio = (liveEarned - lastLeftAmount) / (bridgeMidAmount - lastLeftAmount);
         leftTargetX = lastGoalLeftX + (leftTrackEndX - lastGoalLeftX) * ratio;
       } else {
-        // Handed off to right wing
         leftTargetX = leftLineEndX;
         showLeftCursor = (rightGoals.length === 0);
       }
@@ -892,7 +887,7 @@
           return Math.max(0, (tickRect.left + tickRect.width / 2) - rightTrackRect.left);
         });
 
-        const rightTrackStartX = 4; // Left edge of right track
+        const rightTrackStartX = 2; // Left edge of right track
         const firstGoalRightX = rightXs[0]; // Center of first right goal tick
         const lastGoalRightX = rightXs[rightXs.length - 1]; // Center of final top goal tick
 
@@ -907,7 +902,6 @@
           rightTargetX = rightTrackStartX;
           showRightCursor = false;
         } else if (liveEarned <= firstRightAmount) {
-          // Emerging from center widget towards first right goal
           showRightCursor = true;
           const ratio = (liveEarned - bridgeMidAmount) / (firstRightAmount - bridgeMidAmount);
           rightTargetX = rightTrackStartX + (firstGoalRightX - rightTrackStartX) * ratio;
@@ -915,7 +909,6 @@
           rightTargetX = lastGoalRightX;
           showRightCursor = true;
         } else {
-          // Progress between right goals
           showRightCursor = true;
           let prevAmt = firstRightAmount;
           let prevX = firstGoalRightX;
