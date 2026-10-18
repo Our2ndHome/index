@@ -12,13 +12,14 @@
 
   <style>
     :root {
-      --primary-color: #ace600; /* Lime Green (Marked text only) */
+      --primary-color: #ace600; /* Lime Green */
       --secondary-color: #00ff88;
       --text-white: #ffffff;
       --text-dim: #a1a1aa;
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
+      --shadow-dark: rgba(0, 0, 0, 0.9);
     }
 
     * { box-sizing: border-box; }
@@ -55,10 +56,10 @@
       pointer-events: none;
     }
 
-    /* 🖼️ SPONSOR ROTATOR (TIGHT-FITTED CARD, NO WHITE BORDER) */
+    /* 🖼️ SPONSOR ROTATOR (ROUNDED CARD, ZERO WHITE BORDERS) */
     .sponsor-widget {
       position: absolute;
-      bottom: 115px;
+      bottom: 120px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -68,51 +69,60 @@
       align-items: center;
       background: rgba(0, 0, 0, 0.9);
       border-radius: 16px;
-      border: none; /* Removed white border */
+      border: none;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      padding: 24px 18px 12px 18px; /* Extra space at top */
-      width: auto;
-      min-width: 210px;
-      max-width: 240px; /* Snug width to fit sponsors */
+      padding: 20px 24px 12px 24px; /* Added breathing room at top */
     }
 
     .sponsor-logo-container {
-      width: 200px; /* Fitted width */
-      height: 65px;
-      max-width: 100%;
+      width: 300px;
+      height: 90px;
+      max-width: 85vw;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .sponsor-logo {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      transition: opacity 0.5s ease-in-out;
+      transition: opacity 0.4s ease-in-out;
       opacity: 1;
+      animation: sponsorFloat 3.5s ease-in-out infinite;
+    }
+
+    @keyframes sponsorFloat {
+      0%, 100% {
+        transform: translateY(0px);
+        filter: drop-shadow(0 2px 4px var(--shadow-dark));
+      }
+      50% {
+        transform: translateY(-4px);
+        filter: drop-shadow(0 6px 12px var(--shadow-dark));
+      }
     }
 
     .sponsor-label {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 900;
-      color: #ffffff; /* Clean white */
+      color: #ace600; /* #ace600 as requested */
       letter-spacing: 2px;
       text-transform: uppercase;
       display: block;
-      text-shadow: none; /* No shadow/effect */
+      text-shadow: none;
     }
 
-    /* 📅 SCHEDULE BAR (FULL-WIDTH 1920px, STRAIGHT EDGES, NO WHITE BORDER) */
+    /* 📅 SCHEDULE BAR (FULL-WIDTH 1920px, STRAIGHT SIDES, ZERO WHITE BORDERS) */
     .schedule-widget {
       position: absolute;
       bottom: 0;
       left: 0;
-      width: 100vw; /* Straight to both sides */
+      width: 100vw;
       background: rgba(0, 0, 0, 0.9);
-      border-radius: 0; /* No rounded corners */
-      border: none; /* Removed white border */
+      border-radius: 0; /* Straight edges */
+      border: none;     /* No white border */
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
       padding: 16px 30px 14px 30px;
       display: flex;
@@ -186,7 +196,7 @@
       align-items: center;
       text-align: center;
       padding: 0 4px;
-      text-shadow: none; /* No shadow/effect */
+      text-shadow: none;
     }
 
     .node-time {
@@ -196,7 +206,7 @@
       justify-content: center;
       font-size: 13px;
       font-weight: 800;
-      color: #ffffff; /* Clean white */
+      color: #ffffff;
       white-space: nowrap;
       letter-spacing: 1px;
       text-shadow: none;
@@ -229,21 +239,21 @@
       justify-content: center;
       font-size: 14px;
       font-weight: 900;
-      color: #ffffff; /* Clean white */
+      color: #ffffff;
       white-space: nowrap;
       letter-spacing: 0.8px;
       text-shadow: none;
     }
 
     .node-streamer.is-giveaway-text {
-      color: #ffffff; /* Clean white */
+      color: #ffffff;
       text-shadow: none;
     }
 
-    /* ONLY the marked active slot receives the color #ace600 */
+    /* Only the active slot text is colored #ace600 */
     .timeline-node.active .node-streamer {
       font-size: 15px;
-      color: var(--primary-color); /* #ace600 */
+      color: var(--primary-color);
       text-shadow: none;
     }
 
@@ -404,7 +414,7 @@
        📺 1. STREAM OVERLAY VIEW (#overlay)
        ======================================================== -->
   <div id="overlayRoot">
-    <!-- Fitted Sponsor Card -->
+    <!-- Fitted Sponsor Card with Images -->
     <div class="sponsor-widget" id="sponsorWidget">
       <div class="sponsor-logo-container">
         <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -428,7 +438,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.6</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v8.7</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -520,10 +530,11 @@
       "SUN": "2026-12-06"
     };
 
+    // Full original image formats & colored border styles restored
     const DEFAULT_SPONSORS = [
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">LIME GAMING</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">NORDIC STREAM</text></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ffffff" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">MH PARTNER</text></svg>'
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ace600" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ace600" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">LIME GAMING</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%2300ff88" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%2300ff88" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">NORDIC STREAM</text></svg>',
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="90" viewBox="0 0 300 90"><rect width="300" height="90" rx="8" fill="%23111" stroke="%23ffea00" stroke-width="2"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="%23ffea00" font-family="Montserrat,sans-serif" font-weight="900" font-size="20" letter-spacing="2">MH PARTNER</text></svg>'
     ];
 
     const DEFAULT_SCHEDULE = [
@@ -574,7 +585,7 @@
     ];
 
     let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-    let sponsorFileList = DEFAULT_SPONSORS;
+    let sponsorFileList = [...DEFAULT_SPONSORS];
     let currentSponsorIndex = 0;
     let scheduleMode = 'real';
 
@@ -1041,13 +1052,19 @@
       setTimeout(() => {
         img.src = sponsorFileList[currentSponsorIndex];
         img.style.opacity = '1';
-      }, 500);
+      }, 300);
     }
 
     function escapeHTML(str) {
       return String(str || '').replace(/[&<>'"]/g, tag => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
       }[tag] || tag));
+    }
+
+    // Initialize immediate sponsor image display
+    const initImg = document.getElementById('sponsorLogo');
+    if (initImg && sponsorFileList.length > 0) {
+      initImg.src = sponsorFileList[0];
     }
 
     // INIT
