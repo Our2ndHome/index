@@ -57,32 +57,65 @@
       pointer-events: none;
     }
 
-    /* 🖼️ SPONSOR ROTATOR (NARROWER CARD, MORE SPACING) */
-    .sponsor-widget {
+    /* 🔄 3D ROTATOR WRAPPER (SPONSORS & THEME CARD) */
+    .rotator-wrapper {
       position: absolute;
       bottom: 125px;
       left: 50%;
       transform: translateX(-50%);
-      text-align: center;
+      perspective: 1200px;
       z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: grid;
+      place-items: center;
+    }
+
+    /* Base Card Styling (3D Flip Animation) */
+    .sponsor-widget, .theme-widget {
+      grid-area: 1 / 1;
       background: rgba(0, 0, 0, 0.9);
       border-radius: 16px;
       border: none;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-      padding: 24px 18px 14px 18px; /* Top border follows image move, narrower sides */
+      backface-visibility: hidden;
+      transform-origin: center center;
+      transition: transform 0.75s cubic-bezier(0.34, 1.45, 0.64, 1),
+                  opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                  filter 0.55s ease;
+    }
+
+    .card-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: rotateX(0deg) translateY(0) scale(1);
+      filter: blur(0px);
+      visibility: visible;
+    }
+
+    .card-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: rotateX(75deg) translateY(26px) scale(0.82);
+      filter: blur(8px);
+      visibility: hidden;
+    }
+
+    /* 🖼️ CARD 1: SPONSOR ROTATOR */
+    .sponsor-widget {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 18px 14px 18px;
     }
 
     .sponsor-logo-container {
-      width: 255px; /* Narrower width */
+      width: 255px;
       height: 85px;
       max-width: 85vw;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px; /* Generous gap between image and text */
+      margin-bottom: 16px;
     }
 
     .sponsor-logo {
@@ -91,18 +124,7 @@
       object-fit: contain;
       transition: opacity 0.4s ease-in-out;
       opacity: 0;
-      animation: sponsorFloat 3.5s ease-in-out infinite;
-    }
-
-    @keyframes sponsorFloat {
-      0%, 100% {
-        transform: translateY(0px);
-        filter: drop-shadow(0 2px 4px var(--shadow-dark));
-      }
-      50% {
-        transform: translateY(-4px);
-        filter: drop-shadow(0 6px 12px var(--shadow-dark));
-      }
+      animation: elementFloat 3.5s ease-in-out infinite;
     }
 
     .sponsor-label {
@@ -113,6 +135,91 @@
       text-transform: uppercase;
       display: block;
       text-shadow: none;
+    }
+
+    /* 📻 CARD 2: MUSIKHJÄLPEN ÅRETS TEMA CARD */
+    .theme-widget {
+      position: relative;
+      width: 290px;
+      height: 153px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px 20px;
+      overflow: hidden;
+    }
+
+    .theme-watermark-logo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 115px;
+      height: 115px;
+      pointer-events: none;
+      opacity: 0.16;
+      z-index: 1;
+    }
+
+    .theme-content-box {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: elementFloat 3.5s ease-in-out infinite;
+    }
+
+    .theme-card-header {
+      font-size: 13px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .theme-accent-dot {
+      width: 6px;
+      height: 6px;
+      background: #ace600;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .theme-card-sublabel {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ace600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .theme-card-title {
+      font-size: 12.5px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.35;
+      max-width: 245px;
+      letter-spacing: 0.4px;
+    }
+
+    /* Shared Breathing Motion */
+    @keyframes elementFloat {
+      0%, 100% {
+        transform: translateY(0px);
+        filter: drop-shadow(0 2px 4px var(--shadow-dark));
+      }
+      50% {
+        transform: translateY(-4px);
+        filter: drop-shadow(0 6px 12px var(--shadow-dark));
+      }
     }
 
     /* 📅 SCHEDULE TIMELINE BAR (1920px FULL-WIDTH, STRAIGHT SIDES) */
@@ -428,12 +535,35 @@
        📺 1. STREAM OVERLAY VIEW (#overlay)
        ======================================================== -->
   <div id="overlayRoot">
-    <!-- Floating Sponsor Rotator -->
-    <div class="sponsor-widget" id="sponsorWidget">
-      <div class="sponsor-logo-container">
-        <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
+    
+    <!-- 🔄 3D ROTATOR: SPONSORS & MUSIKHJÄLPEN THEME CARD -->
+    <div class="rotator-wrapper">
+      
+      <!-- Card 1: Sponsor Card (Active by Default) -->
+      <div class="sponsor-widget card-active" id="sponsorWidget">
+        <div class="sponsor-logo-container">
+          <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
+        </div>
+        <span class="sponsor-label">SPONSORER</span>
       </div>
-      <span class="sponsor-label">SPONSORER</span>
+
+      <!-- Card 2: Musikhjälpen Theme Card (Hidden by Default) -->
+      <div class="theme-widget card-hidden" id="themeWidget">
+        <!-- Watermark Logo -->
+        <svg class="theme-watermark-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M50 82C50 82 18 58 18 36C18 24 28 16 38 18C44 19 48 23 50 27C52 23 56 19 62 18C72 16 82 24 82 36C82 58 50 82 50 82Z" fill="#ace600"/>
+          <path d="M14 44C14 22 30 12 50 12C70 12 86 22 86 44" stroke="#ace600" stroke-width="5" stroke-linecap="round"/>
+          <rect x="10" y="40" width="8" height="18" rx="4" fill="#ace600"/>
+          <rect x="82" y="40" width="8" height="18" rx="4" fill="#ace600"/>
+        </svg>
+
+        <div class="theme-content-box">
+          <span class="theme-card-header"><span class="theme-accent-dot"></span>MUSIKHJÄLPEN</span>
+          <span class="theme-card-sublabel">ÅRETS TEMA:</span>
+          <span class="theme-card-title">För psykisk hälsa i krig och kris</span>
+        </div>
+      </div>
+
     </div>
 
     <!-- Timeline Schedule Bar -->
@@ -448,11 +578,11 @@
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel - Clean & Original)
+       🎛️ 2. OBS CONTROL DOCK (#panel)
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.1</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -534,6 +664,7 @@
     const GITHUB_REPO = "index";
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
+    const THEME_SPOTLIGHT_SECONDS = 10; // Theme card display duration
 
     const DAY_BASE_DATES = {
       "MON": "2026-11-30",
@@ -602,6 +733,9 @@
     let isSimulationLocked = false;
     let simulationLockTimer = null;
 
+    let isShowingTheme = false;
+    let rotatorTimer = null;
+
     // ⚡ 1. Auto-load cached sponsors from previous session instantly
     try {
       const cached = localStorage.getItem(STORAGE_KEY_SPONSORS);
@@ -658,6 +792,7 @@
 
       if (typeof data.sponsorIndex === 'number' && sponsorFileList.length > 0) {
         currentSponsorIndex = data.sponsorIndex % sponsorFileList.length;
+        showSponsorCard();
         updateSponsorLogo();
       }
 
@@ -1041,8 +1176,69 @@
         secret: WRITE_SECRET,
         timestamp: Date.now()
       });
+      showSponsorCard();
       updateSponsorLogo();
       updateDockStatus(`Sponsor: ${currentSponsorIndex + 1}/${sponsorFileList.length}`);
+    }
+
+    // ==========================================
+    // 🔄 3D CARD TRANSITION CONTROLLER
+    // ==========================================
+    function showThemeCard() {
+      isShowingTheme = true;
+      const sponsorCard = document.getElementById('sponsorWidget');
+      const themeCard = document.getElementById('themeWidget');
+      if (sponsorCard) {
+        sponsorCard.classList.remove('card-active');
+        sponsorCard.classList.add('card-hidden');
+      }
+      if (themeCard) {
+        themeCard.classList.remove('card-hidden');
+        themeCard.classList.add('card-active');
+      }
+    }
+
+    function showSponsorCard() {
+      isShowingTheme = false;
+      const sponsorCard = document.getElementById('sponsorWidget');
+      const themeCard = document.getElementById('themeWidget');
+      if (themeCard) {
+        themeCard.classList.remove('card-active');
+        themeCard.classList.add('card-hidden');
+      }
+      if (sponsorCard) {
+        sponsorCard.classList.remove('card-hidden');
+        sponsorCard.classList.add('card-active');
+      }
+    }
+
+    function runRotatorCycle() {
+      if (isPanel) return;
+
+      if (isShowingTheme) {
+        // Theme spotlight finished -> Flip back to sponsors
+        showSponsorCard();
+        rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
+      } else {
+        if (sponsorFileList.length > 0) {
+          const nextIndex = currentSponsorIndex + 1;
+          
+          // If all sponsor images have been shown once
+          if (nextIndex >= sponsorFileList.length) {
+            currentSponsorIndex = 0; // Reset index for next cycle
+            showThemeCard();         // 3D Flip to Musikhjälpen Theme Card
+            rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
+          } else {
+            currentSponsorIndex = nextIndex;
+            updateSponsorLogo();
+            rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
+          }
+        } else {
+          // If no sponsors exist yet, keep spotlighting theme card
+          showThemeCard();
+          rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
+        }
+      }
     }
 
     // ==========================================
@@ -1071,14 +1267,9 @@
         }
       } catch(e) {}
 
-      updateSponsorLogo();
-      setInterval(triggerNextSponsorLocal, SPONSOR_ROTATE_SECONDS * 1000);
-    }
-
-    function triggerNextSponsorLocal() {
-      if (isPanel || sponsorFileList.length === 0) return;
-      currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
-      updateSponsorLogo();
+      // Start the rotation cycle
+      if (rotatorTimer) clearTimeout(rotatorTimer);
+      rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
     }
 
     function updateSponsorLogo() {
