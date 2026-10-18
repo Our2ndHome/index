@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Milstolpar - Top Split</title>
+  <title>Musikhjälpen Milstolpar - Top Split Bridge</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- Firebase Realtime Engine -->
@@ -114,14 +114,41 @@
       width: 100%;
       height: 68px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
     }
 
-    /* Background line starts at first tick and ends at last tick */
+    /* Left Wing nodes: padded from the right so line extends past the last goal */
+    .left-track {
+      justify-content: flex-start;
+    }
+
+    /* Right Wing nodes: padded from the left so line leads into the first goal */
+    .right-track {
+      justify-content: flex-end;
+    }
+
+    .track-nodes-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 3;
+    }
+
+    .left-track .track-nodes-container {
+      padding-right: 70px; /* Leaves clean line runway towards the center widget */
+    }
+
+    .right-track .track-nodes-container {
+      padding-left: 70px; /* Leaves clean line runway emerging from the center widget */
+    }
+
+    /* Background line */
     .track-line-bg {
       position: absolute;
-      top: 26px; /* Centered with tick */
+      top: 26px;
       height: 2px;
       background: rgba(255, 255, 255, 0.25);
       z-index: 1;
@@ -172,7 +199,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      z-index: 3;
+      z-index: 4;
       min-width: 60px;
     }
 
@@ -469,26 +496,28 @@
   <div id="overlayRoot">
     <div class="top-goals-container" id="goalsWidgetContainer">
       
-      <!-- LEFT WING (720px) -->
+      <!-- LEFT WING: [0 kr] ---- [Goal 1] ---- [Goal 2] --------> -->
       <div class="goal-wing" id="leftWing">
         <div class="wing-header">MILSTOLPAR</div>
-        <div class="horizontal-track" id="leftTrack">
+        <div class="horizontal-track left-track" id="leftTrack">
           <div class="track-line-bg"></div>
           <div class="track-line-fill" id="leftFill"></div>
           <div class="track-cursor" id="leftCursor"></div>
+          <div class="track-nodes-container" id="leftNodesContainer"></div>
         </div>
       </div>
 
       <!-- 440px GAP FOR CENTER WIDGET -->
       <div class="center-obstacle-spacer"></div>
 
-      <!-- RIGHT WING (720px) -->
+      <!-- RIGHT WING: --------> [Goal 3] ---- [Goal 4] -->
       <div class="goal-wing" id="rightWing">
         <div class="wing-header">NÄSTA MÅL</div>
-        <div class="horizontal-track" id="rightTrack">
+        <div class="horizontal-track right-track" id="rightTrack">
           <div class="track-line-bg"></div>
           <div class="track-line-fill" id="rightFill"></div>
           <div class="track-cursor" id="rightCursor"></div>
+          <div class="track-nodes-container" id="rightNodesContainer"></div>
         </div>
       </div>
 
@@ -500,7 +529,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">TOPP-SPLIT v5.1</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">BRIDGE v5.2</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -590,7 +619,6 @@
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
 
-    // Load saved settings
     try {
       if (!streamerFromUrl) {
         const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
@@ -714,14 +742,13 @@
     // 🎨 RENDER TOP-SPLIT HORIZONTAL LADDERS
     // ========================================================
     function renderGoalsLadder() {
-      const leftTrack = document.getElementById('leftTrack');
-      const rightTrack = document.getElementById('rightTrack');
+      const leftNodesContainer = document.getElementById('leftNodesContainer');
+      const rightNodesContainer = document.getElementById('rightNodesContainer');
       const rightWing = document.getElementById('rightWing');
-      if (!leftTrack || !rightTrack) return;
+      if (!leftNodesContainer || !rightNodesContainer) return;
 
-      // Clean old nodes
-      leftTrack.querySelectorAll('.h-node').forEach(n => n.remove());
-      rightTrack.querySelectorAll('.h-node').forEach(n => n.remove());
+      leftNodesContainer.innerHTML = '';
+      rightNodesContainer.innerHTML = '';
 
       if (parsedGoals.length === 0) {
         document.getElementById('leftFill').style.width = '0px';
@@ -731,41 +758,34 @@
         return;
       }
 
-      // Split goals between left wing and right wing
       const mid = Math.ceil(parsedGoals.length / 2);
       const leftGoals = parsedGoals.slice(0, mid);
       const rightGoals = parsedGoals.slice(mid);
 
       const liveEarned = getLiveSessionEarned();
 
-      // --- 1. BUILD LEFT WING (0 kr -> Mid Goal) ---
+      // --- 1. LEFT WING: [0 kr] ---- [Goal 1] ---- [Goal 2] --------> ---
       const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0);
-      leftTrack.appendChild(leftStartEl);
+      leftNodesContainer.appendChild(leftStartEl);
 
       leftGoals.forEach(g => {
         const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount);
-        leftTrack.appendChild(el);
+        leftNodesContainer.appendChild(el);
       });
 
-      // --- 2. BUILD RIGHT WING (Mid Goal -> Top Goal) ---
+      // --- 2. RIGHT WING: --------> [Goal 3] ---- [Goal 4] (NO redundant "Bas" node!) ---
       if (rightGoals.length > 0) {
         if (rightWing) rightWing.style.display = 'flex';
-        const handoverAmount = leftGoals[leftGoals.length - 1].amount;
-        
-        // Handover anchor on right side
-        const rightStartEl = createNodeEl(handoverAmount, "Bas", liveEarned >= handoverAmount);
-        rightTrack.appendChild(rightStartEl);
-
         rightGoals.forEach(g => {
           const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount);
-          rightTrack.appendChild(el);
+          rightNodesContainer.appendChild(el);
         });
       } else {
         if (rightWing) rightWing.style.display = 'none';
       }
 
       requestAnimationFrame(() => {
-        updateHorizontalProgress(liveEarned, leftGoals, rightGoals);
+        updateBridgeProgress(liveEarned, leftGoals, rightGoals);
       });
     }
 
@@ -785,88 +805,151 @@
       return el;
     }
 
-    // 🎯 PIXEL-PERFECT HORIZONTAL TRACK PROGRESSION
-    function updateHorizontalProgress(liveEarned, leftGoals, rightGoals) {
+    // 🎯 BRIDGE PROGRESSION: Flows through the middle widget
+    function updateBridgeProgress(liveEarned, leftGoals, rightGoals) {
       const leftTrack = document.getElementById('leftTrack');
       const leftFill = document.getElementById('leftFill');
       const leftCursor = document.getElementById('leftCursor');
+      const leftBg = leftTrack.querySelector('.track-line-bg');
 
       const rightTrack = document.getElementById('rightTrack');
       const rightFill = document.getElementById('rightFill');
       const rightCursor = document.getElementById('rightCursor');
+      const rightBg = rightTrack.querySelector('.track-line-bg');
 
-      if (!leftTrack || !leftFill || !leftCursor) return;
+      if (!leftTrack || !leftFill || !leftCursor || !leftBg) return;
 
-      const leftThreshold = leftGoals[leftGoals.length - 1].amount;
+      const leftTrackRect = leftTrack.getBoundingClientRect();
+      if (leftTrackRect.width <= 0) return;
+
       const leftNodes = Array.from(leftTrack.querySelectorAll('.h-node'));
+      if (leftNodes.length === 0) return;
 
-      // 1. Update Left Wing
-      updateWingPhysics(leftTrack, leftFill, leftCursor, leftNodes, leftGoals, liveEarned, 0, leftThreshold, liveEarned > leftThreshold);
-
-      // 2. Update Right Wing
-      if (rightGoals.length > 0 && rightTrack && rightFill && rightCursor) {
-        const rightMax = rightGoals[rightGoals.length - 1].amount;
-        const rightNodes = Array.from(rightTrack.querySelectorAll('.h-node'));
-        updateWingPhysics(rightTrack, rightFill, rightCursor, rightNodes, rightGoals, liveEarned, leftThreshold, rightMax, false);
-      }
-    }
-
-    function updateWingPhysics(trackEl, fillEl, cursorEl, nodes, goals, currentEarned, baseAmount, maxAmount, isHandedOffToNext) {
-      const bgLine = trackEl.querySelector('.track-line-bg');
-      const trackRect = trackEl.getBoundingClientRect();
-      if (trackRect.width <= 0 || nodes.length < 2) return;
-
-      // Extract pixel center coordinates of every tick '|'
-      const nodeXs = nodes.map(nodeEl => {
+      const leftXs = leftNodes.map(nodeEl => {
         const tick = nodeEl.querySelector('.h-node-tick') || nodeEl;
         const tickRect = tick.getBoundingClientRect();
-        return Math.max(0, (tickRect.left + tickRect.width / 2) - trackRect.left);
+        return Math.max(0, (tickRect.left + tickRect.width / 2) - leftTrackRect.left);
       });
 
-      const startX = nodeXs[0];
-      const endX = nodeXs[nodeXs.length - 1];
-      const totalTrackSpan = Math.max(0, endX - startX);
+      const leftStartX = leftXs[0]; // Center of 0 kr tick
+      const lastGoalLeftX = leftXs[leftXs.length - 1]; // Center of last left goal tick
+      const leftTrackEndX = leftTrackRect.width - 4; // Right edge of left track (runs into center widget)
 
-      // 📏 TRIMS LINE: Starts and ends strictly on the '|' ticks
-      if (bgLine) {
-        bgLine.style.left = `${startX.toFixed(1)}px`;
-        bgLine.style.width = `${totalTrackSpan.toFixed(1)}px`;
-      }
+      // 📏 Left line extends past last goal to the edge if right goals exist
+      const leftLineEndX = rightGoals.length > 0 ? leftTrackEndX : lastGoalLeftX;
+      leftBg.style.left = `${leftStartX.toFixed(1)}px`;
+      leftBg.style.width = `${Math.max(0, leftLineEndX - leftStartX).toFixed(1)}px`;
 
-      let targetX = startX;
-      let showCursor = false;
+      const lastLeftAmount = leftGoals[leftGoals.length - 1].amount;
+      const firstRightAmount = rightGoals.length > 0 ? rightGoals[0].amount : lastLeftAmount;
+      // Midpoint represents the visual crossover point behind the center widget
+      const bridgeMidAmount = lastLeftAmount + (firstRightAmount - lastLeftAmount) / 2;
 
-      if (currentEarned <= baseAmount) {
-        targetX = startX;
-        showCursor = (baseAmount === 0);
-      } else if (currentEarned >= maxAmount) {
-        targetX = endX;
-        showCursor = !isHandedOffToNext;
-      } else {
-        showCursor = true;
-        let prevAmt = baseAmount;
-        let prevX = startX;
+      // --- 1. LEFT WING PROGRESSION ---
+      let leftTargetX = leftStartX;
+      let showLeftCursor = false;
 
-        for (let i = 0; i < goals.length; i++) {
-          const goalAmt = goals[i].amount;
-          const currentX = nodeXs[i + 1];
+      if (liveEarned <= 0) {
+        leftTargetX = leftStartX;
+        showLeftCursor = true;
+      } else if (liveEarned <= lastLeftAmount) {
+        // Interpolate along the left goals
+        showLeftCursor = true;
+        let prevAmt = 0;
+        let prevX = leftStartX;
 
-          if (currentEarned <= goalAmt) {
+        for (let i = 0; i < leftGoals.length; i++) {
+          const goalAmt = leftGoals[i].amount;
+          const currentX = leftXs[i + 1];
+
+          if (liveEarned <= goalAmt) {
             const denom = goalAmt - prevAmt;
-            const ratio = denom > 0 ? (currentEarned - prevAmt) / denom : 1;
-            targetX = prevX + (currentX - prevX) * ratio;
+            const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
+            leftTargetX = prevX + (currentX - prevX) * ratio;
             break;
           }
 
           prevAmt = goalAmt;
           prevX = currentX;
         }
+      } else if (rightGoals.length > 0 && liveEarned <= bridgeMidAmount) {
+        // Donations flow past Goal into the center widget
+        showLeftCursor = true;
+        const ratio = (liveEarned - lastLeftAmount) / (bridgeMidAmount - lastLeftAmount);
+        leftTargetX = lastGoalLeftX + (leftTrackEndX - lastGoalLeftX) * ratio;
+      } else {
+        // Handed off to right wing
+        leftTargetX = leftLineEndX;
+        showLeftCursor = (rightGoals.length === 0);
       }
 
-      fillEl.style.left = `${startX.toFixed(1)}px`;
-      fillEl.style.width = `${Math.max(0, targetX - startX).toFixed(1)}px`;
-      cursorEl.style.left = `${targetX.toFixed(1)}px`;
-      cursorEl.style.opacity = showCursor ? '1' : '0';
+      leftFill.style.left = `${leftStartX.toFixed(1)}px`;
+      leftFill.style.width = `${Math.max(0, leftTargetX - leftStartX).toFixed(1)}px`;
+      leftCursor.style.left = `${leftTargetX.toFixed(1)}px`;
+      leftCursor.style.opacity = showLeftCursor ? '1' : '0';
+
+      // --- 2. RIGHT WING PROGRESSION ---
+      if (rightGoals.length > 0 && rightTrack && rightFill && rightCursor && rightBg) {
+        const rightTrackRect = rightTrack.getBoundingClientRect();
+        const rightNodes = Array.from(rightTrack.querySelectorAll('.h-node'));
+        if (rightNodes.length === 0) return;
+
+        const rightXs = rightNodes.map(nodeEl => {
+          const tick = nodeEl.querySelector('.h-node-tick') || nodeEl;
+          const tickRect = tick.getBoundingClientRect();
+          return Math.max(0, (tickRect.left + tickRect.width / 2) - rightTrackRect.left);
+        });
+
+        const rightTrackStartX = 4; // Left edge of right track (emerges from center widget)
+        const firstGoalRightX = rightXs[0]; // Center of first right goal tick
+        const lastGoalRightX = rightXs[rightXs.length - 1]; // Center of final top goal tick
+
+        // Line starts at edge and ends dead-center on top goal
+        rightBg.style.left = `${rightTrackStartX.toFixed(1)}px`;
+        rightBg.style.width = `${Math.max(0, lastGoalRightX - rightTrackStartX).toFixed(1)}px`;
+
+        const topGoalAmount = rightGoals[rightGoals.length - 1].amount;
+        let rightTargetX = rightTrackStartX;
+        let showRightCursor = false;
+
+        if (liveEarned <= bridgeMidAmount) {
+          rightTargetX = rightTrackStartX;
+          showRightCursor = false;
+        } else if (liveEarned <= firstRightAmount) {
+          // Emerging from center widget towards first right goal
+          showRightCursor = true;
+          const ratio = (liveEarned - bridgeMidAmount) / (firstRightAmount - bridgeMidAmount);
+          rightTargetX = rightTrackStartX + (firstGoalRightX - rightTrackStartX) * ratio;
+        } else if (liveEarned >= topGoalAmount) {
+          rightTargetX = lastGoalRightX;
+          showRightCursor = true;
+        } else {
+          // Progress between right goals
+          showRightCursor = true;
+          let prevAmt = firstRightAmount;
+          let prevX = firstGoalRightX;
+
+          for (let i = 1; i < rightGoals.length; i++) {
+            const goalAmt = rightGoals[i].amount;
+            const currentX = rightXs[i];
+
+            if (liveEarned <= goalAmt) {
+              const denom = goalAmt - prevAmt;
+              const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
+              rightTargetX = prevX + (currentX - prevX) * ratio;
+              break;
+            }
+
+            prevAmt = goalAmt;
+            prevX = currentX;
+          }
+        }
+
+        rightFill.style.left = `${rightTrackStartX.toFixed(1)}px`;
+        rightFill.style.width = `${Math.max(0, rightTargetX - rightTrackStartX).toFixed(1)}px`;
+        rightCursor.style.left = `${rightTargetX.toFixed(1)}px`;
+        rightCursor.style.opacity = showRightCursor ? '1' : '0';
+      }
     }
 
     function updateDockDisplay() {
