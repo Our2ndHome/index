@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Musikhjälpen Milstolpar - Top Split Bridge</title>
+  <title>Musikhjälpen Milstolpar - Top Split Balanced</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- Firebase Realtime Engine -->
@@ -117,16 +117,6 @@
       align-items: center;
     }
 
-    /* Left Wing nodes: padded from the right so line extends past the last goal */
-    .left-track {
-      justify-content: flex-start;
-    }
-
-    /* Right Wing nodes: padded from the left so line leads into the first goal */
-    .right-track {
-      justify-content: flex-end;
-    }
-
     .track-nodes-container {
       position: relative;
       width: 100%;
@@ -134,15 +124,16 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 3;
+      z-index: 4;
     }
 
+    /* Line runway towards/from middle widget without crushing node width */
     .left-track .track-nodes-container {
-      padding-right: 70px; /* Leaves clean line runway towards the center widget */
+      padding-right: 44px;
     }
 
     .right-track .track-nodes-container {
-      padding-left: 70px; /* Leaves clean line runway emerging from the center widget */
+      padding-left: 44px;
     }
 
     /* Background line */
@@ -240,7 +231,7 @@
       align-items: center;
       gap: 4px;
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 2px #000;
-      max-width: 140px;
+      max-width: 160px;
       overflow: hidden;
       text-overflow: ellipsis;
       margin-top: 4px;
@@ -510,7 +501,7 @@
       <!-- 440px GAP FOR CENTER WIDGET -->
       <div class="center-obstacle-spacer"></div>
 
-      <!-- RIGHT WING: --------> [Goal 3] ---- [Goal 4] -->
+      <!-- RIGHT WING: --------> [Goal 3] ---- [Goal 4] ---- [Goal 5] -->
       <div class="goal-wing" id="rightWing">
         <div class="wing-header">NÄSTA MÅL</div>
         <div class="horizontal-track right-track" id="rightTrack">
@@ -529,7 +520,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">BRIDGE v5.2</span></span>
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">BALANSERAD v5.3</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -592,7 +583,8 @@
       "200 kr - Äta stark sås\n" +
       "500 kr - Spela skräckspel\n" +
       "1000 kr - Hårfärgning\n" +
-      "2500 kr - 12h Stream";
+      "2500 kr - 12h Stream\n" +
+      "5000 kr - 24h Stream";
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
@@ -739,7 +731,7 @@
     }
 
     // ========================================================
-    // 🎨 RENDER TOP-SPLIT HORIZONTAL LADDERS
+    // 🎨 RENDER BALANCED TOP-SPLIT LADDERS
     // ========================================================
     function renderGoalsLadder() {
       const leftNodesContainer = document.getElementById('leftNodesContainer');
@@ -758,13 +750,15 @@
         return;
       }
 
-      const mid = Math.ceil(parsedGoals.length / 2);
-      const leftGoals = parsedGoals.slice(0, mid);
-      const rightGoals = parsedGoals.slice(mid);
+      // ⚖️ BALANCED SPLIT: Counts the "Start" node as an item so wings are balanced
+      // e.g. 5 goals = 3 on left (Start + 2 goals) & 3 on right (3 goals)
+      const leftGoalsCount = Math.max(1, Math.floor(parsedGoals.length / 2));
+      const leftGoals = parsedGoals.slice(0, leftGoalsCount);
+      const rightGoals = parsedGoals.slice(leftGoalsCount);
 
       const liveEarned = getLiveSessionEarned();
 
-      // --- 1. LEFT WING: [0 kr] ---- [Goal 1] ---- [Goal 2] --------> ---
+      // --- 1. LEFT WING: [0 kr Start] ---- [Goal 1] ---- [Goal 2] --------> ---
       const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0);
       leftNodesContainer.appendChild(leftStartEl);
 
@@ -773,7 +767,7 @@
         leftNodesContainer.appendChild(el);
       });
 
-      // --- 2. RIGHT WING: --------> [Goal 3] ---- [Goal 4] (NO redundant "Bas" node!) ---
+      // --- 2. RIGHT WING: --------> [Goal 3] ---- [Goal 4] ---- [Goal 5] ---
       if (rightGoals.length > 0) {
         if (rightWing) rightWing.style.display = 'flex';
         rightGoals.forEach(g => {
@@ -805,7 +799,7 @@
       return el;
     }
 
-    // 🎯 BRIDGE PROGRESSION: Flows through the middle widget
+    // 🎯 BRIDGE PROGRESSION: Flows across full-width wings and center widget
     function updateBridgeProgress(liveEarned, leftGoals, rightGoals) {
       const leftTrack = document.getElementById('leftTrack');
       const leftFill = document.getElementById('leftFill');
@@ -833,16 +827,15 @@
 
       const leftStartX = leftXs[0]; // Center of 0 kr tick
       const lastGoalLeftX = leftXs[leftXs.length - 1]; // Center of last left goal tick
-      const leftTrackEndX = leftTrackRect.width - 4; // Right edge of left track (runs into center widget)
+      const leftTrackEndX = leftTrackRect.width - 4; // Right edge of left track
 
-      // 📏 Left line extends past last goal to the edge if right goals exist
+      // Left track extends into the middle gap if right goals exist
       const leftLineEndX = rightGoals.length > 0 ? leftTrackEndX : lastGoalLeftX;
       leftBg.style.left = `${leftStartX.toFixed(1)}px`;
       leftBg.style.width = `${Math.max(0, leftLineEndX - leftStartX).toFixed(1)}px`;
 
       const lastLeftAmount = leftGoals[leftGoals.length - 1].amount;
       const firstRightAmount = rightGoals.length > 0 ? rightGoals[0].amount : lastLeftAmount;
-      // Midpoint represents the visual crossover point behind the center widget
       const bridgeMidAmount = lastLeftAmount + (firstRightAmount - lastLeftAmount) / 2;
 
       // --- 1. LEFT WING PROGRESSION ---
@@ -853,7 +846,7 @@
         leftTargetX = leftStartX;
         showLeftCursor = true;
       } else if (liveEarned <= lastLeftAmount) {
-        // Interpolate along the left goals
+        // Interpolate through Left Wing nodes
         showLeftCursor = true;
         let prevAmt = 0;
         let prevX = leftStartX;
@@ -873,7 +866,7 @@
           prevX = currentX;
         }
       } else if (rightGoals.length > 0 && liveEarned <= bridgeMidAmount) {
-        // Donations flow past Goal into the center widget
+        // Flows into the middle widget
         showLeftCursor = true;
         const ratio = (liveEarned - lastLeftAmount) / (bridgeMidAmount - lastLeftAmount);
         leftTargetX = lastGoalLeftX + (leftTrackEndX - lastGoalLeftX) * ratio;
@@ -883,8 +876,7 @@
         showLeftCursor = (rightGoals.length === 0);
       }
 
-      leftFill.style.left = `${leftStartX.toFixed(1)}px`;
-      leftFill.style.width = `${Math.max(0, leftTargetX - leftStartX).toFixed(1)}px`;
+      fillTrack(leftFill, leftStartX, leftTargetX);
       leftCursor.style.left = `${leftTargetX.toFixed(1)}px`;
       leftCursor.style.opacity = showLeftCursor ? '1' : '0';
 
@@ -900,11 +892,10 @@
           return Math.max(0, (tickRect.left + tickRect.width / 2) - rightTrackRect.left);
         });
 
-        const rightTrackStartX = 4; // Left edge of right track (emerges from center widget)
+        const rightTrackStartX = 4; // Left edge of right track
         const firstGoalRightX = rightXs[0]; // Center of first right goal tick
         const lastGoalRightX = rightXs[rightXs.length - 1]; // Center of final top goal tick
 
-        // Line starts at edge and ends dead-center on top goal
         rightBg.style.left = `${rightTrackStartX.toFixed(1)}px`;
         rightBg.style.width = `${Math.max(0, lastGoalRightX - rightTrackStartX).toFixed(1)}px`;
 
@@ -945,11 +936,15 @@
           }
         }
 
-        rightFill.style.left = `${rightTrackStartX.toFixed(1)}px`;
-        rightFill.style.width = `${Math.max(0, rightTargetX - rightTrackStartX).toFixed(1)}px`;
+        fillTrack(rightFill, rightTrackStartX, rightTargetX);
         rightCursor.style.left = `${rightTargetX.toFixed(1)}px`;
         rightCursor.style.opacity = showRightCursor ? '1' : '0';
       }
+    }
+
+    function fillTrack(el, startX, targetX) {
+      el.style.left = `${startX.toFixed(1)}px`;
+      el.style.width = `${Math.max(0, targetX - startX).toFixed(1)}px`;
     }
 
     function updateDockDisplay() {
