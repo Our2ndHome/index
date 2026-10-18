@@ -48,7 +48,7 @@
         }
 
         .dot.connected {
-            background-color: #00f593; /* Green when connected */
+            background-color: #00f593; /* Green when ready */
         }
 
         /* Button Grid */
@@ -89,7 +89,6 @@
             border-bottom-width: 1px;
         }
 
-        /* Color tag on top of the button */
         .deck-btn .tag {
             width: 24px;
             height: 4px;
@@ -113,13 +112,31 @@
 
     <script>
         // ================= BUTTON CONFIGURATION =================
-        // Edit or add buttons below!
-        // "source": Name of the Scene or Source in OBS that has the filter.
-        // "filter": The exact name of your Move Filter.
+        // You can now list multiple scenes and filters under "actions"!
         const BUTTONS = [
-            { label: "Webcam Left",    source: "Musikhjälpen|Gaming Scene",       filter: "Move Webcam Source Left",    color: "#9146FF" },
-            { label: "Reset Cam",   source: "Camera",       filter: "Move Reset",   color: "#00b5ad" },
-            { label: "Webcam Right",  source: "Musikhjälpen|Gaming Scene",   filter: "Move Webcam Source Right",  color: "#f2711c" }
+            {
+                label: "Webcam Left",
+                color: "#9146FF",
+                actions: [
+                    { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Left" },
+                    { source: "Html Files", filter: "Move Chat Source Right" }
+                ]
+            },
+            {
+                label: "Webcam Right",
+                color: "#00b5ad",
+                actions: [
+                    { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Right" },
+                    { source: "Html Files", filter: "Move Chat Source Left" }
+                ]
+            },
+            // Single-filter buttons still work as well:
+            {
+                label: "Solo Cam",
+                color: "#f2711c",
+                source: "Camera",
+                filter: "Move Zoom"
+            }
         ];
         // ========================================================
 
@@ -127,7 +144,6 @@
         let isConnected = false;
 
         function connectOBS() {
-            // OBS WebSocket default address
             ws = new WebSocket('ws://127.0.0.1:4455');
 
             ws.onopen = () => {};
@@ -137,7 +153,6 @@
 
                 // OpCode 0: Hello from OBS
                 if (msg.op === 0) {
-                    // Send Identify (OpCode 1)
                     ws.send(JSON.stringify({
                         op: 1,
                         d: { rpcVersion: 1 }
@@ -156,23 +171,22 @@
                 isConnected = false;
                 document.getElementById('dot').classList.remove('connected');
                 document.getElementById('status-text').textContent = "Offline";
-                setTimeout(connectOBS, 3000); // Auto reconnect
+                setTimeout(connectOBS, 3000);
             };
 
             ws.onerror = () => ws.close();
         }
 
-        // Triggers the Move Filter via OBS WebSocket
-        function triggerFilter(sourceName, filterName) {
+        // Triggers an individual filter on a specific source/scene
+        function sendFilterTrigger(sourceName, filterName) {
             if (!isConnected) return;
 
-            // To guarantee the move animation triggers every time,
-            // we toggle it false then immediately true:
+            // Toggle filter false then true to force animation replay
             ws.send(JSON.stringify({
                 op: 6,
                 d: {
                     requestType: "SetSourceFilterEnabled",
-                    requestId: "req-" + Date.now(),
+                    requestId: "req-" + Math.random(),
                     requestData: {
                         sourceName: sourceName,
                         filterName: filterName,
@@ -186,7 +200,7 @@
                     op: 6,
                     d: {
                         requestType: "SetSourceFilterEnabled",
-                        requestId: "req-" + Date.now(),
+                        requestId: "req-" + Math.random(),
                         requestData: {
                             sourceName: sourceName,
                             filterName: filterName,
@@ -195,6 +209,17 @@
                     }
                 }));
             }, 30);
+        }
+
+        // Handles clicks for single or multiple actions
+        function handleButtonClick(btn) {
+            if (btn.actions && Array.isArray(btn.actions)) {
+                btn.actions.forEach(action => {
+                    sendFilterTrigger(action.source, action.filter);
+                });
+            } else if (btn.source && btn.filter) {
+                sendFilterTrigger(btn.source, btn.filter);
+            }
         }
 
         // Render buttons onto screen
@@ -209,7 +234,7 @@
                     <div class="tag" style="background-color: ${btn.color || '#9146FF'}"></div>
                     <span>${btn.label}</span>
                 `;
-                buttonEl.onclick = () => triggerFilter(btn.source, btn.filter);
+                buttonEl.onclick = () => handleButtonClick(btn);
                 grid.appendChild(buttonEl);
             });
         }
