@@ -32,26 +32,38 @@
       user-select: none;
     }
 
-    /* 📺 OVERLAY */
-    .countdown-widget {
+    /* 📺 OVERLAY CONTAINER (MATCHING SCREENSHOT) */
+    .widget-card {
       position: absolute;
-      top: 20px;
+      top: 0;
       left: 50%;
       transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      padding: 18px 36px 20px 36px;
+      border-radius: 0 0 32px 32px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
       white-space: nowrap;
       pointer-events: none;
       z-index: 1000;
     }
 
+    /* Countdown Section */
+    .countdown-widget {
+      text-align: center;
+      margin-bottom: 2px;
+    }
+
     .countdown-label {
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 900;
       letter-spacing: 1.5px;
       color: #ace600;
       text-transform: uppercase;
-      margin-bottom: 6px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+      margin-bottom: 4px;
     }
 
     .countdown-timer {
@@ -60,76 +72,80 @@
       letter-spacing: 1px;
       color: #ffffff;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .sep-dot { color: #ace600; margin: 0 3px; }
+    .sep-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-color: #ace600;
+      border-radius: 50%;
+      margin: 0 10px;
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+    }
 
+    /* Goal Section */
     .goal-widget {
-      position: absolute;
-      top: 92px;
-      left: 50%;
-      transform: translateX(-50%);
       text-align: center;
       text-transform: uppercase;
-      white-space: nowrap;
-      z-index: 1000;
-      font-size: 22px;
-      font-weight: 900;
-      color: #ffffff;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
     }
 
     .goal-label {
       font-size: 12px;
+      font-weight: 900;
       color: #ffffff;
       display: block;
-      margin-bottom: 6px;
+      margin-top: 12px;
+      margin-bottom: 2px;
       letter-spacing: 1.5px;
     }
 
     .amount {
       color: #ace600;
-      font-size: 38px;
+      font-size: 40px;
       font-weight: 900;
       display: block;
+      line-height: 1.1;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
       transition: opacity 0.3s ease, transform 0.3s ease;
-      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95), 0 0 15px rgba(172, 230, 0, 0.4);
+      text-shadow: 0 0 16px rgba(172, 230, 0, 0.25);
     }
 
-    /* ✨ SLEEK MINIMAL PROGRESS BAR */
+    /* Progress Bar */
     .progress-bar-container {
-      width: 260px;
+      width: 270px;
       height: 6px;
-      background: rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.16);
       border-radius: 999px;
-      margin: 8px auto 6px auto;
+      margin: 12px auto 8px auto;
       overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
 
     .progress-bar-fill {
       height: 100%;
       width: 1%;
-      background: linear-gradient(90deg, #ace600, #00ff88);
+      background: #ace600;
       border-radius: 999px;
       transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.8);
     }
 
     .goal-target {
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 900;
       color: #ffffff;
       display: block;
-      letter-spacing: 1.2px;
-      opacity: 0.95;
+      letter-spacing: 1px;
     }
 
-    /* Clean transparent alert banner */
+    /* Alert Banner */
     .alert-banner {
       position: absolute;
-      top: 42%;
+      top: 45%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.6);
       opacity: 0;
@@ -194,7 +210,7 @@
       z-index: 9999;
     }
 
-    /* 🎛️ DOCK (BLACK & WHITE) */
+    /* 🎛️ DOCK (CONTROL PANEL) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -349,46 +365,48 @@
 
   <!-- 📺 1. STREAM OVERLAY VIEW -->
   <div id="overlayRoot">
-    <div class="countdown-widget">
-      <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
-      <div class="countdown-timer" id="countdownTimer">0D • 00:00:00</div>
-    </div>
-
-    <div class="goal-widget">
-      <span class="goal-label">TOTALT INSAMLAT</span>
-      <span class="amount" id="totalDisplay">0 kr</span>
-      
-      <!-- Progress Bar Element -->
-      <div class="progress-bar-container">
-        <div class="progress-bar-fill" id="goalProgressBar"></div>
+    <div class="widget-card">
+      <div class="countdown-widget">
+        <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
+        <div class="countdown-timer" id="countdownTimer">0D <span class="sep-dot"></span> 00:00:00</div>
       </div>
 
-      <span class="goal-target" id="goalTargetText">MÅL: 40 000 KR (0%)</span>
+      <div class="goal-widget">
+        <span class="goal-label">TOTALT INSAMLAT</span>
+        <span class="amount" id="totalDisplay">0 KR</span>
+        
+        <!-- Progress Bar Element -->
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="goalProgressBar"></div>
+        </div>
+
+        <span class="goal-target" id="goalTargetText">MÅL: 40 000 KR (0.0%)</span>
+      </div>
     </div>
 
     <div class="alert-banner" id="alertBanner">
       <span class="donor-name" id="donorName">JOHAN</span> 
-      <div class="alert-subtext">DONERADE <span id="alertAmount">50 kr</span>!</div>
+      <div class="alert-subtext">DONERADE <span id="alertAmount">50 KR</span>!</div>
       <div class="alert-comment" id="alertComment"></div>
     </div>
 
-    <div class="overlay-version-tag">GOAL-PROGRESS v7.1</div>
+    <div class="overlay-version-tag">GOAL-PROGRESS v7.2</div>
   </div>
 
   <!-- 🎛️ 2. OBS DOCK CONTROLLER -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v7.1</span></span>
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v7.2</span></span>
       <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluter till Firebase...</div>
 
     <div class="summary-text" id="dockSummaryText">
-      <b>0</b> biljetter genererade (Totalt: <b>0 kr</b>)
+      <b>0</b> biljetter genererade (Totalt: <b>0 KR</b>)
     </div>
 
-    <!-- 🔄 The Safe Re-sync Button -->
+    <!-- 🔄 Safe Re-sync Button -->
     <button class="btn-resync" onclick="dockRequestResync()">
       🔄 Återställ till verkligt belopp
     </button>
@@ -433,7 +451,7 @@
     ];
 
     function formatSEK(num) {
-      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
+      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
 
     const hash = window.location.hash.toLowerCase();
@@ -481,7 +499,6 @@
         updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
       }
 
-      // Check if new alerts arrived
       if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
         lastProcessedAlertId = data.alertId;
 
@@ -548,7 +565,6 @@
       });
     }
 
-    // Smooth counter & progress bar update
     function updateTotalDisplaySmooth(num) {
       const el = document.getElementById('totalDisplay');
       if (el) el.innerText = formatSEK(num);
@@ -558,7 +574,7 @@
       if (bar) bar.style.width = `${Math.max(1, percent)}%`;
 
       const targetText = document.getElementById('goalTargetText');
-      if (targetText) targetText.innerText = `MÅL: 40 000 KR (${percent.toFixed(percent < 10 ? 1 : 0)}%)`;
+      if (targetText) targetText.innerText = `MÅL: 40 000 KR (${percent.toFixed(1)}%)`;
     }
 
     function updateStatusDisplay(text) {
@@ -575,7 +591,7 @@
     // 🎛️ DOCK ACTIONS
     function dockRequestResync() {
       const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = "Återställer till 400 kr...";
+      if (box) box.innerText = "Återställer till 400 KR...";
 
       dbRef.set({
         total: 400,
@@ -587,7 +603,7 @@
         forceSync: true,
         secret: WRITE_SECRET
       }).then(() => {
-        updateStatusDisplay("Live Ansluten (400 kr)");
+        updateStatusDisplay("Live Ansluten (400 KR)");
       }).catch(err => {
         alert("Kunde inte återställa: " + err.message);
       });
@@ -599,7 +615,6 @@
       dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET });
     }
 
-    // Case-Insensitive Donor Bridge to Giveaway
     function bridgeDonorToGiveaway(name, amount) {
       if (!name || amount < 1) return;
       const cleanName = name.replace(/^@+/, '').trim();
@@ -608,7 +623,7 @@
 
       dbDonorsRef.child('map').child(key).transaction((current) => {
         const donor = current || { displayName: cleanName, totalAmount: 0, milestonesClaimed: 0, ticketsActive: 0 };
-        donor.displayName = cleanName; // Keep best casing
+        donor.displayName = cleanName;
         donor.totalAmount = (donor.totalAmount || 0) + amount;
         
         const totalMilestones = Math.floor(donor.totalAmount / 200);
@@ -627,7 +642,6 @@
       const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
       const comment = document.getElementById('dockManualComment').value.trim();
 
-      // 🌉 Automatically feed tickets into giveaway pool!
       bridgeDonorToGiveaway(donor, amount);
 
       dbRef.set({
@@ -678,7 +692,7 @@
       const m = String(minutes).padStart(2, '0');
       const s = String(seconds).padStart(2, '0');
 
-      timerDisplay.innerHTML = `${days}D <span class="sep-dot">•</span> ${h}:${m}:${s}`;
+      timerDisplay.innerHTML = `${days}D <span class="sep-dot"></span> ${h}:${m}:${s}`;
     }
 
     if (isPanel) {
