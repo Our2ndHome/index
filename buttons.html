@@ -112,7 +112,6 @@
 
     <script>
         // ================= BUTTON CONFIGURATION =================
-        // You can now list multiple scenes and filters under "actions"!
         const BUTTONS = [
             {
                 label: "Webcam Left",
@@ -130,18 +129,19 @@
                     { source: "Html Files", filter: "Move Chat Source Left" }
                 ]
             },
-            // Single-filter buttons still work as well:
+            // Hide / Toggle Webcam scene item:
             {
-                label: "Solo Cam",
+                label: "Hide Webcam",
                 color: "#f2711c",
-                source: "Camera",
-                filter: "Move Zoom"
+                scene: "Musikhjälpen | Gaming Scene",
+                source: "Webcam Scene"
             }
         ];
         // ========================================================
 
         let ws = null;
         let isConnected = false;
+        const pendingRequests = new Map();
 
         function connectOBS() {
             ws = new WebSocket('ws://127.0.0.1:4455');
@@ -165,16 +165,101 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
                 }
+
+                // OpCode 7: Request Responses
+                if (msg.op === 7) {
+                    const { requestId, requestStatus, responseData } = msg.d;
+                    if (pendingRequests.has(requestId)) {
+                        const { resolve, reject } = pendingRequests.get(requestId);
+                        pendingRequests.delete(requestId);
+
+                        if (requestStatus && requestStatus.result) {
+                            resolve(responseData);
+                        } else {
+                            reject(new Error(requestStatus ? requestStatus.comment : "Request failed"));
+                        }
+                    }
+                }
             };
 
             ws.onclose = () => {
                 isConnected = false;
+                pendingRequests.forEach(({ reject }) => reject(new Error("Connection lost")));
+                pendingRequests.clear();
                 document.getElementById('dot').classList.remove('connected');
                 document.getElementById('status-text').textContent = "Offline";
                 setTimeout(connectOBS, 3000);
             };
 
             ws.onerror = () => ws.close();
+        }
+
+        // Generic Promise-based request wrapper for OBS v5
+        function sendRequest(requestType, requestData = {}) {
+            return new Promise((resolve, reject) => {
+                if (!isConnected || !ws) {
+                    return reject(new Error("Not connected to OBS"));
+                }
+                const requestId = "req-" + Math.random().toString(36).substring(2, 9);
+                pendingRequests.set(requestId, { resolve, reject });
+                ws.send(JSON.stringify({
+                    op: 6,
+                    d: {
+                        requestType,
+                        requestId,
+                        requestData
+                    }
+                }));
+            });
+        }
+
+        // Toggles a source (scene item) visibility inside a specific scene
+        async function toggleSceneItem(sceneName, sourceName) {
+            if (!isConnected) return;
+
+            let targetScene = sceneName;
+            let itemId = null;
+
+            // 1. Fetch the scene item ID (with spacing fallback)
+            try {
+                const res = await sendRequest("GetSceneItemId", {
+                    sceneName: targetScene,
+                    sourceName: sourceName
+                });
+                itemId = res.sceneItemId;
+            } catch (err) {
+                const altScene = targetScene.includes(" | ")
+                    ? targetScene.replace(/\s*\|\s*/g, "|")
+                    : targetScene.replace(/\|/g, " | ");
+
+                try {
+                    const res = await sendRequest("GetSceneItemId", {
+                        sceneName: altScene,
+                        sourceName: sourceName
+                    });
+                    itemId = res.sceneItemId;
+                    targetScene = altScene;
+                } catch (err2) {
+                    console.error(`Could not locate source "${sourceName}" inside "${targetScene}" or "${altScene}".`);
+                    return;
+                }
+            }
+
+            // 2. Fetch current visibility state and invert it
+            try {
+                const statusRes = await sendRequest("GetSceneItemEnabled", {
+                    sceneName: targetScene,
+                    sceneItemId: itemId
+                });
+
+                await sendRequest("SetSceneItemEnabled", {
+                    sceneName: targetScene,
+                    sceneItemId: itemId,
+                    sceneItemEnabled: !statusRes.sceneItemEnabled
+                });
+            } catch (err) {
+                console.error("Failed to toggle visibility:", err);
+            }
         }
 
         // Triggers an individual filter on a specific source/scene
@@ -211,14 +296,20 @@
             }, 30);
         }
 
-        // Handles clicks for single or multiple actions
+        // Handles clicks for filter actions or scene item toggles
         function handleButtonClick(btn) {
             if (btn.actions && Array.isArray(btn.actions)) {
                 btn.actions.forEach(action => {
-                    sendFilterTrigger(action.source, action.filter);
+                    if (action.filter) {
+                        sendFilterTrigger(action.source, action.filter);
+                    } else if (action.scene && action.source) {
+                        toggleSceneItem(action.scene, action.source);
+                    }
                 });
-            } else if (btn.source && btn.filter) {
+            } else if (btn.filter && btn.source) {
                 sendFilterTrigger(btn.source, btn.filter);
+            } else if (btn.scene && btn.source) {
+                toggleSceneItem(btn.scene, btn.source);
             }
         }
 
