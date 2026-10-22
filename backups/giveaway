@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Giveaway Wheel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root {
+      --text-white: #ffffff;
+      --text-dim: #a1a1aa;
+      --dock-bg: #0b0b0d;
+      --card-bg: #141418;
+      --border: #27272a;
+      --viewport-height: 280px; /* 140px is dead center */
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      color: var(--text-white);
+      user-select: none;
+    }
+
+    /* 🔀 HASH ROUTER */
+    body.mode-overlay #panelRoot { display: none !important; }
+    body.mode-panel #overlayRoot { display: none !important; }
+
+    body.mode-panel {
+      background-color: var(--dock-bg);
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    /* 🌧️ EMOTE RAIN CANVAS */
+    #victoryCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99995;
+    }
+
+    /* 📺 1. STREAM OVERLAY: PURE PLAIN TEXT */
+    .giveaway-widget {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px;
+      padding: 10px;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99990;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+
+    .giveaway-widget.active {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto;
+    }
+
+    .giveaway-title-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .giveaway-head-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+    }
+
+    .giveaway-sub-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 4px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .giveaway-timer-badge {
+      display: block;
+      margin-top: 6px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      min-height: 20px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+    }
+
+    /* 🎰 THE 5-SLOT STAGE */
+    .reel-viewport {
+      position: relative;
+      width: 100%;
+      height: var(--viewport-height);
+      overflow: hidden;
+      background: transparent;
+      border: none;
+
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.4) 10%,
+        rgba(0, 0, 0, 1) 28%,
+        rgba(0, 0, 0, 1) 72%,
+        rgba(0, 0, 0, 0.4) 90%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.4) 10%,
+        rgba(0, 0, 0, 1) 28%,
+        rgba(0, 0, 0, 1) 72%,
+        rgba(0, 0, 0, 0.4) 90%,
+        rgba(0, 0, 0, 0) 100%
+      );
+    }
+
+    .reel-stage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slot-item {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      white-space: nowrap;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+      transform-origin: center center;
+      will-change: transform, opacity;
+      line-height: 1;
+    }
+
+    /* 🏷️ TWO-ROW PRIZE DISPLAY */
+    .giveaway-prize-display {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-height: 44px;
+      max-width: 90%;
+    }
+
+    .giveaway-prize-label {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      color: rgba(255, 255, 255, 0.65);
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .giveaway-prize-val {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+      white-space: normal;
+      line-height: 1.2;
+    }
+
+    /* 🎛️ 2. OBS DOCK CONTROLLER */
+    .dock-container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111114;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .version-badge {
+      background: #ffffff;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .status-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+      margin-bottom: 8px;
+    }
+
+    .summary-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin: 0 0 10px 2px;
+    }
+    .summary-text b { color: #ffffff; }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    input[type="text"], input[type="number"], select {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      border-color: #52525b;
+    }
+
+    .btn {
+      background: #18181c;
+      border: 1px solid var(--border);
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover:not(:disabled) {
+      background: #24242a;
+      border-color: #3f3f46;
+    }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-primary-action {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      transition: opacity 0.15s ease;
+    }
+    .btn-primary-action:hover:not(:disabled) { opacity: 0.9; }
+
+    .btn-danger {
+      background: #18181c;
+      border: 1px solid #ff453a;
+      color: #ff453a;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: #ff453a;
+      color: #ffffff;
+    }
+
+    .manual-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .manual-row input[name="name"] { flex: 2; }
+    .manual-row input[name="amount"] { flex: 1; }
+    .manual-row button { flex: 1; margin-bottom: 0; }
+
+    /* 🔍 !biljett Tester */
+    .lookup-box {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+
+    .lookup-output {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #e4e4e7;
+      font-weight: 700;
+      display: none;
+      padding: 6px 8px;
+      background: #1a1a20;
+      border-radius: 4px;
+      border-left: 2px solid #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🌧️ EMOTE RAIN & RADIAL BLAST CANVAS -->
+  <canvas id="victoryCanvas"></canvas>
+
+  <!-- ========================================================
+       📺 1. STREAM OVERLAY VIEW (#overlay)
+       ======================================================== -->
+  <div id="overlayRoot">
+    <div class="giveaway-widget" id="giveawayWidget">
+      <div class="giveaway-title-container">
+        <div class="giveaway-head-title">GIVEAWAY</div>
+        <div class="giveaway-sub-title" id="giveawaySubTitle">Totalt 0 biljetter · 0 givare</div>
+        <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
+      </div>
+      
+      <div class="reel-viewport">
+        <!-- 5-Slot Optical Stage -->
+        <div class="reel-stage" id="reelStage"></div>
+      </div>
+
+      <!-- 🏷️ TWO-ROW PRIZE DISPLAY -->
+      <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       🎛️ 2. OBS CONTROL DOCK (#panel)
+       ======================================================== -->
+  <div id="panelRoot" class="dock-container">
+    <div class="header-box">
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.5</span></span>
+      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
+    </div>
+
+    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
+    <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
+
+    <!-- Prize Input -->
+    <div class="control-row">
+      <span class="control-label">VINST / PRIS:</span>
+      <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 60%; text-align: right;">
+    </div>
+
+    <!-- Sound Preset -->
+    <div class="control-row">
+      <span class="control-label">VINNARLJUD:</span>
+      <select id="soundPresetSelect" style="width: 60%;">
+        <option value="hype_win">Level Up / Gold Victory</option>
+        <option value="jackpot">Casino Jackpot Fanfare</option>
+        <option value="fanfare">Stadium Victory Brass</option>
+      </select>
+    </div>
+    <button class="btn" style="padding:6px; font-size:11px;" onclick="playVictorySound()">Provlyssna vinnarljud</button>
+
+    <!-- 💬 !BILJETT CHAT COMMAND TESTER -->
+    <div class="lookup-box">
+      <div style="font-size:10px; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-bottom:4px;">
+        🧪 Testa !biljett-kommando (Chat Simulator):
+      </div>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="searchDonorInput" placeholder="Skriv namn (t.ex. Marcus)..." style="flex:1;">
+        <button class="btn" style="width:auto; margin:0; padding:6px 10px;" onclick="testChatCommandSimulator()">Kör</button>
+      </div>
+      <div id="lookupOutput" class="lookup-output"></div>
+    </div>
+
+    <!-- Manual Donor Add -->
+    <div class="manual-row" style="margin-top: 6px;">
+      <input type="text" id="manualName" name="name" placeholder="Givarnamn">
+      <input type="number" id="manualAmount" name="amount" placeholder="Kr" style="width:65px;" value="200">
+      <button class="btn" onclick="addManualDonation()">+ Lägg till</button>
+    </div>
+
+    <!-- Actions -->
+    <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">Växla till testläge (500 testbiljetter)</button>
+    <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla biljetter</button>
+
+    <!-- Draw Buttons -->
+    <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
+      Starta dragning (10s)
+    </button>
+    <button class="btn" id="btnSkip" onclick="startDraw(5000)">
+      Dra ny vinnare (5s)
+    </button>
+    <button class="btn btn-danger" id="btnClose" onclick="claimPrizeAndClose()">
+      Avsluta & dela ut vinst
+    </button>
+  </div>
+
+  <script>
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
+    const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
+    const STORAGE_KEY_PRIZE = "mh_overlay_prize_text";
+
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
+    const EMOTES_FOLDER = "emotes";
+
+    const TICKET_MILESTONE_KR = 200;
+    const MAX_TICKETS_PER_USER = 5;
+    const VIEWPORT_HEIGHT = 280; // 140px is dead center
+
+    const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
+
+    const AUDIO_PRESETS = {
+      hype_win: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3",
+      jackpot: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3",
+      fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"
+    };
+
+    let donorMap = {};
+    let currentWinner = null;
+    let isSpinning = false;
+    let isTestMode = false;
+
+    // Continuous Rolling State
+    let currentVirtualOffset = 2.0;
+    let trackNamesList = [];
+
+    let holdTimeout = null;
+    let countdownInterval = null;
+    let claimTimerInterval = null;
+    let animFrameId = null;
+
+    let lastTickIndex = null;
+    let lastTickTime = 0;
+
+    // 🌧️ VERIFIED PRELOADED EMOTES LIST
+    let loadedEmoteImages = [];
+    let celebrationParticles = [];
+    let celebrationAnimId = null;
+
+    const hash = window.location.hash.toLowerCase();
+    const isPanel = hash.includes('panel') || hash.includes('dock');
+
+    if (isPanel) {
+      document.body.classList.add('mode-panel');
+    } else {
+      document.body.classList.add('mode-overlay');
+    }
+
+    const giveawayWidget = document.getElementById('giveawayWidget');
+    const giveawaySubTitle = document.getElementById('giveawaySubTitle');
+    const giveawayTimerBadge = document.getElementById('giveawayHeaderTimer');
+    const giveawayPrizeDisplay = document.getElementById('giveawayPrizeDisplay');
+    const prizeInput = document.getElementById('prizeInput');
+    const reelStage = document.getElementById('reelStage');
+    const victoryCanvas = document.getElementById('victoryCanvas');
+    const vCtx = victoryCanvas.getContext('2d');
+    const soundPresetSelect = document.getElementById('soundPresetSelect');
+
+    const btnStart = document.getElementById('btnStart');
+    const btnSkip = document.getElementById('btnSkip');
+    const btnClose = document.getElementById('btnClose');
+
+    function resizeCanvas() {
+      victoryCanvas.width = window.innerWidth;
+      victoryCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbDonorsRef = firebase.database().ref('giveaway_donors');
+    const dbActionRef = firebase.database().ref('giveaway_action');
+    const dbBossaRef = firebase.database().ref('bossa');
+
+    // ========================================================
+    // 🖼️ DIRECT CDN PRELOADER: Loads images immediately
+    // ========================================================
+    async function loadCustomEmotesFromGitHub() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}?_t=${Date.now()}`);
+        if (!res.ok) return;
+
+        const files = await res.json();
+        const imageFiles = files.filter(f => f.name.match(/\.(png|jpe?g|webp|gif|svg)$/i));
+        
+        let loadedCount = 0;
+        loadedEmoteImages = [];
+
+        for (const f of imageFiles) {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          
+          img.onload = () => {
+            loadedCount++;
+            loadedEmoteImages.push(img);
+            updateStatsUI();
+          };
+
+          // Use direct CDN raw URL so it never 404s while GitHub Pages is building
+          img.src = f.download_url || `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`;
+        }
+      } catch(e) {
+        console.warn("Kunde inte hämta emotes via GitHub API, använder emoji-backup.");
+      }
+    }
+    loadCustomEmotesFromGitHub();
+
+    // ========================================================
+    // 🧠 1. DONOR ENGINE
+    // ========================================================
+    function normalizeDonorKey(name) {
+      if (!name) return "";
+      return name.replace(/^@+/, '').trim().toLowerCase();
+    }
+
+    function recordDonation(rawName, amount) {
+      if (!rawName || amount < 1) return;
+      const cleanName = rawName.replace(/^@+/, '').trim();
+      const key = normalizeDonorKey(cleanName);
+      if (/anonym|hemlig hjälte/i.test(key)) return;
+
+      if (!donorMap[key]) {
+        donorMap[key] = {
+          displayName: cleanName,
+          totalAmount: 0,
+          milestonesClaimed: 0,
+          ticketsActive: 0
+        };
+      }
+
+      const donor = donorMap[key];
+      donor.displayName = cleanName;
+      donor.totalAmount = (donor.totalAmount || 0) + amount;
+
+      const totalMilestones = Math.floor(donor.totalAmount / TICKET_MILESTONE_KR);
+      const newMilestones = totalMilestones - (donor.milestonesClaimed || 0);
+
+      if (newMilestones > 0) {
+        donor.ticketsActive = Math.min(MAX_TICKETS_PER_USER, (donor.ticketsActive || 0) + newMilestones);
+        donor.milestonesClaimed = totalMilestones;
+      }
+
+      saveDonors();
+      updateStatsUI();
+      syncDonorsToCloud();
+    }
+
+    function deductWinnerTicket(winnerKey) {
+      if (!winnerKey || !donorMap[winnerKey]) return;
+      donorMap[winnerKey].ticketsActive = Math.max(0, (donorMap[winnerKey].ticketsActive || 0) - 1);
+      saveDonors();
+      updateStatsUI();
+      syncDonorsToCloud();
+    }
+
+    function getWeightedTicketPool() {
+      const pool = [];
+      for (const [key, donor] of Object.entries(donorMap)) {
+        for (let i = 0; i < (donor.ticketsActive || 0); i++) {
+          pool.push(donor.displayName || key);
+        }
+      }
+      return pool;
+    }
+
+    function getUniqueDonorNames() {
+      return Object.keys(donorMap).filter(k => (donorMap[k].ticketsActive || 0) > 0).map(k => donorMap[k].displayName || k);
+    }
+
+    function saveDonors() {
+      try {
+        localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorMap));
+      } catch (e) {}
+    }
+
+    function loadDonors() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_DONORS);
+        if (saved) donorMap = JSON.parse(saved);
+        const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
+        if (savedPrize !== null) setPrizeText(savedPrize, false);
+      } catch (e) {}
+      updateStatsUI();
+      initInitialStage();
+    }
+
+    function syncDonorsToCloud() {
+      dbDonorsRef.set({
+        map: donorMap,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      }).catch(() => {});
+    }
+
+    // Auto-bridge from /bossa
+    let lastObservedAlertId = 0;
+    dbBossaRef.on('value', (snap) => {
+      const bData = snap.val();
+      if (!bData) return;
+
+      if (bData.alertId && bData.alertId !== lastObservedAlertId) {
+        lastObservedAlertId = bData.alertId;
+
+        if (Array.isArray(bData.alerts) && bData.alerts.length > 0) {
+          bData.alerts.forEach(item => {
+            if (item.donor && item.amount) recordDonation(item.donor, item.amount);
+          });
+        } else if (bData.donor && bData.diff > 0) {
+          recordDonation(bData.donor, bData.diff);
+        }
+      }
+    });
+
+    dbDonorsRef.on('value', (snap) => {
+      const data = snap.val();
+      if (data && data.map && !isSpinning) {
+        donorMap = data.map;
+        saveDonors();
+        updateStatsUI();
+        if (trackNamesList.length === 0) initInitialStage();
+      }
+    });
+
+    dbActionRef.on('value', (snap) => {
+      const act = snap.val();
+      if (!act) return;
+
+      if (act.type === 'START_SPIN') {
+        executeSpin(act.winner, act.delayMs || 10000, act.spinDistance || 75);
+      } else if (act.type === 'CLAIM_CLOSE') {
+        finalizeClaimAndHide();
+      } else if (act.type === 'UPDATE_PRIZE') {
+        setPrizeText(act.prize, false);
+      }
+    });
+
+    if (bus) {
+      bus.onmessage = (e) => {
+        const { type, payload } = e.data || {};
+        if (type === 'START_SPIN') executeSpin(payload.winner, payload.delayMs, payload.spinDistance);
+        if (type === 'CLAIM_CLOSE') finalizeClaimAndHide();
+        if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
+      };
+    }
+
+    // 💬 TEST !BILJETT SIMULATOR
+    function testChatCommandSimulator() {
+      const input = document.getElementById('searchDonorInput');
+      const box = document.getElementById('lookupOutput');
+      if (!input || !box) return;
+
+      const raw = input.value.trim();
+      if (!raw) {
+        box.style.display = 'block';
+        box.innerHTML = `⚠️ Skriv ett namn att testa (t.ex. <code>Marcus</code>)`;
+        return;
+      }
+
+      const key = normalizeDonorKey(raw);
+      const match = donorMap[key];
+      box.style.display = 'block';
+
+      if (match) {
+        box.innerHTML = `💬 <b>Bot-svar:</b> @${raw} ➔ ${match.displayName} har donerat <b>${match.totalAmount} kr</b> totalt och har <b>${match.ticketsActive}/5</b> aktiva biljetter i giveaway-hjulet! 🎁`;
+      } else {
+        box.innerHTML = `💬 <b>Bot-svar:</b> @${raw} ➔ Inga biljetter hittades för '${raw}' än. Donera minst 200 kr till bössan för att få din första biljett! 🎟️`;
+      }
+    }
+
+    // ========================================================
+    // 🏷️ TWO-ROW PRIZE & AUDIO
+    // ========================================================
+    function setPrizeText(text, broadcast = true) {
+      const clean = (text || '').trim();
+      if (clean) {
+        giveawayPrizeDisplay.innerHTML = `
+          <span class="giveaway-prize-label">VINST:</span>
+          <span class="giveaway-prize-val">${escapeHTML(clean)}</span>
+        `;
+      } else {
+        giveawayPrizeDisplay.innerHTML = '';
+      }
+
+      if (prizeInput) prizeInput.value = clean;
+      try {
+        localStorage.setItem(STORAGE_KEY_PRIZE, clean);
+      } catch (e) {}
+
+      if (broadcast) {
+        dbActionRef.set({ type: 'UPDATE_PRIZE', prize: clean, secret: WRITE_SECRET });
+        if (bus) bus.postMessage({ type: 'UPDATE_PRIZE', payload: { prize: clean } });
+      }
+    }
+
+    if (prizeInput) {
+      prizeInput.addEventListener('input', () => setPrizeText(prizeInput.value, true));
+    }
+
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioCtx = new AudioCtx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playWheelClick(speedRatio = 1.0) {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const now = ctx.currentTime;
+
+        const pitch = Math.max(0.75, Math.min(1.4, 0.8 + speedRatio * 0.4));
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520 * pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(90, now + 0.016);
+
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.018);
+      } catch (e) {}
+    }
+
+    function playVictorySound() {
+      getAudioContext();
+      const preset = soundPresetSelect ? soundPresetSelect.value : 'hype_win';
+      const soundSrc = AUDIO_PRESETS[preset] || AUDIO_PRESETS.hype_win;
+
+      try {
+        const audio = new Audio(soundSrc);
+        audio.volume = 0.55;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+
+    // ========================================================
+    // 🎯 BALANCED 5-SLOT SCALING
+    // ========================================================
+    function getSlotPhysicalMetrics(d) {
+      const absD = Math.abs(d);
+      const sign = d < 0 ? -1 : 1;
+
+      let yOffset = 0;
+      let scale = 1.18;
+      let opacity = 1.0;
+      let fontWeight = '900';
+
+      if (absD <= 1.0) {
+        const t = absD;
+        yOffset = sign * (54 * t);
+        scale = 1.18 - (1.18 - 0.86) * t;
+        opacity = 1.0 - (1.0 - 0.60) * t;
+        fontWeight = absD < 0.25 ? '900' : '800';
+      } else if (absD <= 2.0) {
+        const t = absD - 1.0;
+        yOffset = sign * (54 + 46 * t);
+        scale = 0.86 - (0.86 - 0.62) * t;
+        opacity = 0.60 - (0.60 - 0.22) * t;
+        fontWeight = '700';
+      } else {
+        const t = Math.min(1.0, absD - 2.0);
+        yOffset = sign * (100 + 40 * t);
+        scale = 0.62 - (0.62 - 0.45) * t;
+        opacity = Math.max(0, 0.22 - 0.22 * t);
+        fontWeight = '600';
+      }
+
+      return {
+        top: 140 + yOffset,
+        scale: scale,
+        opacity: opacity,
+        fontWeight: fontWeight
+      };
+    }
+
+    function renderVirtualSlots(virtualOffset) {
+      if (trackNamesList.length === 0) return;
+
+      const centerIndex = Math.round(virtualOffset);
+      const minIndex = Math.max(0, centerIndex - 3);
+      const maxIndex = Math.min(trackNamesList.length - 1, centerIndex + 3);
+
+      let html = '';
+      for (let i = minIndex; i <= maxIndex; i++) {
+        const d = i - virtualOffset;
+        const m = getSlotPhysicalMetrics(d);
+
+        if (m.opacity > 0.01) {
+          const transform = `translateY(-50%) scale(${m.scale.toFixed(3)})`;
+          const style = `top: ${m.top.toFixed(1)}px; transform: ${transform}; opacity: ${m.opacity.toFixed(3)}; font-weight: ${m.fontWeight}; font-size: 24px;`;
+          html += `<div class="slot-item" style="${style}">${escapeHTML(trackNamesList[i])}</div>`;
+        }
+      }
+
+      reelStage.innerHTML = html;
+    }
+
+    function initInitialStage() {
+      const uniqueNames = getUniqueDonorNames();
+      trackNamesList = [];
+
+      if (uniqueNames.length === 0) {
+        trackNamesList = ["Väntar...", "Väntar...", "Väntar på gåvor...", "Väntar...", "Väntar..."];
+      } else {
+        for (let i = 0; i < 7; i++) {
+          trackNamesList.push(uniqueNames[i % uniqueNames.length]);
+        }
+      }
+
+      currentVirtualOffset = 2.0;
+      renderVirtualSlots(currentVirtualOffset);
+    }
+
+    function stopTimers() {
+      if (holdTimeout) clearTimeout(holdTimeout);
+      if (countdownInterval) clearInterval(countdownInterval);
+      if (claimTimerInterval) clearInterval(claimTimerInterval);
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      holdTimeout = null;
+      countdownInterval = null;
+      claimTimerInterval = null;
+      animFrameId = null;
+    }
+
+    // ========================================================
+    // 🚀 CONTINUOUS FORWARD ROLLING
+    // ========================================================
+    function startDraw(holdDelayMs = 10000) {
+      const pool = getWeightedTicketPool();
+      if (pool.length === 0) return alert("Inga biljetter i potten än!");
+
+      getAudioContext();
+      const winner = pool[Math.floor(Math.random() * pool.length)];
+      const spinDistance = (holdDelayMs <= 5000) ? 45 : 75;
+
+      dbActionRef.set({
+        type: 'START_SPIN',
+        winner: winner,
+        delayMs: holdDelayMs,
+        spinDistance: spinDistance,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      });
+      if (bus) bus.postMessage({ type: 'START_SPIN', payload: { winner, delayMs: holdDelayMs, spinDistance } });
+
+      executeSpin(winner, holdDelayMs, spinDistance);
+    }
+
+    function executeSpin(winnerName, holdDelayMs = 10000, spinDistance = 75) {
+      getAudioContext();
+      stopTimers();
+      clearCelebrationEffects();
+
+      isSpinning = true;
+      currentWinner = winnerName;
+      setButtonsLocked(true);
+
+      giveawayWidget.classList.add('active');
+
+      const uniqueNames = getUniqueDonorNames();
+      const startOffset = currentVirtualOffset;
+      const targetOffset = Math.round(startOffset) + spinDistance;
+      const totalTrackNeeded = targetOffset + 6;
+
+      const pickDifferent = (notThis) => {
+        if (uniqueNames.length <= 1) return uniqueNames[0] || winnerName;
+        let chosen;
+        do {
+          chosen = uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
+        } while (chosen === notThis);
+        return chosen;
+      };
+
+      let lastAdded = trackNamesList[trackNamesList.length - 1] || "";
+      while (trackNamesList.length < totalTrackNeeded) {
+        const nextIdx = trackNamesList.length;
+        let name;
+        if (nextIdx === targetOffset) {
+          name = winnerName;
+        } else {
+          name = pickDifferent(lastAdded);
+        }
+        trackNamesList.push(name);
+        lastAdded = name;
+      }
+
+      // Countdown
+      const endAt = Date.now() + holdDelayMs;
+      const tickBadge = () => {
+        const leftSec = Math.ceil(Math.max(0, endAt - Date.now()) / 1000);
+        giveawayTimerBadge.innerText = leftSec > 0 ? `Startar om ${leftSec}s` : "Dragning pågår...";
+      };
+      tickBadge();
+
+      countdownInterval = setInterval(() => {
+        tickBadge();
+        if (Date.now() >= endAt) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+      }, 200);
+
+      holdTimeout = setTimeout(() => {
+        giveawayTimerBadge.innerText = "Dragning pågår...";
+
+        const spinDuration = holdDelayMs <= 5000 ? 5500 : 8500;
+        const startTime = performance.now();
+        lastTickIndex = Math.floor(startOffset);
+
+        function spinStep(now) {
+          const elapsed = now - startTime;
+          const progress = Math.min(1.0, elapsed / spinDuration);
+
+          const ease = 1 - Math.pow(1 - progress, 4.5);
+          currentVirtualOffset = startOffset + (targetOffset - startOffset) * ease;
+
+          renderVirtualSlots(currentVirtualOffset);
+
+          const currentItemIdx = Math.floor(currentVirtualOffset);
+          if (currentItemIdx !== lastTickIndex && (now - lastTickTime) > 16) {
+            const speed = (1 - progress);
+            playWheelClick(speed);
+            lastTickIndex = currentItemIdx;
+            lastTickTime = now;
+          }
+
+          if (progress < 1.0) {
+            animFrameId = requestAnimationFrame(spinStep);
+          } else {
+            currentVirtualOffset = targetOffset;
+            renderVirtualSlots(currentVirtualOffset);
+
+            isSpinning = false;
+            setButtonsLocked(false);
+            stopTimers();
+
+            // ⏱️ 60-SECOND WINNER CLAIM COUNTDOWN
+            let claimSec = 60;
+            giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
+
+            claimTimerInterval = setInterval(() => {
+              claimSec--;
+              if (claimSec > 0) {
+                giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
+              } else {
+                giveawayTimerBadge.innerText = "Tiden har gått ut!";
+                clearInterval(claimTimerInterval);
+                claimTimerInterval = null;
+              }
+            }, 1000);
+
+            // 🌧️ TRIGGER PRO EMOTE RAIN
+            triggerCelebrationBurst();
+          }
+        }
+
+        animFrameId = requestAnimationFrame(spinStep);
+      }, holdDelayMs);
+    }
+
+    function claimPrizeAndClose() {
+      if (isSpinning) return;
+      if (!currentWinner) return alert("Ingen vinnare dragen än!");
+
+      const winnerKey = normalizeDonorKey(currentWinner);
+      deductWinnerTicket(winnerKey);
+
+      dbActionRef.set({ type: 'CLAIM_CLOSE', secret: WRITE_SECRET, timestamp: Date.now() });
+      if (bus) bus.postMessage({ type: 'CLAIM_CLOSE' });
+
+      finalizeClaimAndHide();
+    }
+
+    function finalizeClaimAndHide() {
+      stopTimers();
+      clearCelebrationEffects();
+      isSpinning = false;
+      setButtonsLocked(false);
+
+      giveawayWidget.classList.remove('active');
+
+      setTimeout(() => {
+        currentWinner = null;
+        giveawayTimerBadge.innerText = "";
+        initInitialStage();
+      }, 450);
+    }
+
+    // ========================================================
+    // 🌧️ CELEBRATION ENGINE: GUARANTEED VISIBLE EMOTE RAIN
+    // ========================================================
+    function triggerCelebrationBurst() {
+      playVictorySound();
+      celebrationParticles = [];
+
+      const FALLBACK_EMOJIS = ['👑', '🎉', '🎁', '✨', '❤️', '🔥', '🏆', '⭐'];
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const cX = W / 2;
+      const cY = H / 2;
+
+      // 💥 WAVE 1: Radial 360° Blast from Center (45 particles)
+      for (let i = 0; i < 45; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 12 + Math.random() * 18;
+
+        const hasImages = loadedEmoteImages.length > 0;
+        const imgObj = hasImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
+        const fallbackChar = FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
+
+        celebrationParticles.push({
+          x: cX,
+          y: cY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 4,
+          gravity: 0.32,
+          drag: 0.94,
+          size: 46 + Math.random() * 22, // Size calibrated for stream (46-68px)
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8,
+          opacity: 1.0,
+          img: imgObj,
+          char: fallbackChar,
+          sway: Math.random() * 10,
+          swaySpeed: 0.04 + Math.random() * 0.04
+        });
+      }
+
+      // 🌧️ WAVE 2: Full-Screen Cascading Emote Rain (75 particles across 100% width)
+      for (let i = 0; i < 75; i++) {
+        const hasImages = loadedEmoteImages.length > 0;
+        const imgObj = hasImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
+        const fallbackChar = FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
+
+        celebrationParticles.push({
+          x: Math.random() * W,
+          y: -60 - Math.random() * (H * 0.8),
+          vx: (Math.random() - 0.5) * 2.2,
+          vy: 3.8 + Math.random() * 5.2,
+          gravity: 0.12,
+          drag: 0.99,
+          size: 42 + Math.random() * 20, // 42-62px
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 5,
+          opacity: 1.0,
+          img: imgObj,
+          char: fallbackChar,
+          sway: Math.random() * 10,
+          swaySpeed: 0.03 + Math.random() * 0.03
+        });
+      }
+
+      if (celebrationAnimId) cancelAnimationFrame(celebrationAnimId);
+      animateCelebration();
+    }
+
+    function animateCelebration() {
+      vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+      let aliveCount = 0;
+
+      for (let p of celebrationParticles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.vx *= p.drag;
+        p.rotation += p.rotSpeed;
+
+        p.sway += p.swaySpeed;
+        p.x += Math.sin(p.sway) * 1.6;
+
+        if (p.y > window.innerHeight * 0.74) {
+          p.opacity -= 0.014;
+        }
+
+        if (p.opacity > 0.02 && p.y < window.innerHeight + 90) {
+          aliveCount++;
+          vCtx.save();
+          vCtx.translate(p.x, p.y);
+          vCtx.rotate((p.rotation * Math.PI) / 180);
+          vCtx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
+
+          // 🛡️ GUARANTEED VISIBLE: Draw image if loaded, otherwise fallback emoji!
+          if (p.img && p.img.complete && p.img.naturalWidth > 0) {
+            vCtx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
+          } else {
+            vCtx.font = `${Math.round(p.size)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+            vCtx.textAlign = 'center';
+            vCtx.textBaseline = 'middle';
+            vCtx.fillText(p.char, 0, 0);
+          }
+
+          vCtx.restore();
+        }
+      }
+
+      if (aliveCount > 0) {
+        celebrationAnimId = requestAnimationFrame(animateCelebration);
+      } else {
+        vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+        celebrationAnimId = null;
+      }
+    }
+
+    function clearCelebrationEffects() {
+      if (celebrationAnimId) {
+        cancelAnimationFrame(celebrationAnimId);
+        celebrationAnimId = null;
+      }
+      vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+    }
+
+    // ========================================================
+    // 🎛️ DOCK UI
+    // ========================================================
+    function updateStatsUI() {
+      const pool = getWeightedTicketPool();
+      const uniqueCount = getUniqueDonorNames().length;
+
+      const summaryText = document.getElementById('dockSummaryText');
+      if (summaryText) {
+        summaryText.innerHTML = `<b>${pool.length}</b> biljetter fördelade på <b>${uniqueCount}</b> givare`;
+      }
+
+      if (giveawaySubTitle) {
+        giveawaySubTitle.innerText = `Totalt ${pool.length} biljetter · ${uniqueCount} givare`;
+      }
+
+      const statusBox = document.getElementById('dockStatusBox');
+      if (statusBox) {
+        const count = loadedEmoteImages.length;
+        const emoteBadge = count > 0 ? ` (${count} emotes redo)` : '';
+        statusBox.innerText = isTestMode ? `Testläge aktivt${emoteBadge}` : `Ansluten till databas${emoteBadge}`;
+      }
+    }
+
+    function setButtonsLocked(locked) {
+      if (btnStart) btnStart.disabled = locked;
+      if (btnSkip) btnSkip.disabled = locked;
+    }
+
+    function addManualDonation() {
+      const nameInput = document.getElementById('manualName');
+      const amountInput = document.getElementById('manualAmount');
+
+      const name = nameInput.value.trim();
+      const amount = parseInt(amountInput.value, 10) || 0;
+
+      if (!name) return alert("Ange ett namn!");
+      if (amount <= 0) return alert("Ange ett giltigt belopp!");
+
+      recordDonation(name, amount);
+
+      nameInput.value = "";
+      amountInput.value = "200";
+    }
+
+    function toggleTestMode() {
+      isTestMode = !isTestMode;
+      const btn = document.getElementById('btnToggleTest');
+
+      if (isTestMode) {
+        btn.innerText = "Avsluta testläge";
+        generateTestTickets(500);
+      } else {
+        btn.innerText = "Växla till testläge (500 testbiljetter)";
+        loadDonors();
+      }
+      updateStatsUI();
+      initInitialStage();
+    }
+
+    function generateTestTickets(targetTickets = 500) {
+      const prefixes = ["Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Norrlands", "Super", "Mighty", "Cosmic", "Turbo", "Vinter", "Retro", "Hyper", "Cyber"];
+      const suffixes = ["Kungen", "Gud", "Bullen", "Loover", "Svensken", "Master", "Viking", "Räven", "Hjälten", "Kompis", "Tiger", "Björn", "Liraren"];
+
+      const testMap = {};
+      let remaining = targetTickets;
+      let idx = 1;
+
+      while (remaining > 0) {
+        const p = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const s = suffixes[Math.floor(Math.random() * suffixes.length)];
+        const rawName = `${p}${s}_${idx}`;
+        const key = normalizeDonorKey(rawName);
+        const tickets = Math.min(remaining, Math.floor(Math.random() * MAX_TICKETS_PER_USER) + 1);
+
+        testMap[key] = {
+          displayName: rawName,
+          totalAmount: tickets * TICKET_MILESTONE_KR,
+          milestonesClaimed: tickets,
+          ticketsActive: tickets
+        };
+        remaining -= tickets;
+        idx++;
+      }
+
+      donorMap = testMap;
+      saveDonors();
+    }
+
+    function resetAllTickets() {
+      if (confirm("Är du säker på att du vill nollställa alla biljetter och givare?")) {
+        donorMap = {};
+        saveDonors();
+        syncDonorsToCloud();
+        updateStatsUI();
+        initInitialStage();
+      }
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, t => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[t] || t));
+    }
+
+    loadDonors();
+    initInitialStage();
+  </script>
+</body>
+</html>
