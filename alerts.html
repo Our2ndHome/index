@@ -56,7 +56,7 @@
         opacity: 0.95;
       }
       100% {
-        transform: translateY(115vh) rotate(360deg);
+        transform: translateY(118vh) rotate(360deg);
         opacity: 0;
       }
     }
@@ -133,7 +133,7 @@
       text-align: center;
     }
 
-    /* Upper Row: Name in #ace600 with soft glow */
+    /* Upper Row: Name in #ace600 */
     .minor-alert-name {
       font-size: 28px;
       font-weight: 900;
@@ -143,7 +143,7 @@
       text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 18px rgba(172, 230, 0, 0.5);
     }
 
-    /* Lower Row: Action & Highlighted Value */
+    /* Lower Row: Action & Value */
     .minor-alert-detail {
       font-size: 20px;
       font-weight: 800;
@@ -227,28 +227,13 @@
     const SOUNDS_FOLDER = "sounds";
     const EMOTES_FOLDER = "emotes";
 
-    // ========================================================
-    // 💡 100% RELIABLE CUSTOM EMOTES LIST
-    // Type the filenames of your emotes here (case-sensitive!).
-    // This bypasses GitHub API rate limits completely!
-    // ========================================================
+    // Optional manual filenames to completely bypass GitHub API rate limit
     const CUSTOM_EMOTE_FILES = [
-      // Examples (add your actual filenames inside your "emotes" folder):
       // "pepe.png",
-      // "cat.gif",
-      // "heart.png"
-      //"Favicon-very-new.png",
-      "Our2ndHome-EmoteHype-500x500.png",
-      "Our2ndHome-EmoteLove-500x500.png",
-      "Our2ndHome-EmoteWoop-500x500.png",
-      "Our2ndHome-IconLogo-512x512x.png"
-      //"SillySanta.png",
-      //"dfgdfgd-removebg-preview.png",
-      //"evighets-removebg-preview.png",
-      //"nordpuls-storlogo-smaller.png"
+      // "cat.gif"
     ];
 
-    // High-availability CDN Twitch backup emotes (always works 100% of the time)
+    // High-availability CDN Twitch backup emotes
     const BACKUP_EMOTES = [
       'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5b2d2873130c497491d96096a60db2a4/default/dark/3.0', // LUL
       'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0', // Kappa
@@ -283,7 +268,6 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
 
-    // Preloader: warms up images in browser memory so they appear instantly
     function preloadImages(urls) {
       urls.forEach(url => {
         const img = new Image();
@@ -292,15 +276,12 @@
     }
     preloadImages(BACKUP_EMOTES);
 
-    // Load assets
     async function loadAssets() {
-      // 1. Build from manual array if provided (bypasses rate limit)
       if (CUSTOM_EMOTE_FILES.length > 0) {
         emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
         preloadImages(emoteFileList);
       }
 
-      // 2. Fetch sounds
       try {
         const soundRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
         if (soundRes.ok) {
@@ -312,7 +293,6 @@
         }
       } catch(e) {}
 
-      // 3. Fallback scan GitHub API for emotes if manual array was empty
       if (emoteFileList.length === 0) {
         try {
           const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
@@ -331,8 +311,8 @@
     }
     loadAssets();
 
-    // Emote rain generator with automatic broken-image fallback
-    function triggerEmoteRain(count = 35) {
+    // 🌧️ SLOW, DENSE EMOTE RAIN GENERATOR
+    function triggerEmoteRain(count = 75) {
       const list = emoteFileList.length > 0 ? emoteFileList : BACKUP_EMOTES;
       const layer = document.getElementById('emoteRainLayer');
       layer.innerHTML = '';
@@ -342,16 +322,17 @@
         img.className = 'falling-emote';
         img.src = list[Math.floor(Math.random() * list.length)];
 
-        // Fail-safe: If any image 404s, replace it with a Twitch CDN emote immediately!
         img.onerror = function() {
           this.onerror = null;
           this.src = BACKUP_EMOTES[Math.floor(Math.random() * BACKUP_EMOTES.length)];
         };
 
-        const size = Math.floor(Math.random() * 26) + 38;
-        const left = Math.random() * 95;
-        const duration = (Math.random() * 1.4 + 2.4).toFixed(2);
-        const delay = (Math.random() * 0.9).toFixed(2);
+        const size = Math.floor(Math.random() * 26) + 38; // 38px to 64px
+        const left = Math.random() * 95; // 0% to 95vw across screen
+        
+        // Slower duration (4.5s to 7.0s) and staggered start delay (0s to 2.0s)
+        const duration = (Math.random() * 2.5 + 4.5).toFixed(2);
+        const delay = (Math.random() * 2.0).toFixed(2);
 
         img.style.width = `${size}px`;
         img.style.height = `${size}px`;
@@ -362,9 +343,10 @@
         layer.appendChild(img);
       }
 
+      // Keep layer active long enough for all slow-falling emotes to exit
       setTimeout(() => {
         layer.innerHTML = '';
-      }, 5000);
+      }, 9500);
     }
 
     function playAlertSound(type) {
@@ -490,7 +472,8 @@
         banner.classList.add('anim-bottom-in');
       }
 
-      triggerEmoteRain(35);
+      // Spawns 75 slow-raining emotes
+      triggerEmoteRain(75);
       const soundPromise = playAlertSound(type);
       const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
 
