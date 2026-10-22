@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Milstolpar - Top Split</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    :root {
+      --primary: #ace600; /* Lime Green */
+      --secondary: #00ff88;
+      --text-white: #ffffff;
+      --text-dim: #a1a1aa;
+      --dock-bg: #0b0b0d;
+      --card-bg: #141418;
+      --border: #27272a;
+      
+      /* Exact 20px Grid for 400px Center Widget */
+      --wing-width: 720px;
+      --center-spacer-width: 440px; /* 400px widget + 20px gap on each side */
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      color: var(--text-white);
+      user-select: none;
+    }
+
+    /* 🔀 HASH ROUTER */
+    body.mode-overlay #panelRoot { display: none !important; }
+    body.mode-panel #overlayRoot { display: none !important; }
+
+    body.mode-panel {
+      background-color: var(--dock-bg);
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    /* ========================================================
+       📺 1. STREAM OVERLAY: HORIZONTAL TOP-SPLIT BAR
+       ======================================================== */
+    #overlayRoot {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+
+    /* Exactly 20px from top and sides */
+    .top-goals-container {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 1880px; /* 1920px - 20px left - 20px right */
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 1000;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .top-goals-container.is-hidden {
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+
+    /* Left and Right Wings: Pure background only */
+    .goal-wing {
+      position: relative;
+      width: var(--wing-width);
+      display: flex;
+      flex-direction: column;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 12px 18px 12px 18px;
+      border-radius: 8px;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    /* 440px spacer = 400px middle widget + exact 20px gap on each side */
+    .center-obstacle-spacer {
+      width: var(--center-spacer-width);
+      height: 80px;
+      flex-shrink: 0;
+    }
+
+    .wing-header {
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--primary);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 4px #000, 0 0 2px #000;
+    }
+
+    /* Horizontal Track System: Pinned to flex-start so tick height never shifts */
+    .horizontal-track {
+      position: relative;
+      width: 100%;
+      min-height: 86px;
+      height: auto;
+      display: flex;
+      align-items: flex-start;
+      padding-top: 4px;
+    }
+
+    .track-nodes-container {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 4;
+    }
+
+    .left-track .track-nodes-container {
+      padding-right: 20px;
+    }
+
+    .right-track .track-nodes-container {
+      padding-left: 20px;
+    }
+
+    /* Background line: Locked at Y=36px passing through the middle of the tick */
+    .track-line-bg {
+      position: absolute;
+      top: 36px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      z-index: 1;
+    }
+
+    .track-line-fill {
+      position: absolute;
+      top: 35px;
+      height: 4px;
+      background: var(--primary);
+      box-shadow: 0 0 12px rgba(172, 230, 0, 0.9);
+      z-index: 2;
+      width: 0px;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Cursor centered dead-on the track line at Y=37px */
+    .track-cursor {
+      position: absolute;
+      top: 37px;
+      width: 12px;
+      height: 12px;
+      background: var(--primary);
+      box-shadow: 0 0 12px var(--primary);
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      border-radius: 50%;
+      transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    .track-cursor::after {
+      content: '';
+      position: absolute;
+      top: -4px; left: -4px; right: -4px; bottom: -4px;
+      border: 1.5px solid var(--primary);
+      border-radius: 50%;
+      animation: cursorSonar 1.8s infinite ease-out;
+    }
+
+    @keyframes cursorSonar {
+      0% { transform: scale(0.5); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    /* HORIZONTAL NODE */
+    .h-node {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 4;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* Fixed 16px height + 10px margin = tick wrapper always starts at 26px */
+    .h-node-amount {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      color: #ffffff;
+      white-space: nowrap;
+      text-shadow: 0 2px 4px #000, 0 0 3px #000;
+      line-height: 16px;
+      height: 16px;
+      margin-bottom: 10px;
+      transition: color 0.3s ease;
+    }
+
+    /* Crosshair Tick: 14px tall centered in 16px wrapper (center Y = 37px) */
+    .h-node-tick-wrapper {
+      position: relative;
+      height: 16px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+    }
+
+    /* Ticks with muted opacity (not stark white) */
+    .h-node-tick {
+      width: 2px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.45);
+      box-shadow: none;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Milestone Label: Grows downwards below the tick */
+    .h-node-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.35;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      text-shadow: 0 2px 4px #000, 0 0 3px #000;
+      max-width: 180px;
+      margin-top: 8px;
+      text-align: center;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .node-label-text {
+      display: inline-block;
+      text-align: inherit;
+    }
+
+    .h-node.reached .h-node-amount {
+      color: var(--primary) !important;
+      text-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
+    }
+
+    .h-node.reached .h-node-tick {
+      background: var(--primary) !important;
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.9);
+    }
+
+    .h-node .node-check {
+      display: none;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .h-node.reached .node-check {
+      display: inline-block;
+    }
+
+    /* 🎯 FLUSH ALIGNMENTS */
+    .h-node.is-first-node {
+      align-items: flex-start !important;
+      text-align: left !important;
+    }
+    .h-node.is-first-node .h-node-amount {
+      text-align: left !important;
+      align-self: flex-start;
+    }
+    .h-node.is-first-node .h-node-tick-wrapper {
+      justify-content: flex-start;
+    }
+    .h-node.is-first-node .h-node-label {
+      text-align: left !important;
+      justify-content: flex-start;
+      align-self: flex-start;
+    }
+
+    .h-node.is-last-goal {
+      align-items: flex-end !important;
+      text-align: right !important;
+    }
+    .h-node.is-last-goal .h-node-amount {
+      text-align: right !important;
+      align-self: flex-end;
+    }
+    .h-node.is-last-goal .h-node-tick-wrapper {
+      justify-content: flex-end;
+    }
+    .h-node.is-last-goal .h-node-label {
+      text-align: right !important;
+      justify-content: flex-end;
+      align-self: flex-end;
+    }
+    .h-node.is-last-goal .node-label-text {
+      text-align: right !important;
+    }
+
+    /* 🎛️ 2. OBS DOCK CONTROLLER */
+    .dock-container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111114;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .version-badge {
+      background: #00ff88;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .status-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+      margin-bottom: 8px;
+    }
+
+    .card-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 6px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    input[type="text"] {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 11px;
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    input[type="text"]:focus {
+      border-color: #52525b;
+    }
+
+    textarea {
+      width: 100%;
+      height: 130px;
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 11px;
+      line-height: 1.5;
+      outline: none;
+      resize: vertical;
+      margin-bottom: 6px;
+    }
+    textarea:focus { border-color: #52525b; }
+
+    .btn {
+      background: #18181c;
+      border: 1px solid var(--border);
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 4px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn:hover:not(:disabled) {
+      background: #24242a;
+      border-color: #3f3f46;
+    }
+
+    .btn-resync {
+      background: #18181c;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 4px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-resync:hover { background: #00ff88; color: #000000; }
+
+    .btn-toggle-view {
+      background: #1e1e24;
+      border: 1px solid #3a3a44;
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 8px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-toggle-view:hover { background: #2c2c36; }
+
+    .btn-primary-action {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      transition: opacity 0.15s ease;
+    }
+    .btn-primary-action:hover { opacity: 0.9; }
+
+    .btn-danger {
+      background: #18181c;
+      border: 1px solid #ff453a;
+      color: #ff453a;
+    }
+    .btn-danger:hover {
+      background: #ff453a;
+      color: #ffffff;
+    }
+
+    .btn-danger.confirm-state {
+      background: #ff453a !important;
+      color: #ffffff !important;
+      font-weight: 900;
+      animation: pulseAlert 0.8s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+      from { opacity: 0.8; }
+      to { opacity: 1; }
+    }
+
+    .hint-text {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================
+       📺 1. STREAM OVERLAY VIEW: HORIZONTAL TOP-SPLIT BAR
+       ======================================================== -->
+  <div id="overlayRoot">
+    <div class="top-goals-container" id="goalsWidgetContainer">
+      
+      <!-- LEFT WING -->
+      <div class="goal-wing" id="leftWing">
+        <div class="wing-header">MILSTOLPAR</div>
+        <div class="horizontal-track left-track" id="leftTrack">
+          <div class="track-line-bg"></div>
+          <div class="track-line-fill" id="leftFill"></div>
+          <div class="track-cursor" id="leftCursor"></div>
+          <div class="track-nodes-container" id="leftNodesContainer"></div>
+        </div>
+      </div>
+
+      <!-- EXACT 440px GAP FOR 400px CENTER WIDGET (20px gap on each side) -->
+      <div class="center-obstacle-spacer"></div>
+
+      <!-- RIGHT WING -->
+      <div class="goal-wing" id="rightWing">
+        <div class="wing-header">NÄSTA MÅL</div>
+        <div class="horizontal-track right-track" id="rightTrack">
+          <div class="track-line-bg"></div>
+          <div class="track-line-fill" id="rightFill"></div>
+          <div class="track-cursor" id="rightCursor"></div>
+          <div class="track-nodes-container" id="rightNodesContainer"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================
+       🎛️ 2. OBS CONTROL DOCK (#panel)
+       ======================================================== -->
+  <div id="panelRoot" class="dock-container">
+    <div class="header-box">
+      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v6.2</span></span>
+      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
+    </div>
+
+    <!-- 👁️ HIDE / SHOW GOALS TOGGLE -->
+    <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
+      👁️ Göm milstolpar på stream
+    </button>
+
+    <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
+
+    <!-- ⏱️ STREAMER PASS CONTROLS -->
+    <div class="card-section">
+      <span class="section-title">⏱️ Streamer Live-Pass</span>
+      
+      <div class="control-row">
+        <span class="control-label">STREAMER:</span>
+        <input type="text" id="streamerNameInput" placeholder="T.ex. LordBaconeer" style="width:65%;">
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+        <button class="btn-resync" onclick="startFreshPassZero()">
+          🟢 Starta nytt pass (Nollställ till 0 kr)
+        </button>
+
+        <div class="grid-2">
+          <button class="btn" onclick="loadSavedStreamerPass()">
+            🔄 Läs in sparat pass
+          </button>
+          <button class="btn btn-danger" id="btnClearPassBtn" onclick="handleClearPassClick()">
+            🗑️ Rensa pass
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
+    <div class="card-section">
+      <span class="section-title">✏️ Redigera dina milstolpar</span>
+      <div class="hint-text">
+        Skriv det <b>lägsta målet överst</b> och det högsta underst.<br>
+        Format: <code>Belopp - Beskrivning</code>
+      </div>
+      
+      <textarea id="goalsInputArea" placeholder="50 kr - Sill bit&#10;100 kr - Sill bit&#10;150 kr - Sill bit&#10;200 kr - Sill bit&#10;250 kr - Sill bit med ketchup&#10;350 kr - Sill bit&#10;400 kr - Äter 2 bananer.&#10;500 kr - Äter en melon på 2 ben.&#10;600 kr - Dansar.&#10;700 kr - Hoppar på 4 ben och tre armar."></textarea>
+
+      <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
+        💾 Spara mina milstolpar
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
+    const STORAGE_KEY_GOALS = "mh_overlay_local_goals";
+    const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
+    const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
+
+    const DEFAULT_GOALS = 
+      "50 kr - Sill bit\n" +
+      "100 kr - Sill bit\n" +
+      "150 kr - Sill bit\n" +
+      "200 kr - Sill bit\n" +
+      "250 kr - Sill bit med ketchup\n" +
+      "350 kr - Sill bit\n" +
+      "400 kr - Äter 2 bananer.\n" +
+      "500 kr - Äter en melon på 2 ben.\n" +
+      "600 kr - Dansar.\n" +
+      "700 kr - Hoppar på 4 ben och tre armar.";
+
+    const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
+
+    // Checks URL parameter for hardcoded streamer names: ?streamer=LordBaconeer
+    const fullUrl = window.location.href;
+    const streamerMatch = fullUrl.match(/[?&]streamer=([^&#]+)/i);
+    const streamerFromUrl = streamerMatch ? decodeURIComponent(streamerMatch[1]) : null;
+
+    const hash = window.location.hash.toLowerCase();
+    const isPanel = hash.includes('panel') || hash.includes('dock');
+
+    if (isPanel) {
+      document.body.classList.add('mode-panel');
+    } else {
+      document.body.classList.add('mode-overlay');
+    }
+
+    let parsedGoals = [];
+    let currentGlobalTotal = 0;
+    let streamerBaseline = 0;
+    let manualAdjustment = 0;
+    let currentStreamerName = streamerFromUrl ? streamerFromUrl.trim() : "Streamer";
+    let isGoalsHidden = false;
+    let isFocusingInput = false;
+    let currentActiveStreamerRef = null;
+
+    try {
+      if (!streamerFromUrl) {
+        const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
+        if (savedStreamer) currentStreamerName = savedStreamer;
+      }
+      isGoalsHidden = localStorage.getItem(STORAGE_KEY_HIDDEN) === 'true';
+    } catch(e) {
+      isGoalsHidden = false;
+    }
+
+    applyVisibilityState();
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbStreamersRef = firebase.database().ref('streamers');
+    const dbBossaRef = firebase.database().ref('bossa');
+
+    firebase.database().ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        updateDockDisplay();
+      } else {
+        updateDockStatus("⚠️ Ansluter till Musikhjälpen...", true);
+      }
+    });
+
+    function formatSEK(num) {
+      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
+    }
+
+    function updateDockStatus(msg, isError = false) {
+      const box = document.getElementById('dockStatusBox');
+      if (box) {
+        box.innerText = msg;
+        box.style.color = isError ? "#ff453a" : "#00ff88";
+      }
+    }
+
+    function getStreamerKey(name) {
+      const clean = (name || "streamer").trim().toLowerCase().replace(/[^a-z0-9åäö]/gi, '');
+      return clean.length > 0 ? clean : "streamer";
+    }
+
+    function getLiveSessionEarned() {
+      if (!streamerBaseline || streamerBaseline <= 0) {
+        return 0;
+      }
+      return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
+    }
+
+    // ========================================================
+    // 👁️ VISIBILITY CONTROLLER
+    // ========================================================
+    function applyVisibilityState() {
+      const container = document.getElementById('goalsWidgetContainer');
+      if (container) {
+        if (isGoalsHidden) {
+          container.classList.add('is-hidden');
+        } else {
+          container.classList.remove('is-hidden');
+        }
+      }
+
+      const btn = document.getElementById('btnToggleVisibility');
+      if (btn) {
+        if (isGoalsHidden) {
+          btn.innerText = "👁️ Visa milstolpar på stream";
+          btn.style.borderColor = "#00ff88";
+          btn.style.color = "#00ff88";
+        } else {
+          btn.innerText = "👁️ Göm milstolpar på stream";
+          btn.style.borderColor = "#3a3a44";
+          btn.style.color = "#ffffff";
+        }
+      }
+    }
+
+    function toggleGoalsVisibility() {
+      isGoalsHidden = !isGoalsHidden;
+      try {
+        localStorage.setItem(STORAGE_KEY_HIDDEN, isGoalsHidden ? 'true' : 'false');
+      } catch(e) {}
+
+      applyVisibilityState();
+
+      if (bus) {
+        bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
+      }
+
+      updateDockStatus(isGoalsHidden ? "🙈 Milstolpar döljs på stream" : "👀 Milstolpar visas på stream");
+    }
+
+    // ========================================================
+    // 🧠 LINE-BY-LINE PARSER & 25-CHAR TEXT FORMATTER
+    // ========================================================
+    function parseLinesToGoalObjects(text) {
+      if (!text || !text.trim()) return [];
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      const list = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const match = line.match(/^([0-9\s]+)(?:kr|:-|sek)?\s*[-:–—]?\s*(.+)$/i);
+
+        if (match) {
+          const rawAmt = match[1].replace(/[^0-9]/g, '');
+          const amount = parseInt(rawAmt, 10);
+          const label = match[2].trim().replace(/^[-:–—]\s*/, '');
+
+          if (!isNaN(amount) && amount > 0 && label) {
+            list.push({ id: `goal_${amount}_${i}`, amount, label });
+          }
+        }
+      }
+
+      list.sort((a, b) => a.amount - b.amount);
+      return list;
+    }
+
+    function formatMilestoneLabel(rawText, maxCharsPerLine = 25) {
+      if (!rawText) return '';
+      const text = rawText.trim();
+      if (text.length <= maxCharsPerLine) {
+        return escapeHTML(text);
+      }
+
+      const words = text.split(' ');
+      const lines = [];
+      let currentLine = '';
+
+      for (const word of words) {
+        if (!currentLine) {
+          currentLine = word;
+        } else if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+          currentLine += ' ' + word;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+
+      return lines.map(l => escapeHTML(l)).join('<br>');
+    }
+
+    // ========================================================
+    // 🎨 RENDER BALANCED TOP-SPLIT LADDERS
+    // ========================================================
+    function renderGoalsLadder() {
+      const leftNodesContainer = document.getElementById('leftNodesContainer');
+      const rightNodesContainer = document.getElementById('rightNodesContainer');
+      const rightWing = document.getElementById('rightWing');
+      if (!leftNodesContainer || !rightNodesContainer) return;
+
+      leftNodesContainer.innerHTML = '';
+      rightNodesContainer.innerHTML = '';
+
+      if (parsedGoals.length === 0) {
+        document.getElementById('leftFill').style.width = '0px';
+        document.getElementById('rightFill').style.width = '0px';
+        document.getElementById('leftCursor').style.opacity = '0';
+        document.getElementById('rightCursor').style.opacity = '0';
+        return;
+      }
+
+      // ⚖️ BALANCED SPLIT: Counts the "Start" node so wings are equal
+      const leftGoalsCount = Math.max(1, Math.floor(parsedGoals.length / 2));
+      const leftGoals = parsedGoals.slice(0, leftGoalsCount);
+      const rightGoals = parsedGoals.slice(leftGoalsCount);
+
+      const liveEarned = getLiveSessionEarned();
+
+      // --- 1. LEFT WING ---
+      const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0, false, true);
+      leftNodesContainer.appendChild(leftStartEl);
+
+      leftGoals.forEach((g, i) => {
+        const isLastOfAll = (rightGoals.length === 0 && i === leftGoals.length - 1);
+        const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
+        leftNodesContainer.appendChild(el);
+      });
+
+      // --- 2. RIGHT WING ---
+      if (rightGoals.length > 0) {
+        if (rightWing) rightWing.style.display = 'flex';
+        rightGoals.forEach((g, i) => {
+          const isLastOfAll = (i === rightGoals.length - 1);
+          const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
+          rightNodesContainer.appendChild(el);
+        });
+      } else {
+        if (rightWing) rightWing.style.display = 'none';
+      }
+
+      requestAnimationFrame(() => {
+        updateBridgeProgress(liveEarned, leftGoals, rightGoals);
+      });
+    }
+
+    function createNodeEl(amount, label, isReached, isLastGoal = false, isFirstNode = false) {
+      const el = document.createElement('div');
+      el.className = `h-node ${isReached ? 'reached' : ''} ${isLastGoal ? 'is-last-goal' : ''} ${isFirstNode ? 'is-first-node' : ''}`;
+      
+      const formattedLabel = formatMilestoneLabel(label, 25);
+
+      el.innerHTML = `
+        <div class="h-node-amount">${formatSEK(amount)}</div>
+        <div class="h-node-tick-wrapper">
+          <div class="h-node-tick"></div>
+        </div>
+        <div class="h-node-label">
+          <span class="node-check">✓</span>
+          <span class="node-label-text" title="${escapeHTML(label)}">${formattedLabel}</span>
+        </div>
+      `;
+      return el;
+    }
+
+    // 🎯 BRIDGE PROGRESSION
+    function updateBridgeProgress(liveEarned, leftGoals, rightGoals) {
+      const leftTrack = document.getElementById('leftTrack');
+      const leftFill = document.getElementById('leftFill');
+      const leftCursor = document.getElementById('leftCursor');
+      const leftBg = leftTrack.querySelector('.track-line-bg');
+
+      const rightTrack = document.getElementById('rightTrack');
+      const rightFill = document.getElementById('rightFill');
+      const rightCursor = document.getElementById('rightCursor');
+      const rightBg = rightTrack.querySelector('.track-line-bg');
+
+      if (!leftTrack || !leftFill || !leftCursor || !leftBg) return;
+
+      const leftTrackRect = leftTrack.getBoundingClientRect();
+      if (leftTrackRect.width <= 0) return;
+
+      const leftNodes = Array.from(leftTrack.querySelectorAll('.h-node'));
+      if (leftNodes.length === 0) return;
+
+      const leftXs = leftNodes.map(nodeEl => {
+        const tick = nodeEl.querySelector('.h-node-tick') || nodeEl;
+        const tickRect = tick.getBoundingClientRect();
+        return Math.max(0, (tickRect.left + tickRect.width / 2) - leftTrackRect.left);
+      });
+
+      const leftStartX = leftXs[0];
+      const lastGoalLeftX = leftXs[leftXs.length - 1];
+      const leftTrackEndX = leftTrackRect.width - 2;
+
+      const leftLineEndX = rightGoals.length > 0 ? leftTrackEndX : lastGoalLeftX;
+      leftBg.style.left = `${leftStartX.toFixed(1)}px`;
+      leftBg.style.width = `${Math.max(0, leftLineEndX - leftStartX).toFixed(1)}px`;
+
+      const lastLeftAmount = leftGoals[leftGoals.length - 1].amount;
+      const firstRightAmount = rightGoals.length > 0 ? rightGoals[0].amount : lastLeftAmount;
+      const bridgeMidAmount = lastLeftAmount + (firstRightAmount - lastLeftAmount) / 2;
+
+      // --- 1. LEFT WING PROGRESSION ---
+      let leftTargetX = leftStartX;
+      let showLeftCursor = false;
+
+      if (liveEarned <= 0) {
+        leftTargetX = leftStartX;
+        showLeftCursor = true;
+      } else if (liveEarned <= lastLeftAmount) {
+        showLeftCursor = true;
+        let prevAmt = 0;
+        let prevX = leftStartX;
+
+        for (let i = 0; i < leftGoals.length; i++) {
+          const goalAmt = leftGoals[i].amount;
+          const currentX = leftXs[i + 1];
+
+          if (liveEarned <= goalAmt) {
+            const denom = goalAmt - prevAmt;
+            const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
+            leftTargetX = prevX + (currentX - prevX) * ratio;
+            break;
+          }
+
+          prevAmt = goalAmt;
+          prevX = currentX;
+        }
+      } else if (rightGoals.length > 0 && liveEarned <= bridgeMidAmount) {
+        showLeftCursor = true;
+        const ratio = (liveEarned - lastLeftAmount) / (bridgeMidAmount - lastLeftAmount);
+        leftTargetX = lastGoalLeftX + (leftTrackEndX - lastGoalLeftX) * ratio;
+      } else {
+        leftTargetX = leftLineEndX;
+        showLeftCursor = (rightGoals.length === 0);
+      }
+
+      fillTrack(leftFill, leftStartX, leftTargetX);
+      leftCursor.style.left = `${leftTargetX.toFixed(1)}px`;
+      leftCursor.style.opacity = showLeftCursor ? '1' : '0';
+
+      // --- 2. RIGHT WING PROGRESSION ---
+      if (rightGoals.length > 0 && rightTrack && rightFill && rightCursor && rightBg) {
+        const rightTrackRect = rightTrack.getBoundingClientRect();
+        const rightNodes = Array.from(rightTrack.querySelectorAll('.h-node'));
+        if (rightNodes.length === 0) return;
+
+        const rightXs = rightNodes.map(nodeEl => {
+          const tick = nodeEl.querySelector('.h-node-tick') || nodeEl;
+          const tickRect = tick.getBoundingClientRect();
+          return Math.max(0, (tickRect.left + tickRect.width / 2) - rightTrackRect.left);
+        });
+
+        const rightTrackStartX = 2;
+        const firstGoalRightX = rightXs[0];
+        const lastGoalRightX = rightXs[rightXs.length - 1];
+
+        rightBg.style.left = `${rightTrackStartX.toFixed(1)}px`;
+        rightBg.style.width = `${Math.max(0, lastGoalRightX - rightTrackStartX).toFixed(1)}px`;
+
+        const topGoalAmount = rightGoals[rightGoals.length - 1].amount;
+        let rightTargetX = rightTrackStartX;
+        let showRightCursor = false;
+
+        if (liveEarned <= bridgeMidAmount) {
+          rightTargetX = rightTrackStartX;
+          showRightCursor = false;
+        } else if (liveEarned <= firstRightAmount) {
+          showRightCursor = true;
+          const ratio = (liveEarned - bridgeMidAmount) / (firstRightAmount - bridgeMidAmount);
+          rightTargetX = rightTrackStartX + (firstGoalRightX - rightTrackStartX) * ratio;
+        } else if (liveEarned >= topGoalAmount) {
+          rightTargetX = lastGoalRightX;
+          showRightCursor = true;
+        } else {
+          showRightCursor = true;
+          let prevAmt = firstRightAmount;
+          let prevX = firstGoalRightX;
+
+          for (let i = 1; i < rightGoals.length; i++) {
+            const goalAmt = rightGoals[i].amount;
+            const currentX = rightXs[i];
+
+            if (liveEarned <= goalAmt) {
+              const denom = goalAmt - prevAmt;
+              const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
+              rightTargetX = prevX + (currentX - prevX) * ratio;
+              break;
+            }
+
+            prevAmt = goalAmt;
+            prevX = currentX;
+          }
+        }
+
+        fillTrack(rightFill, rightTrackStartX, rightTargetX);
+        rightCursor.style.left = `${rightTargetX.toFixed(1)}px`;
+        rightCursor.style.opacity = showRightCursor ? '1' : '0';
+      }
+    }
+
+    function fillTrack(el, startX, targetX) {
+      el.style.left = `${startX.toFixed(1)}px`;
+      el.style.width = `${Math.max(0, targetX - startX).toFixed(1)}px`;
+    }
+
+    function updateDockDisplay() {
+      const earned = getLiveSessionEarned();
+      if (!streamerBaseline || streamerBaseline <= 0) {
+        updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Klicka på "Starta nytt pass".`);
+      } else {
+        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
+      }
+
+      const nameInput = document.getElementById('streamerNameInput');
+      if (nameInput && !isFocusingInput && currentStreamerName && currentStreamerName !== "Streamer") {
+        nameInput.value = currentStreamerName;
+      }
+    }
+
+    // ========================================================
+    // ⚡ REAL-TIME DATABASE LISTENERS
+    // ========================================================
+    function listenToStreamer(key) {
+      if (!key) return;
+
+      if (currentActiveStreamerRef) {
+        currentActiveStreamerRef.off();
+      }
+
+      currentActiveStreamerRef = dbStreamersRef.child(key);
+      currentActiveStreamerRef.on('value', (snap) => {
+        const data = snap.val();
+        if (data && typeof data.baseline === 'number') {
+          streamerBaseline = data.baseline;
+          manualAdjustment = data.manualAdjustment || 0;
+          if (data.displayName) currentStreamerName = data.displayName;
+
+          if (data.goalsText && typeof data.goalsText === 'string') {
+            parsedGoals = parseLinesToGoalObjects(data.goalsText);
+            const area = document.getElementById('goalsInputArea');
+            if (area && !isFocusingInput) area.value = data.goalsText;
+          }
+
+          renderGoalsLadder();
+          updateDockDisplay();
+        }
+      });
+    }
+
+    dbBossaRef.on('value', (snap) => {
+      const data = snap.val();
+      let raw = null;
+      if (typeof data === 'number' || typeof data === 'string') {
+        raw = data;
+      } else if (data && typeof data === 'object') {
+        raw = data.total ?? data.amount ?? data.current;
+      }
+
+      if (raw !== null) {
+        const parsed = parseInt(String(raw).replace(/[^0-9]/g, ''), 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          currentGlobalTotal = parsed;
+          renderGoalsLadder();
+          updateDockDisplay();
+        }
+      }
+    });
+
+    if (bus) {
+      bus.onmessage = (e) => {
+        const { type, text, hidden, baseline, streamer } = e.data || {};
+        if (type === 'LOCAL_GOALS_UPDATED') {
+          parsedGoals = parseLinesToGoalObjects(text);
+          renderGoalsLadder();
+        } else if (type === 'GOALS_VISIBILITY_TOGGLED') {
+          isGoalsHidden = hidden;
+          applyVisibilityState();
+        } else if (type === 'STREAMER_PASS_SYNC') {
+          streamerBaseline = baseline;
+          currentStreamerName = streamer;
+          renderGoalsLadder();
+          updateDockDisplay();
+        }
+      };
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === STORAGE_KEY_GOALS && e.newValue) {
+        parsedGoals = parseLinesToGoalObjects(e.newValue);
+        const area = document.getElementById('goalsInputArea');
+        if (area) area.value = e.newValue;
+        renderGoalsLadder();
+      } else if (e.key === STORAGE_KEY_HIDDEN) {
+        isGoalsHidden = e.newValue === 'true';
+        applyVisibilityState();
+      } else if (e.key === STORAGE_KEY_STREAMER && e.newValue) {
+        loadSavedStreamerPass(e.newValue);
+      }
+    });
+
+    // ========================================================
+    // 🎛️ DOCK ACTIONS
+    // ========================================================
+    document.addEventListener('focusin', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isFocusingInput = true;
+    });
+    document.addEventListener('focusout', () => { isFocusingInput = false; });
+
+    function startFreshPassZero() {
+      if (currentGlobalTotal <= 0) {
+        updateDockStatus("⚠️ Vänta, hämtar aktuell total från Musikhjälpen...", true);
+        return;
+      }
+
+      const inputEl = document.getElementById('streamerNameInput');
+      const inputVal = inputEl ? inputEl.value.trim() : "";
+      currentStreamerName = inputVal || currentStreamerName || "Streamer";
+      if (inputEl) inputEl.value = currentStreamerName;
+
+      const key = getStreamerKey(currentStreamerName);
+      streamerBaseline = currentGlobalTotal;
+      manualAdjustment = 0;
+
+      try {
+        localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
+      } catch(e) {}
+
+      updateDockStatus(`Startar pass för ${currentStreamerName}...`);
+
+      const area = document.getElementById('goalsInputArea');
+      const goalsText = area ? area.value : "";
+
+      dbStreamersRef.child(key).set({
+        displayName: currentStreamerName,
+        baseline: streamerBaseline,
+        manualAdjustment: 0,
+        goalsText: goalsText,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      }).then(() => {
+        listenToStreamer(key);
+        renderGoalsLadder();
+        updateDockDisplay();
+        if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
+        updateDockStatus(`✅ Nytt pass startat för ${currentStreamerName}! Mätaren är 0 kr.`);
+      }).catch(err => {
+        updateDockStatus("❌ Fel: " + err.message, true);
+      });
+    }
+
+    function loadSavedStreamerPass(optionalTargetName) {
+      const inputEl = document.getElementById('streamerNameInput');
+      const inputVal = inputEl ? inputEl.value.trim() : "";
+      
+      const target = (optionalTargetName || inputVal || currentStreamerName || "Streamer").trim();
+      currentStreamerName = target;
+
+      if (inputEl && !isFocusingInput) {
+        inputEl.value = currentStreamerName;
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
+      } catch(e) {}
+
+      const key = getStreamerKey(currentStreamerName);
+      updateDockStatus(`Läser in pass för ${currentStreamerName}...`);
+
+      dbStreamersRef.child(key).once('value').then((snap) => {
+        const data = snap.val();
+        if (data && typeof data.baseline === 'number') {
+          streamerBaseline = data.baseline;
+          manualAdjustment = data.manualAdjustment || 0;
+
+          if (data.goalsText && typeof data.goalsText === 'string') {
+            parsedGoals = parseLinesToGoalObjects(data.goalsText);
+            const area = document.getElementById('goalsInputArea');
+            if (area) area.value = data.goalsText;
+          }
+
+          listenToStreamer(key);
+          renderGoalsLadder();
+          updateDockDisplay();
+          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
+          updateDockStatus(`✅ Sparat pass inläst för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
+        } else {
+          listenToStreamer(key);
+          updateDockStatus(`Inget sparat pass hittat för ${currentStreamerName}. Starta ett nytt.`);
+        }
+      }).catch(err => {
+        updateDockStatus("❌ Fel: " + err.message, true);
+      });
+    }
+
+    let clearConfirmTimeout = null;
+    function handleClearPassClick() {
+      const btn = document.getElementById('btnClearPassBtn');
+      if (!btn) return;
+
+      if (!btn.classList.contains('confirm-state')) {
+        btn.classList.add('confirm-state');
+        btn.innerText = "⚠️ Klicka igen för att rensa!";
+        clearConfirmTimeout = setTimeout(() => {
+          btn.classList.remove('confirm-state');
+          btn.innerText = "🗑️ Rensa pass";
+        }, 4000);
+      } else {
+        clearTimeout(clearConfirmTimeout);
+        btn.classList.remove('confirm-state');
+        btn.innerText = "🗑️ Rensa pass";
+
+        const key = getStreamerKey(currentStreamerName);
+        streamerBaseline = 0;
+        manualAdjustment = 0;
+
+        dbStreamersRef.child(key).remove().then(() => {
+          renderGoalsLadder();
+          updateDockDisplay();
+          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: 0, streamer: currentStreamerName });
+          updateDockStatus(`Passet för ${currentStreamerName} är rensat.`);
+        }).catch(err => {
+          updateDockStatus("❌ Fel: " + err.message, true);
+        });
+      }
+    }
+
+    function saveGoalsFromTextarea() {
+      const area = document.getElementById('goalsInputArea');
+      const text = area ? area.value : "";
+      const goals = parseLinesToGoalObjects(text);
+
+      if (goals.length === 0) {
+        return updateDockStatus("⚠️ Hittade inga giltiga milstolpar!", true);
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEY_GOALS, text);
+      } catch(e) {}
+
+      parsedGoals = goals;
+      renderGoalsLadder();
+
+      if (bus) {
+        bus.postMessage({ type: 'LOCAL_GOALS_UPDATED', text: text });
+      }
+
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        goalsText: text,
+        secret: WRITE_SECRET
+      }).catch(() => {});
+
+      updateDockStatus(`✅ Sparade dina ${goals.length} milstolpar!`);
+    }
+
+    function escapeHTML(str) {
+      return String(str || '').replace(/[&<>'"]/g, t => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[t] || t));
+    }
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        renderGoalsLadder();
+      });
+    }
+
+    if (window.ResizeObserver) {
+      const container = document.getElementById('goalsWidgetContainer');
+      if (container) {
+        const ro = new ResizeObserver(() => {
+          renderGoalsLadder();
+        });
+        ro.observe(container);
+      }
+    }
+
+    try {
+      let cached = localStorage.getItem(STORAGE_KEY_GOALS);
+      if (!cached || !cached.trim()) {
+        cached = DEFAULT_GOALS;
+      }
+      parsedGoals = parseLinesToGoalObjects(cached);
+      const area = document.getElementById('goalsInputArea');
+      if (area) area.value = cached;
+    } catch(e) {
+      parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS);
+    }
+
+    renderGoalsLadder();
+    window.addEventListener('resize', renderGoalsLadder);
+
+    if (currentStreamerName && currentStreamerName !== "Streamer") {
+      loadSavedStreamerPass(currentStreamerName);
+    }
+  </script>
+</body>
+</html>
