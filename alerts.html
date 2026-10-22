@@ -225,29 +225,14 @@
     const SOUNDS_FOLDER = "sounds";
     const EMOTES_FOLDER = "emotes";
 
-    // 💡 Add any known filenames from your "emotes" folder here to guarantee zero network delay
-    const CUSTOM_EMOTE_FILES = [
-      // "heart.png",
-      // "hype.gif"
-      "Our2ndHome-EmoteHype-500x500.png",
-      "Our2ndHome-EmoteLove-500x500.png",
-      "Our2ndHome-EmoteWoop-500x500.png",
-      "Our2ndHome-IconLogo-512x512x.png"
-    ];
+    const CUSTOM_EMOTE_FILES = [];
 
-    // 🛡️ Built-in Zero-Fail Vector Emotes (Embedded SVG: requires NO internet, cannot 404 or rate-limit)
     const EMBEDDED_FALLBACK_EMOTES = [
-      // 1. Neon Green Charity Heart (#ace600)
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
-      // 2. Gold Star Hype
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
-      // 3. Bits Diamond
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,8 90,36 50,92 10,36" fill="%2300e5ff" stroke="%23ffffff" stroke-width="3"/><polygon points="50,8 50,92 10,36" fill="%2300b0ff"/><polygon points="32,36 50,8 68,36 50,92" fill="%23ffffff" opacity="0.6"/></svg>',
-      // 4. Fire Hype
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,5 C55,25 75,35 75,55 C75,75 60,95 50,95 C40,95 25,75 25,55 C25,40 40,25 40,15 C40,15 35,30 50,5 Z" fill="%23ff4500"/><path d="M50,35 C53,45 62,52 62,65 C62,75 55,85 50,85 C45,85 38,75 38,65 C38,55 46,45 46,38 Z" fill="%23ffd700"/></svg>',
-      // 5. Crown
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="15,75 85,75 95,30 68,55 50,20 32,55 5,30" fill="%23ffbb00" stroke="%23cc9900" stroke-width="4"/><circle cx="50" cy="20" r="6" fill="%23ace600"/><circle cx="95" cy="30" r="6" fill="%23ace600"/><circle cx="5" cy="30" r="6" fill="%23ace600"/></svg>',
-      // 6. Music Note
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M35,75 A15,12 0 1,1 20,63 L20,25 L75,15 L75,55 A15,12 0 1,1 60,43 L60,25 L35,30 Z" fill="%2300ffcc" stroke="%2300b399" stroke-width="3"/></svg>'
     ];
 
@@ -270,6 +255,35 @@
     let lastProcessedAlertId = 0;
     let initialLoad = true;
 
+    // 🎲 SMART SHUFFLE BAG: Plays every sound once before repeating, never twice in a row
+    let soundPool = [];
+    let lastPlayedSound = null;
+
+    function getNextDonationSound() {
+      if (!soundFileList || soundFileList.length === 0) return '';
+      if (soundFileList.length === 1) return soundFileList[0];
+
+      // Refill & Shuffle when deck is exhausted
+      if (soundPool.length === 0) {
+        soundPool = [...soundFileList];
+
+        // Fisher-Yates Random Shuffle
+        for (let i = soundPool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
+        }
+
+        // Avoid back-to-back repetitions across shuffle cycles
+        if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
+          [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
+        }
+      }
+
+      const nextSound = soundPool.pop();
+      lastPlayedSound = nextSound;
+      return nextSound;
+    }
+
     const alertQueue = [];
     let isProcessingAlert = false;
 
@@ -285,13 +299,12 @@
     }
 
     async function loadAssets() {
-      // 1. Load manual custom files if specified
       if (CUSTOM_EMOTE_FILES.length > 0) {
         emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
         preloadImages(emoteFileList);
       }
 
-      // 2. Fetch sounds
+      // Fetch sounds from GitHub
       try {
         const soundRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
         if (soundRes.ok) {
@@ -299,11 +312,14 @@
           const sounds = files
             .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
             .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
-          if (sounds.length > 0) soundFileList = sounds;
+          if (sounds.length > 0) {
+            soundFileList = sounds;
+            soundPool = []; // Reset pool so new sounds enter immediately
+          }
         }
       } catch(e) {}
 
-      // 3. Read cached emotes from browser memory (bypasses GitHub 60/hr limit)
+      // Cache emotes in localStorage to prevent GitHub 60/hr limit
       const cached = localStorage.getItem('mh_cached_emotes');
       if (cached && emoteFileList.length === 0) {
         try {
@@ -315,7 +331,6 @@
         } catch(e) {}
       }
 
-      // 4. If cache is empty, query GitHub API once and cache it permanently
       if (emoteFileList.length === 0) {
         try {
           const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
@@ -337,7 +352,6 @@
     }
     loadAssets();
 
-    // 🌧️ BULLETPROOF EMOTE RAIN GENERATOR
     function triggerEmoteRain(count = 75) {
       const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
       const layer = document.getElementById('emoteRainLayer');
@@ -346,7 +360,6 @@
         const img = document.createElement('img');
         img.className = 'falling-emote';
 
-        // Fallback swap: if custom file fails or 404s, seamlessly switch to embedded SVG
         img.onerror = function() {
           this.onerror = null;
           this.src = EMBEDDED_FALLBACK_EMOTES[i % EMBEDDED_FALLBACK_EMOTES.length];
@@ -354,10 +367,10 @@
 
         img.src = list[Math.floor(Math.random() * list.length)];
 
-        const size = Math.floor(Math.random() * 26) + 38; // 38px to 64px
-        const left = Math.random() * 95; // 0% to 95vw across screen
-        const duration = (Math.random() * 2.5 + 4.5).toFixed(2); // 4.5s to 7.0s
-        const delay = (Math.random() * 2.0).toFixed(2); // 0s to 2.0s
+        const size = Math.floor(Math.random() * 26) + 38;
+        const left = Math.random() * 95;
+        const duration = (Math.random() * 2.5 + 4.5).toFixed(2);
+        const delay = (Math.random() * 2.0).toFixed(2);
 
         img.style.width = `${size}px`;
         img.style.height = `${size}px`;
@@ -365,7 +378,6 @@
         img.style.animationDuration = `${duration}s`;
         img.style.animationDelay = `${delay}s`;
 
-        // Self-cleaning: each emote removes itself once it touches bottom (no timer conflicts)
         img.addEventListener('animationend', () => {
           img.remove();
         });
@@ -386,9 +398,8 @@
           soundUrl = SOUND_SUB_BITS_FOLLOW;
           volume = SOUND_VOLUME_MINOR;
         } else {
-          if (soundFileList.length > 0) {
-            soundUrl = soundFileList[Math.floor(Math.random() * soundFileList.length)];
-          }
+          // Draws from the smart shuffle bag
+          soundUrl = getNextDonationSound();
         }
 
         if (!soundUrl) return resolve();
