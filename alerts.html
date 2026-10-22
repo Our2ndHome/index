@@ -37,7 +37,7 @@
       height: 100vh;
       pointer-events: none;
       overflow: hidden;
-      z-index: 99990; /* Directly behind text */
+      z-index: 99990;
     }
 
     .falling-emote {
@@ -50,10 +50,10 @@
     @keyframes fallDown {
       0% {
         transform: translateY(0) rotate(0deg);
-        opacity: 0.9;
+        opacity: 0.95;
       }
       85% {
-        opacity: 0.9;
+        opacity: 0.95;
       }
       100% {
         transform: translateY(115vh) rotate(360deg);
@@ -62,11 +62,10 @@
     }
 
     /* ========================================================
-       🚨 ALERT BANNER BASE
+       🚨 MAIN ALERT BANNER (Donations & Raids)
        ======================================================== */
     .alert-banner {
       position: absolute;
-      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       opacity: 0;
@@ -80,17 +79,15 @@
       z-index: 99999;
     }
 
-    /* Highlight color */
     .highlight {
       color: #ace600 !important;
       text-shadow: 0 0 16px rgba(172, 230, 0, 0.6);
     }
 
-    /* Main Big Name (Donations & Raids) */
     .donor-name {
       color: #ace600;
       display: block;
-      font-size: 54px;
+      font-size: 52px;
       font-weight: 900;
       margin-bottom: 4px;
       text-transform: uppercase;
@@ -120,26 +117,39 @@
       text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
     }
 
-    /* Plain Text Style (Subs, Bits, Follows) */
-    .plain-alert-title {
-      font-size: 46px;
+    /* ========================================================
+       🌟 COMPACT SECONDARY ALERT (Subs, Bits, Follows)
+       Lowered 100px from center & smaller styling
+       ======================================================== */
+    .minor-alert-badge {
+      background: rgba(15, 15, 18, 0.85);
+      border: 1px solid rgba(172, 230, 0, 0.4);
+      border-radius: 50px;
+      padding: 10px 24px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .minor-alert-title {
+      font-size: 22px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
-      margin-bottom: 6px;
-      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95);
+      letter-spacing: 0.5px;
     }
 
-    .plain-alert-body {
-      font-size: 28px;
+    .minor-alert-body {
+      font-size: 18px;
       font-weight: 800;
       color: #ffffff;
       text-transform: uppercase;
-      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
+      letter-spacing: 0.5px;
     }
 
     /* ========================================================
-       🎬 ANIMATION 1: TOP TO CENTER (Donations & Raids)
+       🎬 ANIMATION: TOP TO CENTER (Donations & Raids)
        ======================================================== */
     .anim-top-in {
       animation: dropFromTop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
@@ -168,14 +178,15 @@
     }
 
     /* ========================================================
-       🎬 ANIMATION 2: BOTTOM TO CENTER (Subs, Bits, Follows)
+       🎬 ANIMATION: BOTTOM TO LOWERED CENTER (Subs, Bits, Follows)
+       Sits ~100px lower than center (top: calc(50% + 100px))
        ======================================================== */
     .anim-bottom-in {
-      animation: riseFromBottom 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      animation: riseFromBottomLowered 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
       visibility: visible !important;
     }
 
-    @keyframes riseFromBottom {
+    @keyframes riseFromBottomLowered {
       0% {
         top: 125%;
         left: 50%;
@@ -183,13 +194,13 @@
         opacity: 0;
       }
       70% {
-        top: 50%;
+        top: calc(50% + 100px);
         left: 50%;
-        transform: translate(-50%, -50%) scale(1.08);
+        transform: translate(-50%, -50%) scale(1.05);
         opacity: 1;
       }
       100% {
-        top: 50%;
+        top: calc(50% + 100px);
         left: 50%;
         transform: translate(-50%, -50%) scale(1);
         opacity: 1;
@@ -208,7 +219,7 @@
       }
       100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.8);
+        transform: translate(-50%, -50%) scale(0.85);
       }
     }
   </style>
@@ -228,18 +239,33 @@
     const SOUNDS_FOLDER = "sounds";
     const EMOTES_FOLDER = "emotes";
 
-    const SOUND_VOLUME = 0.8;
-    const MIN_ALERT_DISPLAY_MS = 4800;
-    const PAUSE_BETWEEN_ALERTS_MS = 1500;
+    // 🎵 SOUND CONFIGURATION (Change these to your own files whenever you want!)
+    const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"; 
+    const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; 
 
+    const SOUND_VOLUME_MAIN = 0.8;
+    const SOUND_VOLUME_MINOR = 0.5; // Quieter so it doesn't take too much attention
+    const MIN_ALERT_DISPLAY_MS = 4600;
+    const PAUSE_BETWEEN_ALERTS_MS = 1400;
+
+    // Backup Donation Sounds
     const BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
       'sounds/ssstik.io_1786298991426.mp3',
       'sounds/ssstik.io_1786299005161.mp3'
     ];
 
+    // Backup Twitch Emotes (Ensures rain works even if GitHub API rate-limits!)
+    const BACKUP_EMOTES = [
+      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5b2d2873130c497491d96096a60db2a4/default/dark/3.0', // LUL
+      'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0', // Kappa
+      'https://static-cdn.jtvnw.net/emoticons/v2/305954156/default/dark/3.0', // PogChamp
+      'https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/3.0', // PogChamp classic
+      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_dc2427a118844855928d395a1215b02b/default/dark/3.0' // Heart
+    ];
+
     let soundFileList = [...BACKUP_SOUNDS];
-    let emoteFileList = [];
+    let emoteFileList = [...BACKUP_EMOTES];
     let lastProcessedAlertId = 0;
     let initialLoad = true;
 
@@ -250,9 +276,9 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
 
-    // --- 1. FETCH ASSETS FROM GITHUB ---
+    // --- 1. LOAD ASSETS FROM GITHUB ---
     async function loadGitHubAssets() {
-      // Load sounds
+      // Sounds
       try {
         const soundRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
         if (soundRes.ok) {
@@ -264,15 +290,17 @@
         }
       } catch(e) {}
 
-      // Load emotes
+      // Emotes (With direct download URL fallback)
       try {
         const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
         if (emoteRes.ok) {
           const files = await emoteRes.json();
           const emotes = files
             .filter(f => f.name.match(/\.(png|gif|webp|jpg|jpeg)$/i))
-            .map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`);
-          if (emotes.length > 0) emoteFileList = emotes;
+            .map(f => f.download_url || `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (emotes.length > 0) {
+            emoteFileList = emotes;
+          }
         }
       } catch(e) {}
     }
@@ -280,20 +308,19 @@
 
     // --- 2. EMOTE RAIN GENERATOR ---
     function triggerEmoteRain(count = 35) {
-      if (emoteFileList.length === 0) return;
-
+      const list = emoteFileList.length > 0 ? emoteFileList : BACKUP_EMOTES;
       const layer = document.getElementById('emoteRainLayer');
       layer.innerHTML = '';
 
       for (let i = 0; i < count; i++) {
         const img = document.createElement('img');
         img.className = 'falling-emote';
-        img.src = emoteFileList[Math.floor(Math.random() * emoteFileList.length)];
+        img.src = list[Math.floor(Math.random() * list.length)];
 
-        const size = Math.floor(Math.random() * 32) + 36; // 36px to 68px
-        const left = Math.random() * 96; // 0% to 96% vw
-        const duration = (Math.random() * 1.5 + 2.2).toFixed(2); // 2.2s - 3.7s
-        const delay = (Math.random() * 1.0).toFixed(2); // 0s - 1.0s
+        const size = Math.floor(Math.random() * 26) + 38; // 38px to 64px
+        const left = Math.random() * 95; // 0% to 95vw
+        const duration = (Math.random() * 1.4 + 2.2).toFixed(2); // 2.2s - 3.6s
+        const delay = (Math.random() * 0.9).toFixed(2); // 0s - 0.9s
 
         img.style.width = `${size}px`;
         img.style.height = `${size}px`;
@@ -304,30 +331,46 @@
         layer.appendChild(img);
       }
 
-      // Cleanup DOM after rain finishes
       setTimeout(() => {
         layer.innerHTML = '';
-      }, 5000);
+      }, 4800);
     }
 
-    // --- 3. AUDIO PLAYER ---
-    function playAlertSound() {
+    // --- 3. AUDIO PLAYBACK ROUTER ---
+    function playAlertSound(type) {
       return new Promise((resolve) => {
-        if (!soundFileList || soundFileList.length === 0) return resolve();
+        let soundUrl = '';
+        let volume = SOUND_VOLUME_MAIN;
+
+        if (type === 'raid') {
+          soundUrl = SOUND_RAID;
+          volume = SOUND_VOLUME_MAIN;
+        } else if (type === 'sub' || type === 'bits' || type === 'follow') {
+          soundUrl = SOUND_SUB_BITS_FOLLOW;
+          volume = SOUND_VOLUME_MINOR;
+        } else {
+          // Donation: pick random sound from list
+          if (soundFileList.length > 0) {
+            soundUrl = soundFileList[Math.floor(Math.random() * soundFileList.length)];
+          }
+        }
+
+        if (!soundUrl) return resolve();
+
         try {
-          const audio = new Audio(soundFileList[Math.floor(Math.random() * soundFileList.length)]);
-          audio.volume = SOUND_VOLUME;
+          const audio = new Audio(soundUrl);
+          audio.volume = volume;
           let done = false;
           const finish = () => { if (!done) { done = true; resolve(); } };
           audio.onended = finish;
           audio.onerror = finish;
           audio.play().catch(() => done());
-          setTimeout(finish, 6500);
+          setTimeout(finish, 6000);
         } catch(e) { resolve(); }
       });
     }
 
-    // --- 4. FIREBASE EVENT LISTENER ---
+    // --- 4. FIREBASE LISTENER ---
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
@@ -340,14 +383,9 @@
       if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
         lastProcessedAlertId = data.alertId;
 
-        // Multi-alert array handling
         if (Array.isArray(data.alerts) && data.alerts.length > 0) {
-          data.alerts.forEach(item => {
-            enqueueAlert(item);
-          });
-        } 
-        // Single donation fallback
-        else if (data.diff > 0 || data.donor) {
+          data.alerts.forEach(item => enqueueAlert(item));
+        } else if (data.diff > 0 || data.donor) {
           enqueueAlert({
             type: data.type || 'donation',
             donor: data.donor || "Givare",
@@ -361,7 +399,7 @@
       }
     });
 
-    // --- 5. ALERT QUEUE & RENDERER ---
+    // --- 5. QUEUE AND RENDERER ---
     function enqueueAlert(item) {
       alertQueue.push(item);
       processAlertQueue();
@@ -375,52 +413,59 @@
       const banner = document.getElementById('alertBanner');
       const type = (item.type || 'donation').toLowerCase();
 
-      // Clear previous classes
       banner.className = 'alert-banner';
 
-      // Build Alert Layout
+      // RENDER: Main Alerts (Center, Drop from Top)
       if (type === 'donation') {
         banner.innerHTML = `
           <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
           <div class="alert-subtext">DONERADE <span class="highlight">${formatSEK(item.amount || 50)}</span>!</div>
           ${item.comment ? `<div class="alert-comment">"${item.comment}"</div>` : ''}
         `;
-        banner.classList.add('anim-top-in'); // Top to center
+        banner.classList.add('anim-top-in');
       } 
       else if (type === 'raid') {
         banner.innerHTML = `
           <span class="donor-name">${item.donor || item.name || 'Raider'}</span>
           <div class="alert-subtext">RAIDAR MED <span class="highlight">${item.viewers || 1}</span> TITTARNA!</div>
         `;
-        banner.classList.add('anim-top-in'); // Top to center
+        banner.classList.add('anim-top-in');
       } 
+
+      // RENDER: Minor Alerts (Lowered by 100px, Compact, Rise from Bottom)
       else if (type === 'sub') {
         const months = item.months || 1;
         banner.innerHTML = `
-          <div class="plain-alert-title">${item.donor || item.name || 'Tittare'}</div>
-          <div class="plain-alert-body">PRENUMERERADE I <span class="highlight">${months} MÅNADER</span>!</div>
+          <div class="minor-alert-badge">
+            <span class="minor-alert-title">${item.donor || item.name || 'Tittare'}</span>
+            <span class="minor-alert-body">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</span>
+          </div>
         `;
-        banner.classList.add('anim-bottom-in'); // Bottom to center
+        banner.classList.add('anim-bottom-in');
       } 
       else if (type === 'bits') {
         const bits = item.bits || item.amount || 100;
         banner.innerHTML = `
-          <div class="plain-alert-title">${item.donor || item.name || 'Tittare'}</div>
-          <div class="plain-alert-body">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
+          <div class="minor-alert-badge">
+            <span class="minor-alert-title">${item.donor || item.name || 'Tittare'}</span>
+            <span class="minor-alert-body">CHEERADE <span class="highlight">${bits} BITS</span>!</span>
+          </div>
         `;
-        banner.classList.add('anim-bottom-in'); // Bottom to center
+        banner.classList.add('anim-bottom-in');
       }
       else if (type === 'follow') {
         banner.innerHTML = `
-          <div class="plain-alert-title">${item.donor || item.name || 'Tittare'}</div>
-          <div class="plain-alert-body">FÖLJER KANALEN!</div>
+          <div class="minor-alert-badge">
+            <span class="minor-alert-title">${item.donor || item.name || 'Tittare'}</span>
+            <span class="minor-alert-body">FÖLJER KANALEN!</span>
+          </div>
         `;
-        banner.classList.add('anim-bottom-in'); // Bottom to center
+        banner.classList.add('anim-bottom-in');
       }
 
-      // Trigger Effects
+      // Trigger Emotes & Sound
       triggerEmoteRain(35);
-      const soundPromise = playAlertSound();
+      const soundPromise = playAlertSound(type);
       const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
 
       await Promise.all([soundPromise, displayPromise]);
@@ -428,7 +473,7 @@
       // Exit Animation
       banner.classList.remove('anim-top-in', 'anim-bottom-in');
       banner.classList.add('anim-exit');
-      await new Promise(r => setTimeout(r, 380));
+      await new Promise(r => setTimeout(r, 360));
 
       banner.className = 'alert-banner';
       banner.innerHTML = '';
@@ -438,21 +483,6 @@
         processAlertQueue();
       }, PAUSE_BETWEEN_ALERTS_MS);
     }
-
-    // --- 6. DEV / MANUAL TEST HELPER ---
-    window.testAlert = function(type = 'donation') {
-      if (type === 'donation') {
-        enqueueAlert({ type: 'donation', donor: 'Lisa', amount: 250, comment: 'Kämpa på allihopa!' });
-      } else if (type === 'raid') {
-        enqueueAlert({ type: 'raid', name: 'SuperStreamer', viewers: 184 });
-      } else if (type === 'sub') {
-        enqueueAlert({ type: 'sub', name: 'GamerGurre', months: 6 });
-      } else if (type === 'bits') {
-        enqueueAlert({ type: 'bits', name: 'CheerMaster', bits: 500 });
-      } else if (type === 'follow') {
-        enqueueAlert({ type: 'follow', name: 'NyFöljare' });
-      }
-    };
   </script>
 </body>
 </html>
