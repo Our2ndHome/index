@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Stream Alerts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', Arial, sans-serif;
+      overflow: hidden;
+      background-color: transparent;
+      color: #ffffff;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+
+    .alert-banner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.6);
+      opacity: 0;
+      visibility: hidden;
+      text-align: center;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 10px 20px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 99999;
+      transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0.3s;
+    }
+
+    .donor-name {
+      color: #ace600;
+      display: block;
+      font-size: 54px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(172, 230, 0, 0.6);
+    }
+
+    .alert-subtext {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 900;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
+    }
+
+    .alert-comment {
+      color: #ffea00;
+      font-size: 22px;
+      font-weight: 800;
+      font-style: italic;
+      margin-top: 8px;
+      text-transform: none;
+      white-space: normal;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.3;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
+    }
+
+    .show-alert {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translate(-50%, -50%) scale(1) !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="alert-banner" id="alertBanner">
+    <span class="donor-name" id="donorName">JOHAN</span> 
+    <div class="alert-subtext">DONERADE <span id="alertAmount">50 KR</span>!</div>
+    <div class="alert-comment" id="alertComment"></div>
+  </div>
+
+  <script>
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
+    const SOUNDS_FOLDER = "sounds";
+    const SOUND_VOLUME = 0.8;
+    const MIN_ALERT_DISPLAY_MS = 4500;
+    const PAUSE_BETWEEN_ALERTS_MS = 5000;
+
+    const BACKUP_SOUNDS = [
+      'sounds/ssstik.io_1786298964532.mp3',
+      'sounds/ssstik.io_1786298991426.mp3',
+      'sounds/ssstik.io_1786299005161.mp3'
+    ];
+
+    function formatSEK(num) {
+      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
+    }
+
+    let lastProcessedAlertId = 0;
+    let initialLoad = true;
+    let soundFileList = [...BACKUP_SOUNDS];
+
+    const alertQueue = [];
+    let isProcessingAlert = false;
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbRef = firebase.database().ref('bossa');
+
+    async function loadSounds() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
+        if (res.ok) {
+          const files = await res.json();
+          const sounds = files
+            .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
+            .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (sounds.length > 0) soundFileList = sounds;
+        }
+      } catch(e) {}
+    }
+    loadSounds();
+
+    dbRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
+        lastProcessedAlertId = data.alertId;
+
+        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
+          data.alerts.forEach(item => {
+            enqueueAlert(item.donor || "Givare", item.amount || 50, item.comment || "Tack för gåvan!");
+          });
+        } else if (data.diff > 0) {
+          enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+        }
+      } else if (initialLoad) {
+        lastProcessedAlertId = data.alertId || 0;
+        initialLoad = false;
+      }
+    });
+
+    function enqueueAlert(donor, amount, comment) {
+      alertQueue.push({ donor, amount, comment });
+      processAlertQueue();
+    }
+
+    async function processAlertQueue() {
+      if (isProcessingAlert || alertQueue.length === 0) return;
+      isProcessingAlert = true;
+
+      const alert = alertQueue.shift();
+      const banner = document.getElementById('alertBanner');
+
+      if (banner) {
+        document.getElementById('donorName').innerText = alert.donor;
+        document.getElementById('alertAmount').innerText = formatSEK(alert.amount);
+        document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
+
+        banner.classList.remove('show-alert');
+        void banner.offsetWidth;
+        banner.classList.add('show-alert');
+
+        const soundPromise = playAlertSound();
+        const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+
+        await Promise.all([soundPromise, displayPromise]);
+        banner.classList.remove('show-alert');
+      }
+
+      setTimeout(() => {
+        isProcessingAlert = false;
+        processAlertQueue();
+      }, PAUSE_BETWEEN_ALERTS_MS);
+    }
+
+    function playAlertSound() {
+      return new Promise((resolve) => {
+        if (!soundFileList || soundFileList.length === 0) return resolve();
+        try {
+          const audio = new Audio(soundFileList[Math.floor(Math.random() * soundFileList.length)]);
+          audio.volume = SOUND_VOLUME;
+          let done = false;
+          const finish = () => { if (!done) { done = true; resolve(); } };
+          audio.onended = finish;
+          audio.onerror = finish;
+          audio.play().catch(() => done());
+          setTimeout(finish, 7000);
+        } catch(e) { resolve(); }
+      });
+    }
+  </script>
+</body>
+</html>
