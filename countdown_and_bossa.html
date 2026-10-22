@@ -361,7 +361,6 @@
       <b>0</b> biljetter genererade (Totalt: <b>0 KR</b>)
     </div>
 
-    <!-- 🔄 Safe Re-sync Button -->
     <button class="btn-resync" onclick="dockRequestResync()">
       🔄 Återställ till verkligt belopp
     </button>
@@ -400,6 +399,9 @@
       <button class="btn-test" onclick="dockTriggerTestAlert('bits')">
         💎 Bits (500)
       </button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('follow')" style="grid-column: span 2;">
+        👤 Ny Följare (Follow)
+      </button>
     </div>
   </div>
 
@@ -423,7 +425,6 @@
     const dbRef = firebase.database().ref('bossa');
     const dbDonorsRef = firebase.database().ref('giveaway_donors');
 
-    // Realtime Listener for Totals
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -463,7 +464,6 @@
       }
     }
 
-    // 🎛️ DOCK ACTIONS
     function dockRequestResync() {
       const box = document.getElementById('dockStatusBox');
       if (box) box.innerText = "Återställer till 400 KR...";
@@ -540,7 +540,6 @@
 
         bridgeDonorToGiveaway(donor, amount);
 
-        // Donation adds to goal total & giveaway tickets
         dbRef.set({
           total: currentTotal + amount,
           diff: amount,
@@ -554,7 +553,6 @@
         return;
       }
 
-      // Twitch alerts (Raid, Sub, Bits) trigger animations without altering the charity KR total
       let alertObj = {};
 
       if (type === 'raid') {
@@ -563,6 +561,8 @@
         alertObj = { type: 'sub', donor: 'GamerGurre', months: 6 };
       } else if (type === 'bits') {
         alertObj = { type: 'bits', donor: 'CheerMaster', bits: 500 };
+      } else if (type === 'follow') {
+        alertObj = { type: 'follow', donor: 'NyFöljare' };
       }
 
       dbRef.set({
