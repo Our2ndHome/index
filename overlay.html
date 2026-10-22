@@ -33,14 +33,16 @@
       height: 100vh;
       border: none;
       background: transparent;
-      pointer-events: none; /* Mouse clicks pass right through to your game/stream */
+      pointer-events: none;
     }
 
-    /* Proper stacking order on stream */
-    #layerSchedule { z-index: 10; } /* Bottom schedule bar */
-    #layerBossa    { z-index: 20; } /* Top countdown & goal */
-    #layerGiveaway { z-index: 30; } /* Center giveaway wheel modal */
-    #layerAlerts   { z-index: 40; } /* Center donation alerts & sound effects */
+    /* ========================================================
+       🥞 LAYER STACKING ORDER (LOWER NUMBER = FURTHER BACK)
+       ======================================================== */
+    #layerAlerts   { z-index: 5; }  /* 👈 1. ALERTS & RAIN BEHIND OVERLAYS */
+    #layerSchedule { z-index: 10; } /* 👈 2. Bottom sponsor box stays in FRONT */
+    #layerBossa    { z-index: 20; } /* 👈 3. Top countdown & goal stays in FRONT */
+    #layerGiveaway { z-index: 30; } /* 👈 4. Giveaway wheel stays on top of all */
 
     /* ========================================================
        🎛️ 2. OBS DOCK CONTROLLER VIEW (#panel)
@@ -48,11 +50,10 @@
     body.mode-panel {
       background-color: #0b0b0d;
       color: #ffffff;
-      overflow-y: auto; /* Clean scrolling in OBS dock */
+      overflow-y: auto;
       padding-bottom: 24px;
     }
 
-    /* Master Dock Header */
     .dock-master-header {
       background: #111114;
       border-bottom: 1px solid #27272a;
@@ -85,7 +86,6 @@
       border-radius: 3px;
     }
 
-    /* Sticky quick-jump buttons */
     .dock-jump-nav {
       position: sticky;
       top: 36px;
@@ -140,8 +140,7 @@
       overflow: hidden;
     }
 
-    /* Heights calibrated to prevent unnecessary inner scrollbars */
-    #frameBossa    { height: 500px; }
+    #frameBossa    { height: 560px; }
     #frameGiveaway { height: 460px; }
     #frameSchedule { height: 400px; }
   </style>
@@ -152,17 +151,17 @@
        📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
-    <!-- Bottom: Schedule / Sponsor Bar -->
+    <!-- Behind: Alerts & Emote Rain (z-index: 5) -->
+    <iframe id="layerAlerts" class="overlay-frame" src="alerts.html" allow="autoplay"></iframe>
+
+    <!-- Foreground: Schedule & Sponsor Bar (z-index: 10) -->
     <iframe id="layerSchedule" class="overlay-frame" src="schedule.html#overlay" allow="autoplay"></iframe>
 
-    <!-- Top: Countdown & Goal -->
+    <!-- Foreground: Countdown & Goal (z-index: 20) -->
     <iframe id="layerBossa" class="overlay-frame" src="countdown_and_bossa.html#overlay" allow="autoplay"></iframe>
 
-    <!-- Center: Giveaway Wheel Popup -->
+    <!-- Top Overlay: Giveaway Wheel Popup (z-index: 30) -->
     <iframe id="layerGiveaway" class="overlay-frame" src="giveaway.html#overlay" allow="autoplay"></iframe>
-
-    <!-- Center: Donation Alerts (Separate GitHub file) -->
-    <iframe id="layerAlerts" class="overlay-frame" src="alerts.html" allow="autoplay"></iframe>
   </div>
 
   <!-- ========================================================
@@ -170,7 +169,6 @@
        ======================================================== -->
   <div id="panelContainer" style="display: none;">
     
-    <!-- Top Header -->
     <div class="dock-master-header">
       <div class="dock-master-title">
         <span>KONTROLLPANEL</span>
@@ -179,7 +177,6 @@
       <button class="jump-btn" style="flex:0; padding: 4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- Quick Jump Navigation -->
     <div class="dock-jump-nav">
       <button class="jump-btn" onclick="scrollToSection('secBossa')">↓ Bössa</button>
       <button class="jump-btn" onclick="scrollToSection('secGiveaway')">↓ Giveaway</button>
@@ -214,7 +211,6 @@
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'block';
     } else {
-      // Default to overlay view
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
     }
