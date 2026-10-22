@@ -51,7 +51,6 @@
       z-index: 1000;
     }
 
-    /* Countdown Section */
     .countdown-widget {
       text-align: center;
       margin-bottom: 2px;
@@ -87,7 +86,6 @@
       box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
     }
 
-    /* Goal Section */
     .goal-widget {
       text-align: center;
       text-transform: uppercase;
@@ -115,7 +113,6 @@
       text-shadow: 0 0 16px rgba(172, 230, 0, 0.25);
     }
 
-    /* Progress Bar */
     .progress-bar-container {
       width: 270px;
       height: 6px;
@@ -289,7 +286,7 @@
       cursor: pointer;
     }
 
-    /* 🎮 Alert Testing Buttons Grid */
+    /* 🎮 Random Alert Testing Grid */
     .test-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -336,7 +333,6 @@
         <span class="goal-label">TOTALT INSAMLAT</span>
         <span class="amount" id="totalDisplay">0 KR</span>
         
-        <!-- Progress Bar Element -->
         <div class="progress-bar-container">
           <div class="progress-bar-fill" id="goalProgressBar"></div>
         </div>
@@ -383,24 +379,24 @@
 
     <!-- 🎮 TEST ALERTS SECTION -->
     <div class="field-label" style="margin-bottom: 6px; color: #a1a1aa; border-top: 1px solid #27272a; padding-top: 10px;">
-      TESTA ALERTS PÅ STREAM:
+      TESTA ALERTS (SLUMPMÄSSIGT):
     </div>
 
     <div class="test-grid">
       <button class="btn-test" onclick="dockTriggerTestAlert('donation')">
-        💰 Donation (250 kr)
+        🎲 Slump-Donation
       </button>
       <button class="btn-test" onclick="dockTriggerTestAlert('raid')">
-        🚀 Raid (184 st)
+        🚀 Slump-Raid
       </button>
       <button class="btn-test" onclick="dockTriggerTestAlert('sub')">
-        ⭐ Sub (6 mån)
+        ⭐ Slump-Sub
       </button>
       <button class="btn-test" onclick="dockTriggerTestAlert('bits')">
-        💎 Bits (500)
+        💎 Slump-Bits
       </button>
       <button class="btn-test" onclick="dockTriggerTestAlert('follow')" style="grid-column: span 2;">
-        👤 Ny Följare (Follow)
+        👤 Slump-Följare
       </button>
     </div>
   </div>
@@ -409,6 +405,19 @@
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const GOAL_TARGET_KR = 40000;
+
+    // Random generator pools
+    const RANDOM_NAMES = ["Lisa", "Erik", "Maja", "Filip", "Klara", "Johan", "Astrid", "Oskar", "Emma", "William", "Alva", "Lucas", "Ebba", "Hugo", "Saga"];
+    const RANDOM_AMOUNTS = [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000];
+    const RANDOM_COMMENTS = ["Kämpa på!", "För en god sak ❤️", "Heja er allihopa!", "Nu tar vi målet!", "Bästa streamen!", "Kärlek till Musikhjälpen!", "Hälsningar från soffan!", ""];
+    const RANDOM_RAIDERS = ["SuperStreamer", "GamerPro", "PixelQueen", "SpeedyG", "VikingGamer", "NordicGamer", "KnatteLive"];
+    const RANDOM_VIEWERS = [15, 34, 78, 125, 184, 250, 390, 520];
+    const RANDOM_MONTHS = [1, 2, 3, 6, 9, 12, 18, 24];
+    const RANDOM_BITS = [100, 200, 300, 500, 1000, 1500, 2500];
+
+    function getRandomItem(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
 
     function formatSEK(num) {
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
@@ -531,12 +540,14 @@
       });
     }
 
-    // 🕹️ TRIGGER TEST ALERTS
+    // 🕹️ TRIGGER RANDOMIZED TEST ALERTS
     function dockTriggerTestAlert(type) {
+      const uniqueId = Date.now();
+
       if (type === 'donation') {
-        const donor = "Lisa";
-        const amount = 250;
-        const comment = "Kämpa på allihopa!";
+        const donor = getRandomItem(RANDOM_NAMES);
+        const amount = getRandomItem(RANDOM_AMOUNTS);
+        const comment = getRandomItem(RANDOM_COMMENTS);
 
         bridgeDonorToGiveaway(donor, amount);
 
@@ -545,24 +556,40 @@
           diff: amount,
           donor: donor,
           comment: comment,
-          alertId: Date.now(),
+          alertId: uniqueId,
           alerts: [{ type: 'donation', donor: donor, amount: amount, comment: comment }],
           forceSync: false,
           secret: WRITE_SECRET
         });
+
+        updateStatusDisplay(`Skickade test-donation: ${donor} (+${amount} kr)`);
         return;
       }
 
       let alertObj = {};
 
       if (type === 'raid') {
-        alertObj = { type: 'raid', donor: 'SuperStreamer', viewers: 184 };
-      } else if (type === 'sub') {
-        alertObj = { type: 'sub', donor: 'GamerGurre', months: 6 };
-      } else if (type === 'bits') {
-        alertObj = { type: 'bits', donor: 'CheerMaster', bits: 500 };
-      } else if (type === 'follow') {
-        alertObj = { type: 'follow', donor: 'NyFöljare' };
+        const raider = getRandomItem(RANDOM_RAIDERS);
+        const viewers = getRandomItem(RANDOM_VIEWERS);
+        alertObj = { type: 'raid', donor: raider, viewers: viewers };
+        updateStatusDisplay(`Skickade test-raid: ${raider} (${viewers} st)`);
+      } 
+      else if (type === 'sub') {
+        const subscriber = getRandomItem(RANDOM_NAMES);
+        const months = getRandomItem(RANDOM_MONTHS);
+        alertObj = { type: 'sub', donor: subscriber, months: months };
+        updateStatusDisplay(`Skickade test-sub: ${subscriber} (${months} mån)`);
+      } 
+      else if (type === 'bits') {
+        const cheerer = getRandomItem(RANDOM_NAMES);
+        const bits = getRandomItem(RANDOM_BITS);
+        alertObj = { type: 'bits', donor: cheerer, bits: bits };
+        updateStatusDisplay(`Skickade test-bits: ${cheerer} (${bits} bits)`);
+      } 
+      else if (type === 'follow') {
+        const follower = getRandomItem(RANDOM_NAMES);
+        alertObj = { type: 'follow', donor: follower };
+        updateStatusDisplay(`Skickade test-följare: ${follower}`);
       }
 
       dbRef.set({
@@ -570,7 +597,7 @@
         diff: 0,
         donor: "",
         comment: "",
-        alertId: Date.now(),
+        alertId: uniqueId,
         alerts: [alertObj],
         forceSync: false,
         secret: WRITE_SECRET
