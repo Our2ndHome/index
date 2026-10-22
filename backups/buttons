@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OBS Button Deck</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background-color: #18181b;
+            color: #efeff1;
+            font-family: 'Inter', sans-serif;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        /* Top Status Bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #adadb8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #eb0400; /* Red when disconnected */
+        }
+
+        .dot.connected {
+            background-color: #00f593; /* Green when ready */
+        }
+
+        /* Button Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+        }
+
+        /* Stream-Deck Style Buttons */
+        .deck-btn {
+            background: #26262c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 3px solid #1f1f23;
+            border-radius: 8px;
+            color: #efeff1;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 16px 8px;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.1s ease;
+        }
+
+        .deck-btn:hover {
+            background: #323239;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .deck-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        .deck-btn .tag {
+            width: 24px;
+            height: 4px;
+            border-radius: 2px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="status-bar">
+        <span>Controls</span>
+        <div class="status-indicator">
+            <span class="dot" id="dot"></span>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </div>
+
+    <!-- Buttons Render Here -->
+    <div class="grid" id="button-grid"></div>
+
+    <script>
+        // ================= BUTTON CONFIGURATION =================
+        const BUTTONS = [
+            {
+                label: "Webcam Left",
+                color: "#9146FF",
+                actions: [
+                    { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Left" },
+                    { source: "Html Files", filter: "Move Chat Source Right" }
+                ]
+            },
+            {
+                label: "Webcam Right",
+                color: "#00b5ad",
+                actions: [
+                    { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Right" },
+                    { source: "Html Files", filter: "Move Chat Source Left" }
+                ]
+            },
+            // Hide / Toggle Webcam scene item:
+            {
+                label: "Hide Webcam",
+                color: "#f2711c",
+                scene: "Musikhjälpen | Gaming Scene",
+                source: "Webcam Scene"
+            }
+        ];
+        // ========================================================
+
+        let ws = null;
+        let isConnected = false;
+        const pendingRequests = new Map();
+
+        function connectOBS() {
+            ws = new WebSocket('ws://127.0.0.1:4455');
+
+            ws.onopen = () => {};
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+
+                // OpCode 0: Hello from OBS
+                if (msg.op === 0) {
+                    ws.send(JSON.stringify({
+                        op: 1,
+                        d: { rpcVersion: 1 }
+                    }));
+                }
+
+                // OpCode 2: Identified & ready
+                if (msg.op === 2) {
+                    isConnected = true;
+                    document.getElementById('dot').classList.add('connected');
+                    document.getElementById('status-text').textContent = "Ready";
+                }
+
+                // OpCode 7: Request Responses
+                if (msg.op === 7) {
+                    const { requestId, requestStatus, responseData } = msg.d;
+                    if (pendingRequests.has(requestId)) {
+                        const { resolve, reject } = pendingRequests.get(requestId);
+                        pendingRequests.delete(requestId);
+
+                        if (requestStatus && requestStatus.result) {
+                            resolve(responseData);
+                        } else {
+                            reject(new Error(requestStatus ? requestStatus.comment : "Request failed"));
+                        }
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                pendingRequests.forEach(({ reject }) => reject(new Error("Connection lost")));
+                pendingRequests.clear();
+                document.getElementById('dot').classList.remove('connected');
+                document.getElementById('status-text').textContent = "Offline";
+                setTimeout(connectOBS, 3000);
+            };
+
+            ws.onerror = () => ws.close();
+        }
+
+        // Generic Promise-based request wrapper for OBS v5
+        function sendRequest(requestType, requestData = {}) {
+            return new Promise((resolve, reject) => {
+                if (!isConnected || !ws) {
+                    return reject(new Error("Not connected to OBS"));
+                }
+                const requestId = "req-" + Math.random().toString(36).substring(2, 9);
+                pendingRequests.set(requestId, { resolve, reject });
+                ws.send(JSON.stringify({
+                    op: 6,
+                    d: {
+                        requestType,
+                        requestId,
+                        requestData
+                    }
+                }));
+            });
+        }
+
+        // Toggles a source (scene item) visibility inside a specific scene
+        async function toggleSceneItem(sceneName, sourceName) {
+            if (!isConnected) return;
+
+            let targetScene = sceneName;
+            let itemId = null;
+
+            // 1. Fetch the scene item ID (with spacing fallback)
+            try {
+                const res = await sendRequest("GetSceneItemId", {
+                    sceneName: targetScene,
+                    sourceName: sourceName
+                });
+                itemId = res.sceneItemId;
+            } catch (err) {
+                const altScene = targetScene.includes(" | ")
+                    ? targetScene.replace(/\s*\|\s*/g, "|")
+                    : targetScene.replace(/\|/g, " | ");
+
+                try {
+                    const res = await sendRequest("GetSceneItemId", {
+                        sceneName: altScene,
+                        sourceName: sourceName
+                    });
+                    itemId = res.sceneItemId;
+                    targetScene = altScene;
+                } catch (err2) {
+                    console.error(`Could not locate source "${sourceName}" inside "${targetScene}" or "${altScene}".`);
+                    return;
+                }
+            }
+
+            // 2. Fetch current visibility state and invert it
+            try {
+                const statusRes = await sendRequest("GetSceneItemEnabled", {
+                    sceneName: targetScene,
+                    sceneItemId: itemId
+                });
+
+                await sendRequest("SetSceneItemEnabled", {
+                    sceneName: targetScene,
+                    sceneItemId: itemId,
+                    sceneItemEnabled: !statusRes.sceneItemEnabled
+                });
+            } catch (err) {
+                console.error("Failed to toggle visibility:", err);
+            }
+        }
+
+        // Triggers an individual filter on a specific source/scene
+        function sendFilterTrigger(sourceName, filterName) {
+            if (!isConnected) return;
+
+            // Toggle filter false then true to force animation replay
+            ws.send(JSON.stringify({
+                op: 6,
+                d: {
+                    requestType: "SetSourceFilterEnabled",
+                    requestId: "req-" + Math.random(),
+                    requestData: {
+                        sourceName: sourceName,
+                        filterName: filterName,
+                        filterEnabled: false
+                    }
+                }
+            }));
+
+            setTimeout(() => {
+                ws.send(JSON.stringify({
+                    op: 6,
+                    d: {
+                        requestType: "SetSourceFilterEnabled",
+                        requestId: "req-" + Math.random(),
+                        requestData: {
+                            sourceName: sourceName,
+                            filterName: filterName,
+                            filterEnabled: true
+                        }
+                    }
+                }));
+            }, 30);
+        }
+
+        // Handles clicks for filter actions or scene item toggles
+        function handleButtonClick(btn) {
+            if (btn.actions && Array.isArray(btn.actions)) {
+                btn.actions.forEach(action => {
+                    if (action.filter) {
+                        sendFilterTrigger(action.source, action.filter);
+                    } else if (action.scene && action.source) {
+                        toggleSceneItem(action.scene, action.source);
+                    }
+                });
+            } else if (btn.filter && btn.source) {
+                sendFilterTrigger(btn.source, btn.filter);
+            } else if (btn.scene && btn.source) {
+                toggleSceneItem(btn.scene, btn.source);
+            }
+        }
+
+        // Render buttons onto screen
+        function renderButtons() {
+            const grid = document.getElementById('button-grid');
+            grid.innerHTML = '';
+
+            BUTTONS.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.className = 'deck-btn';
+                buttonEl.innerHTML = `
+                    <div class="tag" style="background-color: ${btn.color || '#9146FF'}"></div>
+                    <span>${btn.label}</span>
+                `;
+                buttonEl.onclick = () => handleButtonClick(btn);
+                grid.appendChild(buttonEl);
+            });
+        }
+
+        renderButtons();
+        connectOBS();
+    </script>
+</body>
+</html>
