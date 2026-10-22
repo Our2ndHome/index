@@ -289,21 +289,37 @@
       cursor: pointer;
     }
 
-    .btn-primary-action {
-      background: #ffffff;
-      color: #000000;
-      border: none;
-      border-radius: 4px;
-      padding: 12px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 900;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 8px;
-      margin-bottom: 6px;
+    /* 🎮 Alert Testing Buttons Grid */
+    .test-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 8px;
     }
-    .btn-primary-action:hover { opacity: 0.9; }
+
+    .btn-test {
+      background: #18181c;
+      border: 1px solid #27272a;
+      color: #efeff1;
+      border-radius: 4px;
+      padding: 10px 6px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-test:hover {
+      background: #27272f;
+      border-color: #ace600;
+      color: #ace600;
+    }
+
+    .btn-test:active {
+      transform: translateY(1px);
+    }
   </style>
 </head>
 <body>
@@ -364,11 +380,27 @@
       <button id="dockSubmitDonationBtn" onclick="dockSubmitManualDonation()">+ Lägg till</button>
     </div>
 
-    <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:8px;">
+    <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:12px;">
 
-    <button class="btn-primary-action" onclick="dockTriggerSampleDonation('Lisa', 250, 'Kämpa på!')">
-      Skicka testdonation (+250 kr)
-    </button>
+    <!-- 🎮 TEST ALERTS SECTION -->
+    <div class="field-label" style="margin-bottom: 6px; color: #a1a1aa; border-top: 1px solid #27272a; padding-top: 10px;">
+      TESTA ALERTS PÅ STREAM:
+    </div>
+
+    <div class="test-grid">
+      <button class="btn-test" onclick="dockTriggerTestAlert('donation')">
+        💰 Donation (250 kr)
+      </button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('raid')">
+        🚀 Raid (184 st)
+      </button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('sub')">
+        ⭐ Sub (6 mån)
+      </button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('bits')">
+        💎 Bits (500)
+      </button>
+    </div>
   </div>
 
   <script>
@@ -391,7 +423,7 @@
     const dbRef = firebase.database().ref('bossa');
     const dbDonorsRef = firebase.database().ref('giveaway_donors');
 
-    // Realtime Listener for Total Amount (Alert triggering removed from here)
+    // Realtime Listener for Totals
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
@@ -487,30 +519,59 @@
 
       bridgeDonorToGiveaway(donor, amount);
 
-      // Writes alert data to Firebase so alerts.html receives it
       dbRef.set({
         total: currentTotal + amount,
         diff: amount,
         donor: donor,
         comment: comment,
         alertId: Date.now(),
-        alerts: [{ donor: donor, amount: amount, comment: comment }],
+        alerts: [{ type: 'donation', donor: donor, amount: amount, comment: comment }],
         forceSync: false,
         secret: WRITE_SECRET
       });
     }
 
-    function dockTriggerSampleDonation(donor, amount, comment) {
-      bridgeDonorToGiveaway(donor, amount);
+    // 🕹️ TRIGGER TEST ALERTS
+    function dockTriggerTestAlert(type) {
+      if (type === 'donation') {
+        const donor = "Lisa";
+        const amount = 250;
+        const comment = "Kämpa på allihopa!";
 
-      // Writes alert data to Firebase so alerts.html receives it
+        bridgeDonorToGiveaway(donor, amount);
+
+        // Donation adds to goal total & giveaway tickets
+        dbRef.set({
+          total: currentTotal + amount,
+          diff: amount,
+          donor: donor,
+          comment: comment,
+          alertId: Date.now(),
+          alerts: [{ type: 'donation', donor: donor, amount: amount, comment: comment }],
+          forceSync: false,
+          secret: WRITE_SECRET
+        });
+        return;
+      }
+
+      // Twitch alerts (Raid, Sub, Bits) trigger animations without altering the charity KR total
+      let alertObj = {};
+
+      if (type === 'raid') {
+        alertObj = { type: 'raid', donor: 'SuperStreamer', viewers: 184 };
+      } else if (type === 'sub') {
+        alertObj = { type: 'sub', donor: 'GamerGurre', months: 6 };
+      } else if (type === 'bits') {
+        alertObj = { type: 'bits', donor: 'CheerMaster', bits: 500 };
+      }
+
       dbRef.set({
-        total: currentTotal + amount,
-        diff: amount,
-        donor: donor,
-        comment: comment,
+        total: currentTotal,
+        diff: 0,
+        donor: "",
+        comment: "",
         alertId: Date.now(),
-        alerts: [{ donor: donor, amount: amount, comment: comment }],
+        alerts: [alertObj],
         forceSync: false,
         secret: WRITE_SECRET
       });
