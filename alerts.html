@@ -63,7 +63,6 @@
 
     /* ========================================================
        🚨 MAIN ALERT BANNER (Donations & Raids)
-       Resting at top: 40% (moved up from dead center)
        ======================================================== */
     .alert-banner {
       position: absolute;
@@ -119,23 +118,24 @@
     }
 
     /* ========================================================
-       🌟 SECONDARY ALERTS (Subs, Bits, Follows)
-       No background, no border, resting right over sponsors
+       🌟 2-ROW SECONDARY ALERTS (Subs, Bits, Follows)
        ======================================================== */
     .minor-alert-badge {
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
       padding: 0;
-      display: inline-flex;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 3px;
       text-align: center;
     }
 
-    .minor-alert-title {
-      font-size: 26px;
+    /* Upper Row: Name */
+    .minor-alert-name {
+      font-size: 28px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
@@ -143,8 +143,9 @@
       text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.85);
     }
 
-    .minor-alert-body {
-      font-size: 22px;
+    /* Lower Row: Action & Amount */
+    .minor-alert-detail {
+      font-size: 20px;
       font-weight: 800;
       color: #ffffff;
       text-transform: uppercase;
@@ -153,8 +154,7 @@
     }
 
     /* ========================================================
-       🎬 SMOOTH ANIMATION: TOP TO UPPER-CENTER (Donations & Raids)
-       Moves from top: -15% down to top: 40% (gentle glide)
+       🎬 SMOOTH ANIMATION: TOP TO UPPER-CENTER
        ======================================================== */
     .anim-top-in {
       animation: dropFromTopSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -177,8 +177,7 @@
     }
 
     /* ========================================================
-       🎬 SMOOTH ANIMATION: BOTTOM TO OVER-SPONSORS (Subs, Bits, Follows)
-       Rises from 115% to top: calc(50% + 210px)
+       🎬 SMOOTH ANIMATION: BOTTOM TO OVER-SPONSORS
        ======================================================== */
     .anim-bottom-in {
       animation: riseFromBottomSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -398,7 +397,7 @@
 
       banner.className = 'alert-banner';
 
-      // RENDER: Upper Alerts (Donations & Raids)
+      // 1. Upper Alerts (Donations & Raids)
       if (type === 'donation') {
         banner.innerHTML = `
           <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
@@ -415,13 +414,13 @@
         banner.classList.add('anim-top-in');
       } 
 
-      // RENDER: Lowered Secondary Alerts (Subs, Bits, Follows)
+      // 2. Lower Secondary Alerts (2-Row Layout: Name on top, Action on bottom)
       else if (type === 'sub') {
         const months = item.months || 1;
         banner.innerHTML = `
           <div class="minor-alert-badge">
-            <span class="minor-alert-title">${item.donor || item.name || 'Tittare'}</span>
-            <span class="minor-alert-body">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</span>
+            <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+            <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
           </div>
         `;
         banner.classList.add('anim-bottom-in');
@@ -430,8 +429,8 @@
         const bits = item.bits || item.amount || 100;
         banner.innerHTML = `
           <div class="minor-alert-badge">
-            <span class="minor-alert-title">${item.donor || item.name || 'Tittare'}</span>
-            <span class="minor-alert-body">CHEERADE <span class="highlight">${bits} BITS</span>!</span>
+            <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+            <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
           </div>
         `;
         banner.classList.add('anim-bottom-in');
@@ -439,8 +438,8 @@
       else if (type === 'follow') {
         banner.innerHTML = `
           <div class="minor-alert-badge">
-            <span class="minor-alert-title">${item.donor || item.name || 'Tittare'}</span>
-            <span class="minor-alert-body">FÖLJER KANALEN!</span>
+            <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+            <div class="minor-alert-detail">FÖLJER KANALEN!</div>
           </div>
         `;
         banner.classList.add('anim-bottom-in');
