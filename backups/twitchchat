@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Twitch Chat Widget</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+            font-family: 'Inter', "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        /* Anchors the widget with max 1200px width and 200px height */
+        #chat-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            max-width: 1200px;
+            max-height: 200px;
+            pointer-events: none;
+        }
+
+        /* 
+           Flat black background with 0.9 opacity.
+           Expands up to 1200px wide and 200px tall.
+        */
+        .chat-card {
+            display: inline-block;
+            width: fit-content;
+            height: auto;
+            max-width: 1200px;
+            max-height: 200px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.90);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 18px;
+            line-height: 1.5;
+            color: #efeff1;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        /* Badges */
+        .chat-badges {
+            display: inline;
+        }
+
+        .chat-badge {
+            display: inline-block;
+            vertical-align: -3px;
+            height: 18px;
+            width: 18px;
+            margin-right: 4px;
+            border-radius: 2px;
+        }
+
+        /* Username & Colon */
+        .chat-username {
+            font-weight: 700;
+            letter-spacing: -0.2px;
+        }
+
+        .chat-colon {
+            color: #efeff1;
+            font-weight: 700;
+            margin-right: 6px;
+        }
+
+        /* Message */
+        .chat-message {
+            display: inline;
+            font-weight: 400;
+            color: #efeff1;
+        }
+
+        /* Twitch Emotes */
+        .chat-message img.emote {
+            vertical-align: middle;
+            height: 28px;
+            margin: -4px 2px;
+        }
+
+        /* Animations */
+        .animate-in {
+            animation: popIn 0.30s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-out {
+            animation: slideOut 0.30s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: translateY(16px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes slideOut {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-12px) scale(0.98);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="chat-container"></div>
+
+    <script>
+        // ================= CONFIGURATION =================
+        const BASE_DISPLAY_TIME = 3000;  // 3 seconds per message (ms)
+        const FAST_DISPLAY_TIME = 1500;  // Accelerated time if chat is backed up (ms)
+        const ANIMATION_DURATION = 300;  // CSS animation speed (ms)
+        const PAUSE_BETWEEN_MSGS = 200;  // Pause before showing next message (ms)
+        const MAX_QUEUE_LIMIT = 15;      // Max queued backlog
+        // =================================================
+
+        const BADGE_MAP = {
+            'broadcaster': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1',
+            'moderator': 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1',
+            'vip': 'https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/1',
+            'founder': 'https://static-cdn.jtvnw.net/badges/v1/511b78a9-ab37-472f-9569-457753bbe7d3/1',
+            'partner': 'https://static-cdn.jtvnw.net/badges/v1/d12a2e27-16f6-41d0-ab77-b780518f00a3/1',
+            'premium': 'https://static-cdn.jtvnw.net/badges/v1/bbbe0db0-a598-423e-86d0-f9fb98ca1933/1',
+            'turbo': 'https://static-cdn.jtvnw.net/badges/v1/bd444ec6-8f34-4bf9-91f4-af1e3428d80f/1',
+            'staff': 'https://static-cdn.jtvnw.net/badges/v1/d97c37bd-a6f5-4c38-8f57-4e4bef88af34/1',
+            'artist-badge': 'https://static-cdn.jtvnw.net/badges/v1/4300a897-03dc-4e83-8c0e-c332fee7057f/1',
+            'subscriber': 'https://static-cdn.jtvnw.net/badges/v1/5d9f2208-5dd8-11e7-8513-2ff4adfae661/1'
+        };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const channel = (urlParams.get('channel') || 'our2ndhome').toLowerCase().trim();
+
+        const messageQueue = [];
+        let isDisplaying = false;
+
+        function connectToTwitch() {
+            const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+            ws.onopen = () => {
+                ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+                const randomId = Math.floor(10000 + Math.random() * 90000);
+                ws.send('PASS SCHMOOPIE');
+                ws.send(`NICK justinfan${randomId}`);
+                ws.send(`JOIN #${channel}`);
+            };
+
+            ws.onmessage = (event) => {
+                const lines = event.data.split('\r\n');
+                for (const line of lines) {
+                    if (!line) continue;
+
+                    if (line.startsWith('PING')) {
+                        ws.send('PONG :tmi.twitch.tv');
+                        continue;
+                    }
+
+                    if (line.includes(`PRIVMSG #${channel}`)) {
+                        parseTwitchMessage(line);
+                    }
+                }
+            };
+
+            ws.onclose = () => setTimeout(connectToTwitch, 3000);
+            ws.onerror = () => ws.close();
+        }
+
+        function parseTwitchMessage(raw) {
+            const spaceIdx = raw.indexOf(' ');
+            const rawTags = raw.slice(1, spaceIdx);
+            const rest = raw.slice(spaceIdx + 1);
+
+            const tags = {};
+            rawTags.split(';').forEach(tag => {
+                const eq = tag.indexOf('=');
+                if (eq !== -1) tags[tag.slice(0, eq)] = tag.slice(eq + 1);
+            });
+
+            const marker = `PRIVMSG #${channel} :`;
+            const msgIdx = rest.indexOf(marker);
+            if (msgIdx === -1) return;
+
+            const text = rest.slice(msgIdx + marker.length);
+            if (text.startsWith('!')) return;
+
+            const username = tags['display-name'] || 'User';
+            let color = tags['color'] || '#a970ff';
+            if (color === '#000000') color = '#a970ff';
+
+            const badgesHtml = parseBadges(tags['badges']);
+            const messageHtml = parseEmotes(text, tags['emotes']);
+
+            messageQueue.push({
+                name: username,
+                color: color,
+                badges: badgesHtml,
+                html: messageHtml
+            });
+
+            if (messageQueue.length > MAX_QUEUE_LIMIT) {
+                messageQueue.shift();
+            }
+
+            if (!isDisplaying) {
+                showNextMessage();
+            }
+        }
+
+        function parseBadges(badgesTag) {
+            if (!badgesTag) return '';
+            let badgesHtml = '';
+            const items = badgesTag.split(',');
+            for (const item of items) {
+                const badgeName = item.split('/')[0];
+                if (BADGE_MAP[badgeName]) {
+                    badgesHtml += `<img class="chat-badge" src="${BADGE_MAP[badgeName]}" alt="" onerror="this.remove()">`;
+                }
+            }
+            return badgesHtml;
+        }
+
+        function parseEmotes(text, emotesTag) {
+            if (!emotesTag) return escapeHtml(text);
+
+            const emoteRanges = [];
+            emotesTag.split('/').forEach(item => {
+                const [id, ranges] = item.split(':');
+                if (!id || !ranges) return;
+                ranges.split(',').forEach(range => {
+                    const [start, end] = range.split('-').map(Number);
+                    emoteRanges.push({ id, start, end });
+                });
+            });
+
+            emoteRanges.sort((a, b) => a.start - b.start);
+
+            const chars = Array.from(text);
+            let result = '';
+            let lastIndex = 0;
+
+            for (const { id, start, end } of emoteRanges) {
+                result += escapeHtml(chars.slice(lastIndex, start).join(''));
+                const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`;
+                result += `<img class="emote" src="${emoteUrl}" alt="" onerror="this.remove()">`;
+                lastIndex = end + 1;
+            }
+            result += escapeHtml(chars.slice(lastIndex).join(''));
+            return result;
+        }
+
+        function showNextMessage() {
+            if (messageQueue.length === 0) {
+                isDisplaying = false;
+                return;
+            }
+
+            isDisplaying = true;
+            const msg = messageQueue.shift();
+            const currentDuration = messageQueue.length > 2 ? FAST_DISPLAY_TIME : BASE_DISPLAY_TIME;
+            const container = document.getElementById('chat-container');
+
+            container.innerHTML = `
+                <div class="chat-card animate-in">
+                    <span class="chat-badges">${msg.badges}</span>
+                    <span class="chat-username" style="color: ${msg.color}">${escapeHtml(msg.name)}</span><span class="chat-colon">:</span>
+                    <span class="chat-message">${msg.html}</span>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const card = container.querySelector('.chat-card');
+                if (card) {
+                    card.classList.remove('animate-in');
+                    card.classList.add('animate-out');
+                }
+
+                setTimeout(() => {
+                    container.innerHTML = '';
+                    setTimeout(showNextMessage, PAUSE_BETWEEN_MSGS);
+                }, ANIMATION_DURATION);
+
+            }, currentDuration);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        connectToTwitch();
+    </script>
+</body>
+</html>
