@@ -219,14 +219,57 @@
   <div class="alert-banner" id="alertBanner"></div>
 
   <script>
+    // 🛡️ DOCK BLOCK: Never run alerts if inside OBS Dock (#panel or dock frame)
+    if (window.location.hash.includes('panel') || 
+        window.location.hash.includes('dock') || 
+        window.parent?.location?.hash?.includes('panel') ||
+        window.parent?.location?.hash?.includes('dock')) {
+      console.log("Alerts disabled inside panel/dock.");
+      return;
+    }
+
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SOUNDS_FOLDER = "sounds";
     const EMOTES_FOLDER = "emotes";
 
-    const CUSTOM_EMOTE_FILES = [];
+    // ========================================================
+    // 🎵 1 TO 12 SOUND TRACKS LIST
+    // Bypasses GitHub API rate limits completely!
+    // ========================================================
+    const CUSTOM_SOUND_FILES = [
+      "1.mp3",
+      "2.mp3",
+      "3.mp3",
+      "4.mp3",
+      "5.mp3",
+      "6.mp3",
+      "7.mp3",
+      "8.mp3",
+      "9.mp3",
+      "10.mp3",
+      "11.mp3",
+      "12.mp3"
+    ];
 
+    // ========================================================
+    // 🎨 YOUR CUSTOM EMOTES LIST
+    // Permanently saved in code so new updates never lose them!
+    // ========================================================
+    const CUSTOM_EMOTE_FILES = [
+      "Favicon-very-new.png",
+      "Our2ndHome-EmoteHype-500x500.png",
+      "Our2ndHome-EmoteLove-500x500.png",
+      "Our2ndHome-EmoteWoop-500x500.png",
+      "Our2ndHome-IconLogo-512x512x.png",
+      "SillySanta.png",
+      "dfgdfgd-removebg-preview.png",
+      "evighets-removebg-preview.png",
+      "nordpuls-storlogo-smaller.png"
+    ];
+
+    // Zero-Fail Vector Emote Backup (Never fails or rate-limits)
     const EMBEDDED_FALLBACK_EMOTES = [
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
@@ -244,18 +287,12 @@
     const MIN_ALERT_DISPLAY_MS = 4800;
     const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
-    const BACKUP_SOUNDS = [
-      'sounds/ssstik.io_1786298964532.mp3',
-      'sounds/ssstik.io_1786298991426.mp3',
-      'sounds/ssstik.io_1786299005161.mp3'
-    ];
-
-    let soundFileList = [...BACKUP_SOUNDS];
-    let emoteFileList = [];
+    let soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
+    let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
     let lastProcessedAlertId = 0;
     let initialLoad = true;
 
-    // 🎲 SMART SHUFFLE BAG: Plays every sound once before repeating, never twice in a row
+    // 🎲 12-SOUND SHUFFLE BAG: Plays every sound once before repeating
     let soundPool = [];
     let lastPlayedSound = null;
 
@@ -263,7 +300,6 @@
       if (!soundFileList || soundFileList.length === 0) return '';
       if (soundFileList.length === 1) return soundFileList[0];
 
-      // Refill & Shuffle when deck is exhausted
       if (soundPool.length === 0) {
         soundPool = [...soundFileList];
 
@@ -273,10 +309,12 @@
           [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
         }
 
-        // Avoid back-to-back repetitions across shuffle cycles
+        // Avoid back-to-back repetitions across cycle boundaries
         if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
           [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
         }
+
+        console.log(`🔀 [Sound Deck] Shuffled ${soundPool.length} sounds for a new cycle!`);
       }
 
       const nextSound = soundPool.pop();
@@ -291,67 +329,16 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
 
+    // Preload all custom emotes into memory immediately
     function preloadImages(urls) {
       urls.forEach(url => {
         const img = new Image();
         img.src = url;
       });
     }
+    preloadImages(emoteFileList);
 
-    async function loadAssets() {
-      if (CUSTOM_EMOTE_FILES.length > 0) {
-        emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
-        preloadImages(emoteFileList);
-      }
-
-      // Fetch sounds from GitHub
-      try {
-        const soundRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
-        if (soundRes.ok) {
-          const files = await soundRes.json();
-          const sounds = files
-            .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
-            .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
-          if (sounds.length > 0) {
-            soundFileList = sounds;
-            soundPool = []; // Reset pool so new sounds enter immediately
-          }
-        }
-      } catch(e) {}
-
-      // Cache emotes in localStorage to prevent GitHub 60/hr limit
-      const cached = localStorage.getItem('mh_cached_emotes');
-      if (cached && emoteFileList.length === 0) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            emoteFileList = parsed;
-            preloadImages(emoteFileList);
-          }
-        } catch(e) {}
-      }
-
-      if (emoteFileList.length === 0) {
-        try {
-          const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
-          if (emoteRes.ok) {
-            const files = await emoteRes.json();
-            if (Array.isArray(files)) {
-              const emotes = files
-                .filter(f => f.name.match(/\.(png|gif|webp|jpg|jpeg|svg)$/i))
-                .map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`);
-              if (emotes.length > 0) {
-                emoteFileList = emotes;
-                localStorage.setItem('mh_cached_emotes', JSON.stringify(emotes));
-                preloadImages(emoteFileList);
-              }
-            }
-          }
-        } catch(e) {}
-      }
-    }
-    loadAssets();
-
+    // 🌧️ EMOTE RAIN GENERATOR
     function triggerEmoteRain(count = 75) {
       const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
       const layer = document.getElementById('emoteRainLayer');
@@ -367,10 +354,10 @@
 
         img.src = list[Math.floor(Math.random() * list.length)];
 
-        const size = Math.floor(Math.random() * 26) + 38;
-        const left = Math.random() * 95;
-        const duration = (Math.random() * 2.5 + 4.5).toFixed(2);
-        const delay = (Math.random() * 2.0).toFixed(2);
+        const size = Math.floor(Math.random() * 26) + 38; // 38px to 64px
+        const left = Math.random() * 95; // 0% to 95vw across screen
+        const duration = (Math.random() * 2.5 + 4.5).toFixed(2); // 4.5s to 7.0s
+        const delay = (Math.random() * 2.0).toFixed(2); // 0s to 2.0s
 
         img.style.width = `${size}px`;
         img.style.height = `${size}px`;
@@ -378,6 +365,7 @@
         img.style.animationDuration = `${duration}s`;
         img.style.animationDelay = `${delay}s`;
 
+        // Self-cleaning: each emote removes itself once it touches bottom
         img.addEventListener('animationend', () => {
           img.remove();
         });
@@ -398,7 +386,6 @@
           soundUrl = SOUND_SUB_BITS_FOLLOW;
           volume = SOUND_VOLUME_MINOR;
         } else {
-          // Draws from the smart shuffle bag
           soundUrl = getNextDonationSound();
         }
 
@@ -410,8 +397,11 @@
           let done = false;
           const finish = () => { if (!done) { done = true; resolve(); } };
           audio.onended = finish;
-          audio.onerror = finish;
-          audio.play().catch(() => done());
+          audio.onerror = () => {
+            console.warn("⚠️ Sound file failed to load:", soundUrl);
+            finish();
+          };
+          audio.play().catch(() => finish());
           setTimeout(finish, 6500);
         } catch(e) { resolve(); }
       });
@@ -477,7 +467,7 @@
         banner.classList.add('anim-top-in');
       } 
 
-      // 2. Lower Secondary Alerts (Name on top, Action on bottom)
+      // 2. Lower Secondary Alerts (Name in #ace600 on top, Action on bottom)
       else if (type === 'sub') {
         const months = item.months || 1;
         banner.innerHTML = `
