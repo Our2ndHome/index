@@ -36,13 +36,11 @@
       pointer-events: none;
     }
 
-    /* ========================================================
-       🥞 LAYER STACKING ORDER (LOWER NUMBER = FURTHER BACK)
-       ======================================================== */
-    #layerAlerts   { z-index: 5; }  /* 👈 1. ALERTS & RAIN BEHIND OVERLAYS */
-    #layerSchedule { z-index: 10; } /* 👈 2. Bottom sponsor box stays in FRONT */
-    #layerBossa    { z-index: 20; } /* 👈 3. Top countdown & goal stays in FRONT */
-    #layerGiveaway { z-index: 30; } /* 👈 4. Giveaway wheel stays on top of all */
+    /* Proper stacking order on stream */
+    #layerAlerts   { z-index: 5; }  /* Alerts & Emote rain behind overlays */
+    #layerSchedule { z-index: 10; } /* Bottom schedule & sponsor bar */
+    #layerBossa    { z-index: 20; } /* Top countdown & goal */
+    #layerGiveaway { z-index: 30; } /* Giveaway wheel modal */
 
     /* ========================================================
        🎛️ 2. OBS DOCK CONTROLLER VIEW (#panel)
@@ -151,17 +149,11 @@
        📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
-    <!-- Behind: Alerts & Emote Rain (z-index: 5) -->
-    <iframe id="layerAlerts" class="overlay-frame" src="alerts.html" allow="autoplay"></iframe>
-
-    <!-- Foreground: Schedule & Sponsor Bar (z-index: 10) -->
-    <iframe id="layerSchedule" class="overlay-frame" src="schedule.html#overlay" allow="autoplay"></iframe>
-
-    <!-- Foreground: Countdown & Goal (z-index: 20) -->
-    <iframe id="layerBossa" class="overlay-frame" src="countdown_and_bossa.html#overlay" allow="autoplay"></iframe>
-
-    <!-- Top Overlay: Giveaway Wheel Popup (z-index: 30) -->
-    <iframe id="layerGiveaway" class="overlay-frame" src="giveaway.html#overlay" allow="autoplay"></iframe>
+    <!-- src attributes are set dynamically via JS below -->
+    <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
+    <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
+    <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
+    <iframe id="layerGiveaway" class="overlay-frame" allow="autoplay"></iframe>
   </div>
 
   <!-- ========================================================
@@ -183,23 +175,20 @@
       <button class="jump-btn" onclick="scrollToSection('secSchedule')">↓ Schema</button>
     </div>
 
-    <!-- Section 1: Bössa & Countdown -->
     <div id="secBossa" class="panel-section-divider">
       <span>💰 BÖSSA & INSAMLINGSMÅL</span>
     </div>
-    <iframe id="frameBossa" class="stacked-panel-frame" src="countdown_and_bossa.html#panel"></iframe>
+    <iframe id="frameBossa" class="stacked-panel-frame"></iframe>
 
-    <!-- Section 2: Giveaway Wheel -->
     <div id="secGiveaway" class="panel-section-divider">
       <span>🎁 GIVEAWAY HJUL</span>
     </div>
-    <iframe id="frameGiveaway" class="stacked-panel-frame" src="giveaway.html#panel"></iframe>
+    <iframe id="frameGiveaway" class="stacked-panel-frame"></iframe>
 
-    <!-- Section 3: Schedule & Sponsors -->
     <div id="secSchedule" class="panel-section-divider">
       <span>📅 SCHEMA & SPONSORER</span>
     </div>
-    <iframe id="frameSchedule" class="stacked-panel-frame" src="schedule.html#panel"></iframe>
+    <iframe id="frameSchedule" class="stacked-panel-frame"></iframe>
 
   </div>
 
@@ -208,11 +197,22 @@
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
     if (isPanel) {
+      // 🎛️ DOCK MODE: Only load the control panel iframes
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'block';
+
+      document.getElementById('frameBossa').src = "countdown_and_bossa.html#panel";
+      document.getElementById('frameGiveaway').src = "giveaway.html#panel";
+      document.getElementById('frameSchedule').src = "schedule.html#panel";
     } else {
+      // 📺 OVERLAY MODE: Only load the stream overlay iframes
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
+
+      document.getElementById('layerAlerts').src = "alerts.html";
+      document.getElementById('layerSchedule').src = "schedule.html#overlay";
+      document.getElementById('layerBossa').src = "countdown_and_bossa.html#overlay";
+      document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
     }
 
     function scrollToSection(id) {
