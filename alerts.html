@@ -133,17 +133,17 @@
       text-align: center;
     }
 
-    /* Upper Row: Name */
+    /* Upper Row: Name in #ace600 with soft glow */
     .minor-alert-name {
       font-size: 28px;
       font-weight: 900;
-      color: #ffffff;
+      color: #ace600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.85);
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 18px rgba(172, 230, 0, 0.5);
     }
 
-    /* Lower Row: Action & Amount */
+    /* Lower Row: Action & Highlighted Value */
     .minor-alert-detail {
       font-size: 20px;
       font-weight: 800;
@@ -154,7 +154,7 @@
     }
 
     /* ========================================================
-       🎬 SMOOTH ANIMATION: TOP TO UPPER-CENTER
+       🎬 SMOOTH ANIMATIONS
        ======================================================== */
     .anim-top-in {
       animation: dropFromTopSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -176,9 +176,6 @@
       }
     }
 
-    /* ========================================================
-       🎬 SMOOTH ANIMATION: BOTTOM TO OVER-SPONSORS
-       ======================================================== */
     .anim-bottom-in {
       animation: riseFromBottomSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       visibility: visible !important;
@@ -199,7 +196,6 @@
       }
     }
 
-    /* Fade-Out Exit */
     .anim-exit {
       animation: alertExitSmooth 0.4s ease forwards !important;
     }
@@ -231,7 +227,36 @@
     const SOUNDS_FOLDER = "sounds";
     const EMOTES_FOLDER = "emotes";
 
-    // Sounds
+    // ========================================================
+    // 💡 100% RELIABLE CUSTOM EMOTES LIST
+    // Type the filenames of your emotes here (case-sensitive!).
+    // This bypasses GitHub API rate limits completely!
+    // ========================================================
+    const CUSTOM_EMOTE_FILES = [
+      // Examples (add your actual filenames inside your "emotes" folder):
+      // "pepe.png",
+      // "cat.gif",
+      // "heart.png"
+      "Favicon-very-new.png",
+      "Our2ndHome-EmoteHype-500x500.png",
+      "Our2ndHome-EmoteLove-500x500.png",
+      "Our2ndHome-EmoteWoop-500x500.png",
+      "Our2ndHome-IconLogo-512x512.png",
+      "SillySanta.png",
+      "dfgdfgd-removebg-preview.png",
+      "evighets-removebg-preview.png",
+      "nordpuls-storlogo-smaller.png"
+    ];
+
+    // High-availability CDN Twitch backup emotes (always works 100% of the time)
+    const BACKUP_EMOTES = [
+      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5b2d2873130c497491d96096a60db2a4/default/dark/3.0', // LUL
+      'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0', // Kappa
+      'https://static-cdn.jtvnw.net/emoticons/v2/305954156/default/dark/3.0', // PogChamp
+      'https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/3.0', // PogChamp classic
+      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_dc2427a118844855928d395a1215b02b/default/dark/3.0' // Heart
+    ];
+
     const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"; 
     const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; 
 
@@ -246,16 +271,8 @@
       'sounds/ssstik.io_1786299005161.mp3'
     ];
 
-    const BACKUP_EMOTES = [
-      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5b2d2873130c497491d96096a60db2a4/default/dark/3.0',
-      'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0',
-      'https://static-cdn.jtvnw.net/emoticons/v2/305954156/default/dark/3.0',
-      'https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/3.0',
-      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_dc2427a118844855928d395a1215b02b/default/dark/3.0'
-    ];
-
     let soundFileList = [...BACKUP_SOUNDS];
-    let emoteFileList = [...BACKUP_EMOTES];
+    let emoteFileList = [];
     let lastProcessedAlertId = 0;
     let initialLoad = true;
 
@@ -266,7 +283,24 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
 
-    async function loadGitHubAssets() {
+    // Preloader: warms up images in browser memory so they appear instantly
+    function preloadImages(urls) {
+      urls.forEach(url => {
+        const img = new Image();
+        img.src = url;
+      });
+    }
+    preloadImages(BACKUP_EMOTES);
+
+    // Load assets
+    async function loadAssets() {
+      // 1. Build from manual array if provided (bypasses rate limit)
+      if (CUSTOM_EMOTE_FILES.length > 0) {
+        emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
+        preloadImages(emoteFileList);
+      }
+
+      // 2. Fetch sounds
       try {
         const soundRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
         if (soundRes.ok) {
@@ -278,21 +312,26 @@
         }
       } catch(e) {}
 
-      try {
-        const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
-        if (emoteRes.ok) {
-          const files = await emoteRes.json();
-          const emotes = files
-            .filter(f => f.name.match(/\.(png|gif|webp|jpg|jpeg)$/i))
-            .map(f => f.download_url || `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`);
-          if (emotes.length > 0) {
-            emoteFileList = emotes;
+      // 3. Fallback scan GitHub API for emotes if manual array was empty
+      if (emoteFileList.length === 0) {
+        try {
+          const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
+          if (emoteRes.ok) {
+            const files = await emoteRes.json();
+            const emotes = files
+              .filter(f => f.name.match(/\.(png|gif|webp|jpg|jpeg)$/i))
+              .map(f => f.download_url || `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`);
+            if (emotes.length > 0) {
+              emoteFileList = emotes;
+              preloadImages(emoteFileList);
+            }
           }
-        }
-      } catch(e) {}
+        } catch(e) {}
+      }
     }
-    loadGitHubAssets();
+    loadAssets();
 
+    // Emote rain generator with automatic broken-image fallback
     function triggerEmoteRain(count = 35) {
       const list = emoteFileList.length > 0 ? emoteFileList : BACKUP_EMOTES;
       const layer = document.getElementById('emoteRainLayer');
@@ -302,6 +341,12 @@
         const img = document.createElement('img');
         img.className = 'falling-emote';
         img.src = list[Math.floor(Math.random() * list.length)];
+
+        // Fail-safe: If any image 404s, replace it with a Twitch CDN emote immediately!
+        img.onerror = function() {
+          this.onerror = null;
+          this.src = BACKUP_EMOTES[Math.floor(Math.random() * BACKUP_EMOTES.length)];
+        };
 
         const size = Math.floor(Math.random() * 26) + 38;
         const left = Math.random() * 95;
@@ -414,7 +459,7 @@
         banner.classList.add('anim-top-in');
       } 
 
-      // 2. Lower Secondary Alerts (2-Row Layout: Name on top, Action on bottom)
+      // 2. Lower Secondary Alerts (Name in #ace600 on top, Action on bottom)
       else if (type === 'sub') {
         const months = item.months || 1;
         banner.innerHTML = `
