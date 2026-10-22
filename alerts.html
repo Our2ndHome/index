@@ -63,6 +63,7 @@
 
     /* ========================================================
        🚨 MAIN ALERT BANNER (Donations & Raids)
+       Resting at top: 40% (moved up from dead center)
        ======================================================== */
     .alert-banner {
       position: absolute;
@@ -118,59 +119,57 @@
     }
 
     /* ========================================================
-       🌟 COMPACT SECONDARY ALERT (Subs, Bits, Follows)
-       Lowered 100px from center & smaller styling
+       🌟 SECONDARY ALERTS (Subs, Bits, Follows)
+       No background, no border, resting right over sponsors
        ======================================================== */
     .minor-alert-badge {
-      background: rgba(15, 15, 18, 0.85);
-      border: 1px solid rgba(172, 230, 0, 0.4);
-      border-radius: 50px;
-      padding: 10px 24px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
+      text-align: center;
     }
 
     .minor-alert-title {
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.85);
     }
 
     .minor-alert-body {
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 800;
       color: #ffffff;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.85);
     }
 
     /* ========================================================
-       🎬 ANIMATION: TOP TO CENTER (Donations & Raids)
+       🎬 SMOOTH ANIMATION: TOP TO UPPER-CENTER (Donations & Raids)
+       Moves from top: -15% down to top: 40% (gentle glide)
        ======================================================== */
     .anim-top-in {
-      animation: dropFromTop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      animation: dropFromTopSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       visibility: visible !important;
     }
 
-    @keyframes dropFromTop {
+    @keyframes dropFromTopSmooth {
       0% {
-        top: -25%;
+        top: -15%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0.15);
+        transform: translate(-50%, -50%) scale(0.5);
         opacity: 0;
       }
-      70% {
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(1.08);
-        opacity: 1;
-      }
       100% {
-        top: 50%;
+        top: 40%;
         left: 50%;
         transform: translate(-50%, -50%) scale(1);
         opacity: 1;
@@ -178,29 +177,23 @@
     }
 
     /* ========================================================
-       🎬 ANIMATION: BOTTOM TO LOWERED CENTER (Subs, Bits, Follows)
-       Sits ~100px lower than center (top: calc(50% + 100px))
+       🎬 SMOOTH ANIMATION: BOTTOM TO OVER-SPONSORS (Subs, Bits, Follows)
+       Rises from 115% to top: calc(50% + 210px)
        ======================================================== */
     .anim-bottom-in {
-      animation: riseFromBottomLowered 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      animation: riseFromBottomSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       visibility: visible !important;
     }
 
-    @keyframes riseFromBottomLowered {
+    @keyframes riseFromBottomSmooth {
       0% {
-        top: 125%;
+        top: 115%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0.15);
+        transform: translate(-50%, -50%) scale(0.5);
         opacity: 0;
       }
-      70% {
-        top: calc(50% + 100px);
-        left: 50%;
-        transform: translate(-50%, -50%) scale(1.05);
-        opacity: 1;
-      }
       100% {
-        top: calc(50% + 100px);
+        top: calc(50% + 210px);
         left: 50%;
         transform: translate(-50%, -50%) scale(1);
         opacity: 1;
@@ -209,17 +202,17 @@
 
     /* Fade-Out Exit */
     .anim-exit {
-      animation: alertExit 0.35s ease forwards !important;
+      animation: alertExitSmooth 0.4s ease forwards !important;
     }
 
-    @keyframes alertExit {
+    @keyframes alertExitSmooth {
       0% {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
       }
       100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.85);
+        transform: translate(-50%, -50%) scale(0.9);
       }
     }
   </style>
@@ -239,29 +232,27 @@
     const SOUNDS_FOLDER = "sounds";
     const EMOTES_FOLDER = "emotes";
 
-    // 🎵 SOUND CONFIGURATION (Change these to your own files whenever you want!)
+    // Sounds
     const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"; 
     const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; 
 
     const SOUND_VOLUME_MAIN = 0.8;
-    const SOUND_VOLUME_MINOR = 0.5; // Quieter so it doesn't take too much attention
-    const MIN_ALERT_DISPLAY_MS = 4600;
+    const SOUND_VOLUME_MINOR = 0.5;
+    const MIN_ALERT_DISPLAY_MS = 4800;
     const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
-    // Backup Donation Sounds
     const BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
       'sounds/ssstik.io_1786298991426.mp3',
       'sounds/ssstik.io_1786299005161.mp3'
     ];
 
-    // Backup Twitch Emotes (Ensures rain works even if GitHub API rate-limits!)
     const BACKUP_EMOTES = [
-      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5b2d2873130c497491d96096a60db2a4/default/dark/3.0', // LUL
-      'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0', // Kappa
-      'https://static-cdn.jtvnw.net/emoticons/v2/305954156/default/dark/3.0', // PogChamp
-      'https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/3.0', // PogChamp classic
-      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_dc2427a118844855928d395a1215b02b/default/dark/3.0' // Heart
+      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_5b2d2873130c497491d96096a60db2a4/default/dark/3.0',
+      'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0',
+      'https://static-cdn.jtvnw.net/emoticons/v2/305954156/default/dark/3.0',
+      'https://static-cdn.jtvnw.net/emoticons/v2/88/default/dark/3.0',
+      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_dc2427a118844855928d395a1215b02b/default/dark/3.0'
     ];
 
     let soundFileList = [...BACKUP_SOUNDS];
@@ -276,9 +267,7 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
 
-    // --- 1. LOAD ASSETS FROM GITHUB ---
     async function loadGitHubAssets() {
-      // Sounds
       try {
         const soundRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
         if (soundRes.ok) {
@@ -290,7 +279,6 @@
         }
       } catch(e) {}
 
-      // Emotes (With direct download URL fallback)
       try {
         const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
         if (emoteRes.ok) {
@@ -306,7 +294,6 @@
     }
     loadGitHubAssets();
 
-    // --- 2. EMOTE RAIN GENERATOR ---
     function triggerEmoteRain(count = 35) {
       const list = emoteFileList.length > 0 ? emoteFileList : BACKUP_EMOTES;
       const layer = document.getElementById('emoteRainLayer');
@@ -317,10 +304,10 @@
         img.className = 'falling-emote';
         img.src = list[Math.floor(Math.random() * list.length)];
 
-        const size = Math.floor(Math.random() * 26) + 38; // 38px to 64px
-        const left = Math.random() * 95; // 0% to 95vw
-        const duration = (Math.random() * 1.4 + 2.2).toFixed(2); // 2.2s - 3.6s
-        const delay = (Math.random() * 0.9).toFixed(2); // 0s - 0.9s
+        const size = Math.floor(Math.random() * 26) + 38;
+        const left = Math.random() * 95;
+        const duration = (Math.random() * 1.4 + 2.4).toFixed(2);
+        const delay = (Math.random() * 0.9).toFixed(2);
 
         img.style.width = `${size}px`;
         img.style.height = `${size}px`;
@@ -333,10 +320,9 @@
 
       setTimeout(() => {
         layer.innerHTML = '';
-      }, 4800);
+      }, 5000);
     }
 
-    // --- 3. AUDIO PLAYBACK ROUTER ---
     function playAlertSound(type) {
       return new Promise((resolve) => {
         let soundUrl = '';
@@ -349,7 +335,6 @@
           soundUrl = SOUND_SUB_BITS_FOLLOW;
           volume = SOUND_VOLUME_MINOR;
         } else {
-          // Donation: pick random sound from list
           if (soundFileList.length > 0) {
             soundUrl = soundFileList[Math.floor(Math.random() * soundFileList.length)];
           }
@@ -365,12 +350,11 @@
           audio.onended = finish;
           audio.onerror = finish;
           audio.play().catch(() => done());
-          setTimeout(finish, 6000);
+          setTimeout(finish, 6500);
         } catch(e) { resolve(); }
       });
     }
 
-    // --- 4. FIREBASE LISTENER ---
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
@@ -399,7 +383,6 @@
       }
     });
 
-    // --- 5. QUEUE AND RENDERER ---
     function enqueueAlert(item) {
       alertQueue.push(item);
       processAlertQueue();
@@ -415,7 +398,7 @@
 
       banner.className = 'alert-banner';
 
-      // RENDER: Main Alerts (Center, Drop from Top)
+      // RENDER: Upper Alerts (Donations & Raids)
       if (type === 'donation') {
         banner.innerHTML = `
           <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
@@ -432,7 +415,7 @@
         banner.classList.add('anim-top-in');
       } 
 
-      // RENDER: Minor Alerts (Lowered by 100px, Compact, Rise from Bottom)
+      // RENDER: Lowered Secondary Alerts (Subs, Bits, Follows)
       else if (type === 'sub') {
         const months = item.months || 1;
         banner.innerHTML = `
@@ -463,17 +446,15 @@
         banner.classList.add('anim-bottom-in');
       }
 
-      // Trigger Emotes & Sound
       triggerEmoteRain(35);
       const soundPromise = playAlertSound(type);
       const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
 
       await Promise.all([soundPromise, displayPromise]);
 
-      // Exit Animation
       banner.classList.remove('anim-top-in', 'anim-bottom-in');
       banner.classList.add('anim-exit');
-      await new Promise(r => setTimeout(r, 360));
+      await new Promise(r => setTimeout(r, 400));
 
       banner.className = 'alert-banner';
       banner.innerHTML = '';
