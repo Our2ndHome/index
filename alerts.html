@@ -6,6 +6,7 @@
   <title>Musikhjälpen Stream Alerts</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
+  <!-- Firebase Realtime Engine -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -21,34 +22,78 @@
       color: #ffffff;
       width: 100vw;
       height: 100vh;
+      position: relative;
       pointer-events: none;
     }
 
+    /* ========================================================
+       🌧️ EMOTE RAIN LAYER
+       ======================================================== */
+    .emote-rain-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 99990; /* Directly behind text */
+    }
+
+    .falling-emote {
+      position: absolute;
+      top: -100px;
+      will-change: transform, opacity;
+      animation: fallDown linear forwards;
+    }
+
+    @keyframes fallDown {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.9;
+      }
+      85% {
+        opacity: 0.9;
+      }
+      100% {
+        transform: translateY(115vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* ========================================================
+       🚨 ALERT BANNER BASE
+       ======================================================== */
     .alert-banner {
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0.6);
+      transform: translate(-50%, -50%);
       opacity: 0;
       visibility: hidden;
       text-align: center;
       background: transparent !important;
       border: none !important;
-      box-shadow: none !important;
       padding: 10px 20px;
-      text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
       z-index: 99999;
-      transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0.3s;
     }
 
+    /* Highlight color */
+    .highlight {
+      color: #ace600 !important;
+      text-shadow: 0 0 16px rgba(172, 230, 0, 0.6);
+    }
+
+    /* Main Big Name (Donations & Raids) */
     .donor-name {
       color: #ace600;
       display: block;
       font-size: 54px;
       font-weight: 900;
       margin-bottom: 4px;
+      text-transform: uppercase;
       text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(172, 230, 0, 0.6);
     }
 
@@ -56,6 +101,7 @@
       color: #ffffff;
       font-size: 32px;
       font-weight: 900;
+      text-transform: uppercase;
       text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
     }
 
@@ -67,36 +113,124 @@
       margin-top: 8px;
       text-transform: none;
       white-space: normal;
-      max-width: 600px;
+      max-width: 650px;
       margin-left: auto;
       margin-right: auto;
       line-height: 1.3;
       text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
     }
 
-    .show-alert {
-      opacity: 1 !important;
+    /* Plain Text Style (Subs, Bits, Follows) */
+    .plain-alert-title {
+      font-size: 46px;
+      font-weight: 900;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95);
+    }
+
+    .plain-alert-body {
+      font-size: 28px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
+    }
+
+    /* ========================================================
+       🎬 ANIMATION 1: TOP TO CENTER (Donations & Raids)
+       ======================================================== */
+    .anim-top-in {
+      animation: dropFromTop 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
       visibility: visible !important;
-      transform: translate(-50%, -50%) scale(1) !important;
+    }
+
+    @keyframes dropFromTop {
+      0% {
+        top: -25%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.15);
+        opacity: 0;
+      }
+      70% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1.08);
+        opacity: 1;
+      }
+      100% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* ========================================================
+       🎬 ANIMATION 2: BOTTOM TO CENTER (Subs, Bits, Follows)
+       ======================================================== */
+    .anim-bottom-in {
+      animation: riseFromBottom 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+      visibility: visible !important;
+    }
+
+    @keyframes riseFromBottom {
+      0% {
+        top: 125%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.15);
+        opacity: 0;
+      }
+      70% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1.08);
+        opacity: 1;
+      }
+      100% {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Fade-Out Exit */
+    .anim-exit {
+      animation: alertExit 0.35s ease forwards !important;
+    }
+
+    @keyframes alertExit {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="alert-banner" id="alertBanner">
-    <span class="donor-name" id="donorName">JOHAN</span> 
-    <div class="alert-subtext">DONERADE <span id="alertAmount">50 KR</span>!</div>
-    <div class="alert-comment" id="alertComment"></div>
-  </div>
+  <!-- Falling Emote Layer -->
+  <div class="emote-rain-layer" id="emoteRainLayer"></div>
+
+  <!-- Main Alert Banner Container -->
+  <div class="alert-banner" id="alertBanner"></div>
 
   <script>
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const GITHUB_USERNAME = "Our2ndHome";
     const GITHUB_REPO = "index";
     const SOUNDS_FOLDER = "sounds";
+    const EMOTES_FOLDER = "emotes";
+
     const SOUND_VOLUME = 0.8;
-    const MIN_ALERT_DISPLAY_MS = 4500;
-    const PAUSE_BETWEEN_ALERTS_MS = 5000;
+    const MIN_ALERT_DISPLAY_MS = 4800;
+    const PAUSE_BETWEEN_ALERTS_MS = 1500;
 
     const BACKUP_SOUNDS = [
       'sounds/ssstik.io_1786298964532.mp3',
@@ -104,90 +238,79 @@
       'sounds/ssstik.io_1786299005161.mp3'
     ];
 
-    function formatSEK(num) {
-      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
-    }
-
+    let soundFileList = [...BACKUP_SOUNDS];
+    let emoteFileList = [];
     let lastProcessedAlertId = 0;
     let initialLoad = true;
-    let soundFileList = [...BACKUP_SOUNDS];
 
     const alertQueue = [];
     let isProcessingAlert = false;
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    function formatSEK(num) {
+      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
-    const dbRef = firebase.database().ref('bossa');
 
-    async function loadSounds() {
+    // --- 1. FETCH ASSETS FROM GITHUB ---
+    async function loadGitHubAssets() {
+      // Load sounds
       try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
-        if (res.ok) {
-          const files = await res.json();
+        const soundRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
+        if (soundRes.ok) {
+          const files = await soundRes.json();
           const sounds = files
             .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
             .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
           if (sounds.length > 0) soundFileList = sounds;
         }
       } catch(e) {}
-    }
-    loadSounds();
 
-    dbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (!data) return;
-
-      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
-        lastProcessedAlertId = data.alertId;
-
-        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
-          data.alerts.forEach(item => {
-            enqueueAlert(item.donor || "Givare", item.amount || 50, item.comment || "Tack för gåvan!");
-          });
-        } else if (data.diff > 0) {
-          enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+      // Load emotes
+      try {
+        const emoteRes = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}`);
+        if (emoteRes.ok) {
+          const files = await emoteRes.json();
+          const emotes = files
+            .filter(f => f.name.match(/\.(png|gif|webp|jpg|jpeg)$/i))
+            .map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (emotes.length > 0) emoteFileList = emotes;
         }
-      } else if (initialLoad) {
-        lastProcessedAlertId = data.alertId || 0;
-        initialLoad = false;
-      }
-    });
-
-    function enqueueAlert(donor, amount, comment) {
-      alertQueue.push({ donor, amount, comment });
-      processAlertQueue();
+      } catch(e) {}
     }
+    loadGitHubAssets();
 
-    async function processAlertQueue() {
-      if (isProcessingAlert || alertQueue.length === 0) return;
-      isProcessingAlert = true;
+    // --- 2. EMOTE RAIN GENERATOR ---
+    function triggerEmoteRain(count = 35) {
+      if (emoteFileList.length === 0) return;
 
-      const alert = alertQueue.shift();
-      const banner = document.getElementById('alertBanner');
+      const layer = document.getElementById('emoteRainLayer');
+      layer.innerHTML = '';
 
-      if (banner) {
-        document.getElementById('donorName').innerText = alert.donor;
-        document.getElementById('alertAmount').innerText = formatSEK(alert.amount);
-        document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
+      for (let i = 0; i < count; i++) {
+        const img = document.createElement('img');
+        img.className = 'falling-emote';
+        img.src = emoteFileList[Math.floor(Math.random() * emoteFileList.length)];
 
-        banner.classList.remove('show-alert');
-        void banner.offsetWidth;
-        banner.classList.add('show-alert');
+        const size = Math.floor(Math.random() * 32) + 36; // 36px to 68px
+        const left = Math.random() * 96; // 0% to 96% vw
+        const duration = (Math.random() * 1.5 + 2.2).toFixed(2); // 2.2s - 3.7s
+        const delay = (Math.random() * 1.0).toFixed(2); // 0s - 1.0s
 
-        const soundPromise = playAlertSound();
-        const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+        img.style.width = `${size}px`;
+        img.style.height = `${size}px`;
+        img.style.left = `${left}vw`;
+        img.style.animationDuration = `${duration}s`;
+        img.style.animationDelay = `${delay}s`;
 
-        await Promise.all([soundPromise, displayPromise]);
-        banner.classList.remove('show-alert');
+        layer.appendChild(img);
       }
 
+      // Cleanup DOM after rain finishes
       setTimeout(() => {
-        isProcessingAlert = false;
-        processAlertQueue();
-      }, PAUSE_BETWEEN_ALERTS_MS);
+        layer.innerHTML = '';
+      }, 5000);
     }
 
+    // --- 3. AUDIO PLAYER ---
     function playAlertSound() {
       return new Promise((resolve) => {
         if (!soundFileList || soundFileList.length === 0) return resolve();
@@ -199,10 +322,137 @@
           audio.onended = finish;
           audio.onerror = finish;
           audio.play().catch(() => done());
-          setTimeout(finish, 7000);
+          setTimeout(finish, 6500);
         } catch(e) { resolve(); }
       });
     }
+
+    // --- 4. FIREBASE EVENT LISTENER ---
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbRef = firebase.database().ref('bossa');
+
+    dbRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
+        lastProcessedAlertId = data.alertId;
+
+        // Multi-alert array handling
+        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
+          data.alerts.forEach(item => {
+            enqueueAlert(item);
+          });
+        } 
+        // Single donation fallback
+        else if (data.diff > 0 || data.donor) {
+          enqueueAlert({
+            type: data.type || 'donation',
+            donor: data.donor || "Givare",
+            amount: data.diff || data.amount || 50,
+            comment: data.comment || ""
+          });
+        }
+      } else if (initialLoad) {
+        lastProcessedAlertId = data.alertId || 0;
+        initialLoad = false;
+      }
+    });
+
+    // --- 5. ALERT QUEUE & RENDERER ---
+    function enqueueAlert(item) {
+      alertQueue.push(item);
+      processAlertQueue();
+    }
+
+    async function processAlertQueue() {
+      if (isProcessingAlert || alertQueue.length === 0) return;
+      isProcessingAlert = true;
+
+      const item = alertQueue.shift();
+      const banner = document.getElementById('alertBanner');
+      const type = (item.type || 'donation').toLowerCase();
+
+      // Clear previous classes
+      banner.className = 'alert-banner';
+
+      // Build Alert Layout
+      if (type === 'donation') {
+        banner.innerHTML = `
+          <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
+          <div class="alert-subtext">DONERADE <span class="highlight">${formatSEK(item.amount || 50)}</span>!</div>
+          ${item.comment ? `<div class="alert-comment">"${item.comment}"</div>` : ''}
+        `;
+        banner.classList.add('anim-top-in'); // Top to center
+      } 
+      else if (type === 'raid') {
+        banner.innerHTML = `
+          <span class="donor-name">${item.donor || item.name || 'Raider'}</span>
+          <div class="alert-subtext">RAIDAR MED <span class="highlight">${item.viewers || 1}</span> TITTARNA!</div>
+        `;
+        banner.classList.add('anim-top-in'); // Top to center
+      } 
+      else if (type === 'sub') {
+        const months = item.months || 1;
+        banner.innerHTML = `
+          <div class="plain-alert-title">${item.donor || item.name || 'Tittare'}</div>
+          <div class="plain-alert-body">PRENUMERERADE I <span class="highlight">${months} MÅNADER</span>!</div>
+        `;
+        banner.classList.add('anim-bottom-in'); // Bottom to center
+      } 
+      else if (type === 'bits') {
+        const bits = item.bits || item.amount || 100;
+        banner.innerHTML = `
+          <div class="plain-alert-title">${item.donor || item.name || 'Tittare'}</div>
+          <div class="plain-alert-body">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
+        `;
+        banner.classList.add('anim-bottom-in'); // Bottom to center
+      }
+      else if (type === 'follow') {
+        banner.innerHTML = `
+          <div class="plain-alert-title">${item.donor || item.name || 'Tittare'}</div>
+          <div class="plain-alert-body">FÖLJER KANALEN!</div>
+        `;
+        banner.classList.add('anim-bottom-in'); // Bottom to center
+      }
+
+      // Trigger Effects
+      triggerEmoteRain(35);
+      const soundPromise = playAlertSound();
+      const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+
+      await Promise.all([soundPromise, displayPromise]);
+
+      // Exit Animation
+      banner.classList.remove('anim-top-in', 'anim-bottom-in');
+      banner.classList.add('anim-exit');
+      await new Promise(r => setTimeout(r, 380));
+
+      banner.className = 'alert-banner';
+      banner.innerHTML = '';
+
+      setTimeout(() => {
+        isProcessingAlert = false;
+        processAlertQueue();
+      }, PAUSE_BETWEEN_ALERTS_MS);
+    }
+
+    // --- 6. DEV / MANUAL TEST HELPER ---
+    window.testAlert = function(type = 'donation') {
+      if (type === 'donation') {
+        enqueueAlert({ type: 'donation', donor: 'Lisa', amount: 250, comment: 'Kämpa på allihopa!' });
+      } else if (type === 'raid') {
+        enqueueAlert({ type: 'raid', name: 'SuperStreamer', viewers: 184 });
+      } else if (type === 'sub') {
+        enqueueAlert({ type: 'sub', name: 'GamerGurre', months: 6 });
+      } else if (type === 'bits') {
+        enqueueAlert({ type: 'bits', name: 'CheerMaster', bits: 500 });
+      } else if (type === 'follow') {
+        enqueueAlert({ type: 'follow', name: 'NyFöljare' });
+      }
+    };
   </script>
 </body>
 </html>
