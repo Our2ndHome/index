@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Stream Widget</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', Arial, sans-serif;
+      overflow: hidden;
+      background-color: transparent;
+      color: #ffffff;
+    }
+
+    body.mode-overlay #panelRoot { display: none !important; }
+    body.mode-panel #overlayRoot { display: none !important; }
+
+    body.mode-panel {
+      background-color: #0b0b0d;
+      overflow-y: auto;
+      padding: 10px;
+      user-select: none;
+    }
+
+    /* 📺 OVERLAY CONTAINER (MATCHING SCREENSHOT) */
+    .widget-card {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.9);
+      padding: 18px 36px 20px 36px;
+      border-radius: 0 0 32px 32px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Countdown Section */
+    .countdown-widget {
+      text-align: center;
+      margin-bottom: 2px;
+    }
+
+    .countdown-label {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #ace600;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .countdown-timer {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ffffff;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sep-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-color: #ace600;
+      border-radius: 50%;
+      margin: 0 10px;
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.6);
+    }
+
+    /* Goal Section */
+    .goal-widget {
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .goal-label {
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffffff;
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 2px;
+      letter-spacing: 1.5px;
+    }
+
+    .amount {
+      color: #ace600;
+      font-size: 40px;
+      font-weight: 900;
+      display: block;
+      line-height: 1.1;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      text-shadow: 0 0 16px rgba(172, 230, 0, 0.25);
+    }
+
+    /* Progress Bar */
+    .progress-bar-container {
+      width: 270px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      margin: 12px auto 8px auto;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 1%;
+      background: #ace600;
+      border-radius: 999px;
+      transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.8);
+    }
+
+    .goal-target {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffffff;
+      display: block;
+      letter-spacing: 1px;
+    }
+
+    /* Alert Banner */
+    .alert-banner {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.6);
+      opacity: 0;
+      visibility: hidden;
+      text-align: center;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 10px 20px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 99999;
+      transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0.3s;
+    }
+
+    .donor-name {
+      color: #ace600;
+      display: block;
+      font-size: 54px;
+      font-weight: 900;
+      margin-bottom: 4px;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(172, 230, 0, 0.6);
+    }
+
+    .alert-subtext {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 900;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
+    }
+
+    .alert-comment {
+      color: #ffea00;
+      font-size: 22px;
+      font-weight: 800;
+      font-style: italic;
+      margin-top: 8px;
+      text-transform: none;
+      white-space: normal;
+      max-width: 600px;
+      line-height: 1.3;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
+    }
+
+    .show-alert {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translate(-50%, -50%) scale(1) !important;
+    }
+
+    .overlay-version-tag {
+      position: absolute;
+      bottom: 12px;
+      right: 16px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.35);
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* 🎛️ DOCK (CONTROL PANEL) */
+    .dock-container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header-box {
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111114;
+      margin-bottom: 8px;
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .version-badge {
+      background: #ffffff;
+      color: #000000;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    .status-box {
+      background: #141418;
+      border: 1px solid #27272a;
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #e4e4e7;
+      margin-bottom: 8px;
+    }
+
+    .summary-text {
+      font-size: 12px;
+      font-weight: 700;
+      color: #a1a1aa;
+      margin: 0 0 10px 2px;
+    }
+    .summary-text b { color: #ffffff; }
+
+    .btn-resync {
+      background: #18181c;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 10px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-resync:hover { background: #00ff88; color: #000000; }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    input[type="text"], input[type="number"] {
+      background: #121215;
+      border: 1px solid #27272a;
+      border-radius: 4px;
+      color: #ffffff;
+      padding: 7px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .btn-dark {
+      background: #18181c;
+      border: 1px solid #27272a;
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .btn-dark:hover { background: #24242a; }
+
+    .manual-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .manual-row input[name="name"] { flex: 2; }
+    .manual-row input[name="amount"] { flex: 1; }
+    .manual-row button {
+      flex: 1;
+      background: #18181c;
+      border: 1px solid #27272a;
+      color: #ffffff;
+      border-radius: 4px;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn-primary-action {
+      background: #ffffff;
+      color: #000000;
+      border: none;
+      border-radius: 4px;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+      margin-bottom: 6px;
+    }
+    .btn-primary-action:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <!-- 📺 1. STREAM OVERLAY VIEW -->
+  <div id="overlayRoot">
+    <div class="widget-card">
+      <div class="countdown-widget">
+        <div class="countdown-label" id="countdownLabel">INSAMLINGEN SLUTAR OM</div>
+        <div class="countdown-timer" id="countdownTimer">0D <span class="sep-dot"></span> 00:00:00</div>
+      </div>
+
+      <div class="goal-widget">
+        <span class="goal-label">TOTALT INSAMLAT</span>
+        <span class="amount" id="totalDisplay">0 KR</span>
+        
+        <!-- Progress Bar Element -->
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="goalProgressBar"></div>
+        </div>
+
+        <span class="goal-target" id="goalTargetText">MÅL: 40 000 KR (0.0%)</span>
+      </div>
+    </div>
+
+    <div class="alert-banner" id="alertBanner">
+      <span class="donor-name" id="donorName">JOHAN</span> 
+      <div class="alert-subtext">DONERADE <span id="alertAmount">50 KR</span>!</div>
+      <div class="alert-comment" id="alertComment"></div>
+    </div>
+
+    <div class="overlay-version-tag">GOAL-PROGRESS v7.2</div>
+  </div>
+
+  <!-- 🎛️ 2. OBS DOCK CONTROLLER -->
+  <div id="panelRoot" class="dock-container">
+    <div class="header-box">
+      <span class="header-title">KONTROLLPANEL <span class="version-badge">v7.2</span></span>
+      <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
+    </div>
+
+    <div class="status-box" id="dockStatusBox">Ansluter till Firebase...</div>
+
+    <div class="summary-text" id="dockSummaryText">
+      <b>0</b> biljetter genererade (Totalt: <b>0 KR</b>)
+    </div>
+
+    <!-- 🔄 Safe Re-sync Button -->
+    <button class="btn-resync" onclick="dockRequestResync()">
+      🔄 Återställ till verkligt belopp
+    </button>
+
+    <div class="field-row">
+      <span class="field-label">SÄTT BELOPP:</span>
+      <div style="display:flex; gap:4px; width:60%;">
+        <input type="number" id="dockDirectTotalInput" placeholder="Belopp (kr)" style="width:100%;">
+        <button class="btn-dark" style="width:auto; margin:0; padding:6px 10px;" onclick="dockSetTotal()">Sätt</button>
+      </div>
+    </div>
+
+    <div class="manual-row" style="margin-top: 10px;">
+      <input type="text" id="dockManualName" name="name" placeholder="Namn" value="Lisa">
+      <input type="number" id="dockManualAmount" name="amount" placeholder="Kr" value="250">
+      <button id="dockSubmitDonationBtn" onclick="dockSubmitManualDonation()">+ Lägg till</button>
+    </div>
+
+    <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:8px;">
+
+    <button class="btn-primary-action" onclick="dockTriggerSampleDonation('Lisa', 250, 'Kämpa på!')">
+      Skicka testdonation (+250 kr)
+    </button>
+  </div>
+
+  <script>
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
+    const GOAL_TARGET_KR = 40000;
+
+    const GITHUB_USERNAME = "Our2ndHome";
+    const GITHUB_REPO = "index";
+    const SOUNDS_FOLDER = "sounds";
+    const SOUND_VOLUME = 0.8;
+    const MIN_ALERT_DISPLAY_MS = 4500;
+    const PAUSE_BETWEEN_ALERTS_MS = 5000;
+
+    const BACKUP_SOUNDS = [
+      'sounds/ssstik.io_1786298964532.mp3',
+      'sounds/ssstik.io_1786298991426.mp3',
+      'sounds/ssstik.io_1786299005161.mp3'
+    ];
+
+    function formatSEK(num) {
+      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
+    }
+
+    const hash = window.location.hash.toLowerCase();
+    const isPanel = hash.includes('panel');
+
+    let currentTotal = 0;
+    let lastProcessedAlertId = 0;
+    let initialLoad = true;
+    let soundFileList = [...BACKUP_SOUNDS];
+
+    const alertQueue = [];
+    let isProcessingAlert = false;
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const dbRef = firebase.database().ref('bossa');
+    const dbDonorsRef = firebase.database().ref('giveaway_donors');
+
+    async function loadSounds() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
+        if (res.ok) {
+          const files = await res.json();
+          const sounds = files.filter(f => f.name.match(/\.(mp3|wav|ogg)$/i)).map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (sounds.length > 0) soundFileList = sounds;
+        }
+      } catch(e) {}
+    }
+    loadSounds();
+
+    // ⚡ REAL-TIME MULTI-ALERT LISTENER
+    dbRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      const newTotal = data.total || 0;
+      currentTotal = newTotal;
+
+      updateTotalDisplaySmooth(currentTotal);
+
+      if (data.forceSync) {
+        updateStatusDisplay("Hämtar verkligt belopp från bössan...");
+      } else {
+        updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
+      }
+
+      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
+        lastProcessedAlertId = data.alertId;
+
+        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
+          data.alerts.forEach(item => {
+            enqueueAlert(item.donor || "Givare", item.amount || 50, item.comment || "Tack för gåvan!");
+          });
+        } else if (data.diff > 0) {
+          enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+        }
+      } else if (initialLoad) {
+        lastProcessedAlertId = data.alertId || 0;
+        initialLoad = false;
+      }
+    });
+
+    function enqueueAlert(donor, amount, comment) {
+      alertQueue.push({ donor, amount, comment });
+      processAlertQueue();
+    }
+
+    async function processAlertQueue() {
+      if (isProcessingAlert || alertQueue.length === 0) return;
+      isProcessingAlert = true;
+
+      const alert = alertQueue.shift();
+      const banner = document.getElementById('alertBanner');
+
+      if (banner) {
+        document.getElementById('donorName').innerText = alert.donor;
+        document.getElementById('alertAmount').innerText = formatSEK(alert.amount);
+        document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
+
+        banner.classList.remove('show-alert');
+        void banner.offsetWidth;
+        banner.classList.add('show-alert');
+
+        const soundPromise = playAlertSound();
+        const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+
+        await Promise.all([soundPromise, displayPromise]);
+        banner.classList.remove('show-alert');
+      }
+
+      setTimeout(() => {
+        isProcessingAlert = false;
+        processAlertQueue();
+      }, PAUSE_BETWEEN_ALERTS_MS);
+    }
+
+    function playAlertSound() {
+      return new Promise((resolve) => {
+        if (!soundFileList || soundFileList.length === 0) return resolve();
+        try {
+          const audio = new Audio(soundFileList[Math.floor(Math.random() * soundFileList.length)]);
+          audio.volume = SOUND_VOLUME;
+          let done = false;
+          const finish = () => { if (!done) { done = true; resolve(); } };
+          audio.onended = finish;
+          audio.onerror = finish;
+          audio.play().catch(() => done());
+          setTimeout(finish, 7000);
+        } catch(e) { resolve(); }
+      });
+    }
+
+    function updateTotalDisplaySmooth(num) {
+      const el = document.getElementById('totalDisplay');
+      if (el) el.innerText = formatSEK(num);
+
+      const percent = Math.min(100, Math.max(0, (num / GOAL_TARGET_KR) * 100));
+      const bar = document.getElementById('goalProgressBar');
+      if (bar) bar.style.width = `${Math.max(1, percent)}%`;
+
+      const targetText = document.getElementById('goalTargetText');
+      if (targetText) targetText.innerText = `MÅL: 40 000 KR (${percent.toFixed(1)}%)`;
+    }
+
+    function updateStatusDisplay(text) {
+      const box = document.getElementById('dockStatusBox');
+      if (box) box.innerText = text;
+
+      const summary = document.getElementById('dockSummaryText');
+      if (summary) {
+        const tickets = Math.floor(currentTotal / 200);
+        summary.innerHTML = `<b>${tickets}</b> biljetter genererade (Totalt: <b>${formatSEK(currentTotal)}</b>)`;
+      }
+    }
+
+    // 🎛️ DOCK ACTIONS
+    function dockRequestResync() {
+      const box = document.getElementById('dockStatusBox');
+      if (box) box.innerText = "Återställer till 400 KR...";
+
+      dbRef.set({
+        total: 400,
+        diff: 0,
+        donor: "",
+        comment: "",
+        alertId: 0,
+        alerts: [],
+        forceSync: true,
+        secret: WRITE_SECRET
+      }).then(() => {
+        updateStatusDisplay("Live Ansluten (400 KR)");
+      }).catch(err => {
+        alert("Kunde inte återställa: " + err.message);
+      });
+    }
+
+    function dockSetTotal() {
+      const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
+      if (isNaN(val)) return;
+      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET });
+    }
+
+    function bridgeDonorToGiveaway(name, amount) {
+      if (!name || amount < 1) return;
+      const cleanName = name.replace(/^@+/, '').trim();
+      const key = cleanName.toLowerCase();
+      if (/anonym|hemlig hjälte/i.test(key)) return;
+
+      dbDonorsRef.child('map').child(key).transaction((current) => {
+        const donor = current || { displayName: cleanName, totalAmount: 0, milestonesClaimed: 0, ticketsActive: 0 };
+        donor.displayName = cleanName;
+        donor.totalAmount = (donor.totalAmount || 0) + amount;
+        
+        const totalMilestones = Math.floor(donor.totalAmount / 200);
+        const newMilestones = totalMilestones - (donor.milestonesClaimed || 0);
+
+        if (newMilestones > 0) {
+          donor.ticketsActive = Math.min(5, (donor.ticketsActive || 0) + newMilestones);
+          donor.milestonesClaimed = totalMilestones;
+        }
+        return donor;
+      });
+    }
+
+    function dockSubmitManualDonation() {
+      const donor = document.getElementById('dockManualName').value.trim() || "Lisa";
+      const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
+      const comment = document.getElementById('dockManualComment').value.trim();
+
+      bridgeDonorToGiveaway(donor, amount);
+
+      dbRef.set({
+        total: currentTotal + amount,
+        diff: amount,
+        donor: donor,
+        comment: comment,
+        alertId: Date.now(),
+        alerts: [{ donor: donor, amount: amount, comment: comment }],
+        forceSync: false,
+        secret: WRITE_SECRET
+      });
+    }
+
+    function dockTriggerSampleDonation(donor, amount, comment) {
+      bridgeDonorToGiveaway(donor, amount);
+
+      dbRef.set({
+        total: currentTotal + amount,
+        diff: amount,
+        donor: donor,
+        comment: comment,
+        alertId: Date.now(),
+        alerts: [{ donor: donor, amount: amount, comment: comment }],
+        forceSync: false,
+        secret: WRITE_SECRET
+      });
+    }
+
+    function updateCountdown() {
+      const label = document.getElementById('countdownLabel');
+      const timerDisplay = document.getElementById('countdownTimer');
+      const targetTime = new Date("2026-12-20T21:00:00+01:00").getTime();
+      const diff = targetTime - Date.now();
+
+      if (diff <= 0) {
+        timerDisplay.innerText = "00:00:00";
+        label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      const h = String(hours).padStart(2, '0');
+      const m = String(minutes).padStart(2, '0');
+      const s = String(seconds).padStart(2, '0');
+
+      timerDisplay.innerHTML = `${days}D <span class="sep-dot"></span> ${h}:${m}:${s}`;
+    }
+
+    if (isPanel) {
+      document.body.classList.add('mode-panel');
+    } else {
+      document.body.classList.add('mode-overlay');
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+  </script>
+</body>
+</html>
