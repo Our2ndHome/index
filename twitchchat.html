@@ -20,25 +20,27 @@
             font-family: 'Inter', "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
 
-        /* Anchors the widget with max 1200px width and 200px height */
+        /* Full-width bottom bar that centers any child content horizontally */
         #chat-container {
             position: absolute;
             bottom: 20px;
-            left: 20px;
-            max-width: 1200px;
-            max-height: 200px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
             pointer-events: none;
         }
 
         /* 
            Flat black background with 0.9 opacity.
-           Expands up to 1200px wide and 200px tall.
+           Expands up to 1200px wide (or screen width - 40px padding) and 200px tall.
         */
         .chat-card {
             display: inline-block;
             width: fit-content;
             height: auto;
-            max-width: 1200px;
+            max-width: min(1200px, calc(100% - 40px));
             max-height: 200px;
             overflow: hidden;
             background: rgba(0, 0, 0, 0.90);
