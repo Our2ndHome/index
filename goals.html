@@ -112,7 +112,7 @@
       text-shadow: 0 2px 4px #000, 0 0 2px #000;
     }
 
-    /* Horizontal Track System: Pinned to flex-start so tick height never shifts */
+    /* Horizontal Track System */
     .horizontal-track {
       position: relative;
       width: 100%;
@@ -140,7 +140,7 @@
       padding-left: 20px;
     }
 
-    /* Background line: Locked at Y=36px passing through the middle of the tick */
+    /* Background line */
     .track-line-bg {
       position: absolute;
       top: 36px;
@@ -161,7 +161,7 @@
       transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Cursor centered dead-on the track line at Y=37px */
+    /* Cursor */
     .track-cursor {
       position: absolute;
       top: 37px;
@@ -199,9 +199,9 @@
       z-index: 4;
       min-width: 50px;
       text-align: center;
+      transition: opacity 0.3s ease;
     }
 
-    /* Fixed 16px height + 10px margin = tick wrapper always starts at 26px */
     .h-node-amount {
       font-size: 14px;
       font-weight: 900;
@@ -212,10 +212,9 @@
       line-height: 16px;
       height: 16px;
       margin-bottom: 10px;
-      transition: color 0.3s ease;
+      transition: color 0.3s ease, text-shadow 0.3s ease;
     }
 
-    /* Crosshair Tick: 14px tall centered in 16px wrapper (center Y = 37px) */
     .h-node-tick-wrapper {
       position: relative;
       height: 16px;
@@ -226,7 +225,6 @@
       z-index: 3;
     }
 
-    /* Ticks with muted opacity (not stark white) */
     .h-node-tick {
       width: 2px;
       height: 12px;
@@ -235,7 +233,6 @@
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Milestone Label: Grows downwards below the tick */
     .h-node-label {
       font-size: 12px;
       font-weight: 800;
@@ -243,14 +240,15 @@
       line-height: 1.35;
       letter-spacing: 0.4px;
       display: flex;
+      justify-content: center;
       align-items: flex-start;
-      gap: 5px;
       text-shadow: 0 2px 4px #000, 0 0 3px #000;
       max-width: 180px;
       margin-top: 8px;
       text-align: center;
       white-space: normal;
       word-break: break-word;
+      transition: color 0.3s ease, text-shadow 0.3s ease;
     }
 
     .node-label-text {
@@ -258,26 +256,22 @@
       text-align: inherit;
     }
 
+    /* ========================================================
+       🏁 FINISHED / REACHED GOALS: GRAYED OUT & CLEAN
+       ======================================================== */
     .h-node.reached .h-node-amount {
-      color: var(--primary) !important;
-      text-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
+      color: rgba(255, 255, 255, 0.38) !important;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+    }
+
+    .h-node.reached .h-node-label {
+      color: rgba(255, 255, 255, 0.38) !important;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
     }
 
     .h-node.reached .h-node-tick {
       background: var(--primary) !important;
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.9);
-    }
-
-    .h-node .node-check {
-      display: none;
-      color: var(--primary);
-      font-size: 13px;
-      font-weight: 900;
-      line-height: 1.1;
-    }
-
-    .h-node.reached .node-check {
-      display: inline-block;
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
     }
 
     /* 🎯 FLUSH ALIGNMENTS */
@@ -557,7 +551,7 @@
         </div>
       </div>
 
-      <!-- EXACT 440px GAP FOR 400px CENTER WIDGET (20px gap on each side) -->
+      <!-- EXACT 440px GAP FOR 400px CENTER WIDGET -->
       <div class="center-obstacle-spacer"></div>
 
       <!-- RIGHT WING -->
@@ -652,7 +646,6 @@
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
-    // Checks URL parameter for hardcoded streamer names: ?streamer=LordBaconeer
     const fullUrl = window.location.href;
     const streamerMatch = fullUrl.match(/[?&]streamer=([^&#]+)/i);
     const streamerFromUrl = streamerMatch ? decodeURIComponent(streamerMatch[1]) : null;
@@ -842,7 +835,6 @@
         return;
       }
 
-      // ⚖️ BALANCED SPLIT: Counts the "Start" node so wings are equal
       const leftGoalsCount = Math.max(1, Math.floor(parsedGoals.length / 2));
       const leftGoals = parsedGoals.slice(0, leftGoalsCount);
       const rightGoals = parsedGoals.slice(leftGoalsCount);
@@ -888,7 +880,6 @@
           <div class="h-node-tick"></div>
         </div>
         <div class="h-node-label">
-          <span class="node-check">✓</span>
           <span class="node-label-text" title="${escapeHTML(label)}">${formattedLabel}</span>
         </div>
       `;
