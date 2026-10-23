@@ -26,9 +26,7 @@
       pointer-events: none;
     }
 
-    /* ========================================================
-       🌧️ EMOTE RAIN LAYER
-       ======================================================== */
+    /* 🌧️ EMOTE RAIN LAYER */
     .emote-rain-layer {
       position: fixed;
       top: 0;
@@ -61,9 +59,7 @@
       }
     }
 
-    /* ========================================================
-       🚨 MAIN ALERT BANNER (Donations & Raids)
-       ======================================================== */
+    /* 🚨 MAIN ALERT BANNER (Donations & Raids) */
     .alert-banner {
       position: absolute;
       left: 50%;
@@ -117,9 +113,7 @@
       text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
     }
 
-    /* ========================================================
-       🌟 2-ROW SECONDARY ALERTS (Subs, Bits, Follows)
-       ======================================================== */
+    /* 🌟 2-ROW SECONDARY ALERTS (Subs, Bits, Follows) */
     .minor-alert-badge {
       background: transparent !important;
       border: none !important;
@@ -151,9 +145,7 @@
       text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.85);
     }
 
-    /* ========================================================
-       🎬 SMOOTH ANIMATIONS
-       ======================================================== */
+    /* 🎬 SMOOTH ANIMATIONS */
     .anim-top-in {
       animation: dropFromTopSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       visibility: visible !important;
@@ -220,7 +212,7 @@
 
   <script>
     (function () {
-      // 🛡️ DOCK BLOCK: Safe check with zero syntax errors or cross-origin crashes
+      // 🛡️ DOCK BLOCK: Never run alerts if inside OBS Dock (#panel or dock frame)
       try {
         const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
         const isParentDock = window.parent && window.parent !== window && 
@@ -229,19 +221,142 @@
           console.log("Alerts disabled inside panel/dock.");
           return;
         }
-      } catch (e) {
-        // Cross-origin parent frame access handled cleanly
+      } catch (e) {}
+
+      // ========================================================
+      // 🎛️ OBS WEBSOCKET v5 AUTOMATIC SCENE SWITCHER
+      // ========================================================
+      const OBS_WS_URL = "ws://127.0.0.1:4455";
+      const SCENE_GAMING = "Musikhjälpen|Gaming Scene";
+      const SCENE_INTERMISSION = "Musikhjälpen|Intermission Scene";
+
+      let obsWs = null;
+      let isObsConnected = false;
+      const pendingObsRequests = new Map();
+
+      function connectOBS() {
+        try {
+          obsWs = new WebSocket(OBS_WS_URL);
+        } catch (e) {
+          setTimeout(connectOBS, 5000);
+          return;
+        }
+
+        obsWs.onopen = () => {};
+
+        obsWs.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            // OpCode 0: Hello from OBS -> Send Identify
+            if (msg.op === 0) {
+              obsWs.send(JSON.stringify({
+                op: 1,
+                d: { rpcVersion: 1 }
+              }));
+            }
+            // OpCode 2: Identified -> Ready
+            if (msg.op === 2) {
+              isObsConnected = true;
+              console.log("🔌 [OBS WebSocket] Connected & Ready to Switch Scenes!");
+            }
+            // OpCode 7: Request Response
+            if (msg.op === 7) {
+              const { requestId, requestStatus, responseData } = msg.d;
+              if (pendingObsRequests.has(requestId)) {
+                const { resolve, reject } = pendingObsRequests.get(requestId);
+                pendingObsRequests.delete(requestId);
+                if (requestStatus && requestStatus.result) {
+                  resolve(responseData);
+                } else {
+                  reject(new Error(requestStatus ? requestStatus.comment : "Request failed"));
+                }
+              }
+            }
+          } catch (e) {}
+        };
+
+        obsWs.onclose = () => {
+          isObsConnected = false;
+          pendingObsRequests.forEach(({ reject }) => reject(new Error("OBS Connection closed")));
+          pendingObsRequests.clear();
+          setTimeout(connectOBS, 4000);
+        };
+
+        obsWs.onerror = () => {
+          try { obsWs.close(); } catch (e) {}
+        };
       }
 
+      function sendObsRequest(requestType, requestData = {}) {
+        return new Promise((resolve, reject) => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) {
+            return reject(new Error("OBS WebSocket not connected"));
+          }
+          const requestId = "req-" + Math.random().toString(36).substring(2, 9);
+          pendingObsRequests.set(requestId, { resolve, reject });
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: {
+              requestType,
+              requestId,
+              requestData
+            }
+          }));
+
+          setTimeout(() => {
+            if (pendingObsRequests.has(requestId)) {
+              pendingObsRequests.delete(requestId);
+              reject(new Error("OBS request timeout"));
+            }
+          }, 3000);
+        });
+      }
+
+      function isMatchingScene(currentName, targetName) {
+        if (!currentName || !targetName) return false;
+        // Tolerates spacing differences around the pipe (e.g. "Musikhjälpen|Gaming Scene" vs "Musikhjälpen | Gaming Scene")
+        const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        return cleanA === cleanB;
+      }
+
+      async function getCurrentObsScene() {
+        try {
+          const res = await sendObsRequest("GetCurrentProgramScene");
+          return res.currentProgramSceneName || "";
+        } catch (e) {
+          return "";
+        }
+      }
+
+      async function setObsScene(targetSceneName) {
+        try {
+          await sendObsRequest("SetCurrentProgramScene", { sceneName: targetSceneName });
+        } catch (e) {
+          // Fallback check with/without space around pipe symbol
+          const altName = targetSceneName.includes(" | ")
+            ? targetSceneName.replace(/\s*\|\s*/g, "|")
+            : targetSceneName.replace(/\|/g, " | ");
+          try {
+            await sendObsRequest("SetCurrentProgramScene", { sceneName: altName });
+          } catch (e2) {
+            console.warn("Could not switch to scene:", targetSceneName);
+          }
+        }
+      }
+
+      connectOBS();
+
+      // ========================================================
+      // 📡 FIREBASE & ASSETS
+      // ========================================================
       const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
       const GITHUB_USERNAME = "Our2ndHome";
       const GITHUB_REPO = "index";
       const SOUNDS_FOLDER = "sounds";
       const EMOTES_FOLDER = "emotes";
 
-      // ========================================================
-      // 🎵 0 TO 9 SOUND TRACKS LIST (10 Sounds Total)
-      // ========================================================
+      // 🎵 0 TO 9 SOUND TRACKS LIST
       const CUSTOM_SOUND_FILES = [
         "0.mp3",
         "1.mp3",
@@ -255,9 +370,7 @@
         "9.mp3"
       ];
 
-      // ========================================================
-      // 🎨 YOUR CUSTOM EMOTES LIST
-      // ========================================================
+      // 🎨 CUSTOM EMOTES LIST
       const CUSTOM_EMOTE_FILES = [
         "Favicon-very-new.png",
         "Our2ndHome-EmoteHype-500x500.png",
@@ -270,7 +383,6 @@
         "nordpuls-storlogo-smaller.png"
       ];
 
-      // Zero-Fail Vector Emote Backup
       const EMBEDDED_FALLBACK_EMOTES = [
         'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
         'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
@@ -304,13 +416,11 @@
         if (soundPool.length === 0) {
           soundPool = [...soundFileList];
 
-          // Fisher-Yates Random Shuffle
           for (let i = soundPool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
           }
 
-          // Avoid back-to-back repeats across cycle boundaries
           if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
             [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
           }
@@ -330,7 +440,6 @@
         return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
       }
 
-      // Preload custom images into memory
       function preloadImages(urls) {
         urls.forEach(url => {
           const img = new Image();
@@ -339,7 +448,6 @@
       }
       preloadImages(emoteFileList);
 
-      // Preload all audio tracks so they play with zero delay
       function preloadAudio(urls) {
         urls.forEach(url => {
           const audio = new Audio();
@@ -349,7 +457,6 @@
       }
       preloadAudio(soundFileList);
 
-      // 🌧️ EMOTE RAIN GENERATOR
       function triggerEmoteRain(count = 75) {
         const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
         const layer = document.getElementById('emoteRainLayer');
@@ -413,7 +520,7 @@
             };
             audio.play().catch(() => finish());
             setTimeout(finish, 6500);
-          } catch(e) { resolve(); }
+          } catch (e) { resolve(); }
         });
       }
 
@@ -458,6 +565,25 @@
         const banner = document.getElementById('alertBanner');
         const type = (item.type || 'donation').toLowerCase();
 
+        // 🎬 SCENE SWITCHER: Only trigger for donations or raids
+        const isDonationOrRaid = (type === 'donation' || type === 'raid');
+        let didSwitchScene = false;
+        let originalSceneName = "";
+
+        if (isDonationOrRaid && isObsConnected) {
+          const currentScene = await getCurrentObsScene();
+          if (isMatchingScene(currentScene, SCENE_GAMING)) {
+            originalSceneName = currentScene;
+            console.log(`🎬 Switching to Intermission from: ${currentScene}`);
+            await setObsScene(SCENE_INTERMISSION);
+            didSwitchScene = true;
+            // Short 350ms pause so OBS starts the scene transition before showing the alert
+            await new Promise(r => setTimeout(r, 350));
+          } else {
+            console.log(`🎬 On scene "${currentScene}". Not on Gaming Scene, skipping scene switch.`);
+          }
+        }
+
         banner.className = 'alert-banner';
 
         // 1. Upper Alerts (Donations & Raids)
@@ -477,7 +603,7 @@
           banner.classList.add('anim-top-in');
         } 
 
-        // 2. Lower Secondary Alerts (Name in #ace600 on top, Action on bottom)
+        // 2. Lower Secondary Alerts (Subs, Bits, Follows)
         else if (type === 'sub') {
           const months = item.months || 1;
           banner.innerHTML = `
@@ -520,6 +646,17 @@
 
         banner.className = 'alert-banner';
         banner.innerHTML = '';
+
+        // 🎬 SWITCH BACK TO GAMING SCENE: Only if stream hasn't manually moved away
+        if (didSwitchScene && isObsConnected) {
+          const activeScene = await getCurrentObsScene();
+          if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
+            console.log(`🎬 Switching back to: ${originalSceneName}`);
+            await setObsScene(originalSceneName);
+            // Brief pause for scene transition
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
 
         setTimeout(() => {
           isProcessingAlert = false;
