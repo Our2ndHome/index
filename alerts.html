@@ -219,315 +219,314 @@
   <div class="alert-banner" id="alertBanner"></div>
 
   <script>
-    // 🛡️ DOCK BLOCK: Never run alerts if inside OBS Dock (#panel or dock frame)
-    if (window.location.hash.includes('panel') || 
-        window.location.hash.includes('dock') || 
-        window.parent?.location?.hash?.includes('panel') ||
-        window.parent?.location?.hash?.includes('dock')) {
-      console.log("Alerts disabled inside panel/dock.");
-      return;
-    }
-
-    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
-    const GITHUB_USERNAME = "Our2ndHome";
-    const GITHUB_REPO = "index";
-    const SOUNDS_FOLDER = "sounds";
-    const EMOTES_FOLDER = "emotes";
-
-    // ========================================================
-    // 🎵 0 TO 9 SOUND TRACKS LIST (10 Sounds Total)
-    // ========================================================
-    const CUSTOM_SOUND_FILES = [
-      "0.mp3",
-      "1.mp3",
-      "2.mp3",
-      "3.mp3",
-      "4.mp3",
-      "5.mp3",
-      "6.mp3",
-      "7.mp3",
-      "8.mp3",
-      "9.mp3"
-    ];
-
-    // ========================================================
-    // 🎨 YOUR CUSTOM EMOTES LIST
-    // ========================================================
-    const CUSTOM_EMOTE_FILES = [
-      "Favicon-very-new.png",
-      "Our2ndHome-EmoteHype-500x500.png",
-      "Our2ndHome-EmoteLove-500x500.png",
-      "Our2ndHome-EmoteWoop-500x500.png",
-      "Our2ndHome-IconLogo-512x512x.png",
-      "SillySanta.png",
-      "dfgdfgd-removebg-preview.png",
-      "evighets-removebg-preview.png",
-      "nordpuls-storlogo-smaller.png"
-    ];
-
-    // Zero-Fail Vector Emote Backup
-    const EMBEDDED_FALLBACK_EMOTES = [
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,8 90,36 50,92 10,36" fill="%2300e5ff" stroke="%23ffffff" stroke-width="3"/><polygon points="50,8 50,92 10,36" fill="%2300b0ff"/><polygon points="32,36 50,8 68,36 50,92" fill="%23ffffff" opacity="0.6"/></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,5 C55,25 75,35 75,55 C75,75 60,95 50,95 C40,95 25,75 25,55 C25,40 40,25 40,15 C40,15 35,30 50,5 Z" fill="%23ff4500"/><path d="M50,35 C53,45 62,52 62,65 C62,75 55,85 50,85 C45,85 38,75 38,65 C38,55 46,45 46,38 Z" fill="%23ffd700"/></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="15,75 85,75 95,30 68,55 50,20 32,55 5,30" fill="%23ffbb00" stroke="%23cc9900" stroke-width="4"/><circle cx="50" cy="20" r="6" fill="%23ace600"/><circle cx="95" cy="30" r="6" fill="%23ace600"/><circle cx="5" cy="30" r="6" fill="%23ace600"/></svg>',
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M35,75 A15,12 0 1,1 20,63 L20,25 L75,15 L75,55 A15,12 0 1,1 60,43 L60,25 L35,30 Z" fill="%2300ffcc" stroke="%2300b399" stroke-width="3"/></svg>'
-    ];
-
-    const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"; 
-    const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; 
-
-    const SOUND_VOLUME_MAIN = 0.8;
-    const SOUND_VOLUME_MINOR = 0.5;
-    const MIN_ALERT_DISPLAY_MS = 4800;
-    const PAUSE_BETWEEN_ALERTS_MS = 1400;
-
-    let soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
-    let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
-    let lastProcessedAlertId = 0;
-    let initialLoad = true;
-
-    // 🎲 10-SOUND SHUFFLE BAG: Plays every sound once before repeating
-    let soundPool = [];
-    let lastPlayedSound = null;
-
-    function getNextDonationSound() {
-      if (!soundFileList || soundFileList.length === 0) return '';
-      if (soundFileList.length === 1) return soundFileList[0];
-
-      if (soundPool.length === 0) {
-        soundPool = [...soundFileList];
-
-        // Fisher-Yates Random Shuffle
-        for (let i = soundPool.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
+    (function () {
+      // 🛡️ DOCK BLOCK: Safe check with zero syntax errors or cross-origin crashes
+      try {
+        const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
+        const isParentDock = window.parent && window.parent !== window && 
+                             (window.parent.location.hash.includes('panel') || window.parent.location.hash.includes('dock'));
+        if (isSelfDock || isParentDock) {
+          console.log("Alerts disabled inside panel/dock.");
+          return;
         }
-
-        // Avoid back-to-back repeats across cycle boundaries
-        if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
-          [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
-        }
-
-        console.log(`🔀 [Sound Deck] Shuffled ${soundPool.length} sounds for a new cycle!`);
+      } catch (e) {
+        // Cross-origin parent frame access handled cleanly
       }
 
-      const nextSound = soundPool.pop();
-      lastPlayedSound = nextSound;
-      return nextSound;
-    }
+      const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+      const GITHUB_USERNAME = "Our2ndHome";
+      const GITHUB_REPO = "index";
+      const SOUNDS_FOLDER = "sounds";
+      const EMOTES_FOLDER = "emotes";
 
-    const alertQueue = [];
-    let isProcessingAlert = false;
+      // ========================================================
+      // 🎵 0 TO 9 SOUND TRACKS LIST (10 Sounds Total)
+      // ========================================================
+      const CUSTOM_SOUND_FILES = [
+        "0.mp3",
+        "1.mp3",
+        "2.mp3",
+        "3.mp3",
+        "4.mp3",
+        "5.mp3",
+        "6.mp3",
+        "7.mp3",
+        "8.mp3",
+        "9.mp3"
+      ];
 
-    function formatSEK(num) {
-      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
-    }
+      // ========================================================
+      // 🎨 YOUR CUSTOM EMOTES LIST
+      // ========================================================
+      const CUSTOM_EMOTE_FILES = [
+        "Favicon-very-new.png",
+        "Our2ndHome-EmoteHype-500x500.png",
+        "Our2ndHome-EmoteLove-500x500.png",
+        "Our2ndHome-EmoteWoop-500x500.png",
+        "Our2ndHome-IconLogo-512x512x.png",
+        "SillySanta.png",
+        "dfgdfgd-removebg-preview.png",
+        "evighets-removebg-preview.png",
+        "nordpuls-storlogo-smaller.png"
+      ];
 
-    // Preload custom images into memory
-    function preloadImages(urls) {
-      urls.forEach(url => {
-        const img = new Image();
-        img.src = url;
-      });
-    }
-    preloadImages(emoteFileList);
+      // Zero-Fail Vector Emote Backup
+      const EMBEDDED_FALLBACK_EMOTES = [
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,8 90,36 50,92 10,36" fill="%2300e5ff" stroke="%23ffffff" stroke-width="3"/><polygon points="50,8 50,92 10,36" fill="%2300b0ff"/><polygon points="32,36 50,8 68,36 50,92" fill="%23ffffff" opacity="0.6"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,5 C55,25 75,35 75,55 C75,75 60,95 50,95 C40,95 25,75 25,55 C25,40 40,25 40,15 C40,15 35,30 50,5 Z" fill="%23ff4500"/><path d="M50,35 C53,45 62,52 62,65 C62,75 55,85 50,85 C45,85 38,75 38,65 C38,55 46,45 46,38 Z" fill="%23ffd700"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="15,75 85,75 95,30 68,55 50,20 32,55 5,30" fill="%23ffbb00" stroke="%23cc9900" stroke-width="4"/><circle cx="50" cy="20" r="6" fill="%23ace600"/><circle cx="95" cy="30" r="6" fill="%23ace600"/><circle cx="5" cy="30" r="6" fill="%23ace600"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M35,75 A15,12 0 1,1 20,63 L20,25 L75,15 L75,55 A15,12 0 1,1 60,43 L60,25 L35,30 Z" fill="%2300ffcc" stroke="%2300b399" stroke-width="3"/></svg>'
+      ];
 
-    // Preload all audio tracks so they play with zero delay
-    function preloadAudio(urls) {
-      urls.forEach(url => {
-        const audio = new Audio();
-        audio.preload = 'auto';
-        audio.src = url;
-      });
-    }
-    preloadAudio(soundFileList);
+      const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"; 
+      const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; 
 
-    // 🌧️ EMOTE RAIN GENERATOR
-    function triggerEmoteRain(count = 75) {
-      const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
-      const layer = document.getElementById('emoteRainLayer');
+      const SOUND_VOLUME_MAIN = 0.8;
+      const SOUND_VOLUME_MINOR = 0.5;
+      const MIN_ALERT_DISPLAY_MS = 4800;
+      const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
-      for (let i = 0; i < count; i++) {
-        const img = document.createElement('img');
-        img.className = 'falling-emote';
+      let soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
+      let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
+      let lastProcessedAlertId = 0;
+      let initialLoad = true;
 
-        img.onerror = function() {
-          this.onerror = null;
-          this.src = EMBEDDED_FALLBACK_EMOTES[i % EMBEDDED_FALLBACK_EMOTES.length];
-        };
+      // 🎲 10-SOUND SHUFFLE BAG
+      let soundPool = [];
+      let lastPlayedSound = null;
 
-        img.src = list[Math.floor(Math.random() * list.length)];
+      function getNextDonationSound() {
+        if (!soundFileList || soundFileList.length === 0) return '';
+        if (soundFileList.length === 1) return soundFileList[0];
 
-        const size = Math.floor(Math.random() * 26) + 38;
-        const left = Math.random() * 95;
-        const duration = (Math.random() * 2.5 + 4.5).toFixed(2);
-        const delay = (Math.random() * 2.0).toFixed(2);
+        if (soundPool.length === 0) {
+          soundPool = [...soundFileList];
 
-        img.style.width = `${size}px`;
-        img.style.height = `${size}px`;
-        img.style.left = `${left}vw`;
-        img.style.animationDuration = `${duration}s`;
-        img.style.animationDelay = `${delay}s`;
+          // Fisher-Yates Random Shuffle
+          for (let i = soundPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
+          }
 
-        img.addEventListener('animationend', () => {
-          img.remove();
+          // Avoid back-to-back repeats across cycle boundaries
+          if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
+            [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
+          }
+
+          console.log(`🔀 [Sound Deck] Shuffled ${soundPool.length} sounds for a new cycle!`);
+        }
+
+        const nextSound = soundPool.pop();
+        lastPlayedSound = nextSound;
+        return nextSound;
+      }
+
+      const alertQueue = [];
+      let isProcessingAlert = false;
+
+      function formatSEK(num) {
+        return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
+      }
+
+      // Preload custom images into memory
+      function preloadImages(urls) {
+        urls.forEach(url => {
+          const img = new Image();
+          img.src = url;
         });
-
-        layer.appendChild(img);
       }
-    }
+      preloadImages(emoteFileList);
 
-    function playAlertSound(type) {
-      return new Promise((resolve) => {
-        let soundUrl = '';
-        let volume = SOUND_VOLUME_MAIN;
+      // Preload all audio tracks so they play with zero delay
+      function preloadAudio(urls) {
+        urls.forEach(url => {
+          const audio = new Audio();
+          audio.preload = 'auto';
+          audio.src = url;
+        });
+      }
+      preloadAudio(soundFileList);
 
-        if (type === 'raid') {
-          soundUrl = SOUND_RAID;
-          volume = SOUND_VOLUME_MAIN;
-        } else if (type === 'sub' || type === 'bits' || type === 'follow') {
-          soundUrl = SOUND_SUB_BITS_FOLLOW;
-          volume = SOUND_VOLUME_MINOR;
-        } else {
-          soundUrl = getNextDonationSound();
-        }
+      // 🌧️ EMOTE RAIN GENERATOR
+      function triggerEmoteRain(count = 75) {
+        const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
+        const layer = document.getElementById('emoteRainLayer');
 
-        if (!soundUrl) return resolve();
+        for (let i = 0; i < count; i++) {
+          const img = document.createElement('img');
+          img.className = 'falling-emote';
 
-        try {
-          const audio = new Audio(soundUrl);
-          audio.volume = volume;
-          let done = false;
-          const finish = () => { if (!done) { done = true; resolve(); } };
-          audio.onended = finish;
-          audio.onerror = () => {
-            console.warn("⚠️ Sound file failed to load:", soundUrl);
-            // Auto-fallback: try the next sound if this one fails to decode
-            if (type !== 'raid' && type !== 'sub' && type !== 'bits' && type !== 'follow') {
-              const fallbackSound = getNextDonationSound();
-              if (fallbackSound && fallbackSound !== soundUrl) {
-                new Audio(fallbackSound).play().catch(() => {});
-              }
-            }
-            finish();
+          img.onerror = function() {
+            this.onerror = null;
+            this.src = EMBEDDED_FALLBACK_EMOTES[i % EMBEDDED_FALLBACK_EMOTES.length];
           };
-          audio.play().catch(() => finish());
-          setTimeout(finish, 6500);
-        } catch(e) { resolve(); }
-      });
-    }
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
-    }
-    const dbRef = firebase.database().ref('bossa');
+          img.src = list[Math.floor(Math.random() * list.length)];
 
-    dbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (!data) return;
+          const size = Math.floor(Math.random() * 26) + 38;
+          const left = Math.random() * 95;
+          const duration = (Math.random() * 2.5 + 4.5).toFixed(2);
+          const delay = (Math.random() * 2.0).toFixed(2);
 
-      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
-        lastProcessedAlertId = data.alertId;
+          img.style.width = `${size}px`;
+          img.style.height = `${size}px`;
+          img.style.left = `${left}vw`;
+          img.style.animationDuration = `${duration}s`;
+          img.style.animationDelay = `${delay}s`;
 
-        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
-          data.alerts.forEach(item => enqueueAlert(item));
-        } else if (data.diff > 0 || data.donor) {
-          enqueueAlert({
-            type: data.type || 'donation',
-            donor: data.donor || "Givare",
-            amount: data.diff || data.amount || 50,
-            comment: data.comment || ""
+          img.addEventListener('animationend', () => {
+            img.remove();
           });
+
+          layer.appendChild(img);
         }
-      } else if (initialLoad) {
-        lastProcessedAlertId = data.alertId || 0;
-        initialLoad = false;
-      }
-    });
-
-    function enqueueAlert(item) {
-      alertQueue.push(item);
-      processAlertQueue();
-    }
-
-    async function processAlertQueue() {
-      if (isProcessingAlert || alertQueue.length === 0) return;
-      isProcessingAlert = true;
-
-      const item = alertQueue.shift();
-      const banner = document.getElementById('alertBanner');
-      const type = (item.type || 'donation').toLowerCase();
-
-      banner.className = 'alert-banner';
-
-      // 1. Upper Alerts (Donations & Raids)
-      if (type === 'donation') {
-        banner.innerHTML = `
-          <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
-          <div class="alert-subtext">DONERADE <span class="highlight">${formatSEK(item.amount || 50)}</span>!</div>
-          ${item.comment ? `<div class="alert-comment">"${item.comment}"</div>` : ''}
-        `;
-        banner.classList.add('anim-top-in');
-      } 
-      else if (type === 'raid') {
-        banner.innerHTML = `
-          <span class="donor-name">${item.donor || item.name || 'Raider'}</span>
-          <div class="alert-subtext">RAIDAR MED <span class="highlight">${item.viewers || 1}</span> TITTARNA!</div>
-        `;
-        banner.classList.add('anim-top-in');
-      } 
-
-      // 2. Lower Secondary Alerts (Name in #ace600 on top, Action on bottom)
-      else if (type === 'sub') {
-        const months = item.months || 1;
-        banner.innerHTML = `
-          <div class="minor-alert-badge">
-            <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
-            <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
-          </div>
-        `;
-        banner.classList.add('anim-bottom-in');
-      } 
-      else if (type === 'bits') {
-        const bits = item.bits || item.amount || 100;
-        banner.innerHTML = `
-          <div class="minor-alert-badge">
-            <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
-            <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
-          </div>
-        `;
-        banner.classList.add('anim-bottom-in');
-      }
-      else if (type === 'follow') {
-        banner.innerHTML = `
-          <div class="minor-alert-badge">
-            <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
-            <div class="minor-alert-detail">FÖLJER KANALEN!</div>
-          </div>
-        `;
-        banner.classList.add('anim-bottom-in');
       }
 
-      triggerEmoteRain(75);
-      const soundPromise = playAlertSound(type);
-      const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+      function playAlertSound(type) {
+        return new Promise((resolve) => {
+          let soundUrl = '';
+          let volume = SOUND_VOLUME_MAIN;
 
-      await Promise.all([soundPromise, displayPromise]);
+          if (type === 'raid') {
+            soundUrl = SOUND_RAID;
+            volume = SOUND_VOLUME_MAIN;
+          } else if (type === 'sub' || type === 'bits' || type === 'follow') {
+            soundUrl = SOUND_SUB_BITS_FOLLOW;
+            volume = SOUND_VOLUME_MINOR;
+          } else {
+            soundUrl = getNextDonationSound();
+          }
 
-      banner.classList.remove('anim-top-in', 'anim-bottom-in');
-      banner.classList.add('anim-exit');
-      await new Promise(r => setTimeout(r, 400));
+          if (!soundUrl) return resolve();
 
-      banner.className = 'alert-banner';
-      banner.innerHTML = '';
+          try {
+            const audio = new Audio(soundUrl);
+            audio.volume = volume;
+            let done = false;
+            const finish = () => { if (!done) { done = true; resolve(); } };
+            audio.onended = finish;
+            audio.onerror = () => {
+              console.warn("⚠️ Sound file failed to load:", soundUrl);
+              finish();
+            };
+            audio.play().catch(() => finish());
+            setTimeout(finish, 6500);
+          } catch(e) { resolve(); }
+        });
+      }
 
-      setTimeout(() => {
-        isProcessingAlert = false;
+      if (!firebase.apps.length) {
+        firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+      }
+      const dbRef = firebase.database().ref('bossa');
+
+      dbRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
+          lastProcessedAlertId = data.alertId;
+
+          if (Array.isArray(data.alerts) && data.alerts.length > 0) {
+            data.alerts.forEach(item => enqueueAlert(item));
+          } else if (data.diff > 0 || data.donor) {
+            enqueueAlert({
+              type: data.type || 'donation',
+              donor: data.donor || "Givare",
+              amount: data.diff || data.amount || 50,
+              comment: data.comment || ""
+            });
+          }
+        } else if (initialLoad) {
+          lastProcessedAlertId = data.alertId || 0;
+          initialLoad = false;
+        }
+      });
+
+      function enqueueAlert(item) {
+        alertQueue.push(item);
         processAlertQueue();
-      }, PAUSE_BETWEEN_ALERTS_MS);
-    }
+      }
+
+      async function processAlertQueue() {
+        if (isProcessingAlert || alertQueue.length === 0) return;
+        isProcessingAlert = true;
+
+        const item = alertQueue.shift();
+        const banner = document.getElementById('alertBanner');
+        const type = (item.type || 'donation').toLowerCase();
+
+        banner.className = 'alert-banner';
+
+        // 1. Upper Alerts (Donations & Raids)
+        if (type === 'donation') {
+          banner.innerHTML = `
+            <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
+            <div class="alert-subtext">DONERADE <span class="highlight">${formatSEK(item.amount || 50)}</span>!</div>
+            ${item.comment ? `<div class="alert-comment">"${item.comment}"</div>` : ''}
+          `;
+          banner.classList.add('anim-top-in');
+        } 
+        else if (type === 'raid') {
+          banner.innerHTML = `
+            <span class="donor-name">${item.donor || item.name || 'Raider'}</span>
+            <div class="alert-subtext">RAIDAR MED <span class="highlight">${item.viewers || 1}</span> TITTARNA!</div>
+          `;
+          banner.classList.add('anim-top-in');
+        } 
+
+        // 2. Lower Secondary Alerts (Name in #ace600 on top, Action on bottom)
+        else if (type === 'sub') {
+          const months = item.months || 1;
+          banner.innerHTML = `
+            <div class="minor-alert-badge">
+              <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+              <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
+            </div>
+          `;
+          banner.classList.add('anim-bottom-in');
+        } 
+        else if (type === 'bits') {
+          const bits = item.bits || item.amount || 100;
+          banner.innerHTML = `
+            <div class="minor-alert-badge">
+              <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+              <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
+            </div>
+          `;
+          banner.classList.add('anim-bottom-in');
+        }
+        else if (type === 'follow') {
+          banner.innerHTML = `
+            <div class="minor-alert-badge">
+              <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+              <div class="minor-alert-detail">FÖLJER KANALEN!</div>
+            </div>
+          `;
+          banner.classList.add('anim-bottom-in');
+        }
+
+        triggerEmoteRain(75);
+        const soundPromise = playAlertSound(type);
+        const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+
+        await Promise.all([soundPromise, displayPromise]);
+
+        banner.classList.remove('anim-top-in', 'anim-bottom-in');
+        banner.classList.add('anim-exit');
+        await new Promise(r => setTimeout(r, 400));
+
+        banner.className = 'alert-banner';
+        banner.innerHTML = '';
+
+        setTimeout(() => {
+          isProcessingAlert = false;
+          processAlertQueue();
+        }, PAUSE_BETWEEN_ALERTS_MS);
+      }
+    })();
   </script>
 </body>
 </html>
