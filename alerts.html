@@ -235,8 +235,7 @@
     const EMOTES_FOLDER = "emotes";
 
     // ========================================================
-    // 🎵 1 TO 12 SOUND TRACKS LIST
-    // Bypasses GitHub API rate limits completely!
+    // 🎵 0 TO 9 SOUND TRACKS LIST (10 Sounds Total)
     // ========================================================
     const CUSTOM_SOUND_FILES = [
       "0.mp3",
@@ -253,7 +252,6 @@
 
     // ========================================================
     // 🎨 YOUR CUSTOM EMOTES LIST
-    // Permanently saved in code so new updates never lose them!
     // ========================================================
     const CUSTOM_EMOTE_FILES = [
       "Favicon-very-new.png",
@@ -267,7 +265,7 @@
       "nordpuls-storlogo-smaller.png"
     ];
 
-    // Zero-Fail Vector Emote Backup (Never fails or rate-limits)
+    // Zero-Fail Vector Emote Backup
     const EMBEDDED_FALLBACK_EMOTES = [
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
       'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
@@ -290,7 +288,7 @@
     let lastProcessedAlertId = 0;
     let initialLoad = true;
 
-    // 🎲 12-SOUND SHUFFLE BAG: Plays every sound once before repeating
+    // 🎲 10-SOUND SHUFFLE BAG: Plays every sound once before repeating
     let soundPool = [];
     let lastPlayedSound = null;
 
@@ -307,7 +305,7 @@
           [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
         }
 
-        // Avoid back-to-back repetitions across cycle boundaries
+        // Avoid back-to-back repeats across cycle boundaries
         if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
           [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
         }
@@ -327,7 +325,7 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
     }
 
-    // Preload all custom emotes into memory immediately
+    // Preload custom images into memory
     function preloadImages(urls) {
       urls.forEach(url => {
         const img = new Image();
@@ -335,6 +333,16 @@
       });
     }
     preloadImages(emoteFileList);
+
+    // Preload all audio tracks so they play with zero delay
+    function preloadAudio(urls) {
+      urls.forEach(url => {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = url;
+      });
+    }
+    preloadAudio(soundFileList);
 
     // 🌧️ EMOTE RAIN GENERATOR
     function triggerEmoteRain(count = 75) {
@@ -352,10 +360,10 @@
 
         img.src = list[Math.floor(Math.random() * list.length)];
 
-        const size = Math.floor(Math.random() * 26) + 38; // 38px to 64px
-        const left = Math.random() * 95; // 0% to 95vw across screen
-        const duration = (Math.random() * 2.5 + 4.5).toFixed(2); // 4.5s to 7.0s
-        const delay = (Math.random() * 2.0).toFixed(2); // 0s to 2.0s
+        const size = Math.floor(Math.random() * 26) + 38;
+        const left = Math.random() * 95;
+        const duration = (Math.random() * 2.5 + 4.5).toFixed(2);
+        const delay = (Math.random() * 2.0).toFixed(2);
 
         img.style.width = `${size}px`;
         img.style.height = `${size}px`;
@@ -363,7 +371,6 @@
         img.style.animationDuration = `${duration}s`;
         img.style.animationDelay = `${delay}s`;
 
-        // Self-cleaning: each emote removes itself once it touches bottom
         img.addEventListener('animationend', () => {
           img.remove();
         });
@@ -397,6 +404,13 @@
           audio.onended = finish;
           audio.onerror = () => {
             console.warn("⚠️ Sound file failed to load:", soundUrl);
+            // Auto-fallback: try the next sound if this one fails to decode
+            if (type !== 'raid' && type !== 'sub' && type !== 'bits' && type !== 'follow') {
+              const fallbackSound = getNextDonationSound();
+              if (fallbackSound && fallbackSound !== soundUrl) {
+                new Audio(fallbackSound).play().catch(() => {});
+              }
+            }
             finish();
           };
           audio.play().catch(() => finish());
