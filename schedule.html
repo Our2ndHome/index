@@ -156,10 +156,11 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 115px;
-      height: 115px;
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
       pointer-events: none;
-      opacity: 0.16;
+      opacity: 0.18;
       z-index: 1;
     }
 
@@ -222,7 +223,7 @@
       }
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR (1920px FULL-WIDTH, STRAIGHT SIDES) */
+    /* 📅 SCHEDULE TIMELINE BAR (1920px FULL-WIDTH) */
     .schedule-widget {
       position: absolute;
       bottom: 0;
@@ -378,7 +379,7 @@
       text-shadow: none;
     }
 
-    /* 🎛️ 2. OBS DOCK: BLACK & WHITE THEME */
+    /* 🎛️ 2. OBS DOCK */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -539,7 +540,7 @@
     <!-- 🔄 3D ROTATOR: SPONSORS & MUSIKHJÄLPEN THEME CARD -->
     <div class="rotator-wrapper">
       
-      <!-- Card 1: Sponsor Card (Active by Default) -->
+      <!-- Card 1: Sponsor Card -->
       <div class="sponsor-widget card-active" id="sponsorWidget">
         <div class="sponsor-logo-container">
           <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -547,15 +548,9 @@
         <span class="sponsor-label">SPONSORER</span>
       </div>
 
-      <!-- Card 2: Musikhjälpen Theme Card (Hidden by Default) -->
+      <!-- Card 2: Musikhjälpen Theme Card (Uses MusikhjalpenLogo.png) -->
       <div class="theme-widget card-hidden" id="themeWidget">
-        <!-- Watermark Logo -->
-        <svg class="theme-watermark-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 82C50 82 18 58 18 36C18 24 28 16 38 18C44 19 48 23 50 27C52 23 56 19 62 18C72 16 82 24 82 36C82 58 50 82 50 82Z" fill="#ace600"/>
-          <path d="M14 44C14 22 30 12 50 12C70 12 86 22 86 44" stroke="#ace600" stroke-width="5" stroke-linecap="round"/>
-          <rect x="10" y="40" width="8" height="18" rx="4" fill="#ace600"/>
-          <rect x="82" y="40" width="8" height="18" rx="4" fill="#ace600"/>
-        </svg>
+        <img id="themeMhLogo" class="theme-watermark-logo" src="sponsors/MusikhjalpenLogo.png" alt="Musikhjälpen" />
 
         <div class="theme-content-box">
           <span class="theme-card-header"><span class="theme-accent-dot"></span>MUSIKHJÄLPEN</span>
@@ -582,7 +577,7 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.2</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.3</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -608,7 +603,6 @@
       <div class="control-row">
         <span class="control-label">VÄLJ PASS:</span>
         <select id="editSlotSelect" style="width:65%;" onchange="loadSelectedSlotData()">
-          <!-- Populated dynamically -->
         </select>
       </div>
 
@@ -664,7 +658,14 @@
     const GITHUB_REPO = "index";
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
-    const THEME_SPOTLIGHT_SECONDS = 10; // Theme card display duration
+    const THEME_SPOTLIGHT_SECONDS = 10;
+
+    // 🛡️ Reliable offline / rate-limit fallback list of your exact sponsors:
+    const KNOWN_SPONSORS = [
+      "sponsors/DisgustingFoodMuseum_Sponsor.png",
+      "sponsors/ElinPK_Sponsor.png",
+      "sponsors/EscapeHouse_Sponsor.png"
+    ];
 
     const DAY_BASE_DATES = {
       "MON": "2026-11-30",
@@ -724,7 +725,7 @@
     ];
 
     let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-    let sponsorFileList = [];
+    let sponsorFileList = [...KNOWN_SPONSORS];
     let currentSponsorIndex = 0;
     let scheduleMode = 'real';
 
@@ -736,12 +737,21 @@
     let isShowingTheme = false;
     let rotatorTimer = null;
 
-    // ⚡ 1. Auto-load cached sponsors from previous session instantly
+    // Helper to check if a filename is the Musikhjälpen logo
+    function isMhLogo(filename) {
+      if (!filename) return false;
+      const lower = filename.toLowerCase();
+      return lower.includes('musikhjalpen') || lower.includes('musikhjälpen');
+    }
+
     try {
       const cached = localStorage.getItem(STORAGE_KEY_SPONSORS);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) sponsorFileList = parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Never let MusikhjalpenLogo slip into sponsor list from older cache
+          sponsorFileList = parsed.filter(url => !isMhLogo(url));
+        }
       }
     } catch(e) {}
 
@@ -785,7 +795,7 @@
       }
 
       if (Array.isArray(data.autoSponsors) && data.autoSponsors.length > 0) {
-        sponsorFileList = data.autoSponsors;
+        sponsorFileList = data.autoSponsors.filter(url => !isMhLogo(url));
         try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsorFileList)); } catch(e) {}
         updateSponsorLogo();
       }
@@ -1212,29 +1222,32 @@
       }
     }
 
+    // 🔄 REWRITTEN ROTATOR: Cycles through all sponsors with ZERO missing images
     function runRotatorCycle() {
       if (isPanel) return;
 
       if (isShowingTheme) {
-        // Theme spotlight finished -> Flip back to sponsors
+        // Theme spotlight finished -> Flip back to Sponsor 1 (index 0)
+        currentSponsorIndex = 0;
+        updateSponsorLogo();
         showSponsorCard();
         rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
       } else {
         if (sponsorFileList.length > 0) {
           const nextIndex = currentSponsorIndex + 1;
-          
-          // If all sponsor images have been shown once
-          if (nextIndex >= sponsorFileList.length) {
-            currentSponsorIndex = 0; // Reset index for next cycle
-            showThemeCard();         // 3D Flip to Musikhjälpen Theme Card
-            rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
-          } else {
+
+          if (nextIndex < sponsorFileList.length) {
+            // Show next sponsor
             currentSponsorIndex = nextIndex;
             updateSponsorLogo();
             rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
+          } else {
+            // All sponsors have been displayed once -> Show Musikhjälpen Theme Card
+            showThemeCard();
+            rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
           }
         } else {
-          // If no sponsors exist yet, keep spotlighting theme card
+          // If no sponsors in folder, stay on theme card
           showThemeCard();
           rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
         }
@@ -1249,25 +1262,39 @@
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}?_t=${Date.now()}`);
         if (res.ok) {
           const files = await res.json();
-          const apiSponsors = files
-            .filter(f => f.name && f.name.match(/\.(png|jpe?g|svg|webp)$/i))
-            .map(f => f.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (Array.isArray(files)) {
+            // Filter out MusikhjalpenLogo so it NEVER appears in the sponsor rotation
+            const sponsorFiles = files.filter(f => {
+              if (!f.name || !f.name.match(/\.(png|jpe?g|svg|webp)$/i)) return false;
+              return !isMhLogo(f.name);
+            });
 
-          if (apiSponsors.length > 0) {
-            sponsorFileList = apiSponsors;
-            try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch(e) {}
-            
-            dbScheduleRef.update({
-              autoSponsors: apiSponsors,
-              secret: WRITE_SECRET
-            }).catch(() => {});
+            // If Musikhjälpen logo is detected in folder, update theme card image src
+            const mhLogoFile = files.find(f => f.name && isMhLogo(f.name));
+            if (mhLogoFile) {
+              const mhImg = document.getElementById('themeMhLogo');
+              if (mhImg) {
+                mhImg.src = mhLogoFile.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(mhLogoFile.name)}`;
+              }
+            }
 
-            updateSponsorLogo();
+            const apiSponsors = sponsorFiles.map(f => f.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
+
+            if (apiSponsors.length > 0) {
+              sponsorFileList = apiSponsors;
+              try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch(e) {}
+
+              dbScheduleRef.update({
+                autoSponsors: apiSponsors,
+                secret: WRITE_SECRET
+              }).catch(() => {});
+
+              updateSponsorLogo();
+            }
           }
         }
       } catch(e) {}
 
-      // Start the rotation cycle
       if (rotatorTimer) clearTimeout(rotatorTimer);
       rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
     }
@@ -1283,6 +1310,10 @@
       setTimeout(() => {
         img.src = targetSrc;
         img.onload = () => { img.style.opacity = '1'; };
+        // Failsafe for cached images
+        if (img.complete && img.naturalWidth > 0) {
+          img.style.opacity = '1';
+        }
       }, 250);
     }
 
