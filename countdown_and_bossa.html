@@ -139,20 +139,7 @@
       letter-spacing: 1px;
     }
 
-    .overlay-version-tag {
-      position: absolute;
-      bottom: 12px;
-      right: 16px;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      color: rgba(255, 255, 255, 0.35);
-      text-transform: uppercase;
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    /* 🎛️ DOCK (CONTROL PANEL) */
+    /* 🎛️ 2. OBS DOCK (CONTROL PANEL) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -286,7 +273,7 @@
       cursor: pointer;
     }
 
-    /* 🎮 Random Alert Testing Grid */
+    /* 🎮 Alert Testing Buttons Grid */
     .test-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -605,7 +592,8 @@
     function updateCountdown() {
       const label = document.getElementById('countdownLabel');
       const timerDisplay = document.getElementById('countdownTimer');
-      const targetTime = new Date("2026-12-20T21:00:00+01:00").getTime();
+      // 🎯 FIXED: Target set to 6 December 2026 at 20:00 Swedish time (CET / +01:00)
+      const targetTime = new Date("2026-12-06T20:00:00+01:00").getTime();
       const diff = targetTime - Date.now();
 
       if (diff <= 0) {
