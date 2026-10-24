@@ -234,9 +234,9 @@
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
 
         // 🎬 MOVE VALUE FILTER AUTOMATION
-        const WEBCAM_SOURCE_FOR_FILTERS = "Webcam Source"; // Automatically falls back to "Webcam Scene"
-        const FILTER_LEAVE_GAMING = "Move Value out";       // Runs on Intermission, Starting & Ending
-        const FILTER_ENTER_GAMING = "Move Value in";        // Runs on Gaming Scene (change if named differently)
+        const WEBCAM_SOURCE_FOR_FILTERS = "Webcam Source"; // Auto-falls back to "Webcam Scene"
+        const FILTER_LEAVE_GAMING = "Move Value out";       // Runs immediately on Intermission, Starting & Ending
+        const FILTER_ENTER_GAMING = "Move Value in";        // Runs immediately on Gaming Scene
 
         const WEBCAM_BUTTONS = [
             {
@@ -265,7 +265,7 @@
             }
         ];
 
-        // 🎬 4 SCENE BUTTONS
+        // 🎬 ALL 4 SCENE BUTTONS
         const SCENE_BUTTONS = [
             {
                 label: "Start",
@@ -326,6 +326,7 @@
         let isConnected = false;
         const pendingRequests = new Map();
         let currentActiveScene = "";
+        let lastAutoFilteredScene = "";
 
         function connectOBS() {
             ws = new WebSocket('ws://127.0.0.1:4455');
@@ -347,7 +348,7 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch current active scene
+                    // Fetch active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
@@ -358,7 +359,7 @@
                     syncInitialWebcamState();
                 }
 
-                // Scene change event listener
+                // Scene change broadcast from OBS (e.g. via keyboard hotkey or external click)
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
                     const newScene = msg.d.eventData.sceneName;
                     updateActiveSceneUI(newScene);
@@ -419,28 +420,119 @@
         }
 
         // ========================================================
-        // 🎬 MOVE VALUE AUTOMATION ON SCENE SWITCH
+        // ⚡ INSTANT MOVE VALUE FILTER TRIGGER (FIRST ACTION)
         // ========================================================
         function triggerFilterWithFallback(sourceName, filterName) {
             sendFilterTrigger(sourceName, filterName);
-            // Fallback: If "Webcam Source" failed, also attempt on "Webcam Scene"
+            // Instant concurrent trigger for Webcam Scene alias
             if (sourceName === "Webcam Source") {
-                setTimeout(() => {
-                    sendFilterTrigger("Webcam Scene", filterName);
-                }, 40);
+                sendFilterTrigger("Webcam Scene", filterName);
             }
         }
 
         function handleSceneAutoFilters(sceneName) {
+            // Prevent duplicate triggers if already handled by instant click
+            if (isMatchingScene(sceneName, lastAutoFilteredScene)) return;
+            lastAutoFilteredScene = sceneName;
+
             if (isMatchingScene(sceneName, "Intermission Scene") ||
                 isMatchingScene(sceneName, "Starting Scene") ||
                 isMatchingScene(sceneName, "Ending Scene")) {
-                // Switching to Intermission, Starting, or Ending -> Run "Move Value out"
                 triggerFilterWithFallback(WEBCAM_SOURCE_FOR_FILTERS, FILTER_LEAVE_GAMING);
             } else if (isMatchingScene(sceneName, "Gaming Scene")) {
-                // Switching to Gaming Scene -> Run "Move Value in"
                 triggerFilterWithFallback(WEBCAM_SOURCE_FOR_FILTERS, FILTER_ENTER_GAMING);
             }
+
+            // Release lock after 600ms
+            setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
+        }
+
+        function sendFilterTrigger(sourceName, filterName) {
+            if (!isConnected) return;
+
+            // Reset and trigger instantly
+            ws.send(JSON.stringify({
+                op: 6,
+                d: {
+                    requestType: "SetSourceFilterEnabled",
+                    requestId: "req-" + Math.random(),
+                    requestData: {
+                        sourceName: sourceName,
+                        filterName: filterName,
+                        filterEnabled: false
+                    }
+                }
+            }));
+
+            setTimeout(() => {
+                ws.send(JSON.stringify({
+                    op: 6,
+                    d: {
+                        requestType: "SetSourceFilterEnabled",
+                        requestId: "req-" + Math.random(),
+                        requestData: {
+                            sourceName: sourceName,
+                            filterName: filterName,
+                            filterEnabled: true
+                        }
+                    }
+                }));
+            }, 20);
+        }
+
+        // ========================================================
+        // 🎬 SCENE ACTIONS (FILTER RUNS FIRST)
+        // ========================================================
+        function isMatchingScene(currentName, targetName) {
+            if (!currentName || !targetName) return false;
+            const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            if (cleanA === cleanB) return true;
+
+            const baseA = cleanA.split('|').pop().trim();
+            const baseB = cleanB.split('|').pop().trim();
+            return baseA === baseB;
+        }
+
+        async function switchScene(sceneName) {
+            if (!isConnected) return;
+
+            // 🚀 STEP 1: FIRE FILTER AS THE VERY FIRST ACTION! (0ms lag)
+            handleSceneAutoFilters(sceneName);
+
+            // 🚀 STEP 2: Instant UI update
+            updateActiveSceneUI(sceneName);
+
+            // 🚀 STEP 3: Switch scene in OBS
+            try {
+                await sendRequest("SetCurrentProgramScene", { sceneName });
+            } catch (err) {
+                const prefix1 = "Musikhjälpen|" + sceneName;
+                const prefix2 = "Musikhjälpen | " + sceneName;
+                try {
+                    await sendRequest("SetCurrentProgramScene", { sceneName: prefix1 });
+                } catch (e1) {
+                    try {
+                        await sendRequest("SetCurrentProgramScene", { sceneName: prefix2 });
+                    } catch (e2) {
+                        console.error("Could not switch to scene:", sceneName);
+                    }
+                }
+            }
+        }
+
+        function updateActiveSceneUI(activeSceneName) {
+            currentActiveScene = activeSceneName;
+            const buttons = document.querySelectorAll('#scene-grid .deck-btn');
+
+            buttons.forEach((btnEl, idx) => {
+                const sceneBtn = SCENE_BUTTONS[idx];
+                if (sceneBtn && isMatchingScene(activeSceneName, sceneBtn.sceneName)) {
+                    btnEl.classList.add('active-scene');
+                } else {
+                    btnEl.classList.remove('active-scene');
+                }
+            });
         }
 
         // ========================================================
@@ -592,87 +684,6 @@
             } catch (err) {
                 console.error("Could not open properties for:", inputName, err);
             }
-        }
-
-        // ========================================================
-        // 🎬 SCENE ACTIONS
-        // ========================================================
-        function isMatchingScene(currentName, targetName) {
-            if (!currentName || !targetName) return false;
-            const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
-            const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
-            if (cleanA === cleanB) return true;
-
-            const baseA = cleanA.split('|').pop().trim();
-            const baseB = cleanB.split('|').pop().trim();
-            return baseA === baseB;
-        }
-
-        async function switchScene(sceneName) {
-            if (!isConnected) return;
-            updateActiveSceneUI(sceneName);
-
-            try {
-                await sendRequest("SetCurrentProgramScene", { sceneName });
-            } catch (err) {
-                const prefix1 = "Musikhjälpen|" + sceneName;
-                const prefix2 = "Musikhjälpen | " + sceneName;
-                try {
-                    await sendRequest("SetCurrentProgramScene", { sceneName: prefix1 });
-                } catch (e1) {
-                    try {
-                        await sendRequest("SetCurrentProgramScene", { sceneName: prefix2 });
-                    } catch (e2) {
-                        console.error("Could not switch to scene:", sceneName);
-                    }
-                }
-            }
-        }
-
-        function updateActiveSceneUI(activeSceneName) {
-            currentActiveScene = activeSceneName;
-            const buttons = document.querySelectorAll('#scene-grid .deck-btn');
-
-            buttons.forEach((btnEl, idx) => {
-                const sceneBtn = SCENE_BUTTONS[idx];
-                if (sceneBtn && isMatchingScene(activeSceneName, sceneBtn.sceneName)) {
-                    btnEl.classList.add('active-scene');
-                } else {
-                    btnEl.classList.remove('active-scene');
-                }
-            });
-        }
-
-        function sendFilterTrigger(sourceName, filterName) {
-            if (!isConnected) return;
-
-            ws.send(JSON.stringify({
-                op: 6,
-                d: {
-                    requestType: "SetSourceFilterEnabled",
-                    requestId: "req-" + Math.random(),
-                    requestData: {
-                        sourceName: sourceName,
-                        filterName: filterName,
-                        filterEnabled: false
-                    }
-                }
-            }));
-
-            setTimeout(() => {
-                ws.send(JSON.stringify({
-                    op: 6,
-                    d: {
-                        requestType: "SetSourceFilterEnabled",
-                        requestId: "req-" + Math.random(),
-                        requestData: {
-                            sourceName: sourceName,
-                            filterName: filterName,
-                            filterEnabled: true
-                        }
-                    }
-                }));
-            }, 30);
         }
 
         function handleButtonClick(btn) {
