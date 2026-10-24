@@ -233,9 +233,10 @@
         // ================= CONFIGURATION =================
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
 
-        // 🎭 WEBCAM MASK FILTER CONFIGURATION
-        const WEBCAM_SOURCE_FOR_MASK = "Webcam Source"; // Fallback to "Webcam Scene" automatically
-        const ADVANCED_MASK_FILTER_NAME = "Advanced Mask"; // Check that this matches your OBS filter name
+        // 🎬 MOVE VALUE FILTER AUTOMATION
+        const WEBCAM_SOURCE_FOR_FILTERS = "Webcam Source"; // Automatically falls back to "Webcam Scene"
+        const FILTER_LEAVE_GAMING = "Move Value out";       // Runs on Intermission, Starting & Ending
+        const FILTER_ENTER_GAMING = "Move Value in";        // Runs on Gaming Scene (change if named differently)
 
         const WEBCAM_BUTTONS = [
             {
@@ -346,11 +347,10 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch active scene
+                    // Fetch current active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
-                            handleSceneMaskAutoToggle(res.currentProgramSceneName);
                         }
                     }).catch(() => {});
 
@@ -362,7 +362,7 @@
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
                     const newScene = msg.d.eventData.sceneName;
                     updateActiveSceneUI(newScene);
-                    handleSceneMaskAutoToggle(newScene);
+                    handleSceneAutoFilters(newScene);
                 }
 
                 // Webcam visibility change listener
@@ -419,39 +419,27 @@
         }
 
         // ========================================================
-        // 🎭 ADVANCED MASK AUTO-TOGGLE ON SCENE SWITCH
+        // 🎬 MOVE VALUE AUTOMATION ON SCENE SWITCH
         // ========================================================
-        async function setFilterEnabled(sourceName, filterName, enabled) {
-            if (!isConnected) return;
-            try {
-                await sendRequest("SetSourceFilterEnabled", {
-                    sourceName: sourceName,
-                    filterName: filterName,
-                    filterEnabled: enabled
-                });
-                console.log(`Filter "${filterName}" on "${sourceName}" set to ${enabled}`);
-            } catch (err) {
-                // Fallback: If "Webcam Source" failed, try "Webcam Scene"
-                if (sourceName === "Webcam Source") {
-                    try {
-                        await sendRequest("SetSourceFilterEnabled", {
-                            sourceName: "Webcam Scene",
-                            filterName: filterName,
-                            filterEnabled: enabled
-                        });
-                        console.log(`Filter "${filterName}" on "Webcam Scene" set to ${enabled}`);
-                    } catch (e2) {}
-                }
+        function triggerFilterWithFallback(sourceName, filterName) {
+            sendFilterTrigger(sourceName, filterName);
+            // Fallback: If "Webcam Source" failed, also attempt on "Webcam Scene"
+            if (sourceName === "Webcam Source") {
+                setTimeout(() => {
+                    sendFilterTrigger("Webcam Scene", filterName);
+                }, 40);
             }
         }
 
-        async function handleSceneMaskAutoToggle(sceneName) {
-            if (isMatchingScene(sceneName, "Intermission Scene")) {
-                // 🙈 On Intermission Scene: Disable/Hide the mask
-                await setFilterEnabled(WEBCAM_SOURCE_FOR_MASK, ADVANCED_MASK_FILTER_NAME, false);
+        function handleSceneAutoFilters(sceneName) {
+            if (isMatchingScene(sceneName, "Intermission Scene") ||
+                isMatchingScene(sceneName, "Starting Scene") ||
+                isMatchingScene(sceneName, "Ending Scene")) {
+                // Switching to Intermission, Starting, or Ending -> Run "Move Value out"
+                triggerFilterWithFallback(WEBCAM_SOURCE_FOR_FILTERS, FILTER_LEAVE_GAMING);
             } else if (isMatchingScene(sceneName, "Gaming Scene")) {
-                // 👀 Returning to Gaming Scene: Enable/Show the mask again
-                await setFilterEnabled(WEBCAM_SOURCE_FOR_MASK, ADVANCED_MASK_FILTER_NAME, true);
+                // Switching to Gaming Scene -> Run "Move Value in"
+                triggerFilterWithFallback(WEBCAM_SOURCE_FOR_FILTERS, FILTER_ENTER_GAMING);
             }
         }
 
