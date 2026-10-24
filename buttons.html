@@ -221,7 +221,7 @@
     <div class="section-title">Webcam Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
 
-    <!-- 🎬 ROW 2: SCENES (All 4 Scenes) -->
+    <!-- 🎬 ROW 2: SCENES -->
     <div class="section-title">Scener</div>
     <div class="grid grid-scenes" id="scene-grid"></div>
 
@@ -232,6 +232,10 @@
     <script>
         // ================= CONFIGURATION =================
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
+
+        // 🎭 WEBCAM MASK FILTER CONFIGURATION
+        const WEBCAM_SOURCE_FOR_MASK = "Webcam Source"; // Fallback to "Webcam Scene" automatically
+        const ADVANCED_MASK_FILTER_NAME = "Advanced Mask"; // Check that this matches your OBS filter name
 
         const WEBCAM_BUTTONS = [
             {
@@ -260,7 +264,7 @@
             }
         ];
 
-        // 🎬 ALL 4 SCENE BUTTONS
+        // 🎬 4 SCENE BUTTONS
         const SCENE_BUTTONS = [
             {
                 label: "Start",
@@ -342,27 +346,26 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch current active scene
+                    // Fetch active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
+                            handleSceneMaskAutoToggle(res.currentProgramSceneName);
                         }
                     }).catch(() => {});
 
-                    // Fetch current text from OBS text source into input box
                     fetchCurrentText(TEXT_SOURCE_NAME);
-
-                    // Sync initial Webcam visibility (Göm vs Visa)
                     syncInitialWebcamState();
                 }
 
-                // Scene change event
+                // Scene change event listener
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
                     const newScene = msg.d.eventData.sceneName;
                     updateActiveSceneUI(newScene);
+                    handleSceneMaskAutoToggle(newScene);
                 }
 
-                // Webcam visibility change event
+                // Webcam visibility change listener
                 if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
                     const { sceneName, sceneItemEnabled } = msg.d.eventData;
                     if (sceneName && sceneName.includes("Gaming Scene")) {
@@ -416,6 +419,43 @@
         }
 
         // ========================================================
+        // 🎭 ADVANCED MASK AUTO-TOGGLE ON SCENE SWITCH
+        // ========================================================
+        async function setFilterEnabled(sourceName, filterName, enabled) {
+            if (!isConnected) return;
+            try {
+                await sendRequest("SetSourceFilterEnabled", {
+                    sourceName: sourceName,
+                    filterName: filterName,
+                    filterEnabled: enabled
+                });
+                console.log(`Filter "${filterName}" on "${sourceName}" set to ${enabled}`);
+            } catch (err) {
+                // Fallback: If "Webcam Source" failed, try "Webcam Scene"
+                if (sourceName === "Webcam Source") {
+                    try {
+                        await sendRequest("SetSourceFilterEnabled", {
+                            sourceName: "Webcam Scene",
+                            filterName: filterName,
+                            filterEnabled: enabled
+                        });
+                        console.log(`Filter "${filterName}" on "Webcam Scene" set to ${enabled}`);
+                    } catch (e2) {}
+                }
+            }
+        }
+
+        async function handleSceneMaskAutoToggle(sceneName) {
+            if (isMatchingScene(sceneName, "Intermission Scene")) {
+                // 🙈 On Intermission Scene: Disable/Hide the mask
+                await setFilterEnabled(WEBCAM_SOURCE_FOR_MASK, ADVANCED_MASK_FILTER_NAME, false);
+            } else if (isMatchingScene(sceneName, "Gaming Scene")) {
+                // 👀 Returning to Gaming Scene: Enable/Show the mask again
+                await setFilterEnabled(WEBCAM_SOURCE_FOR_MASK, ADVANCED_MASK_FILTER_NAME, true);
+            }
+        }
+
+        // ========================================================
         // 📷 WEBCAM DYNAMIC TOGGLE (GÖM / VISA)
         // ========================================================
         function updateWebcamToggleUI(isVisible) {
@@ -426,11 +466,11 @@
 
             if (isVisible) {
                 if (labelEl) labelEl.textContent = "Göm Webcam";
-                if (tagEl) tagEl.style.backgroundColor = "#f2711c"; // Orange
+                if (tagEl) tagEl.style.backgroundColor = "#f2711c";
                 btnEl.classList.remove('webcam-is-hidden');
             } else {
                 if (labelEl) labelEl.textContent = "Visa Webcam";
-                if (tagEl) tagEl.style.backgroundColor = "#00ff88"; // Green
+                if (tagEl) tagEl.style.backgroundColor = "#00ff88";
                 btnEl.classList.add('webcam-is-hidden');
             }
         }
