@@ -118,16 +118,19 @@
             gap: 6px;
         }
 
+        /* 3-column row for Webcam controls */
         .grid-webcam {
             grid-template-columns: repeat(3, 1fr);
             margin-bottom: 12px;
         }
 
+        /* 2-column row for Intermission & Ending Scenes */
         .grid-scenes {
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             margin-bottom: 12px;
         }
 
+        /* 4-column row for Properties buttons */
         .grid-props {
             grid-template-columns: repeat(4, 1fr);
         }
@@ -169,6 +172,7 @@
             width: 18px;
             height: 3px;
             border-radius: 2px;
+            transition: background-color 0.2s ease;
         }
 
         .btn-sub {
@@ -188,6 +192,11 @@
 
         .deck-btn.active-scene .btn-sub {
             color: #00ff88 !important;
+        }
+
+        /* State when Webcam is hidden */
+        .deck-btn.webcam-is-hidden {
+            border-color: rgba(0, 255, 136, 0.35);
         }
     </style>
 </head>
@@ -212,7 +221,7 @@
     <div class="section-title">Webcam Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
 
-    <!-- 🎬 ROW 2: SCENES -->
+    <!-- 🎬 ROW 2: SCENES (Intermission & Ending) -->
     <div class="section-title">Scener</div>
     <div class="grid grid-scenes" id="scene-grid"></div>
 
@@ -242,40 +251,32 @@
                 ]
             },
             {
+                id: "btn-webcam-toggle",
                 label: "Göm Webcam",
                 color: "#f2711c",
+                isToggle: true,
                 scene: "Musikhjälpen | Gaming Scene",
                 source: "Webcam Scene"
             }
         ];
 
+        // 🎬 2 SCENE BUTTONS
         const SCENE_BUTTONS = [
             {
-                label: "Start",
-                sublabel: "Scene",
-                color: "#eab308",
-                sceneName: "Musikhjälpen|Starting Scene"
-            },
-            {
-                label: "Gaming",
-                sublabel: "Scene",
-                color: "#00ff88",
-                sceneName: "Musikhjälpen|Gaming Scene"
-            },
-            {
-                label: "Paus",
-                sublabel: "Intermission",
+                label: "Intermission Scene",
+                sublabel: "Scen",
                 color: "#3b82f6",
-                sceneName: "Musikhjälpen|Intermission Scene"
+                sceneName: "Intermission Scene"
             },
             {
-                label: "Slut",
-                sublabel: "Ending",
+                label: "Ending Scene",
+                sublabel: "Scen",
                 color: "#ef4444",
-                sceneName: "Musikhjälpen|Ending Scene"
+                sceneName: "Ending Scene"
             }
         ];
 
+        // ⚙️ 4 SOURCE PROPERTIES BUTTONS
         const PROPERTIES_BUTTONS = [
             {
                 label: "Spotify",
@@ -338,11 +339,23 @@
 
                     // Fetch current text from OBS text source into input box
                     fetchCurrentText(TEXT_SOURCE_NAME);
+
+                    // Sync initial Webcam visibility (Göm vs Visa)
+                    syncInitialWebcamState();
                 }
 
+                // Scene change event
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
                     const newScene = msg.d.eventData.sceneName;
                     updateActiveSceneUI(newScene);
+                }
+
+                // Webcam visibility change event
+                if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
+                    const { sceneName, sceneItemEnabled } = msg.d.eventData;
+                    if (sceneName && sceneName.includes("Gaming Scene")) {
+                        updateWebcamToggleUI(sceneItemEnabled);
+                    }
                 }
 
                 if (msg.op === 7) {
@@ -391,117 +404,45 @@
         }
 
         // ========================================================
-        // ✏️ TEXT SOURCE CONTROLLER
+        // 📷 WEBCAM DYNAMIC TOGGLE (GÖM / VISA)
         // ========================================================
-        async function updateTextSource(inputName, newText) {
-            if (!isConnected) return;
+        function updateWebcamToggleUI(isVisible) {
+            const btnEl = document.getElementById('btn-webcam-toggle');
+            if (!btnEl) return;
+            const labelEl = btnEl.querySelector('.btn-label');
+            const tagEl = btnEl.querySelector('.tag');
+
+            if (isVisible) {
+                if (labelEl) labelEl.textContent = "Göm Webcam";
+                if (tagEl) tagEl.style.backgroundColor = "#f2711c"; // Orange for hiding
+                btnEl.classList.remove('webcam-is-hidden');
+            } else {
+                if (labelEl) labelEl.textContent = "Visa Webcam";
+                if (tagEl) tagEl.style.backgroundColor = "#00ff88"; // Green for showing
+                btnEl.classList.add('webcam-is-hidden');
+            }
+        }
+
+        async function syncInitialWebcamState() {
             try {
-                await sendRequest("SetInputSettings", {
-                    inputName: inputName,
-                    inputSettings: {
-                        text: newText
-                    },
-                    overlay: true
-                });
-            } catch (err) {
-                console.error(`Failed to update text on "${inputName}":`, err);
-            }
-        }
-
-        async function fetchCurrentText(inputName) {
-            if (!isConnected) return;
-            try {
-                const res = await sendRequest("GetInputSettings", { inputName });
-                if (res && res.inputSettings && typeof res.inputSettings.text === 'string') {
-                    const inputEl = document.getElementById('streamer-name-input');
-                    if (inputEl && document.activeElement !== inputEl) {
-                        inputEl.value = res.inputSettings.text;
-                    }
-                }
-            } catch (err) {
-                console.warn(`Could not read text from "${inputName}":`, err);
-            }
-        }
-
-        function submitStreamerName() {
-            const inputEl = document.getElementById('streamer-name-input');
-            const submitBtn = document.getElementById('streamer-submit-btn');
-            if (!inputEl) return;
-
-            const text = inputEl.value.trim();
-            updateTextSource(TEXT_SOURCE_NAME, text);
-
-            // Button feedback
-            if (submitBtn) {
-                const originalText = submitBtn.innerText;
-                submitBtn.innerText = "✓ Sparat!";
-                submitBtn.style.color = "#ffffff";
-                setTimeout(() => {
-                    submitBtn.innerText = originalText;
-                    submitBtn.style.color = "#00ff88";
-                }, 1200);
-            }
-        }
-
-        // Allow pressing Enter inside the text field
-        document.getElementById('streamer-name-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                submitStreamerName();
-            }
-        });
-
-        // ========================================================
-        // 🪟 OPEN PROPERTIES DIALOG
-        // ========================================================
-        async function openSourceProperties(inputName) {
-            try {
-                await sendRequest("OpenInputPropertiesDialog", { inputName });
-            } catch (err) {
-                console.error("Could not open properties for:", inputName, err);
-            }
-        }
-
-        // ========================================================
-        // 🎬 SCENE & ITEM ACTIONS
-        // ========================================================
-        function isMatchingScene(nameA, nameB) {
-            if (!nameA || !nameB) return false;
-            const cleanA = nameA.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
-            const cleanB = nameB.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
-            return cleanA === cleanB;
-        }
-
-        async function switchScene(sceneName) {
-            if (!isConnected) return;
-            updateActiveSceneUI(sceneName);
-
-            try {
-                await sendRequest("SetCurrentProgramScene", { sceneName });
-            } catch (err) {
-                const altName = sceneName.includes(" | ")
-                    ? sceneName.replace(/\s*\|\s*/g, "|")
-                    : sceneName.replace(/\|/g, " | ");
+                let targetScene = "Musikhjälpen | Gaming Scene";
+                let sourceName = "Webcam Scene";
+                let itemId = null;
 
                 try {
-                    await sendRequest("SetCurrentProgramScene", { sceneName: altName });
-                } catch (err2) {
-                    console.error("Could not switch to scene:", sceneName, err2);
+                    const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
+                    itemId = res.sceneItemId;
+                } catch(e) {
+                    targetScene = "Musikhjälpen|Gaming Scene";
+                    const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
+                    itemId = res.sceneItemId;
                 }
-            }
-        }
 
-        function updateActiveSceneUI(activeSceneName) {
-            currentActiveScene = activeSceneName;
-            const buttons = document.querySelectorAll('#scene-grid .deck-btn');
-
-            buttons.forEach((btnEl, idx) => {
-                const sceneBtn = SCENE_BUTTONS[idx];
-                if (sceneBtn && isMatchingScene(activeSceneName, sceneBtn.sceneName)) {
-                    btnEl.classList.add('active-scene');
-                } else {
-                    btnEl.classList.remove('active-scene');
+                if (itemId !== null) {
+                    const statusRes = await sendRequest("GetSceneItemEnabled", { sceneName: targetScene, sceneItemId: itemId });
+                    updateWebcamToggleUI(statusRes.sceneItemEnabled);
                 }
-            });
+            } catch(e) {}
         }
 
         async function toggleSceneItem(sceneName, sourceName) {
@@ -534,14 +475,135 @@
                     sceneItemId: itemId
                 });
 
+                const willBeEnabled = !statusRes.sceneItemEnabled;
+
                 await sendRequest("SetSceneItemEnabled", {
                     sceneName: targetScene,
                     sceneItemId: itemId,
-                    sceneItemEnabled: !statusRes.sceneItemEnabled
+                    sceneItemEnabled: willBeEnabled
                 });
+
+                // Dynamically change text between "Göm Webcam" and "Visa Webcam"
+                updateWebcamToggleUI(willBeEnabled);
             } catch (err) {
                 console.error("Failed to toggle visibility:", err);
             }
+        }
+
+        // ========================================================
+        // ✏️ TEXT SOURCE CONTROLLER
+        // ========================================================
+        async function updateTextSource(inputName, newText) {
+            if (!isConnected) return;
+            try {
+                await sendRequest("SetInputSettings", {
+                    inputName: inputName,
+                    inputSettings: { text: newText },
+                    overlay: true
+                });
+            } catch (err) {
+                console.error(`Failed to update text on "${inputName}":`, err);
+            }
+        }
+
+        async function fetchCurrentText(inputName) {
+            if (!isConnected) return;
+            try {
+                const res = await sendRequest("GetInputSettings", { inputName });
+                if (res && res.inputSettings && typeof res.inputSettings.text === 'string') {
+                    const inputEl = document.getElementById('streamer-name-input');
+                    if (inputEl && document.activeElement !== inputEl) {
+                        inputEl.value = res.inputSettings.text;
+                    }
+                }
+            } catch (err) {
+                console.warn(`Could not read text from "${inputName}":`, err);
+            }
+        }
+
+        function submitStreamerName() {
+            const inputEl = document.getElementById('streamer-name-input');
+            const submitBtn = document.getElementById('streamer-submit-btn');
+            if (!inputEl) return;
+
+            const text = inputEl.value.trim();
+            updateTextSource(TEXT_SOURCE_NAME, text);
+
+            if (submitBtn) {
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "✓ Sparat!";
+                submitBtn.style.color = "#ffffff";
+                setTimeout(() => {
+                    submitBtn.innerText = originalText;
+                    submitBtn.style.color = "#00ff88";
+                }, 1200);
+            }
+        }
+
+        document.getElementById('streamer-name-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitStreamerName();
+        });
+
+        // ========================================================
+        // 🪟 OPEN PROPERTIES DIALOG
+        // ========================================================
+        async function openSourceProperties(inputName) {
+            try {
+                await sendRequest("OpenInputPropertiesDialog", { inputName });
+            } catch (err) {
+                console.error("Could not open properties for:", inputName, err);
+            }
+        }
+
+        // ========================================================
+        // 🎬 SCENE ACTIONS
+        // ========================================================
+        function isMatchingScene(currentName, targetName) {
+            if (!currentName || !targetName) return false;
+            const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            if (cleanA === cleanB) return true;
+
+            // Matches whether "Musikhjälpen|" prefix is present or not
+            const baseA = cleanA.split('|').pop().trim();
+            const baseB = cleanB.split('|').pop().trim();
+            return baseA === baseB;
+        }
+
+        async function switchScene(sceneName) {
+            if (!isConnected) return;
+            updateActiveSceneUI(sceneName);
+
+            // Tries exact scene name, then attempts prefixed versions automatically
+            try {
+                await sendRequest("SetCurrentProgramScene", { sceneName });
+            } catch (err) {
+                const prefix1 = "Musikhjälpen|" + sceneName;
+                const prefix2 = "Musikhjälpen | " + sceneName;
+                try {
+                    await sendRequest("SetCurrentProgramScene", { sceneName: prefix1 });
+                } catch (e1) {
+                    try {
+                        await sendRequest("SetCurrentProgramScene", { sceneName: prefix2 });
+                    } catch (e2) {
+                        console.error("Could not switch to scene:", sceneName);
+                    }
+                }
+            }
+        }
+
+        function updateActiveSceneUI(activeSceneName) {
+            currentActiveScene = activeSceneName;
+            const buttons = document.querySelectorAll('#scene-grid .deck-btn');
+
+            buttons.forEach((btnEl, idx) => {
+                const sceneBtn = SCENE_BUTTONS[idx];
+                if (sceneBtn && isMatchingScene(activeSceneName, sceneBtn.sceneName)) {
+                    btnEl.classList.add('active-scene');
+                } else {
+                    btnEl.classList.remove('active-scene');
+                }
+            });
         }
 
         function sendFilterTrigger(sourceName, filterName) {
@@ -596,15 +658,18 @@
             WEBCAM_BUTTONS.forEach(btn => {
                 const buttonEl = document.createElement('button');
                 buttonEl.className = 'deck-btn';
+                if (btn.isToggle) {
+                    buttonEl.id = 'btn-webcam-toggle';
+                }
                 buttonEl.innerHTML = `
                     <div class="tag" style="background-color: ${btn.color}"></div>
-                    <span>${btn.label}</span>
+                    <span class="btn-label">${btn.label}</span>
                 `;
                 buttonEl.onclick = () => handleButtonClick(btn);
                 webcamGrid.appendChild(buttonEl);
             });
 
-            // 2. Scene Buttons
+            // 2. Scene Buttons (Intermission & Ending)
             const sceneGrid = document.getElementById('scene-grid');
             sceneGrid.innerHTML = '';
             SCENE_BUTTONS.forEach(btn => {
