@@ -124,9 +124,9 @@
             margin-bottom: 12px;
         }
 
-        /* 2-column row for Intermission & Ending Scenes */
+        /* 4-column row for All 4 Scene buttons */
         .grid-scenes {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             margin-bottom: 12px;
         }
 
@@ -221,7 +221,7 @@
     <div class="section-title">Webcam Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
 
-    <!-- 🎬 ROW 2: SCENES (Intermission & Ending) -->
+    <!-- 🎬 ROW 2: SCENES (All 4 Scenes) -->
     <div class="section-title">Scener</div>
     <div class="grid grid-scenes" id="scene-grid"></div>
 
@@ -260,17 +260,29 @@
             }
         ];
 
-        // 🎬 2 SCENE BUTTONS
+        // 🎬 ALL 4 SCENE BUTTONS
         const SCENE_BUTTONS = [
             {
-                label: "Intermission Scene",
-                sublabel: "Scen",
+                label: "Start",
+                sublabel: "Scene",
+                color: "#eab308",
+                sceneName: "Musikhjälpen|Starting Scene"
+            },
+            {
+                label: "Gaming",
+                sublabel: "Scene",
+                color: "#00ff88",
+                sceneName: "Musikhjälpen|Gaming Scene"
+            },
+            {
+                label: "Intermission",
+                sublabel: "Scene",
                 color: "#3b82f6",
                 sceneName: "Intermission Scene"
             },
             {
-                label: "Ending Scene",
-                sublabel: "Scen",
+                label: "Ending",
+                sublabel: "Scene",
                 color: "#ef4444",
                 sceneName: "Ending Scene"
             }
@@ -330,7 +342,7 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch active scene
+                    // Fetch current active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
@@ -414,11 +426,11 @@
 
             if (isVisible) {
                 if (labelEl) labelEl.textContent = "Göm Webcam";
-                if (tagEl) tagEl.style.backgroundColor = "#f2711c"; // Orange for hiding
+                if (tagEl) tagEl.style.backgroundColor = "#f2711c"; // Orange
                 btnEl.classList.remove('webcam-is-hidden');
             } else {
                 if (labelEl) labelEl.textContent = "Visa Webcam";
-                if (tagEl) tagEl.style.backgroundColor = "#00ff88"; // Green for showing
+                if (tagEl) tagEl.style.backgroundColor = "#00ff88"; // Green
                 btnEl.classList.add('webcam-is-hidden');
             }
         }
@@ -483,7 +495,6 @@
                     sceneItemEnabled: willBeEnabled
                 });
 
-                // Dynamically change text between "Göm Webcam" and "Visa Webcam"
                 updateWebcamToggleUI(willBeEnabled);
             } catch (err) {
                 console.error("Failed to toggle visibility:", err);
@@ -564,7 +575,6 @@
             const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
             if (cleanA === cleanB) return true;
 
-            // Matches whether "Musikhjälpen|" prefix is present or not
             const baseA = cleanA.split('|').pop().trim();
             const baseB = cleanB.split('|').pop().trim();
             return baseA === baseB;
@@ -574,7 +584,6 @@
             if (!isConnected) return;
             updateActiveSceneUI(sceneName);
 
-            // Tries exact scene name, then attempts prefixed versions automatically
             try {
                 await sendRequest("SetCurrentProgramScene", { sceneName });
             } catch (err) {
@@ -669,7 +678,7 @@
                 webcamGrid.appendChild(buttonEl);
             });
 
-            // 2. Scene Buttons (Intermission & Ending)
+            // 2. Scene Buttons (All 4 Scenes)
             const sceneGrid = document.getElementById('scene-grid');
             sceneGrid.innerHTML = '';
             SCENE_BUTTONS.forEach(btn => {
