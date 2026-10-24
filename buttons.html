@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>OBS Button Deck</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap');
 
         * {
             margin: 0;
@@ -14,10 +14,10 @@
         }
 
         body {
-            background-color: #18181b;
+            background-color: #111114;
             color: #efeff1;
             font-family: 'Inter', sans-serif;
-            padding: 12px;
+            padding: 10px;
             overflow-y: auto;
         }
 
@@ -26,12 +26,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 11px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #adadb8;
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #71717a;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
 
         .status-indicator {
@@ -41,80 +41,126 @@
         }
 
         .dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background-color: #eb0400; /* Red when disconnected */
+            background-color: #eb0400; /* Red when offline */
         }
 
         .dot.connected {
-            background-color: #00f593; /* Green when ready */
+            background-color: #00ff88; /* Green when ready */
+            box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
         }
 
-        /* Button Grid */
+        /* Section Titles */
+        .section-title {
+            font-size: 9px;
+            font-weight: 800;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        /* Grids */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 10px;
+            gap: 6px;
+        }
+
+        /* 3-column row for Webcam controls */
+        .grid-webcam {
+            grid-template-columns: repeat(3, 1fr);
+            margin-bottom: 12px;
+        }
+
+        /* 4-column row for all 4 Scene buttons side-by-side */
+        .grid-scenes {
+            grid-template-columns: repeat(4, 1fr);
         }
 
         /* Stream-Deck Style Buttons */
         .deck-btn {
-            background: #26262c;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 3px solid #1f1f23;
-            border-radius: 8px;
+            background: #1c1c22;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 2px solid #141418;
+            border-radius: 6px;
             color: #efeff1;
             font-family: inherit;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
-            padding: 16px 8px;
+            padding: 10px 4px;
             cursor: pointer;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: all 0.1s ease;
+            gap: 4px;
+            transition: all 0.12s ease;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         .deck-btn:hover {
-            background: #323239;
+            background: #272730;
             border-color: rgba(255, 255, 255, 0.2);
         }
 
         .deck-btn:active {
-            transform: translateY(2px);
+            transform: translateY(1px);
             border-bottom-width: 1px;
         }
 
         .deck-btn .tag {
-            width: 24px;
-            height: 4px;
+            width: 18px;
+            height: 3px;
             border-radius: 2px;
-            margin-bottom: 4px;
+        }
+
+        .btn-sub {
+            font-size: 8px;
+            color: #71717a;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: -2px;
+        }
+
+        /* 🌟 ACTIVE SCENE HIGHLIGHT */
+        .deck-btn.active-scene {
+            background: #1e2922 !important;
+            border-color: #00ff88 !important;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3) !important;
+        }
+
+        .deck-btn.active-scene .btn-sub {
+            color: #00ff88 !important;
         }
     </style>
 </head>
 <body>
 
     <div class="status-bar">
-        <span>Controls</span>
+        <span>OBS Kontrollpanel</span>
         <div class="status-indicator">
             <span class="dot" id="dot"></span>
             <span id="status-text">Connecting...</span>
         </div>
     </div>
 
-    <!-- Buttons Render Here -->
-    <div class="grid" id="button-grid"></div>
+    <!-- 📷 ROW 1: WEBCAM CONTROLS (3 Columns) -->
+    <div class="section-title">Webcam Kontroller</div>
+    <div class="grid grid-webcam" id="webcam-grid"></div>
+
+    <!-- 🎬 ROW 2: SCENES (All 4 in a Row) -->
+    <div class="section-title">Scener</div>
+    <div class="grid grid-scenes" id="scene-grid"></div>
 
     <script>
-        // ================= BUTTON CONFIGURATION =================
-        const BUTTONS = [
+        // ================= BUTTON DEFINITIONS =================
+        const WEBCAM_BUTTONS = [
             {
-                label: "Webcam Left",
+                label: "Webcam Vänster",
                 color: "#9146FF",
                 actions: [
                     { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Left" },
@@ -122,26 +168,53 @@
                 ]
             },
             {
-                label: "Webcam Right",
+                label: "Webcam Höger",
                 color: "#00b5ad",
                 actions: [
                     { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Right" },
                     { source: "Html Files", filter: "Move Chat Source Left" }
                 ]
             },
-            // Hide / Toggle Webcam scene item:
             {
-                label: "Hide Webcam",
+                label: "Göm Webcam",
                 color: "#f2711c",
                 scene: "Musikhjälpen | Gaming Scene",
                 source: "Webcam Scene"
             }
         ];
-        // ========================================================
+
+        const SCENE_BUTTONS = [
+            {
+                label: "Start",
+                sublabel: "Scene",
+                color: "#eab308", // Yellow
+                sceneName: "Musikhjälpen|Starting Scene"
+            },
+            {
+                label: "Gaming",
+                sublabel: "Scene",
+                color: "#00ff88", // Green
+                sceneName: "Musikhjälpen|Gaming Scene"
+            },
+            {
+                label: "Paus",
+                sublabel: "Intermission",
+                color: "#3b82f6", // Blue
+                sceneName: "Musikhjälpen|Intermission Scene"
+            },
+            {
+                label: "Slut",
+                sublabel: "Ending",
+                color: "#ef4444", // Red
+                sceneName: "Musikhjälpen|Ending Scene"
+            }
+        ];
+        // ======================================================
 
         let ws = null;
         let isConnected = false;
         const pendingRequests = new Map();
+        let currentActiveScene = "";
 
         function connectOBS() {
             ws = new WebSocket('ws://127.0.0.1:4455');
@@ -151,7 +224,7 @@
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
 
-                // OpCode 0: Hello from OBS
+                // OpCode 0: Hello from OBS -> Send Identify
                 if (msg.op === 0) {
                     ws.send(JSON.stringify({
                         op: 1,
@@ -164,6 +237,19 @@
                     isConnected = true;
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
+
+                    // Fetch active scene on connect
+                    sendRequest("GetCurrentProgramScene").then(res => {
+                        if (res && res.currentProgramSceneName) {
+                            updateActiveSceneUI(res.currentProgramSceneName);
+                        }
+                    }).catch(() => {});
+                }
+
+                // OpCode 5: OBS Events (Live scene changes)
+                if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
+                    const newScene = msg.d.eventData.sceneName;
+                    updateActiveSceneUI(newScene);
                 }
 
                 // OpCode 7: Request Responses
@@ -213,19 +299,58 @@
             });
         }
 
-        // Toggles a source (scene item) visibility inside a specific scene
+        // Match scene names flexibly with or without spaces around '|'
+        function isMatchingScene(nameA, nameB) {
+            if (!nameA || !nameB) return false;
+            const cleanA = nameA.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            const cleanB = nameB.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            return cleanA === cleanB;
+        }
+
+        // Switch scenes in OBS
+        async function switchScene(sceneName) {
+            if (!isConnected) return;
+            updateActiveSceneUI(sceneName); // Optimistic UI update
+
+            try {
+                await sendRequest("SetCurrentProgramScene", { sceneName });
+            } catch (err) {
+                const altName = sceneName.includes(" | ")
+                    ? sceneName.replace(/\s*\|\s*/g, "|")
+                    : sceneName.replace(/\|/g, " | ");
+
+                try {
+                    await sendRequest("SetCurrentProgramScene", { sceneName: altName });
+                } catch (err2) {
+                    console.error("Could not switch to scene:", sceneName, err2);
+                }
+            }
+        }
+
+        // Highlight the currently active scene button
+        function updateActiveSceneUI(activeSceneName) {
+            currentActiveScene = activeSceneName;
+            const buttons = document.querySelectorAll('#scene-grid .deck-btn');
+
+            buttons.forEach((btnEl, idx) => {
+                const sceneBtn = SCENE_BUTTONS[idx];
+                if (sceneBtn && isMatchingScene(activeSceneName, sceneBtn.sceneName)) {
+                    btnEl.classList.add('active-scene');
+                } else {
+                    btnEl.classList.remove('active-scene');
+                }
+            });
+        }
+
+        // Toggle webcam visibility inside Gaming Scene
         async function toggleSceneItem(sceneName, sourceName) {
             if (!isConnected) return;
 
             let targetScene = sceneName;
             let itemId = null;
 
-            // 1. Fetch the scene item ID (with spacing fallback)
             try {
-                const res = await sendRequest("GetSceneItemId", {
-                    sceneName: targetScene,
-                    sourceName: sourceName
-                });
+                const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
                 itemId = res.sceneItemId;
             } catch (err) {
                 const altScene = targetScene.includes(" | ")
@@ -233,19 +358,15 @@
                     : targetScene.replace(/\|/g, " | ");
 
                 try {
-                    const res = await sendRequest("GetSceneItemId", {
-                        sceneName: altScene,
-                        sourceName: sourceName
-                    });
+                    const res = await sendRequest("GetSceneItemId", { sceneName: altScene, sourceName });
                     itemId = res.sceneItemId;
                     targetScene = altScene;
                 } catch (err2) {
-                    console.error(`Could not locate source "${sourceName}" inside "${targetScene}" or "${altScene}".`);
+                    console.error(`Could not locate source "${sourceName}" in "${targetScene}".`);
                     return;
                 }
             }
 
-            // 2. Fetch current visibility state and invert it
             try {
                 const statusRes = await sendRequest("GetSceneItemEnabled", {
                     sceneName: targetScene,
@@ -262,11 +383,10 @@
             }
         }
 
-        // Triggers an individual filter on a specific source/scene
+        // Trigger Move filters
         function sendFilterTrigger(sourceName, filterName) {
             if (!isConnected) return;
 
-            // Toggle filter false then true to force animation replay
             ws.send(JSON.stringify({
                 op: 6,
                 d: {
@@ -296,41 +416,49 @@
             }, 30);
         }
 
-        // Handles clicks for filter actions or scene item toggles
-        function handleButtonClick(btn) {
+        function handleWebcamButtonClick(btn) {
             if (btn.actions && Array.isArray(btn.actions)) {
                 btn.actions.forEach(action => {
-                    if (action.filter) {
-                        sendFilterTrigger(action.source, action.filter);
-                    } else if (action.scene && action.source) {
-                        toggleSceneItem(action.scene, action.source);
-                    }
+                    sendFilterTrigger(action.source, action.filter);
                 });
-            } else if (btn.filter && btn.source) {
-                sendFilterTrigger(btn.source, btn.filter);
             } else if (btn.scene && btn.source) {
                 toggleSceneItem(btn.scene, btn.source);
             }
         }
 
-        // Render buttons onto screen
-        function renderButtons() {
-            const grid = document.getElementById('button-grid');
-            grid.innerHTML = '';
-
-            BUTTONS.forEach(btn => {
+        // Render both rows onto screen
+        function renderDeck() {
+            // 1. Render Webcam buttons
+            const webcamGrid = document.getElementById('webcam-grid');
+            webcamGrid.innerHTML = '';
+            WEBCAM_BUTTONS.forEach(btn => {
                 const buttonEl = document.createElement('button');
                 buttonEl.className = 'deck-btn';
                 buttonEl.innerHTML = `
-                    <div class="tag" style="background-color: ${btn.color || '#9146FF'}"></div>
+                    <div class="tag" style="background-color: ${btn.color}"></div>
                     <span>${btn.label}</span>
                 `;
-                buttonEl.onclick = () => handleButtonClick(btn);
-                grid.appendChild(buttonEl);
+                buttonEl.onclick = () => handleWebcamButtonClick(btn);
+                webcamGrid.appendChild(buttonEl);
+            });
+
+            // 2. Render Scene buttons
+            const sceneGrid = document.getElementById('scene-grid');
+            sceneGrid.innerHTML = '';
+            SCENE_BUTTONS.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.className = 'deck-btn';
+                buttonEl.innerHTML = `
+                    <div class="tag" style="background-color: ${btn.color}"></div>
+                    <span>${btn.label}</span>
+                    <span class="btn-sub">${btn.sublabel}</span>
+                `;
+                buttonEl.onclick = () => switchScene(btn.sceneName);
+                sceneGrid.appendChild(buttonEl);
             });
         }
 
-        renderButtons();
+        renderDeck();
         connectOBS();
     </script>
 </body>
