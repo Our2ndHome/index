@@ -62,25 +62,72 @@
             margin-bottom: 6px;
         }
 
+        /* ✏️ Text Input Row */
+        .input-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .deck-input {
+            flex: 1;
+            background: #18181c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 8px 10px;
+            outline: none;
+            user-select: auto;
+            transition: border-color 0.15s ease;
+        }
+
+        .deck-input:focus {
+            border-color: #00ff88;
+        }
+
+        .deck-submit-btn {
+            background: #1c1c22;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid #141418;
+            border-radius: 6px;
+            color: #00ff88;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            white-space: nowrap;
+        }
+
+        .deck-submit-btn:hover {
+            background: #272730;
+            border-color: #00ff88;
+        }
+
+        .deck-submit-btn:active {
+            transform: translateY(1px);
+        }
+
         /* Grids */
         .grid {
             display: grid;
             gap: 6px;
         }
 
-        /* 3-column row for Webcam controls */
         .grid-webcam {
             grid-template-columns: repeat(3, 1fr);
             margin-bottom: 12px;
         }
 
-        /* 4-column row for Scene buttons */
         .grid-scenes {
             grid-template-columns: repeat(4, 1fr);
             margin-bottom: 12px;
         }
 
-        /* 4-column row for Properties buttons right under scenes */
         .grid-props {
             grid-template-columns: repeat(4, 1fr);
         }
@@ -154,6 +201,13 @@
         </div>
     </div>
 
+    <!-- ✏️ ROW 0: STREAMER NAME TEXT SOURCE -->
+    <div class="section-title">Streamer Namn (Textkälla)</div>
+    <div class="input-row">
+        <input type="text" id="streamer-name-input" class="deck-input" placeholder="Skriv streamernamn..." />
+        <button class="deck-submit-btn" id="streamer-submit-btn" onclick="submitStreamerName()">Sätt</button>
+    </div>
+
     <!-- 📷 ROW 1: WEBCAM CONTROLS -->
     <div class="section-title">Webcam Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
@@ -167,7 +221,9 @@
     <div class="grid grid-props" id="props-grid"></div>
 
     <script>
-        // ================= BUTTON DEFINITIONS =================
+        // ================= CONFIGURATION =================
+        const TEXT_SOURCE_NAME = "Streamer - Name Source";
+
         const WEBCAM_BUTTONS = [
             {
                 label: "Webcam Vänster",
@@ -220,7 +276,6 @@
             }
         ];
 
-        // ⚙️ 4 SOURCE PROPERTIES BUTTONS
         const PROPERTIES_BUTTONS = [
             {
                 label: "Spotify",
@@ -247,7 +302,7 @@
                 source: "Webcam Source"
             }
         ];
-        // ======================================================
+        // =================================================
 
         let ws = null;
         let isConnected = false;
@@ -274,11 +329,15 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
+                    // Fetch active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
                         }
                     }).catch(() => {});
+
+                    // Fetch current text from OBS text source into input box
+                    fetchCurrentText(TEXT_SOURCE_NAME);
                 }
 
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
@@ -330,6 +389,66 @@
                 }));
             });
         }
+
+        // ========================================================
+        // ✏️ TEXT SOURCE CONTROLLER
+        // ========================================================
+        async function updateTextSource(inputName, newText) {
+            if (!isConnected) return;
+            try {
+                await sendRequest("SetInputSettings", {
+                    inputName: inputName,
+                    inputSettings: {
+                        text: newText
+                    },
+                    overlay: true
+                });
+            } catch (err) {
+                console.error(`Failed to update text on "${inputName}":`, err);
+            }
+        }
+
+        async function fetchCurrentText(inputName) {
+            if (!isConnected) return;
+            try {
+                const res = await sendRequest("GetInputSettings", { inputName });
+                if (res && res.inputSettings && typeof res.inputSettings.text === 'string') {
+                    const inputEl = document.getElementById('streamer-name-input');
+                    if (inputEl && document.activeElement !== inputEl) {
+                        inputEl.value = res.inputSettings.text;
+                    }
+                }
+            } catch (err) {
+                console.warn(`Could not read text from "${inputName}":`, err);
+            }
+        }
+
+        function submitStreamerName() {
+            const inputEl = document.getElementById('streamer-name-input');
+            const submitBtn = document.getElementById('streamer-submit-btn');
+            if (!inputEl) return;
+
+            const text = inputEl.value.trim();
+            updateTextSource(TEXT_SOURCE_NAME, text);
+
+            // Button feedback
+            if (submitBtn) {
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "✓ Sparat!";
+                submitBtn.style.color = "#ffffff";
+                setTimeout(() => {
+                    submitBtn.innerText = originalText;
+                    submitBtn.style.color = "#00ff88";
+                }, 1200);
+            }
+        }
+
+        // Allow pressing Enter inside the text field
+        document.getElementById('streamer-name-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                submitStreamerName();
+            }
+        });
 
         // ========================================================
         // 🪟 OPEN PROPERTIES DIALOG
@@ -500,7 +619,7 @@
                 sceneGrid.appendChild(buttonEl);
             });
 
-            // 3. Properties Buttons (Ändra dessa:)
+            // 3. Properties Buttons
             const propsGrid = document.getElementById('props-grid');
             propsGrid.innerHTML = '';
             PROPERTIES_BUTTONS.forEach(btn => {
