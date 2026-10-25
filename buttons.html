@@ -233,10 +233,12 @@
         // ================= CONFIGURATION =================
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
 
-        // 🎬 MOVE VALUE FILTERS ON "Webcam Scene"
-        const WEBCAM_SCENE_SOURCE = "Webcam Scene"; 
-        const FILTER_START_END = "Move Value in";       // Runs on Starting & Ending Scene
-        const FILTER_GAMING_INTER = "Move Value out";   // Runs on Gaming & Intermission Scene
+        // 🎬 EXACT SOURCES & FILTER MAPPINGS
+        const SOURCE_WEBCAM = "Webcam Source";
+        const SOURCE_WEBCAM_SCENE = "Webcam Scene";
+
+        const FILTER_MOVE_OUT = "Move Value out";
+        const FILTER_MOVE_IN = "Move Value in";
 
         const WEBCAM_BUTTONS = [
             {
@@ -420,26 +422,20 @@
         }
 
         // ========================================================
-        // 🎬 MOVE VALUE FILTERS (TARGET: Webcam Scene)
+        // 🎬 MOVE VALUE AUTOMATION ON SCENE CHANGE
         // ========================================================
-        function triggerFilter(sourceName, filterName) {
-            sendFilterTrigger(sourceName, filterName);
-            // Fallback: If also defined on Webcam Source
-            if (sourceName === "Webcam Scene") {
-                sendFilterTrigger("Webcam Source", filterName);
-            }
-        }
-
         function handleSceneAutoFilters(sceneName) {
             if (isMatchingScene(sceneName, lastAutoFilteredScene)) return;
             lastAutoFilteredScene = sceneName;
 
             if (isMatchingScene(sceneName, "Starting Scene") || isMatchingScene(sceneName, "Ending Scene")) {
-                // Starting & Ending Scene -> "Move Value in" on Webcam Scene
-                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_START_END);
+                // Starting & Ending:
+                sendFilterTrigger(SOURCE_WEBCAM, FILTER_MOVE_OUT);       // "Move Value out" on Webcam Source
+                sendFilterTrigger(SOURCE_WEBCAM_SCENE, FILTER_MOVE_IN);  // "Move Value in" on Webcam Scene
             } else if (isMatchingScene(sceneName, "Gaming Scene") || isMatchingScene(sceneName, "Intermission Scene")) {
-                // Gaming & Intermission Scene -> "Move Value out" on Webcam Scene
-                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_GAMING_INTER);
+                // Gaming & Intermission:
+                sendFilterTrigger(SOURCE_WEBCAM, FILTER_MOVE_IN);        // "Move Value in" on Webcam Source
+                sendFilterTrigger(SOURCE_WEBCAM_SCENE, FILTER_MOVE_OUT); // "Move Value out" on Webcam Scene
             }
 
             setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
@@ -448,7 +444,7 @@
         function sendFilterTrigger(sourceName, filterName) {
             if (!isConnected) return;
 
-            // Reset and replay filter instantly
+            // Reset and trigger instantly so Move Transition replays every time
             ws.send(JSON.stringify({
                 op: 6,
                 d: {
@@ -495,7 +491,7 @@
         async function switchScene(sceneName) {
             if (!isConnected) return;
 
-            // 🚀 STEP 1: Fire Move Value filter immediately (0ms delay)
+            // 🚀 STEP 1: Fire Move Value filters immediately (0ms delay)
             handleSceneAutoFilters(sceneName);
 
             // 🚀 STEP 2: Instant button active state
