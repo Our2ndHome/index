@@ -233,12 +233,9 @@
         // ================= CONFIGURATION =================
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
 
-        // 🎬 EXACT SOURCES & FILTER MAPPINGS
+        // Exact sources
         const SOURCE_WEBCAM = "Webcam Source";
         const SOURCE_WEBCAM_SCENE = "Webcam Scene";
-
-        const FILTER_MOVE_OUT = "Move Value out";
-        const FILTER_MOVE_IN = "Move Value in";
 
         const WEBCAM_BUTTONS = [
             {
@@ -350,10 +347,11 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch current active scene
+                    // Fetch current active scene and apply filters immediately
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
+                            handleSceneAutoFilters(res.currentProgramSceneName);
                         }
                     }).catch(() => {});
 
@@ -422,20 +420,30 @@
         }
 
         // ========================================================
-        // 🎬 MOVE VALUE AUTOMATION ON SCENE CHANGE
+        // 🎬 EXACT SCENE FILTER LOGIC
         // ========================================================
         function handleSceneAutoFilters(sceneName) {
             if (isMatchingScene(sceneName, lastAutoFilteredScene)) return;
             lastAutoFilteredScene = sceneName;
 
+            // 1. MASK FILTER (Target: Webcam Source)
+            // Gaming: "Move Value in"
+            // Starting, Ending, Intermission: "Move Value out"
+            if (isMatchingScene(sceneName, "Gaming Scene")) {
+                sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
+            } else if (isMatchingScene(sceneName, "Starting Scene") ||
+                       isMatchingScene(sceneName, "Ending Scene") ||
+                       isMatchingScene(sceneName, "Intermission Scene")) {
+                sendFilterTrigger(SOURCE_WEBCAM, "Move Value out");
+            }
+
+            // 2. BLUR FILTER (Target: Webcam Scene)
+            // Starting, Ending: "Move Value in"
+            // Gaming, Intermission: "Move Value out"
             if (isMatchingScene(sceneName, "Starting Scene") || isMatchingScene(sceneName, "Ending Scene")) {
-                // Starting & Ending:
-                sendFilterTrigger(SOURCE_WEBCAM, FILTER_MOVE_OUT);       // "Move Value out" on Webcam Source
-                sendFilterTrigger(SOURCE_WEBCAM_SCENE, FILTER_MOVE_IN);  // "Move Value in" on Webcam Scene
+                sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value in");
             } else if (isMatchingScene(sceneName, "Gaming Scene") || isMatchingScene(sceneName, "Intermission Scene")) {
-                // Gaming & Intermission:
-                sendFilterTrigger(SOURCE_WEBCAM, FILTER_MOVE_IN);        // "Move Value in" on Webcam Source
-                sendFilterTrigger(SOURCE_WEBCAM_SCENE, FILTER_MOVE_OUT); // "Move Value out" on Webcam Scene
+                sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
             }
 
             setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
@@ -444,7 +452,7 @@
         function sendFilterTrigger(sourceName, filterName) {
             if (!isConnected) return;
 
-            // Reset and trigger instantly so Move Transition replays every time
+            // Instant reset & replay toggle
             ws.send(JSON.stringify({
                 op: 6,
                 d: {
@@ -491,7 +499,7 @@
         async function switchScene(sceneName) {
             if (!isConnected) return;
 
-            // 🚀 STEP 1: Fire Move Value filters immediately (0ms delay)
+            // 🚀 STEP 1: Fire all filters immediately (0ms delay)
             handleSceneAutoFilters(sceneName);
 
             // 🚀 STEP 2: Instant button active state
