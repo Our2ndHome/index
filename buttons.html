@@ -234,9 +234,9 @@
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
 
         // 🎬 MOVE VALUE FILTERS ON "Webcam Scene"
-        const WEBCAM_SCENE_SOURCE = "Webcam Scene"; // Filter target is now Webcam Scene
-        const FILTER_LEAVE_GAMING = "Move Value out"; // Runs on Intermission, Starting & Ending
-        const FILTER_ENTER_GAMING = "Move Value in";  // Runs on Gaming Scene
+        const WEBCAM_SCENE_SOURCE = "Webcam Scene"; 
+        const FILTER_START_END = "Move Value in";       // Runs on Starting & Ending Scene
+        const FILTER_GAMING_INTER = "Move Value out";   // Runs on Gaming & Intermission Scene
 
         const WEBCAM_BUTTONS = [
             {
@@ -434,14 +434,12 @@
             if (isMatchingScene(sceneName, lastAutoFilteredScene)) return;
             lastAutoFilteredScene = sceneName;
 
-            if (isMatchingScene(sceneName, "Intermission Scene") ||
-                isMatchingScene(sceneName, "Starting Scene") ||
-                isMatchingScene(sceneName, "Ending Scene")) {
-                // Switching to Intermission, Starting, or Ending -> Run "Move Value out" on Webcam Scene
-                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_LEAVE_GAMING);
-            } else if (isMatchingScene(sceneName, "Gaming Scene")) {
-                // Switching to Gaming Scene -> Run "Move Value in" on Webcam Scene
-                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_ENTER_GAMING);
+            if (isMatchingScene(sceneName, "Starting Scene") || isMatchingScene(sceneName, "Ending Scene")) {
+                // Starting & Ending Scene -> "Move Value in" on Webcam Scene
+                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_START_END);
+            } else if (isMatchingScene(sceneName, "Gaming Scene") || isMatchingScene(sceneName, "Intermission Scene")) {
+                // Gaming & Intermission Scene -> "Move Value out" on Webcam Scene
+                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_GAMING_INTER);
             }
 
             setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
@@ -497,7 +495,7 @@
         async function switchScene(sceneName) {
             if (!isConnected) return;
 
-            // 🚀 STEP 1: Fire Move Value filter on Webcam Scene immediately (0ms delay)
+            // 🚀 STEP 1: Fire Move Value filter immediately (0ms delay)
             handleSceneAutoFilters(sceneName);
 
             // 🚀 STEP 2: Instant button active state
