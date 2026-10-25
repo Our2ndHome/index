@@ -233,14 +233,10 @@
         // ================= CONFIGURATION =================
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
 
-        // 🎬 MOVE VALUE TRANSITIONS
-        const WEBCAM_SOURCE_FOR_FILTERS = "Webcam Source"; 
-        const FILTER_LEAVE_GAMING = "Move Value out";       
-        const FILTER_ENTER_GAMING = "Move Value in";        
-
-        // 🌫️ COMPOSITE BLUR AUTOMATION
-        const BLUR_TARGET_SOURCE = "Webcam Scene"; // The scene/source that has the blur filter
-        const BLUR_FILTER_NAME = "Composite Blur"; // Filter name in OBS
+        // 🎬 MOVE VALUE FILTERS ON "Webcam Scene"
+        const WEBCAM_SCENE_SOURCE = "Webcam Scene"; // Filter target is now Webcam Scene
+        const FILTER_LEAVE_GAMING = "Move Value out"; // Runs on Intermission, Starting & Ending
+        const FILTER_ENTER_GAMING = "Move Value in";  // Runs on Gaming Scene
 
         const WEBCAM_BUTTONS = [
             {
@@ -352,11 +348,10 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch current active scene and apply initial filters/blur
+                    // Fetch current active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
-                            handleSceneAutoFilters(res.currentProgramSceneName);
                         }
                     }).catch(() => {});
 
@@ -364,7 +359,7 @@
                     syncInitialWebcamState();
                 }
 
-                // Scene change event listener
+                // Scene change broadcast from OBS
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
                     const newScene = msg.d.eventData.sceneName;
                     updateActiveSceneUI(newScene);
@@ -425,33 +420,13 @@
         }
 
         // ========================================================
-        // ⚡ FILTER AUTOMATION (MOVE VALUE & COMPOSITE BLUR)
+        // 🎬 MOVE VALUE FILTERS (TARGET: Webcam Scene)
         // ========================================================
-        async function setFilterState(sourceName, filterName, enabled) {
-            if (!isConnected) return;
-            try {
-                await sendRequest("SetSourceFilterEnabled", {
-                    sourceName: sourceName,
-                    filterName: filterName,
-                    filterEnabled: enabled
-                });
-            } catch (err) {
-                // Fallback: If "Webcam Scene" failed, check "Webcam Source"
-                const altSource = sourceName === "Webcam Scene" ? "Webcam Source" : "Webcam Scene";
-                try {
-                    await sendRequest("SetSourceFilterEnabled", {
-                        sourceName: altSource,
-                        filterName: filterName,
-                        filterEnabled: enabled
-                    });
-                } catch (e2) {}
-            }
-        }
-
-        function triggerFilterWithFallback(sourceName, filterName) {
+        function triggerFilter(sourceName, filterName) {
             sendFilterTrigger(sourceName, filterName);
-            if (sourceName === "Webcam Source") {
-                sendFilterTrigger("Webcam Scene", filterName);
+            // Fallback: If also defined on Webcam Source
+            if (sourceName === "Webcam Scene") {
+                sendFilterTrigger("Webcam Source", filterName);
             }
         }
 
@@ -459,20 +434,14 @@
             if (isMatchingScene(sceneName, lastAutoFilteredScene)) return;
             lastAutoFilteredScene = sceneName;
 
-            // 1. Move Value Transitions
             if (isMatchingScene(sceneName, "Intermission Scene") ||
                 isMatchingScene(sceneName, "Starting Scene") ||
                 isMatchingScene(sceneName, "Ending Scene")) {
-                triggerFilterWithFallback(WEBCAM_SOURCE_FOR_FILTERS, FILTER_LEAVE_GAMING);
+                // Switching to Intermission, Starting, or Ending -> Run "Move Value out" on Webcam Scene
+                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_LEAVE_GAMING);
             } else if (isMatchingScene(sceneName, "Gaming Scene")) {
-                triggerFilterWithFallback(WEBCAM_SOURCE_FOR_FILTERS, FILTER_ENTER_GAMING);
-            }
-
-            // 2. Composite Blur Automation (Starting & Ending = ON, Gaming & Intermission = OFF)
-            if (isMatchingScene(sceneName, "Starting Scene") || isMatchingScene(sceneName, "Ending Scene")) {
-                setFilterState(BLUR_TARGET_SOURCE, BLUR_FILTER_NAME, true);
-            } else if (isMatchingScene(sceneName, "Gaming Scene") || isMatchingScene(sceneName, "Intermission Scene")) {
-                setFilterState(BLUR_TARGET_SOURCE, BLUR_FILTER_NAME, false);
+                // Switching to Gaming Scene -> Run "Move Value in" on Webcam Scene
+                triggerFilter(WEBCAM_SCENE_SOURCE, FILTER_ENTER_GAMING);
             }
 
             setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
@@ -481,6 +450,7 @@
         function sendFilterTrigger(sourceName, filterName) {
             if (!isConnected) return;
 
+            // Reset and replay filter instantly
             ws.send(JSON.stringify({
                 op: 6,
                 d: {
@@ -511,7 +481,7 @@
         }
 
         // ========================================================
-        // 🎬 SCENE ACTIONS (FIRST ACTION TRIGGER)
+        // 🎬 SCENE ACTIONS (FIRST ACTION EXECUTION)
         // ========================================================
         function isMatchingScene(currentName, targetName) {
             if (!currentName || !targetName) return false;
@@ -527,10 +497,10 @@
         async function switchScene(sceneName) {
             if (!isConnected) return;
 
-            // 🚀 STEP 1: Run filter & blur automation instantly on click
+            // 🚀 STEP 1: Fire Move Value filter on Webcam Scene immediately (0ms delay)
             handleSceneAutoFilters(sceneName);
 
-            // 🚀 STEP 2: Instant UI update
+            // 🚀 STEP 2: Instant button active state
             updateActiveSceneUI(sceneName);
 
             // 🚀 STEP 3: Switch scene in OBS
