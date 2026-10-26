@@ -62,11 +62,25 @@
             margin-bottom: 6px;
         }
 
-        /* ✏️ Text Input Rows */
+        /* ✏️ Standard Input Row */
         .input-row {
             display: flex;
             gap: 6px;
             margin-bottom: 12px;
+        }
+
+        /* 👥 Combined Same-Row Container for Streamer 2 & Webcam 2 */
+        .dual-row {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+            margin-bottom: 8px;
+        }
+
+        .dual-row .input-sub-group {
+            display: flex;
+            gap: 6px;
+            flex: 1;
         }
 
         .deck-input {
@@ -118,27 +132,19 @@
             gap: 6px;
         }
 
-        /* 3-column row for Webcam 1 controls */
         .grid-webcam {
             grid-template-columns: repeat(3, 1fr);
             margin-bottom: 12px;
         }
 
-        /* Webcam 2 Grid (matches button width) */
-        .grid-webcam-2 {
-            grid-template-columns: repeat(3, 1fr);
-            margin-bottom: 12px;
-        }
-
-        /* 4-column row for All 4 Scene buttons */
         .grid-scenes {
             grid-template-columns: repeat(4, 1fr);
             margin-bottom: 12px;
         }
 
-        /* 4-column row for Properties buttons */
         .grid-props {
             grid-template-columns: repeat(4, 1fr);
+            margin-bottom: 14px;
         }
 
         /* Stream-Deck Style Buttons */
@@ -162,6 +168,13 @@
             transition: all 0.12s ease;
             white-space: nowrap;
             overflow: hidden;
+        }
+
+        /* Same-row webcam button styling */
+        .dual-row .deck-btn {
+            width: 115px;
+            flex-shrink: 0;
+            padding: 6px 4px;
         }
 
         .deck-btn:hover {
@@ -200,7 +213,6 @@
             color: #00ff88 !important;
         }
 
-        /* State when Webcam is hidden */
         .deck-btn.webcam-is-hidden {
             border-color: rgba(0, 255, 136, 0.35);
         }
@@ -216,27 +228,16 @@
         </div>
     </div>
 
-    <!-- ✏️ ROW 0A: STREAMER 1 NAME -->
+    <!-- ✏️ ROW 1: STREAMER 1 NAME -->
     <div class="section-title">Streamer 1 Namn (Textkälla)</div>
     <div class="input-row">
         <input type="text" id="streamer-name-input" class="deck-input" placeholder="Namn för Streamer 1..." />
         <button class="deck-submit-btn" id="streamer-submit-btn" onclick="submitStreamerName()">Sätt</button>
     </div>
 
-    <!-- ✏️ ROW 0B: STREAMER 2 NAME -->
-    <div class="section-title">Streamer 2 Namn (Textkälla 2)</div>
-    <div class="input-row">
-        <input type="text" id="streamer-name-input-2" class="deck-input" placeholder="Namn för Streamer 2..." />
-        <button class="deck-submit-btn" id="streamer-submit-btn-2" onclick="submitStreamerName2()">Sätt</button>
-    </div>
-
-    <!-- 📷 ROW 1: WEBCAM 1 CONTROLS -->
-    <div class="section-title">Webcam 1 Kontroller</div>
+    <!-- 📷 ROW 2: WEBCAM 1 CONTROLS -->
+    <div class="section-title">Webcam Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
-
-    <!-- 📷 ROW 2: WEBCAM 2 CONTROLS -->
-    <div class="section-title">Webcam 2 Kontroller</div>
-    <div class="grid grid-webcam-2" id="webcam-grid-2"></div>
 
     <!-- 🎬 ROW 3: SCENES -->
     <div class="section-title">Scener</div>
@@ -245,6 +246,21 @@
     <!-- ⚙️ ROW 4: ÄNDRA DESSA (SOURCE PROPERTIES) -->
     <div class="section-title">Ändra dessa:</div>
     <div class="grid grid-props" id="props-grid"></div>
+
+    <!-- 👥 ROW 5: STREAMER 2 & WEBCAM 2 (ALL THE WAY DOWN, SAME ROW) -->
+    <div class="section-title" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+      Streamer 2 & Extra Webcam (Valfri)
+    </div>
+    <div class="dual-row">
+        <div class="input-sub-group">
+            <input type="text" id="streamer-name-input-2" class="deck-input" placeholder="Streamer 2 namn..." />
+            <button class="deck-submit-btn" id="streamer-submit-btn-2" onclick="submitStreamerName2()">Sätt</button>
+        </div>
+        <button id="btn-webcam-2-toggle" class="deck-btn" onclick="handleWebcam2Click()">
+            <div class="tag" style="background-color: #f2711c"></div>
+            <span class="btn-label">Göm Webcam 2</span>
+        </button>
+    </div>
 
     <script>
         // ================= CONFIGURATION =================
@@ -283,18 +299,6 @@
                 isToggle1: true,
                 scene: "Musikhjälpen | Gaming Scene",
                 source: "Webcam Scene"
-            }
-        ];
-
-        // Webcam 2 Buttons (Dual setup)
-        const WEBCAM_2_BUTTONS = [
-            {
-                id: "btn-webcam-2-toggle",
-                label: "Göm Webcam 2",
-                color: "#f2711c",
-                isToggle2: true,
-                scene: "Webcam Scene 2",
-                source: "Webcam Source 2"
             }
         ];
 
@@ -361,6 +365,10 @@
         let currentActiveScene = "";
         let lastAutoFilteredScene = "";
 
+        // Tracked scene item IDs for reliable syncing
+        let webcam1ItemId = null;
+        let webcam2ItemId = null;
+
         function connectOBS() {
             ws = new WebSocket('ws://127.0.0.1:4455');
 
@@ -394,8 +402,8 @@
                     fetchCurrentText(TEXT_SOURCE_NAME_2, 'streamer-name-input-2');
 
                     // Sync initial visibility for Webcam 1 and Webcam 2
-                    syncInitialWebcamState("Musikhjälpen | Gaming Scene", "Webcam Scene", updateWebcamToggleUI);
-                    syncInitialWebcamState("Webcam Scene 2", "Webcam Source 2", updateWebcam2ToggleUI);
+                    syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
+                    syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, updateWebcam2ToggleUI);
                 }
 
                 // Scene change broadcast from OBS
@@ -405,13 +413,12 @@
                     handleSceneAutoFilters(newScene);
                 }
 
-                // Scene item visibility change listener
+                // Accurate Scene Item Enable State Listener via unique item IDs
                 if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
-                    const { sceneName, sceneItemEnabled } = msg.d.eventData;
-                    if (sceneName && sceneName.includes("Gaming Scene")) {
+                    const { sceneItemId, sceneItemEnabled } = msg.d.eventData;
+                    if (sceneItemId === webcam1ItemId) {
                         updateWebcamToggleUI(sceneItemEnabled);
-                    }
-                    if (sceneName && (sceneName.includes("Webcam Scene 2") || sceneName.includes("Webcam 2"))) {
+                    } else if (sceneItemId === webcam2ItemId) {
                         updateWebcam2ToggleUI(sceneItemEnabled);
                     }
                 }
@@ -607,7 +614,7 @@
             }
         }
 
-        async function syncInitialWebcamState(sceneName, sourceName, callback) {
+        async function syncWebcamItem(sceneName, sourceName, setItemIdCallback, updateUICallback) {
             try {
                 let targetScene = sceneName;
                 let itemId = null;
@@ -625,13 +632,14 @@
                 }
 
                 if (itemId !== null) {
+                    setItemIdCallback(itemId);
                     const statusRes = await sendRequest("GetSceneItemEnabled", { sceneName: targetScene, sceneItemId: itemId });
-                    if (callback) callback(statusRes.sceneItemEnabled);
+                    updateUICallback(statusRes.sceneItemEnabled);
                 }
             } catch(e) {}
         }
 
-        async function toggleSceneItemGeneric(sceneName, sourceName, callback) {
+        async function toggleSceneItemGeneric(sceneName, sourceName, setItemIdCallback, callback) {
             if (!isConnected) return;
 
             let targetScene = sceneName;
@@ -656,6 +664,7 @@
             }
 
             try {
+                setItemIdCallback(itemId);
                 const statusRes = await sendRequest("GetSceneItemEnabled", {
                     sceneName: targetScene,
                     sceneItemId: itemId
@@ -673,6 +682,16 @@
             } catch (err) {
                 console.error("Failed to toggle visibility:", err);
             }
+        }
+
+        function handleWebcam2Click() {
+            // Correct path: Scene: Musikhjälpen|Gaming Scene, Source: Webcam Scene 2
+            toggleSceneItemGeneric(
+                "Musikhjälpen|Gaming Scene", 
+                "Webcam Scene 2", 
+                (id) => webcam2ItemId = id, 
+                updateWebcam2ToggleUI
+            );
         }
 
         // ========================================================
@@ -769,11 +788,9 @@
                     sendFilterTrigger(action.source, action.filter);
                 });
             } else if (btn.isToggle1) {
-                toggleSceneItemGeneric(btn.scene, btn.source, updateWebcamToggleUI);
-            } else if (btn.isToggle2) {
-                toggleSceneItemGeneric(btn.scene, btn.source, updateWebcam2ToggleUI);
+                toggleSceneItemGeneric(btn.scene, btn.source, (id) => webcam1ItemId = id, updateWebcamToggleUI);
             } else if (btn.scene && btn.source) {
-                toggleSceneItemGeneric(btn.scene, btn.source);
+                toggleSceneItemGeneric(btn.scene, btn.source, () => {}, () => {});
             }
         }
 
@@ -796,22 +813,7 @@
                 webcamGrid.appendChild(buttonEl);
             });
 
-            // 2. Webcam 2 Buttons
-            const webcamGrid2 = document.getElementById('webcam-grid-2');
-            webcamGrid2.innerHTML = '';
-            WEBCAM_2_BUTTONS.forEach(btn => {
-                const buttonEl = document.createElement('button');
-                buttonEl.className = 'deck-btn';
-                if (btn.isToggle2) buttonEl.id = 'btn-webcam-2-toggle';
-                buttonEl.innerHTML = `
-                    <div class="tag" style="background-color: ${btn.color}"></div>
-                    <span class="btn-label">${btn.label}</span>
-                `;
-                buttonEl.onclick = () => handleButtonClick(btn);
-                webcamGrid2.appendChild(buttonEl);
-            });
-
-            // 3. Scene Buttons
+            // 2. Scene Buttons
             const sceneGrid = document.getElementById('scene-grid');
             sceneGrid.innerHTML = '';
             SCENE_BUTTONS.forEach(btn => {
@@ -826,7 +828,7 @@
                 sceneGrid.appendChild(buttonEl);
             });
 
-            // 4. Properties Buttons
+            // 3. Properties Buttons
             const propsGrid = document.getElementById('props-grid');
             propsGrid.innerHTML = '';
             PROPERTIES_BUTTONS.forEach(btn => {
