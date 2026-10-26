@@ -132,16 +132,19 @@
             gap: 6px;
         }
 
+        /* 3-column row for Webcam 1 controls */
         .grid-webcam {
             grid-template-columns: repeat(3, 1fr);
             margin-bottom: 12px;
         }
 
+        /* 4-column row for All 4 Scene buttons */
         .grid-scenes {
             grid-template-columns: repeat(4, 1fr);
             margin-bottom: 12px;
         }
 
+        /* 4-column row for Properties buttons */
         .grid-props {
             grid-template-columns: repeat(4, 1fr);
             margin-bottom: 14px;
@@ -247,7 +250,7 @@
     <div class="section-title">Ändra dessa:</div>
     <div class="grid grid-props" id="props-grid"></div>
 
-    <!-- 👥 ROW 5: STREAMER 2 & WEBCAM 2 (ALL THE WAY DOWN, SAME ROW) -->
+    <!-- 👥 ROW 5: STREAMER 2 & WEBCAM 2 (FOLLOWS SAME VISIBILITY) -->
     <div class="section-title" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
       Streamer 2 & Extra Webcam (Valfri)
     </div>
@@ -365,7 +368,7 @@
         let currentActiveScene = "";
         let lastAutoFilteredScene = "";
 
-        // Tracked scene item IDs for reliable syncing
+        // Tracked item IDs for reliable multi-webcam state syncing
         let webcam1ItemId = null;
         let webcam2ItemId = null;
 
@@ -389,7 +392,7 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch active scene
+                    // Fetch current active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
@@ -401,9 +404,13 @@
                     fetchCurrentText(TEXT_SOURCE_NAME, 'streamer-name-input');
                     fetchCurrentText(TEXT_SOURCE_NAME_2, 'streamer-name-input-2');
 
-                    // Sync initial visibility for Webcam 1 and Webcam 2
+                    // Sync initial visibility for Webcam 1 and Webcam 2 + Name Tag 2
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
-                    syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, updateWebcam2ToggleUI);
+                    syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
+                        updateWebcam2ToggleUI(isEnabled);
+                        // Follower: Keeps Streamer - Name Source 2 in sync with Webcam Scene 2
+                        setSceneItemState("Html Files", "Streamer - Name Source 2", isEnabled);
+                    });
                 }
 
                 // Scene change broadcast from OBS
@@ -413,13 +420,15 @@
                     handleSceneAutoFilters(newScene);
                 }
 
-                // Accurate Scene Item Enable State Listener via unique item IDs
+                // Scene item visibility change listener
                 if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
                     const { sceneItemId, sceneItemEnabled } = msg.d.eventData;
                     if (sceneItemId === webcam1ItemId) {
                         updateWebcamToggleUI(sceneItemEnabled);
                     } else if (sceneItemId === webcam2ItemId) {
                         updateWebcam2ToggleUI(sceneItemEnabled);
+                        // Name tag in Html Files mirrors external changes directly from OBS
+                        setSceneItemState("Html Files", "Streamer - Name Source 2", sceneItemEnabled);
                     }
                 }
 
@@ -578,7 +587,7 @@
         }
 
         // ========================================================
-        // 📷 WEBCAM 1 & 2 DYNAMIC TOGGLES
+        // 📷 WEBCAM 1 & 2 DYNAMIC TOGGLES + LINKED NAME TAG
         // ========================================================
         function updateWebcamToggleUI(isVisible) {
             const btnEl = document.getElementById('btn-webcam-toggle');
@@ -614,6 +623,42 @@
             }
         }
 
+        // Sets the visibility of any scene item directly
+        async function setSceneItemState(sceneName, sourceName, enabled) {
+            if (!isConnected) return;
+            let targetScene = sceneName;
+            let itemId = null;
+
+            try {
+                const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
+                itemId = res.sceneItemId;
+            } catch (e) {
+                const altScene = targetScene.includes(" | ")
+                    ? targetScene.replace(/\s*\|\s*/g, "|")
+                    : (targetScene.includes("|") ? targetScene.replace(/\|/g, " | ") : targetScene);
+                try {
+                    const res = await sendRequest("GetSceneItemId", { sceneName: altScene, sourceName });
+                    itemId = res.sceneItemId;
+                    targetScene = altScene;
+                } catch (e2) {
+                    console.error(`Could not locate "${sourceName}" in "${targetScene}".`);
+                    return;
+                }
+            }
+
+            if (itemId !== null) {
+                try {
+                    await sendRequest("SetSceneItemEnabled", {
+                        sceneName: targetScene,
+                        sceneItemId: itemId,
+                        sceneItemEnabled: enabled
+                    });
+                } catch (err) {
+                    console.error(`Failed to set state for "${sourceName}" in "${targetScene}":`, err);
+                }
+            }
+        }
+
         async function syncWebcamItem(sceneName, sourceName, setItemIdCallback, updateUICallback) {
             try {
                 let targetScene = sceneName;
@@ -622,7 +667,7 @@
                 try {
                     const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
                     itemId = res.sceneItemId;
-                } catch(e) {
+                } catch (e) {
                     const altScene = targetScene.includes(" | ")
                         ? targetScene.replace(/\s*\|\s*/g, "|")
                         : (targetScene.includes("|") ? targetScene.replace(/\|/g, " | ") : targetScene);
@@ -636,7 +681,7 @@
                     const statusRes = await sendRequest("GetSceneItemEnabled", { sceneName: targetScene, sceneItemId: itemId });
                     updateUICallback(statusRes.sceneItemEnabled);
                 }
-            } catch(e) {}
+            } catch (e) {}
         }
 
         async function toggleSceneItemGeneric(sceneName, sourceName, setItemIdCallback, callback) {
@@ -685,12 +730,16 @@
         }
 
         function handleWebcam2Click() {
-            // Correct path: Scene: Musikhjälpen|Gaming Scene, Source: Webcam Scene 2
+            // Toggles Webcam Scene 2 inside Gaming Scene, and makes Streamer - Name Source 2 in Html Files follow
             toggleSceneItemGeneric(
                 "Musikhjälpen|Gaming Scene", 
                 "Webcam Scene 2", 
                 (id) => webcam2ItemId = id, 
-                updateWebcam2ToggleUI
+                (willBeEnabled) => {
+                    updateWebcam2ToggleUI(willBeEnabled);
+                    // 🔗 Follower: Streamer - Name Source 2 in Html Files mirrors this exact state!
+                    setSceneItemState("Html Files", "Streamer - Name Source 2", willBeEnabled);
+                }
             );
         }
 
