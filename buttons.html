@@ -62,7 +62,7 @@
             margin-bottom: 6px;
         }
 
-        /* ✏️ Text Input Row */
+        /* ✏️ Text Input Rows */
         .input-row {
             display: flex;
             gap: 6px;
@@ -118,8 +118,14 @@
             gap: 6px;
         }
 
-        /* 3-column row for Webcam controls */
+        /* 3-column row for Webcam 1 controls */
         .grid-webcam {
+            grid-template-columns: repeat(3, 1fr);
+            margin-bottom: 12px;
+        }
+
+        /* Webcam 2 Grid (matches button width) */
+        .grid-webcam-2 {
             grid-template-columns: repeat(3, 1fr);
             margin-bottom: 12px;
         }
@@ -210,33 +216,49 @@
         </div>
     </div>
 
-    <!-- ✏️ ROW 0: STREAMER NAME TEXT SOURCE -->
-    <div class="section-title">Streamer Namn (Textkälla)</div>
+    <!-- ✏️ ROW 0A: STREAMER 1 NAME -->
+    <div class="section-title">Streamer 1 Namn (Textkälla)</div>
     <div class="input-row">
-        <input type="text" id="streamer-name-input" class="deck-input" placeholder="Skriv streamernamn..." />
+        <input type="text" id="streamer-name-input" class="deck-input" placeholder="Namn för Streamer 1..." />
         <button class="deck-submit-btn" id="streamer-submit-btn" onclick="submitStreamerName()">Sätt</button>
     </div>
 
-    <!-- 📷 ROW 1: WEBCAM CONTROLS -->
-    <div class="section-title">Webcam Kontroller</div>
+    <!-- ✏️ ROW 0B: STREAMER 2 NAME -->
+    <div class="section-title">Streamer 2 Namn (Textkälla 2)</div>
+    <div class="input-row">
+        <input type="text" id="streamer-name-input-2" class="deck-input" placeholder="Namn för Streamer 2..." />
+        <button class="deck-submit-btn" id="streamer-submit-btn-2" onclick="submitStreamerName2()">Sätt</button>
+    </div>
+
+    <!-- 📷 ROW 1: WEBCAM 1 CONTROLS -->
+    <div class="section-title">Webcam 1 Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
 
-    <!-- 🎬 ROW 2: SCENES -->
+    <!-- 📷 ROW 2: WEBCAM 2 CONTROLS -->
+    <div class="section-title">Webcam 2 Kontroller</div>
+    <div class="grid grid-webcam-2" id="webcam-grid-2"></div>
+
+    <!-- 🎬 ROW 3: SCENES -->
     <div class="section-title">Scener</div>
     <div class="grid grid-scenes" id="scene-grid"></div>
 
-    <!-- ⚙️ ROW 3: ÄNDRA DESSA (SOURCE PROPERTIES) -->
+    <!-- ⚙️ ROW 4: ÄNDRA DESSA (SOURCE PROPERTIES) -->
     <div class="section-title">Ändra dessa:</div>
     <div class="grid grid-props" id="props-grid"></div>
 
     <script>
         // ================= CONFIGURATION =================
         const TEXT_SOURCE_NAME = "Streamer - Name Source";
+        const TEXT_SOURCE_NAME_2 = "Streamer - Name Source 2";
 
-        // Exact sources
+        // Exact sources for Move filters
         const SOURCE_WEBCAM = "Webcam Source";
         const SOURCE_WEBCAM_SCENE = "Webcam Scene";
 
+        const FILTER_MOVE_OUT = "Move Value out";
+        const FILTER_MOVE_IN = "Move Value in";
+
+        // Webcam 1 Buttons
         const WEBCAM_BUTTONS = [
             {
                 label: "Webcam Vänster",
@@ -256,15 +278,27 @@
             },
             {
                 id: "btn-webcam-toggle",
-                label: "Göm Webcam",
+                label: "Göm Webcam 1",
                 color: "#f2711c",
-                isToggle: true,
+                isToggle1: true,
                 scene: "Musikhjälpen | Gaming Scene",
                 source: "Webcam Scene"
             }
         ];
 
-        // 🎬 ALL 4 SCENE BUTTONS
+        // Webcam 2 Buttons (Dual setup)
+        const WEBCAM_2_BUTTONS = [
+            {
+                id: "btn-webcam-2-toggle",
+                label: "Göm Webcam 2",
+                color: "#f2711c",
+                isToggle2: true,
+                scene: "Webcam Scene 2",
+                source: "Webcam Source 2"
+            }
+        ];
+
+        // 🎬 4 SCENE BUTTONS
         const SCENE_BUTTONS = [
             {
                 label: "Start",
@@ -347,7 +381,7 @@
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
 
-                    // Fetch current active scene and apply filters immediately
+                    // Fetch active scene
                     sendRequest("GetCurrentProgramScene").then(res => {
                         if (res && res.currentProgramSceneName) {
                             updateActiveSceneUI(res.currentProgramSceneName);
@@ -355,8 +389,13 @@
                         }
                     }).catch(() => {});
 
-                    fetchCurrentText(TEXT_SOURCE_NAME);
-                    syncInitialWebcamState();
+                    // Fetch both streamer text inputs
+                    fetchCurrentText(TEXT_SOURCE_NAME, 'streamer-name-input');
+                    fetchCurrentText(TEXT_SOURCE_NAME_2, 'streamer-name-input-2');
+
+                    // Sync initial visibility for Webcam 1 and Webcam 2
+                    syncInitialWebcamState("Musikhjälpen | Gaming Scene", "Webcam Scene", updateWebcamToggleUI);
+                    syncInitialWebcamState("Webcam Scene 2", "Webcam Source 2", updateWebcam2ToggleUI);
                 }
 
                 // Scene change broadcast from OBS
@@ -366,11 +405,14 @@
                     handleSceneAutoFilters(newScene);
                 }
 
-                // Webcam visibility change listener
+                // Scene item visibility change listener
                 if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
                     const { sceneName, sceneItemEnabled } = msg.d.eventData;
                     if (sceneName && sceneName.includes("Gaming Scene")) {
                         updateWebcamToggleUI(sceneItemEnabled);
+                    }
+                    if (sceneName && (sceneName.includes("Webcam Scene 2") || sceneName.includes("Webcam 2"))) {
+                        updateWebcam2ToggleUI(sceneItemEnabled);
                     }
                 }
 
@@ -420,15 +462,13 @@
         }
 
         // ========================================================
-        // 🎬 EXACT SCENE FILTER LOGIC
+        // 🎬 MOVE VALUE AUTOMATION ON SCENE CHANGE
         // ========================================================
         function handleSceneAutoFilters(sceneName) {
             if (isMatchingScene(sceneName, lastAutoFilteredScene)) return;
             lastAutoFilteredScene = sceneName;
 
             // 1. MASK FILTER (Target: Webcam Source)
-            // Gaming: "Move Value in"
-            // Starting, Ending, Intermission: "Move Value out"
             if (isMatchingScene(sceneName, "Gaming Scene")) {
                 sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
             } else if (isMatchingScene(sceneName, "Starting Scene") ||
@@ -438,8 +478,6 @@
             }
 
             // 2. BLUR FILTER (Target: Webcam Scene)
-            // Starting, Ending: "Move Value in"
-            // Gaming, Intermission: "Move Value out"
             if (isMatchingScene(sceneName, "Starting Scene") || isMatchingScene(sceneName, "Ending Scene")) {
                 sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value in");
             } else if (isMatchingScene(sceneName, "Gaming Scene") || isMatchingScene(sceneName, "Intermission Scene")) {
@@ -452,7 +490,6 @@
         function sendFilterTrigger(sourceName, filterName) {
             if (!isConnected) return;
 
-            // Instant reset & replay toggle
             ws.send(JSON.stringify({
                 op: 6,
                 d: {
@@ -483,7 +520,7 @@
         }
 
         // ========================================================
-        // 🎬 SCENE ACTIONS (FIRST ACTION EXECUTION)
+        // 🎬 SCENE ACTIONS
         // ========================================================
         function isMatchingScene(currentName, targetName) {
             if (!currentName || !targetName) return false;
@@ -499,13 +536,9 @@
         async function switchScene(sceneName) {
             if (!isConnected) return;
 
-            // 🚀 STEP 1: Fire all filters immediately (0ms delay)
             handleSceneAutoFilters(sceneName);
-
-            // 🚀 STEP 2: Instant button active state
             updateActiveSceneUI(sceneName);
 
-            // 🚀 STEP 3: Switch scene in OBS
             try {
                 await sendRequest("SetCurrentProgramScene", { sceneName });
             } catch (err) {
@@ -538,7 +571,7 @@
         }
 
         // ========================================================
-        // 📷 WEBCAM DYNAMIC TOGGLE (GÖM / VISA)
+        // 📷 WEBCAM 1 & 2 DYNAMIC TOGGLES
         // ========================================================
         function updateWebcamToggleUI(isVisible) {
             const btnEl = document.getElementById('btn-webcam-toggle');
@@ -547,39 +580,58 @@
             const tagEl = btnEl.querySelector('.tag');
 
             if (isVisible) {
-                if (labelEl) labelEl.textContent = "Göm Webcam";
+                if (labelEl) labelEl.textContent = "Göm Webcam 1";
                 if (tagEl) tagEl.style.backgroundColor = "#f2711c";
                 btnEl.classList.remove('webcam-is-hidden');
             } else {
-                if (labelEl) labelEl.textContent = "Visa Webcam";
+                if (labelEl) labelEl.textContent = "Visa Webcam 1";
                 if (tagEl) tagEl.style.backgroundColor = "#00ff88";
                 btnEl.classList.add('webcam-is-hidden');
             }
         }
 
-        async function syncInitialWebcamState() {
+        function updateWebcam2ToggleUI(isVisible) {
+            const btnEl = document.getElementById('btn-webcam-2-toggle');
+            if (!btnEl) return;
+            const labelEl = btnEl.querySelector('.btn-label');
+            const tagEl = btnEl.querySelector('.tag');
+
+            if (isVisible) {
+                if (labelEl) labelEl.textContent = "Göm Webcam 2";
+                if (tagEl) tagEl.style.backgroundColor = "#f2711c";
+                btnEl.classList.remove('webcam-is-hidden');
+            } else {
+                if (labelEl) labelEl.textContent = "Visa Webcam 2";
+                if (tagEl) tagEl.style.backgroundColor = "#00ff88";
+                btnEl.classList.add('webcam-is-hidden');
+            }
+        }
+
+        async function syncInitialWebcamState(sceneName, sourceName, callback) {
             try {
-                let targetScene = "Musikhjälpen | Gaming Scene";
-                let sourceName = "Webcam Scene";
+                let targetScene = sceneName;
                 let itemId = null;
 
                 try {
                     const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
                     itemId = res.sceneItemId;
                 } catch(e) {
-                    targetScene = "Musikhjälpen|Gaming Scene";
-                    const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
+                    const altScene = targetScene.includes(" | ")
+                        ? targetScene.replace(/\s*\|\s*/g, "|")
+                        : (targetScene.includes("|") ? targetScene.replace(/\|/g, " | ") : targetScene);
+                    const res = await sendRequest("GetSceneItemId", { sceneName: altScene, sourceName });
                     itemId = res.sceneItemId;
+                    targetScene = altScene;
                 }
 
                 if (itemId !== null) {
                     const statusRes = await sendRequest("GetSceneItemEnabled", { sceneName: targetScene, sceneItemId: itemId });
-                    updateWebcamToggleUI(statusRes.sceneItemEnabled);
+                    if (callback) callback(statusRes.sceneItemEnabled);
                 }
             } catch(e) {}
         }
 
-        async function toggleSceneItem(sceneName, sourceName) {
+        async function toggleSceneItemGeneric(sceneName, sourceName, callback) {
             if (!isConnected) return;
 
             let targetScene = sceneName;
@@ -591,7 +643,7 @@
             } catch (err) {
                 const altScene = targetScene.includes(" | ")
                     ? targetScene.replace(/\s*\|\s*/g, "|")
-                    : targetScene.replace(/\|/g, " | ");
+                    : (targetScene.includes("|") ? targetScene.replace(/\|/g, " | ") : targetScene);
 
                 try {
                     const res = await sendRequest("GetSceneItemId", { sceneName: altScene, sourceName });
@@ -617,14 +669,14 @@
                     sceneItemEnabled: willBeEnabled
                 });
 
-                updateWebcamToggleUI(willBeEnabled);
+                if (callback) callback(willBeEnabled);
             } catch (err) {
                 console.error("Failed to toggle visibility:", err);
             }
         }
 
         // ========================================================
-        // ✏️ TEXT SOURCE CONTROLLER
+        // ✏️ TEXT SOURCE CONTROLLERS (STREAMER 1 & 2)
         // ========================================================
         async function updateTextSource(inputName, newText) {
             if (!isConnected) return;
@@ -639,12 +691,12 @@
             }
         }
 
-        async function fetchCurrentText(inputName) {
+        async function fetchCurrentText(inputName, elementId) {
             if (!isConnected) return;
             try {
                 const res = await sendRequest("GetInputSettings", { inputName });
                 if (res && res.inputSettings && typeof res.inputSettings.text === 'string') {
-                    const inputEl = document.getElementById('streamer-name-input');
+                    const inputEl = document.getElementById(elementId);
                     if (inputEl && document.activeElement !== inputEl) {
                         inputEl.value = res.inputSettings.text;
                     }
@@ -673,8 +725,31 @@
             }
         }
 
+        function submitStreamerName2() {
+            const inputEl = document.getElementById('streamer-name-input-2');
+            const submitBtn = document.getElementById('streamer-submit-btn-2');
+            if (!inputEl) return;
+
+            const text = inputEl.value.trim();
+            updateTextSource(TEXT_SOURCE_NAME_2, text);
+
+            if (submitBtn) {
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "✓ Sparat!";
+                submitBtn.style.color = "#ffffff";
+                setTimeout(() => {
+                    submitBtn.innerText = originalText;
+                    submitBtn.style.color = "#00ff88";
+                }, 1200);
+            }
+        }
+
         document.getElementById('streamer-name-input').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') submitStreamerName();
+        });
+
+        document.getElementById('streamer-name-input-2').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitStreamerName2();
         });
 
         // ========================================================
@@ -693,8 +768,12 @@
                 btn.actions.forEach(action => {
                     sendFilterTrigger(action.source, action.filter);
                 });
+            } else if (btn.isToggle1) {
+                toggleSceneItemGeneric(btn.scene, btn.source, updateWebcamToggleUI);
+            } else if (btn.isToggle2) {
+                toggleSceneItemGeneric(btn.scene, btn.source, updateWebcam2ToggleUI);
             } else if (btn.scene && btn.source) {
-                toggleSceneItem(btn.scene, btn.source);
+                toggleSceneItemGeneric(btn.scene, btn.source);
             }
         }
 
@@ -702,15 +781,13 @@
         // 🎨 RENDER DECK BUTTONS
         // ========================================================
         function renderDeck() {
-            // 1. Webcam Buttons
+            // 1. Webcam 1 Buttons
             const webcamGrid = document.getElementById('webcam-grid');
             webcamGrid.innerHTML = '';
             WEBCAM_BUTTONS.forEach(btn => {
                 const buttonEl = document.createElement('button');
                 buttonEl.className = 'deck-btn';
-                if (btn.isToggle) {
-                    buttonEl.id = 'btn-webcam-toggle';
-                }
+                if (btn.isToggle1) buttonEl.id = 'btn-webcam-toggle';
                 buttonEl.innerHTML = `
                     <div class="tag" style="background-color: ${btn.color}"></div>
                     <span class="btn-label">${btn.label}</span>
@@ -719,7 +796,22 @@
                 webcamGrid.appendChild(buttonEl);
             });
 
-            // 2. Scene Buttons (All 4 Scenes)
+            // 2. Webcam 2 Buttons
+            const webcamGrid2 = document.getElementById('webcam-grid-2');
+            webcamGrid2.innerHTML = '';
+            WEBCAM_2_BUTTONS.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.className = 'deck-btn';
+                if (btn.isToggle2) buttonEl.id = 'btn-webcam-2-toggle';
+                buttonEl.innerHTML = `
+                    <div class="tag" style="background-color: ${btn.color}"></div>
+                    <span class="btn-label">${btn.label}</span>
+                `;
+                buttonEl.onclick = () => handleButtonClick(btn);
+                webcamGrid2.appendChild(buttonEl);
+            });
+
+            // 3. Scene Buttons
             const sceneGrid = document.getElementById('scene-grid');
             sceneGrid.innerHTML = '';
             SCENE_BUTTONS.forEach(btn => {
@@ -734,7 +826,7 @@
                 sceneGrid.appendChild(buttonEl);
             });
 
-            // 3. Properties Buttons
+            // 4. Properties Buttons
             const propsGrid = document.getElementById('props-grid');
             propsGrid.innerHTML = '';
             PROPERTIES_BUTTONS.forEach(btn => {
