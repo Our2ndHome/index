@@ -17,6 +17,7 @@
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
+      --primary: #ace600;
       --viewport-height: 280px;
     }
 
@@ -55,7 +56,7 @@
       z-index: 99995;
     }
 
-    /* 📺 1. STREAM OVERLAY: PURE PLAIN TEXT */
+    /* 📺 1. STREAM OVERLAY */
     .giveaway-widget {
       position: absolute;
       top: 50%;
@@ -172,7 +173,6 @@
       line-height: 1;
     }
 
-    /* 🏷️ TWO-ROW PRIZE DISPLAY */
     .giveaway-prize-display {
       margin-top: 14px;
       display: flex;
@@ -258,6 +258,24 @@
     }
     .summary-text b { color: #ffffff; }
 
+    .card-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: block;
+    }
+
     .control-row {
       display: flex;
       justify-content: space-between;
@@ -288,6 +306,62 @@
     }
     input[type="text"]:focus, input[type="number"]:focus, select:focus {
       border-color: #52525b;
+    }
+
+    /* 🎟️ TICKET LIST STYLING */
+    .donor-list-container {
+      max-height: 190px;
+      overflow-y: auto;
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .donor-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      background: #18181c;
+      border-radius: 4px;
+      border-left: 3px solid var(--primary);
+      font-size: 11px;
+    }
+
+    .donor-name-col {
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .donor-amount-dim {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .donor-ticket-badge {
+      background: var(--primary);
+      color: #000000;
+      font-weight: 900;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    .empty-donor-list {
+      padding: 12px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 600;
     }
 
     .btn {
@@ -391,15 +465,31 @@
     </div>
   </div>
 
-  <!-- 🎛️ 2. OBS CONTROL DOCK (#panel) -->
+  <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.0 PRO</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.5 PRO</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
+
+    <!-- 🎟️ LIVE BILJETTLISTA (DONOR LIST) -->
+    <div class="card-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="section-title" style="margin-bottom:0;">🎟️ Aktiva Biljetthållare</span>
+        <span id="donorCountBadge" style="font-size:10px; font-weight:800; color:var(--primary);">0 givare</span>
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <input type="text" id="filterDonorInput" placeholder="Sök givare i listan..." style="width:100%;" oninput="renderDonorListUI()">
+      </div>
+
+      <div class="donor-list-container" id="donorListContainer">
+        <div class="empty-donor-list">Hämtar biljetter från databasen...</div>
+      </div>
+    </div>
 
     <!-- Prize Input -->
     <div class="control-row">
@@ -463,7 +553,6 @@
     const GITHUB_REPO = "index";
     const EMOTES_FOLDER = "emotes";
 
-    // 🛡️ Reliable custom emotes list from your repo
     const CUSTOM_EMOTE_FILES = [
       "Favicon-very-new.png",
       "Our2ndHome-EmoteHype-500x500.png",
@@ -488,7 +577,7 @@
     };
 
     let donorMap = {};
-    let realDonorsBackup = null; // 🛡️ Protects real donors during test mode!
+    let realDonorsBackup = null; // 🛡️ Protects real donors during test mode
     let currentWinner = null;
     let isSpinning = false;
     let isTestMode = false;
@@ -503,11 +592,15 @@
 
     let lastTickIndex = null;
     let lastTickTime = 0;
-    let lastProcessedActionId = 0; // 🛡️ Prevents double-spin triggers
+    let lastProcessedActionId = 0;
 
     let loadedEmoteImages = [];
     let celebrationParticles = [];
     let celebrationAnimId = null;
+
+    function formatSEK(num) {
+      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
+    }
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -546,7 +639,6 @@
     const dbActionRef = firebase.database().ref('giveaway_action');
     const dbBossaRef = firebase.database().ref('bossa');
 
-    // Preload custom images
     function preloadEmoteImages() {
       loadedEmoteImages = [];
       CUSTOM_EMOTE_FILES.forEach(filename => {
@@ -561,7 +653,7 @@
     preloadEmoteImages();
 
     // ========================================================
-    // 🧠 1. DONOR ENGINE (BULLETPROOF & DEDUPLICATED)
+    // 🧠 1. DONOR ENGINE
     // ========================================================
     function normalizeDonorKey(name) {
       if (!name) return "";
@@ -625,7 +717,7 @@
     }
 
     function saveDonors() {
-      if (isTestMode) return; // 🛡️ NEVER save test mode bots to localStorage!
+      if (isTestMode) return; // Never save test bots
       try {
         localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorMap));
       } catch (e) {}
@@ -643,7 +735,7 @@
     }
 
     function syncDonorsToCloud() {
-      if (isTestMode) return; // 🛡️ NEVER overwrite cloud database with test bots!
+      if (isTestMode) return;
       dbDonorsRef.set({
         map: donorMap,
         secret: WRITE_SECRET,
@@ -651,7 +743,7 @@
       }).catch(() => {});
     }
 
-    // 🛡️ BÖSSA BRIDGE WITH INITIAL-LOAD LOCK (Stops re-adding donations on reload)
+    // BÖSSA BRIDGE WITH INITIAL-LOAD LOCK
     let isInitialBossaLoad = true;
     let lastObservedAlertId = 0;
 
@@ -659,14 +751,12 @@
       const bData = snap.val();
       if (!bData) return;
 
-      // On first boot, record the ID so we don't process ancient donations
       if (isInitialBossaLoad) {
         lastObservedAlertId = bData.alertId || 0;
         isInitialBossaLoad = false;
         return;
       }
 
-      // Only the panel dock or standalone handles bossa updates to prevent duplicate ticketing
       if (isPanel && bData.alertId && bData.alertId !== lastObservedAlertId) {
         lastObservedAlertId = bData.alertId;
 
@@ -680,9 +770,8 @@
       }
     });
 
-    // Cloud ticket sync listener
     dbDonorsRef.on('value', (snap) => {
-      if (isTestMode) return; // Don't wipe test mode if active
+      if (isTestMode) return;
       const data = snap.val();
       if (data && data.map && !isSpinning) {
         donorMap = data.map;
@@ -692,7 +781,6 @@
       }
     });
 
-    // Action listener (handles start spin & prize close)
     dbActionRef.on('value', (snap) => {
       const act = snap.val();
       if (!act) return;
@@ -721,6 +809,50 @@
         }
         if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
       };
+    }
+
+    // ========================================================
+    // 🎟️ LIVE DONOR TICKET LIST RENDERER
+    // ========================================================
+    function renderDonorListUI() {
+      const container = document.getElementById('donorListContainer');
+      const countBadge = document.getElementById('donorCountBadge');
+      if (!container) return;
+
+      const filterInput = document.getElementById('filterDonorInput');
+      const query = filterInput ? filterInput.value.trim().toLowerCase() : '';
+
+      // Get all active donors with at least 1 ticket
+      const activeDonors = Object.keys(donorMap)
+        .map(k => donorMap[k])
+        .filter(d => (d.ticketsActive || 0) > 0)
+        .sort((a, b) => (b.ticketsActive || 0) - (a.ticketsActive || 0) || (b.totalAmount || 0) - (a.totalAmount || 0));
+
+      if (countBadge) {
+        countBadge.innerText = `${activeDonors.length} givare`;
+      }
+
+      const filtered = activeDonors.filter(d => {
+        if (!query) return true;
+        return (d.displayName || '').toLowerCase().includes(query);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = query
+          ? `<div class="empty-donor-list">Ingen givare matchar "${escapeHTML(query)}"</div>`
+          : `<div class="empty-donor-list">Inga givare med aktiva biljetter än.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(d => `
+        <div class="donor-row">
+          <div class="donor-name-col">
+            <span>${escapeHTML(d.displayName || 'Givare')}</span>
+            <span class="donor-amount-dim">(${formatSEK(d.totalAmount || 0)})</span>
+          </div>
+          <span class="donor-ticket-badge">${d.ticketsActive} 🎟️</span>
+        </div>
+      `).join('');
     }
 
     function testChatCommandSimulator() {
@@ -1082,7 +1214,6 @@
       const cX = W / 2;
       const cY = H / 2;
 
-      // Wave 1: Center radial blast
       for (let i = 0; i < 45; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 12 + Math.random() * 18;
@@ -1109,7 +1240,6 @@
         });
       }
 
-      // Wave 2: Full screen cascading rain
       for (let i = 0; i < 75; i++) {
         const hasImages = loadedEmoteImages.length > 0;
         const imgObj = hasImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
@@ -1213,6 +1343,9 @@
         const emoteBadge = count > 0 ? ` (${count} emotes redo)` : '';
         statusBox.innerText = isTestMode ? `Testläge aktivt${emoteBadge}` : `Ansluten till databas${emoteBadge}`;
       }
+
+      // Re-render the live ticket list whenever stats update
+      renderDonorListUI();
     }
 
     function setButtonsLocked(locked) {
@@ -1236,19 +1369,16 @@
       amountInput.value = "200";
     }
 
-    // 🛡️ BULLETPROOF TEST MODE (Zero risk to real donors)
     function toggleTestMode() {
       isTestMode = !isTestMode;
       const btn = document.getElementById('btnToggleTest');
 
       if (isTestMode) {
         btn.innerText = "Avsluta testläge";
-        // Back up real donors in RAM before creating bots
         realDonorsBackup = JSON.parse(JSON.stringify(donorMap));
         generateTestTickets(500);
       } else {
         btn.innerText = "Växla till testläge (500 testbiljetter)";
-        // Completely restore real donors, wiping out test bots with zero file contamination
         donorMap = realDonorsBackup || {};
         realDonorsBackup = null;
         loadDonors();
@@ -1283,7 +1413,6 @@
       }
 
       donorMap = testMap;
-      // Do NOT call saveDonors() or syncDonorsToCloud() here!
     }
 
     function resetAllTickets() {
