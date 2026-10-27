@@ -38,6 +38,7 @@
     /* 🔀 HASH ROUTER */
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
+    body.mode-panel #victoryCanvas { display: none !important; }
 
     body.mode-panel {
       background-color: var(--dock-bg);
@@ -45,7 +46,7 @@
       padding: 10px;
     }
 
-    /* 🌧️ EMOTE RAIN CANVAS */
+    /* 🌧️ EMOTE RAIN CANVAS (OVERLAY ONLY) */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -437,6 +438,17 @@
       color: #ffffff;
     }
 
+    .btn-cancel-safe {
+      background: #1a1a20;
+      border: 1px solid #71717a;
+      color: #e4e4e7;
+    }
+    .btn-cancel-safe:hover:not(:disabled) {
+      background: #272730;
+      color: #ffffff;
+      border-color: #ffffff;
+    }
+
     .manual-row {
       display: flex;
       gap: 6px;
@@ -476,11 +488,11 @@
 </head>
 <body>
 
-  <!-- 🌧️ EMOTE RAIN & RADIAL BLAST CANVAS -->
-  <canvas id="victoryCanvas"></canvas>
-
   <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
+    <!-- 🌧️ EMOTE RAIN & RADIAL BLAST CANVAS (ONLY ON OVERLAY) -->
+    <canvas id="victoryCanvas"></canvas>
+
     <div class="giveaway-widget" id="giveawayWidget">
       <div class="giveaway-title-container">
         <div class="giveaway-head-title">GIVEAWAY</div>
@@ -499,7 +511,7 @@
   <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.6 PRO</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.7 PRO</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -522,7 +534,7 @@
       </div>
     </div>
 
-    <!-- ⏳ LISTA 2: GIVARE UTAN BILJETT (DONERAT UNDER 200 KR ELLER VUNNIT) -->
+    <!-- ⏳ LISTA 2: GIVARE UTAN BILJETT -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="section-title" style="margin-bottom:0;">⏳ Givare utan biljett (än)</span>
@@ -589,9 +601,15 @@
     <button class="btn" id="btnSkip" onclick="startDraw(5000)">
       Dra ny vinnare (5s)
     </button>
-    <button class="btn btn-danger" id="btnClose" onclick="claimPrizeAndClose()">
-      Avsluta & dela ut vinst
-    </button>
+    
+    <div class="grid-2" style="margin-top: 4px;">
+      <button class="btn btn-danger" id="btnClose" onclick="claimPrizeAndClose()">
+        🏆 Dela ut vinst (-1 biljett)
+      </button>
+      <button class="btn btn-cancel-safe" id="btnCancel" onclick="cancelWithoutTicket()">
+        ❌ Stäng utan att ta biljett
+      </button>
+    </div>
   </div>
 
   <script>
@@ -643,6 +661,9 @@
 
     let lastTickIndex = null;
     let lastTickTime = 0;
+    
+    // 🛡️ PREVENT AUTO-SPIN ON RELOAD: Track action IDs
+    let isInitialActionLoad = true;
     let lastProcessedActionId = 0;
 
     let loadedEmoteImages = [];
@@ -669,16 +690,19 @@
     const prizeInput = document.getElementById('prizeInput');
     const reelStage = document.getElementById('reelStage');
     const victoryCanvas = document.getElementById('victoryCanvas');
-    const vCtx = victoryCanvas.getContext('2d');
+    const vCtx = victoryCanvas ? victoryCanvas.getContext('2d') : null;
     const soundPresetSelect = document.getElementById('soundPresetSelect');
 
     const btnStart = document.getElementById('btnStart');
     const btnSkip = document.getElementById('btnSkip');
     const btnClose = document.getElementById('btnClose');
+    const btnCancel = document.getElementById('btnCancel');
 
     function resizeCanvas() {
-      victoryCanvas.width = window.innerWidth;
-      victoryCanvas.height = window.innerHeight;
+      if (victoryCanvas && !isPanel) {
+        victoryCanvas.width = window.innerWidth;
+        victoryCanvas.height = window.innerHeight;
+      }
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -831,16 +855,26 @@
       }
     });
 
+    // 🛡️ REWRITE: IGNORE OLD ACTION ON BOOT (PREVENTS AUTO-SPIN)
     dbActionRef.on('value', (snap) => {
       const act = snap.val();
       if (!act) return;
 
-      if (act.type === 'START_SPIN' && act.actionId !== lastProcessedActionId) {
+      if (isInitialActionLoad) {
+        lastProcessedActionId = act.actionId || act.timestamp || 0;
+        isInitialActionLoad = false;
+        return;
+      }
+
+      if (act.type === 'START_SPIN' && act.actionId && act.actionId !== lastProcessedActionId) {
         lastProcessedActionId = act.actionId;
         executeSpin(act.winner, act.delayMs || 10000, act.spinDistance || 75);
-      } else if (act.type === 'CLAIM_CLOSE' && act.actionId !== lastProcessedActionId) {
+      } else if (act.type === 'CLAIM_CLOSE' && act.actionId && act.actionId !== lastProcessedActionId) {
         lastProcessedActionId = act.actionId;
         finalizeClaimAndHide();
+      } else if (act.type === 'CANCEL_CLOSE' && act.actionId && act.actionId !== lastProcessedActionId) {
+        lastProcessedActionId = act.actionId;
+        finalizeCancelAndHide();
       } else if (act.type === 'UPDATE_PRIZE') {
         setPrizeText(act.prize, false);
       }
@@ -856,6 +890,10 @@
         if (type === 'CLAIM_CLOSE' && payload.actionId !== lastProcessedActionId) {
           lastProcessedActionId = payload.actionId;
           finalizeClaimAndHide();
+        }
+        if (type === 'CANCEL_CLOSE' && payload.actionId !== lastProcessedActionId) {
+          lastProcessedActionId = payload.actionId;
+          finalizeCancelAndHide();
         }
         if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
       };
@@ -1280,6 +1318,7 @@
               }
             }, 1000);
 
+            // Trigger celebration only on the stream overlay (not in the dock)
             triggerCelebrationBurst();
           }
         }
@@ -1288,6 +1327,7 @@
       }, holdDelayMs);
     }
 
+    // 🏆 CLOSE AND DEDUCT 1 TICKET
     function claimPrizeAndClose() {
       if (isSpinning) return;
       if (!currentWinner) return alert("Ingen vinnare dragen än!");
@@ -1302,6 +1342,17 @@
       if (bus) bus.postMessage({ type: 'CLAIM_CLOSE', payload: { actionId } });
 
       finalizeClaimAndHide();
+    }
+
+    // ❌ CANCEL AND CLOSE WITHOUT DEDUCTING A TICKET
+    function cancelWithoutTicket() {
+      const actionId = Date.now();
+      lastProcessedActionId = actionId;
+
+      dbActionRef.set({ type: 'CANCEL_CLOSE', actionId: actionId, secret: WRITE_SECRET, timestamp: actionId });
+      if (bus) bus.postMessage({ type: 'CANCEL_CLOSE', payload: { actionId } });
+
+      finalizeCancelAndHide();
     }
 
     function finalizeClaimAndHide() {
@@ -1319,7 +1370,23 @@
       }, 450);
     }
 
+    function finalizeCancelAndHide() {
+      stopTimers();
+      clearCelebrationEffects();
+      isSpinning = false;
+      setButtonsLocked(false);
+
+      giveawayWidget.classList.remove('active');
+
+      setTimeout(() => {
+        currentWinner = null;
+        giveawayTimerBadge.innerText = "";
+        initInitialStage();
+      }, 450);
+    }
+
     function triggerCelebrationBurst() {
+      if (isPanel) return; // 🛡️ Never burst emotes or draw canvas inside the dock!
       playVictorySound();
       celebrationParticles = [];
 
@@ -1383,6 +1450,7 @@
     }
 
     function animateCelebration() {
+      if (isPanel || !vCtx || !victoryCanvas) return;
       vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
       let aliveCount = 0;
 
@@ -1433,7 +1501,9 @@
         cancelAnimationFrame(celebrationAnimId);
         celebrationAnimId = null;
       }
-      vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+      if (vCtx && victoryCanvas) {
+        vCtx.clearRect(0, 0, victoryCanvas.width, victoryCanvas.height);
+      }
     }
 
     // ========================================================
@@ -1459,7 +1529,6 @@
         statusBox.innerText = isTestMode ? `Testläge aktivt${emoteBadge}` : `Ansluten till databas${emoteBadge}`;
       }
 
-      // Re-render both live lists
       renderDonorListUI();
       renderNoTicketListUI();
     }
