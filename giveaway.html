@@ -133,7 +133,7 @@
       -webkit-mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.4) 10%,
+        rgba(0, 0, 0, 0.4) 10%;
         rgba(0, 0, 0, 1) 28%,
         rgba(0, 0, 0, 1) 72%,
         rgba(0, 0, 0, 0.4) 90%,
@@ -385,6 +385,17 @@
     }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
+    .btn-clean {
+      background: #1e1e24;
+      border: 1px solid #eab308;
+      color: #eab308;
+      font-weight: 800;
+    }
+    .btn-clean:hover:not(:disabled) {
+      background: #eab308;
+      color: #000000;
+    }
+
     .btn-primary-action {
       background: #ffffff;
       color: #000000;
@@ -420,6 +431,12 @@
     .manual-row input[name="name"] { flex: 2; }
     .manual-row input[name="amount"] { flex: 1; }
     .manual-row button { flex: 1; margin-bottom: 0; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
 
     .lookup-box {
       background: #121215;
@@ -527,9 +544,13 @@
       <button class="btn" onclick="addManualDonation()">+ Lägg till</button>
     </div>
 
-    <!-- Actions -->
+    <!-- Actions & Purge Button -->
     <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">Växla till testläge (500 testbiljetter)</button>
-    <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla biljetter</button>
+    
+    <div class="grid-2">
+      <button class="btn btn-clean" onclick="purgeTestBots()">🧹 Rensa test-bottar</button>
+      <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla</button>
+    </div>
 
     <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
@@ -577,7 +598,7 @@
     };
 
     let donorMap = {};
-    let realDonorsBackup = null; // 🛡️ Protects real donors during test mode
+    let realDonorsBackup = null;
     let currentWinner = null;
     let isSpinning = false;
     let isTestMode = false;
@@ -717,7 +738,7 @@
     }
 
     function saveDonors() {
-      if (isTestMode) return; // Never save test bots
+      if (isTestMode) return;
       try {
         localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorMap));
       } catch (e) {}
@@ -743,7 +764,6 @@
       }).catch(() => {});
     }
 
-    // BÖSSA BRIDGE WITH INITIAL-LOAD LOCK
     let isInitialBossaLoad = true;
     let lastObservedAlertId = 0;
 
@@ -822,7 +842,6 @@
       const filterInput = document.getElementById('filterDonorInput');
       const query = filterInput ? filterInput.value.trim().toLowerCase() : '';
 
-      // Get all active donors with at least 1 ticket
       const activeDonors = Object.keys(donorMap)
         .map(k => donorMap[k])
         .filter(d => (d.ticketsActive || 0) > 0)
@@ -853,6 +872,25 @@
           <span class="donor-ticket-badge">${d.ticketsActive} 🎟️</span>
         </div>
       `).join('');
+    }
+
+    // 🧹 PURGE ALL TEST BOTS (Wipes out fake bots, keeps real donors)
+    function purgeTestBots() {
+      let removedCount = 0;
+      for (const key of Object.keys(donorMap)) {
+        // Detects bots created by the test generator (e.g., ends in _number)
+        if (/_\d+$/.test(key) || /cosmic|gamerloover|norlands|dunder|pixel/i.test(key)) {
+          delete donorMap[key];
+          removedCount++;
+        }
+      }
+
+      saveDonors();
+      syncDonorsToCloud();
+      updateStatsUI();
+      initInitialStage();
+
+      alert(`Rensade bort ${removedCount} test-bottar från databasen! Eventuella riktiga givare är kvar.`);
     }
 
     function testChatCommandSimulator() {
@@ -1101,7 +1139,6 @@
         lastAdded = name;
       }
 
-      // Countdown
       const endAt = Date.now() + holdDelayMs;
       const tickBadge = () => {
         const leftSec = Math.ceil(Math.max(0, endAt - Date.now()) / 1000);
@@ -1344,7 +1381,6 @@
         statusBox.innerText = isTestMode ? `Testläge aktivt${emoteBadge}` : `Ansluten till databas${emoteBadge}`;
       }
 
-      // Re-render the live ticket list whenever stats update
       renderDonorListUI();
     }
 
