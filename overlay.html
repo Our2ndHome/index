@@ -36,11 +36,11 @@
       pointer-events: none;
     }
 
-    /* Proper stacking order on stream */
-    #layerAlerts   { z-index: 5; }  /* Alerts & Emote rain behind overlays */
-    #layerSchedule { z-index: 10; } /* Bottom schedule & sponsor bar */
-    #layerBossa    { z-index: 20; } /* Top countdown & goal */
-    #layerGiveaway { z-index: 30; } /* Giveaway wheel modal */
+    /* Layer Depth Order (Lower numbers = further back) */
+    #layerAlerts   { z-index: 5; }  /* Alerts & rain slide out from behind */
+    #layerSchedule { z-index: 10; } /* Bottom sponsor & timeline bar in front */
+    #layerBossa    { z-index: 20; } /* Top countdown & goal bar in front */
+    #layerGiveaway { z-index: 30; } /* Giveaway wheel pops over everything */
 
     /* ========================================================
        🎛️ 2. OBS DOCK CONTROLLER VIEW (#panel)
@@ -139,7 +139,6 @@
     }
 
     #frameBossa    { height: 560px; }
-    #frameGiveaway { height: 460px; }
     #frameSchedule { height: 400px; }
   </style>
 </head>
@@ -149,7 +148,7 @@
        📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
-    <!-- src attributes are set dynamically via JS below -->
+    <!-- Empty src: Injected dynamically only in stream mode -->
     <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
@@ -169,22 +168,19 @@
       <button class="jump-btn" style="flex:0; padding: 4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
+    <!-- Quick Jump Navigation -->
     <div class="dock-jump-nav">
       <button class="jump-btn" onclick="scrollToSection('secBossa')">↓ Bössa</button>
-      <button class="jump-btn" onclick="scrollToSection('secGiveaway')">↓ Giveaway</button>
       <button class="jump-btn" onclick="scrollToSection('secSchedule')">↓ Schema</button>
     </div>
 
+    <!-- Section 1: Bössa & Countdown -->
     <div id="secBossa" class="panel-section-divider">
       <span>💰 BÖSSA & INSAMLINGSMÅL</span>
     </div>
     <iframe id="frameBossa" class="stacked-panel-frame"></iframe>
 
-    <div id="secGiveaway" class="panel-section-divider">
-      <span>🎁 GIVEAWAY HJUL</span>
-    </div>
-    <iframe id="frameGiveaway" class="stacked-panel-frame"></iframe>
-
+    <!-- Section 2: Schedule & Sponsors -->
     <div id="secSchedule" class="panel-section-divider">
       <span>📅 SCHEMA & SPONSORER</span>
     </div>
@@ -197,15 +193,14 @@
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
     if (isPanel) {
-      // 🎛️ DOCK MODE: Only load the control panel iframes
+      // 🎛️ DOCK MODE: Only load the control panels for Bössa and Schema
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'block';
 
       document.getElementById('frameBossa').src = "countdown_and_bossa.html#panel";
-      document.getElementById('frameGiveaway').src = "giveaway.html#panel";
       document.getElementById('frameSchedule').src = "schedule.html#panel";
     } else {
-      // 📺 OVERLAY MODE: Only load the stream overlay iframes
+      // 📺 OVERLAY MODE: Only load the visual stream layers
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
 
