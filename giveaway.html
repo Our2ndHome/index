@@ -17,7 +17,7 @@
       --dock-bg: #0b0b0d;
       --card-bg: #141418;
       --border: #27272a;
-      --viewport-height: 280px; /* 140px is dead center */
+      --viewport-height: 280px;
     }
 
     * { box-sizing: border-box; }
@@ -347,7 +347,6 @@
     .manual-row input[name="amount"] { flex: 1; }
     .manual-row button { flex: 1; margin-bottom: 0; }
 
-    /* 🔍 !biljett Tester */
     .lookup-box {
       background: #121215;
       border: 1px solid var(--border);
@@ -375,9 +374,7 @@
   <!-- 🌧️ EMOTE RAIN & RADIAL BLAST CANVAS -->
   <canvas id="victoryCanvas"></canvas>
 
-  <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW (#overlay)
-       ======================================================== -->
+  <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
     <div class="giveaway-widget" id="giveawayWidget">
       <div class="giveaway-title-container">
@@ -387,21 +384,17 @@
       </div>
       
       <div class="reel-viewport">
-        <!-- 5-Slot Optical Stage -->
         <div class="reel-stage" id="reelStage"></div>
       </div>
 
-      <!-- 🏷️ TWO-ROW PRIZE DISPLAY -->
       <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
     </div>
   </div>
 
-  <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel)
-       ======================================================== -->
+  <!-- 🎛️ 2. OBS CONTROL DOCK (#panel) -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v8.5</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.0 PRO</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -470,9 +463,21 @@
     const GITHUB_REPO = "index";
     const EMOTES_FOLDER = "emotes";
 
+    // 🛡️ Reliable custom emotes list from your repo
+    const CUSTOM_EMOTE_FILES = [
+      "Favicon-very-new.png",
+      "Our2ndHome-EmoteHype-500x500.png",
+      "Our2ndHome-EmoteLove-500x500.png",
+      "Our2ndHome-EmoteWoop-500x500.png",
+      "Our2ndHome-IconLogo-512x512x.png",
+      "SillySanta.png",
+      "dfgdfgd-removebg-preview.png",
+      "evighets-removebg-preview.png",
+      "nordpuls-storlogo-smaller.png"
+    ];
+
     const TICKET_MILESTONE_KR = 200;
     const MAX_TICKETS_PER_USER = 5;
-    const VIEWPORT_HEIGHT = 280; // 140px is dead center
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
 
@@ -483,11 +488,11 @@
     };
 
     let donorMap = {};
+    let realDonorsBackup = null; // 🛡️ Protects real donors during test mode!
     let currentWinner = null;
     let isSpinning = false;
     let isTestMode = false;
 
-    // Continuous Rolling State
     let currentVirtualOffset = 2.0;
     let trackNamesList = [];
 
@@ -498,8 +503,8 @@
 
     let lastTickIndex = null;
     let lastTickTime = 0;
+    let lastProcessedActionId = 0; // 🛡️ Prevents double-spin triggers
 
-    // 🌧️ VERIFIED PRELOADED EMOTES LIST
     let loadedEmoteImages = [];
     let celebrationParticles = [];
     let celebrationAnimId = null;
@@ -541,41 +546,22 @@
     const dbActionRef = firebase.database().ref('giveaway_action');
     const dbBossaRef = firebase.database().ref('bossa');
 
-    // ========================================================
-    // 🖼️ DIRECT CDN PRELOADER: Loads images immediately
-    // ========================================================
-    async function loadCustomEmotesFromGitHub() {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${EMOTES_FOLDER}?_t=${Date.now()}`);
-        if (!res.ok) return;
-
-        const files = await res.json();
-        const imageFiles = files.filter(f => f.name.match(/\.(png|jpe?g|webp|gif|svg)$/i));
-        
-        let loadedCount = 0;
-        loadedEmoteImages = [];
-
-        for (const f of imageFiles) {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          
-          img.onload = () => {
-            loadedCount++;
-            loadedEmoteImages.push(img);
-            updateStatsUI();
-          };
-
-          // Use direct CDN raw URL so it never 404s while GitHub Pages is building
-          img.src = f.download_url || `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/${EMOTES_FOLDER}/${encodeURIComponent(f.name)}`;
-        }
-      } catch(e) {
-        console.warn("Kunde inte hämta emotes via GitHub API, använder emoji-backup.");
-      }
+    // Preload custom images
+    function preloadEmoteImages() {
+      loadedEmoteImages = [];
+      CUSTOM_EMOTE_FILES.forEach(filename => {
+        const img = new Image();
+        img.src = `${EMOTES_FOLDER}/${encodeURIComponent(filename)}`;
+        img.onload = () => {
+          loadedEmoteImages.push(img);
+          updateStatsUI();
+        };
+      });
     }
-    loadCustomEmotesFromGitHub();
+    preloadEmoteImages();
 
     // ========================================================
-    // 🧠 1. DONOR ENGINE
+    // 🧠 1. DONOR ENGINE (BULLETPROOF & DEDUPLICATED)
     // ========================================================
     function normalizeDonorKey(name) {
       if (!name) return "";
@@ -583,7 +569,7 @@
     }
 
     function recordDonation(rawName, amount) {
-      if (!rawName || amount < 1) return;
+      if (!rawName || amount < 1 || isTestMode) return;
       const cleanName = rawName.replace(/^@+/, '').trim();
       const key = normalizeDonorKey(cleanName);
       if (/anonym|hemlig hjälte/i.test(key)) return;
@@ -615,11 +601,13 @@
     }
 
     function deductWinnerTicket(winnerKey) {
-      if (!winnerKey || !donorMap[winnerKey]) return;
-      donorMap[winnerKey].ticketsActive = Math.max(0, (donorMap[winnerKey].ticketsActive || 0) - 1);
-      saveDonors();
-      updateStatsUI();
-      syncDonorsToCloud();
+      if (!winnerKey || isTestMode) return;
+      if (donorMap[winnerKey]) {
+        donorMap[winnerKey].ticketsActive = Math.max(0, (donorMap[winnerKey].ticketsActive || 0) - 1);
+        saveDonors();
+        updateStatsUI();
+        syncDonorsToCloud();
+      }
     }
 
     function getWeightedTicketPool() {
@@ -637,6 +625,7 @@
     }
 
     function saveDonors() {
+      if (isTestMode) return; // 🛡️ NEVER save test mode bots to localStorage!
       try {
         localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorMap));
       } catch (e) {}
@@ -654,6 +643,7 @@
     }
 
     function syncDonorsToCloud() {
+      if (isTestMode) return; // 🛡️ NEVER overwrite cloud database with test bots!
       dbDonorsRef.set({
         map: donorMap,
         secret: WRITE_SECRET,
@@ -661,13 +651,23 @@
       }).catch(() => {});
     }
 
-    // Auto-bridge from /bossa
+    // 🛡️ BÖSSA BRIDGE WITH INITIAL-LOAD LOCK (Stops re-adding donations on reload)
+    let isInitialBossaLoad = true;
     let lastObservedAlertId = 0;
+
     dbBossaRef.on('value', (snap) => {
       const bData = snap.val();
       if (!bData) return;
 
-      if (bData.alertId && bData.alertId !== lastObservedAlertId) {
+      // On first boot, record the ID so we don't process ancient donations
+      if (isInitialBossaLoad) {
+        lastObservedAlertId = bData.alertId || 0;
+        isInitialBossaLoad = false;
+        return;
+      }
+
+      // Only the panel dock or standalone handles bossa updates to prevent duplicate ticketing
+      if (isPanel && bData.alertId && bData.alertId !== lastObservedAlertId) {
         lastObservedAlertId = bData.alertId;
 
         if (Array.isArray(bData.alerts) && bData.alerts.length > 0) {
@@ -680,7 +680,9 @@
       }
     });
 
+    // Cloud ticket sync listener
     dbDonorsRef.on('value', (snap) => {
+      if (isTestMode) return; // Don't wipe test mode if active
       const data = snap.val();
       if (data && data.map && !isSpinning) {
         donorMap = data.map;
@@ -690,13 +692,16 @@
       }
     });
 
+    // Action listener (handles start spin & prize close)
     dbActionRef.on('value', (snap) => {
       const act = snap.val();
       if (!act) return;
 
-      if (act.type === 'START_SPIN') {
+      if (act.type === 'START_SPIN' && act.actionId !== lastProcessedActionId) {
+        lastProcessedActionId = act.actionId;
         executeSpin(act.winner, act.delayMs || 10000, act.spinDistance || 75);
-      } else if (act.type === 'CLAIM_CLOSE') {
+      } else if (act.type === 'CLAIM_CLOSE' && act.actionId !== lastProcessedActionId) {
+        lastProcessedActionId = act.actionId;
         finalizeClaimAndHide();
       } else if (act.type === 'UPDATE_PRIZE') {
         setPrizeText(act.prize, false);
@@ -706,13 +711,18 @@
     if (bus) {
       bus.onmessage = (e) => {
         const { type, payload } = e.data || {};
-        if (type === 'START_SPIN') executeSpin(payload.winner, payload.delayMs, payload.spinDistance);
-        if (type === 'CLAIM_CLOSE') finalizeClaimAndHide();
+        if (type === 'START_SPIN' && payload.actionId !== lastProcessedActionId) {
+          lastProcessedActionId = payload.actionId;
+          executeSpin(payload.winner, payload.delayMs, payload.spinDistance);
+        }
+        if (type === 'CLAIM_CLOSE' && payload.actionId !== lastProcessedActionId) {
+          lastProcessedActionId = payload.actionId;
+          finalizeClaimAndHide();
+        }
         if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
       };
     }
 
-    // 💬 TEST !BILJETT SIMULATOR
     function testChatCommandSimulator() {
       const input = document.getElementById('searchDonorInput');
       const box = document.getElementById('lookupOutput');
@@ -736,9 +746,6 @@
       }
     }
 
-    // ========================================================
-    // 🏷️ TWO-ROW PRIZE & AUDIO
-    // ========================================================
     function setPrizeText(text, broadcast = true) {
       const clean = (text || '').trim();
       if (clean) {
@@ -813,9 +820,6 @@
       } catch (e) {}
     }
 
-    // ========================================================
-    // 🎯 BALANCED 5-SLOT SCALING
-    // ========================================================
     function getSlotPhysicalMetrics(d) {
       const absD = Math.abs(d);
       const sign = d < 0 ? -1 : 1;
@@ -902,9 +906,6 @@
       animFrameId = null;
     }
 
-    // ========================================================
-    // 🚀 CONTINUOUS FORWARD ROLLING
-    // ========================================================
     function startDraw(holdDelayMs = 10000) {
       const pool = getWeightedTicketPool();
       if (pool.length === 0) return alert("Inga biljetter i potten än!");
@@ -912,16 +913,20 @@
       getAudioContext();
       const winner = pool[Math.floor(Math.random() * pool.length)];
       const spinDistance = (holdDelayMs <= 5000) ? 45 : 75;
+      const actionId = Date.now();
+      lastProcessedActionId = actionId;
 
       dbActionRef.set({
         type: 'START_SPIN',
         winner: winner,
         delayMs: holdDelayMs,
         spinDistance: spinDistance,
+        actionId: actionId,
         secret: WRITE_SECRET,
-        timestamp: Date.now()
+        timestamp: actionId
       });
-      if (bus) bus.postMessage({ type: 'START_SPIN', payload: { winner, delayMs: holdDelayMs, spinDistance } });
+
+      if (bus) bus.postMessage({ type: 'START_SPIN', payload: { winner, delayMs: holdDelayMs, spinDistance, actionId } });
 
       executeSpin(winner, holdDelayMs, spinDistance);
     }
@@ -1014,7 +1019,6 @@
             setButtonsLocked(false);
             stopTimers();
 
-            // ⏱️ 60-SECOND WINNER CLAIM COUNTDOWN
             let claimSec = 60;
             giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
 
@@ -1029,7 +1033,6 @@
               }
             }, 1000);
 
-            // 🌧️ TRIGGER PRO EMOTE RAIN
             triggerCelebrationBurst();
           }
         }
@@ -1045,8 +1048,11 @@
       const winnerKey = normalizeDonorKey(currentWinner);
       deductWinnerTicket(winnerKey);
 
-      dbActionRef.set({ type: 'CLAIM_CLOSE', secret: WRITE_SECRET, timestamp: Date.now() });
-      if (bus) bus.postMessage({ type: 'CLAIM_CLOSE' });
+      const actionId = Date.now();
+      lastProcessedActionId = actionId;
+
+      dbActionRef.set({ type: 'CLAIM_CLOSE', actionId: actionId, secret: WRITE_SECRET, timestamp: actionId });
+      if (bus) bus.postMessage({ type: 'CLAIM_CLOSE', payload: { actionId } });
 
       finalizeClaimAndHide();
     }
@@ -1066,9 +1072,6 @@
       }, 450);
     }
 
-    // ========================================================
-    // 🌧️ CELEBRATION ENGINE: GUARANTEED VISIBLE EMOTE RAIN
-    // ========================================================
     function triggerCelebrationBurst() {
       playVictorySound();
       celebrationParticles = [];
@@ -1079,7 +1082,7 @@
       const cX = W / 2;
       const cY = H / 2;
 
-      // 💥 WAVE 1: Radial 360° Blast from Center (45 particles)
+      // Wave 1: Center radial blast
       for (let i = 0; i < 45; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 12 + Math.random() * 18;
@@ -1095,7 +1098,7 @@
           vy: Math.sin(angle) * speed - 4,
           gravity: 0.32,
           drag: 0.94,
-          size: 46 + Math.random() * 22, // Size calibrated for stream (46-68px)
+          size: 46 + Math.random() * 22,
           rotation: Math.random() * 360,
           rotSpeed: (Math.random() - 0.5) * 8,
           opacity: 1.0,
@@ -1106,7 +1109,7 @@
         });
       }
 
-      // 🌧️ WAVE 2: Full-Screen Cascading Emote Rain (75 particles across 100% width)
+      // Wave 2: Full screen cascading rain
       for (let i = 0; i < 75; i++) {
         const hasImages = loadedEmoteImages.length > 0;
         const imgObj = hasImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
@@ -1119,7 +1122,7 @@
           vy: 3.8 + Math.random() * 5.2,
           gravity: 0.12,
           drag: 0.99,
-          size: 42 + Math.random() * 20, // 42-62px
+          size: 42 + Math.random() * 20,
           rotation: Math.random() * 360,
           rotSpeed: (Math.random() - 0.5) * 5,
           opacity: 1.0,
@@ -1159,7 +1162,6 @@
           vCtx.rotate((p.rotation * Math.PI) / 180);
           vCtx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
 
-          // 🛡️ GUARANTEED VISIBLE: Draw image if loaded, otherwise fallback emoji!
           if (p.img && p.img.complete && p.img.naturalWidth > 0) {
             vCtx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
           } else {
@@ -1234,15 +1236,21 @@
       amountInput.value = "200";
     }
 
+    // 🛡️ BULLETPROOF TEST MODE (Zero risk to real donors)
     function toggleTestMode() {
       isTestMode = !isTestMode;
       const btn = document.getElementById('btnToggleTest');
 
       if (isTestMode) {
         btn.innerText = "Avsluta testläge";
+        // Back up real donors in RAM before creating bots
+        realDonorsBackup = JSON.parse(JSON.stringify(donorMap));
         generateTestTickets(500);
       } else {
         btn.innerText = "Växla till testläge (500 testbiljetter)";
+        // Completely restore real donors, wiping out test bots with zero file contamination
+        donorMap = realDonorsBackup || {};
+        realDonorsBackup = null;
         loadDonors();
       }
       updateStatsUI();
@@ -1275,12 +1283,13 @@
       }
 
       donorMap = testMap;
-      saveDonors();
+      // Do NOT call saveDonors() or syncDonorsToCloud() here!
     }
 
     function resetAllTickets() {
       if (confirm("Är du säker på att du vill nollställa alla biljetter och givare?")) {
         donorMap = {};
+        realDonorsBackup = null;
         saveDonors();
         syncDonorsToCloud();
         updateStatsUI();
