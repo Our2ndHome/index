@@ -133,7 +133,7 @@
       -webkit-mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.4) 10%;
+        rgba(0, 0, 0, 0.4) 10%,
         rgba(0, 0, 0, 1) 28%,
         rgba(0, 0, 0, 1) 72%,
         rgba(0, 0, 0, 0.4) 90%,
@@ -308,9 +308,9 @@
       border-color: #52525b;
     }
 
-    /* 🎟️ TICKET LIST STYLING */
+    /* 🎟️ TICKET LISTS */
     .donor-list-container {
-      max-height: 190px;
+      max-height: 180px;
       overflow-y: auto;
       background: #121215;
       border: 1px solid var(--border);
@@ -332,6 +332,10 @@
       font-size: 11px;
     }
 
+    .donor-row.no-ticket-row {
+      border-left: 3px solid #52525b;
+    }
+
     .donor-name-col {
       font-weight: 800;
       color: #ffffff;
@@ -350,6 +354,16 @@
       background: var(--primary);
       color: #000000;
       font-weight: 900;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    .no-ticket-badge {
+      background: #27272a;
+      color: #e4e4e7;
+      font-weight: 800;
       font-size: 10px;
       padding: 2px 7px;
       border-radius: 3px;
@@ -393,7 +407,7 @@
     }
     .btn-clean:hover:not(:disabled) {
       background: #eab308;
-      color: #000000;
+      color: #00ff88;
     }
 
     .btn-primary-action {
@@ -485,14 +499,14 @@
   <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.5 PRO</span></span>
+      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.6 PRO</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
 
-    <!-- 🎟️ LIVE BILJETTLISTA (DONOR LIST) -->
+    <!-- 🎟️ LISTA 1: AKTIVA BILJETTHÅLLARE -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="section-title" style="margin-bottom:0;">🎟️ Aktiva Biljetthållare</span>
@@ -500,11 +514,27 @@
       </div>
 
       <div style="margin-bottom:6px;">
-        <input type="text" id="filterDonorInput" placeholder="Sök givare i listan..." style="width:100%;" oninput="renderDonorListUI()">
+        <input type="text" id="filterDonorInput" placeholder="Sök bland biljetthållare..." style="width:100%;" oninput="renderDonorListUI()">
       </div>
 
       <div class="donor-list-container" id="donorListContainer">
         <div class="empty-donor-list">Hämtar biljetter från databasen...</div>
+      </div>
+    </div>
+
+    <!-- ⏳ LISTA 2: GIVARE UTAN BILJETT (DONERAT UNDER 200 KR ELLER VUNNIT) -->
+    <div class="card-section">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span class="section-title" style="margin-bottom:0;">⏳ Givare utan biljett (än)</span>
+        <span id="noTicketCountBadge" style="font-size:10px; font-weight:800; color:var(--text-dim);">0 givare</span>
+      </div>
+
+      <div style="margin-bottom:6px;">
+        <input type="text" id="filterNoTicketInput" placeholder="Sök bland givare utan biljett..." style="width:100%;" oninput="renderNoTicketListUI()">
+      </div>
+
+      <div class="donor-list-container" id="noTicketListContainer" style="max-height: 140px;">
+        <div class="empty-donor-list">Inga givare utan biljetter just nu.</div>
       </div>
     </div>
 
@@ -832,7 +862,7 @@
     }
 
     // ========================================================
-    // 🎟️ LIVE DONOR TICKET LIST RENDERER
+    // 🎟️ LISTA 1: AKTIVA BILJETTHÅLLARE (TICKETS > 0)
     // ========================================================
     function renderDonorListUI() {
       const container = document.getElementById('donorListContainer');
@@ -874,11 +904,59 @@
       `).join('');
     }
 
-    // 🧹 PURGE ALL TEST BOTS (Wipes out fake bots, keeps real donors)
+    // ========================================================
+    // ⏳ LISTA 2: GIVARE UTAN BILJETT (TICKETS = 0 & TOTAL > 0)
+    // ========================================================
+    function renderNoTicketListUI() {
+      const container = document.getElementById('noTicketListContainer');
+      const countBadge = document.getElementById('noTicketCountBadge');
+      if (!container) return;
+
+      const filterInput = document.getElementById('filterNoTicketInput');
+      const query = filterInput ? filterInput.value.trim().toLowerCase() : '';
+
+      const noTicketDonors = Object.keys(donorMap)
+        .map(k => donorMap[k])
+        .filter(d => (d.ticketsActive || 0) === 0 && (d.totalAmount || 0) > 0)
+        .sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
+
+      if (countBadge) {
+        countBadge.innerText = `${noTicketDonors.length} givare`;
+      }
+
+      const filtered = noTicketDonors.filter(d => {
+        if (!query) return true;
+        return (d.displayName || '').toLowerCase().includes(query);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = query
+          ? `<div class="empty-donor-list">Ingen givare matchar "${escapeHTML(query)}"</div>`
+          : `<div class="empty-donor-list">Inga givare utan biljetter just nu.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(d => {
+        const total = d.totalAmount || 0;
+        const remainder = total % TICKET_MILESTONE_KR;
+        const needed = remainder === 0 ? TICKET_MILESTONE_KR : (TICKET_MILESTONE_KR - remainder);
+
+        return `
+          <div class="donor-row no-ticket-row">
+            <div class="donor-name-col">
+              <span>${escapeHTML(d.displayName || 'Givare')}</span>
+              <span class="donor-amount-dim">(${formatSEK(total)} totalt)</span>
+            </div>
+            <span class="no-ticket-badge">Saknar ${needed} kr</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 🧹 PURGE ALL TEST BOTS (Leaves real donors untouched)
     function purgeTestBots() {
       let removedCount = 0;
       for (const key of Object.keys(donorMap)) {
-        // Detects bots created by the test generator (e.g., ends in _number)
         if (/_\d+$/.test(key) || /cosmic|gamerloover|norlands|dunder|pixel/i.test(key)) {
           delete donorMap[key];
           removedCount++;
@@ -1381,7 +1459,9 @@
         statusBox.innerText = isTestMode ? `Testläge aktivt${emoteBadge}` : `Ansluten till databas${emoteBadge}`;
       }
 
+      // Re-render both live lists
       renderDonorListUI();
+      renderNoTicketListUI();
     }
 
     function setButtonsLocked(locked) {
