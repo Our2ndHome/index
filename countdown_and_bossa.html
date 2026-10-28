@@ -459,24 +459,19 @@
     }
 
     function dockRequestResync() {
-      const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = "Återställer till 400 KR...";
+  const box = document.getElementById('dockStatusBox');
+  if (box) box.innerText = "Hämtar verkligt belopp från bössan...";
 
-      dbRef.set({
-        total: 400,
-        diff: 0,
-        donor: "",
-        comment: "",
-        alertId: 0,
-        alerts: [],
-        forceSync: true,
-        secret: WRITE_SECRET
-      }).then(() => {
-        updateStatusDisplay("Live Ansluten (400 KR)");
-      }).catch(err => {
-        alert("Kunde inte återställa: " + err.message);
-      });
-    }
+  // 🎯 Sends forceSync: true WITHOUT overwriting with a fake 400 KR!
+  dbRef.update({
+    forceSync: true,
+    secret: WRITE_SECRET
+  }).then(() => {
+    updateStatusDisplay("Begärde avläsning från bössan...");
+  }).catch(err => {
+    alert("Kunde inte begära synk: " + err.message);
+  });
+}
 
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
