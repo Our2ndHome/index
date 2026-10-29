@@ -456,7 +456,7 @@
     }
 
     textarea#goalsInputArea {
-      flex: 1 1 auto !important; /* Stretches to fill all remaining vertical room */
+      flex: 1 1 auto !important;
       width: 100% !important;
       min-height: 140px !important;
       height: auto !important;
@@ -468,7 +468,7 @@
       font-family: 'Consolas', 'Courier New', monospace !important;
       font-size: 13px !important;
       font-weight: 600 !important;
-      line-height: 1.85 !important; /* Generous breathing room between each line */
+      line-height: 1.85 !important;
       outline: none !important;
       resize: none !important;
       overflow-y: auto !important;
@@ -514,7 +514,6 @@
     }
     .btn-toggle-view:hover { background: #2c2c36; }
 
-    /* ALWAYS PINNED TO BOTTOM OF CARD */
     .btn-primary-action {
       flex-shrink: 0 !important;
       background: #ffffff;
@@ -586,7 +585,7 @@
       <div class="header-box">
         <span class="header-title">
           MILSTOLPAR KONTROLL 
-          <span class="version-badge">PRO v7.2</span>
+          <span class="version-badge">PRO v7.3</span>
           <span id="obsLivePill" class="live-pill offline">⚪ OBS OFFLINE</span>
         </span>
         <button class="btn" style="width:auto; margin:0; padding:3px 6px;" onclick="location.reload()">Ladda om</button>
@@ -599,7 +598,7 @@
 
       <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
 
-      <!-- ⏱️ STREAMER LIVE-PASS (AUTOMATED) -->
+      <!-- ⏱️ STREAMER LIVE-PASS (AUTOMATED & SYNCED WITH OBS TEXT SOURCE) -->
       <div class="card-section">
         <span class="section-title">⏱️ Streamer Live-Pass</span>
         
@@ -607,7 +606,7 @@
           <span class="control-label">STREAMER:</span>
           <input type="text" id="streamerNameInput" placeholder="T.ex. LordBaconeer" style="width:65%;">
         </div>
-        <span class="auto-badge-note">⚡ Passet nollställs och startar automatiskt när du trycker "Start Streaming" i OBS.</span>
+        <span class="auto-badge-note">⚡ Uppdaterar webbkamerans namnskylt och nollställer passet automatiskt vid "Start Streaming".</span>
       </div>
     </div>
 
@@ -634,6 +633,9 @@
     const STORAGE_KEY_GOALS = "mh_overlay_local_goals";
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
+
+    // Exact OBS text source name to update automatically
+    const OBS_TEXT_SOURCE_NAME = "Streamer - Name Source";
 
     const DEFAULT_GOALS = 
       "50 kr - Sill bit\n" +
@@ -671,6 +673,60 @@
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
     let isObsStreaming = false;
+
+    // ========================================================
+    // 🔌 NATIVE OBS WEBSOCKET (DIRECT SOURCE TEXT UPDATES)
+    // ========================================================
+    let obsWs = null;
+    let isObsWsConnected = false;
+
+    function connectObsWebSocket() {
+      try {
+        obsWs = new WebSocket('ws://127.0.0.1:4455');
+
+        obsWs.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+
+          if (msg.op === 0) {
+            obsWs.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
+          }
+
+          if (msg.op === 2) {
+            isObsWsConnected = true;
+            if (currentStreamerName && currentStreamerName !== "Streamer") {
+              setObsTextSource(currentStreamerName);
+            }
+          }
+        };
+
+        obsWs.onclose = () => {
+          isObsWsConnected = false;
+          setTimeout(connectObsWebSocket, 3000);
+        };
+
+        obsWs.onerror = () => {
+          try { obsWs.close(); } catch(e) {}
+        };
+      } catch (e) {}
+    }
+
+    function setObsTextSource(newName) {
+      if (!obsWs || !isObsWsConnected || !newName || newName === "Streamer") return;
+      try {
+        obsWs.send(JSON.stringify({
+          op: 6,
+          d: {
+            requestType: "SetInputSettings",
+            requestId: "set-streamer-text-" + Date.now(),
+            requestData: {
+              inputName: OBS_TEXT_SOURCE_NAME,
+              inputSettings: { text: newName },
+              overlay: true
+            }
+          }
+        }));
+      } catch (e) {}
+    }
 
     try {
       if (!streamerFromUrl) {
@@ -742,7 +798,7 @@
     }
 
     // ========================================================
-    // 👤 STREAMER NAME AUTO-LOAD (ON INPUT CHANGE)
+    // 👤 STREAMER NAME AUTO-LOAD & DIRECT TEXT SOURCE SYNC
     // ========================================================
     const nameInputEl = document.getElementById('streamerNameInput');
     if (nameInputEl) {
@@ -750,6 +806,7 @@
         const val = nameInputEl.value.trim();
         if (val && val !== currentStreamerName) {
           loadSavedStreamerPass(val);
+          setObsTextSource(val);
         }
       });
       nameInputEl.addEventListener('keydown', (e) => {
@@ -1190,7 +1247,6 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // Automatically called when OBS starts streaming
     function startFreshPassZero() {
       if (currentGlobalTotal <= 0) {
         updateDockStatus("⚠️ Vänta, hämtar aktuell total från Musikhjälpen...", true);
@@ -1227,6 +1283,7 @@
         listenToStreamer(key);
         renderGoalsLadder();
         updateDockDisplay();
+        setObsTextSource(currentStreamerName);
         if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
         updateDockStatus(`✅ Automatiskt pass startat för ${currentStreamerName}! Mätaren är 0 kr.`);
       }).catch(err => {
@@ -1234,7 +1291,6 @@
       });
     }
 
-    // Automatically called when streamer edits name or loads page
     function loadSavedStreamerPass(optionalTargetName) {
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -1249,6 +1305,9 @@
       try {
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
       } catch(e) {}
+
+      // Automatically update OBS stream text source
+      setObsTextSource(currentStreamerName);
 
       const key = getStreamerKey(currentStreamerName);
       updateDockStatus(`Läser in pass för ${currentStreamerName}...`);
@@ -1344,6 +1403,9 @@
 
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
+
+    // Connect to OBS-WebSocket and load saved profile
+    connectObsWebSocket();
 
     if (currentStreamerName && currentStreamerName !== "Streamer") {
       loadSavedStreamerPass(currentStreamerName);
