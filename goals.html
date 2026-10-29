@@ -404,7 +404,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       gap: 6px;
     }
 
@@ -428,16 +428,25 @@
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus { border-color: #52525b; }
+    input[type="text"]:focus { border-color: var(--primary); }
+
+    .auto-badge-note {
+      font-size: 9px;
+      color: #00ff88;
+      font-weight: 700;
+      margin-top: 4px;
+      display: block;
+      line-height: 1.3;
+    }
 
     /* ========================================================
-       ✏️ DYNAMIC RESPONSIVE MILESTONE EDITOR (FILLS REMAINING SPACE)
+       ✏️ DYNAMIC RESPONSIVE MILESTONE EDITOR (MAXIMIZED ROOM)
        ======================================================== */
     .milestone-editor-card {
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      min-height: 180px;
+      min-height: 220px;
       margin-bottom: 0;
     }
 
@@ -449,7 +458,7 @@
     textarea#goalsInputArea {
       flex: 1 1 auto !important; /* Stretches to fill all remaining vertical room */
       width: 100% !important;
-      min-height: 120px !important;
+      min-height: 140px !important;
       height: auto !important;
       background: #121215 !important;
       border: 1px solid var(--border) !important;
@@ -459,9 +468,9 @@
       font-family: 'Consolas', 'Courier New', monospace !important;
       font-size: 13px !important;
       font-weight: 600 !important;
-      line-height: 1.8 !important; /* Clean vertical spacing between each goal line */
+      line-height: 1.85 !important; /* Generous breathing room between each line */
       outline: none !important;
-      resize: none !important; /* Layout adapts automatically without breaking */
+      resize: none !important;
       overflow-y: auto !important;
       margin-bottom: 6px !important;
       box-sizing: border-box !important;
@@ -488,23 +497,6 @@
       border-color: #3f3f46;
     }
 
-    .btn-resync {
-      background: #18181c;
-      border: 1px solid #00ff88;
-      color: #00ff88;
-      border-radius: 4px;
-      padding: 8px 10px;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 800;
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-      margin-bottom: 4px;
-      transition: background 0.15s ease, color 0.15s ease;
-    }
-    .btn-resync:hover { background: #00ff88; color: #000000; }
-
     .btn-toggle-view {
       background: #1e1e24;
       border: 1px solid #3a3a44;
@@ -529,7 +521,7 @@
       color: #000000;
       border: none;
       border-radius: 4px;
-      padding: 9px;
+      padding: 10px;
       font-family: inherit;
       font-size: 12px;
       font-weight: 900;
@@ -541,39 +533,11 @@
     }
     .btn-primary-action:hover { opacity: 0.9; }
 
-    .btn-danger {
-      background: #18181c;
-      border: 1px solid #ff453a;
-      color: #ff453a;
-    }
-    .btn-danger:hover {
-      background: #ff453a;
-      color: #ffffff;
-    }
-
-    .btn-danger.confirm-state {
-      background: #ff453a !important;
-      color: #ffffff !important;
-      font-weight: 900;
-      animation: pulseAlert 0.8s infinite alternate;
-    }
-
-    @keyframes pulseAlert {
-      from { opacity: 0.8; }
-      to { opacity: 1; }
-    }
-
     .hint-text {
       font-size: 10px;
       color: var(--text-dim);
       margin-bottom: 4px;
       line-height: 1.35;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
     }
   </style>
 </head>
@@ -622,7 +586,7 @@
       <div class="header-box">
         <span class="header-title">
           MILSTOLPAR KONTROLL 
-          <span class="version-badge">PRO v7.1</span>
+          <span class="version-badge">PRO v7.2</span>
           <span id="obsLivePill" class="live-pill offline">⚪ OBS OFFLINE</span>
         </span>
         <button class="btn" style="width:auto; margin:0; padding:3px 6px;" onclick="location.reload()">Ladda om</button>
@@ -635,7 +599,7 @@
 
       <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
 
-      <!-- ⏱️ STREAMER PASS CONTROLS -->
+      <!-- ⏱️ STREAMER LIVE-PASS (AUTOMATED) -->
       <div class="card-section">
         <span class="section-title">⏱️ Streamer Live-Pass</span>
         
@@ -643,25 +607,11 @@
           <span class="control-label">STREAMER:</span>
           <input type="text" id="streamerNameInput" placeholder="T.ex. LordBaconeer" style="width:65%;">
         </div>
-
-        <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
-          <button class="btn-resync" onclick="startFreshPassZero()">
-            🟢 Starta nytt pass (Nollställ till 0 kr)
-          </button>
-
-          <div class="grid-2">
-            <button class="btn" onclick="loadSavedStreamerPass()">
-              🔄 Läs in sparat pass
-            </button>
-            <button class="btn btn-danger" id="btnClearPassBtn" onclick="handleClearPassClick()">
-              🗑️ Rensa pass
-            </button>
-          </div>
-        </div>
+        <span class="auto-badge-note">⚡ Passet nollställs och startar automatiskt när du trycker "Start Streaming" i OBS.</span>
       </div>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (RESPONSIVE STRETCH & FIXED BOTTOM BUTTON) -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (EXPANDED TO MAXIMUM AVAILABLE ROOM) -->
     <div class="card-section milestone-editor-card">
       <span class="section-title">✏️ Redigera dina milstolpar</span>
       <div class="hint-text">
@@ -749,7 +699,7 @@
     });
 
     // ========================================================
-    // 🎬 OBS NATIVE STREAMING EVENTS (AUTO LIVE-PASS)
+    // 🎬 OBS NATIVE STREAMING EVENTS (100% AUTOMATIC)
     // ========================================================
     function updateObsLiveStatus(isStreaming) {
       isObsStreaming = isStreaming;
@@ -769,18 +719,8 @@
 
     window.addEventListener('obsStreamingStarted', () => {
       updateObsLiveStatus(true);
-      updateDockStatus("🎬 OBS gick LIVE! Startar automatiskt nytt pass...");
-      
-      if (!streamerBaseline || streamerBaseline <= 0) {
-        startFreshPassZero();
-      } else {
-        const key = getStreamerKey(currentStreamerName);
-        dbStreamersRef.child(key).update({
-          isLive: true,
-          secret: WRITE_SECRET,
-          lastLiveStartedUtc: new Date().toISOString()
-        }).catch(() => {});
-      }
+      updateDockStatus("🎬 OBS gick LIVE! Nollställer och startar pass...");
+      startFreshPassZero();
     });
 
     window.addEventListener('obsStreamingStopped', () => {
@@ -798,6 +738,24 @@
     if (window.obsstudio && window.obsstudio.getStatus) {
       window.obsstudio.getStatus((status) => {
         if (status) updateObsLiveStatus(status.streaming);
+      });
+    }
+
+    // ========================================================
+    // 👤 STREAMER NAME AUTO-LOAD (ON INPUT CHANGE)
+    // ========================================================
+    const nameInputEl = document.getElementById('streamerNameInput');
+    if (nameInputEl) {
+      nameInputEl.addEventListener('change', () => {
+        const val = nameInputEl.value.trim();
+        if (val && val !== currentStreamerName) {
+          loadSavedStreamerPass(val);
+        }
+      });
+      nameInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          nameInputEl.blur();
+        }
       });
     }
 
@@ -1135,7 +1093,7 @@
     function updateDockDisplay() {
       const earned = getLiveSessionEarned();
       if (!streamerBaseline || streamerBaseline <= 0) {
-        updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Klicka på "Starta nytt pass".`);
+        updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Starta streamen i OBS för att aktivera.`);
       } else {
         updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
       }
@@ -1232,6 +1190,7 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
+    // Automatically called when OBS starts streaming
     function startFreshPassZero() {
       if (currentGlobalTotal <= 0) {
         updateDockStatus("⚠️ Vänta, hämtar aktuell total från Musikhjälpen...", true);
@@ -1269,12 +1228,13 @@
         renderGoalsLadder();
         updateDockDisplay();
         if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-        updateDockStatus(`✅ Nytt pass startat för ${currentStreamerName}! Mätaren är 0 kr.`);
+        updateDockStatus(`✅ Automatiskt pass startat för ${currentStreamerName}! Mätaren är 0 kr.`);
       }).catch(err => {
         updateDockStatus("❌ Fel: " + err.message, true);
       });
     }
 
+    // Automatically called when streamer edits name or loads page
     function loadSavedStreamerPass(optionalTargetName) {
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -1309,46 +1269,14 @@
           renderGoalsLadder();
           updateDockDisplay();
           if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-          updateDockStatus(`✅ Sparat pass inläst för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
+          updateDockStatus(`✅ Profil inläst för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
         } else {
           listenToStreamer(key);
-          updateDockStatus(`Inget sparat pass hittat för ${currentStreamerName}. Starta ett nytt.`);
+          updateDockStatus(`Redo för ${currentStreamerName}. Tryck 'Start Streaming' i OBS för att starta passet.`);
         }
       }).catch(err => {
         updateDockStatus("❌ Fel: " + err.message, true);
       });
-    }
-
-    let clearConfirmTimeout = null;
-    function handleClearPassClick() {
-      const btn = document.getElementById('btnClearPassBtn');
-      if (!btn) return;
-
-      if (!btn.classList.contains('confirm-state')) {
-        btn.classList.add('confirm-state');
-        btn.innerText = "⚠️ Klicka igen för att rensa!";
-        clearConfirmTimeout = setTimeout(() => {
-          btn.classList.remove('confirm-state');
-          btn.innerText = "🗑️ Rensa pass";
-        }, 4000);
-      } else {
-        clearTimeout(clearConfirmTimeout);
-        btn.classList.remove('confirm-state');
-        btn.innerText = "🗑️ Rensa pass";
-
-        const key = getStreamerKey(currentStreamerName);
-        streamerBaseline = 0;
-        manualAdjustment = 0;
-
-        dbStreamersRef.child(key).remove().then(() => {
-          renderGoalsLadder();
-          updateDockDisplay();
-          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: 0, streamer: currentStreamerName });
-          updateDockStatus(`Passet för ${currentStreamerName} är rensat.`);
-        }).catch(err => {
-          updateDockStatus("❌ Fel: " + err.message, true);
-        });
-      }
     }
 
     function saveGoalsFromTextarea() {
