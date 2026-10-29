@@ -318,7 +318,7 @@
     .header-box {
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 6px 10px;
+      padding: 7px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -333,25 +333,16 @@
       color: #ffffff;
       display: flex;
       align-items: center;
-    }
-
-    .version-badge {
-      background: #00ff88;
-      color: #000000;
-      font-size: 8px;
-      font-weight: 900;
-      padding: 1px 4px;
-      border-radius: 3px;
-      margin-left: 6px;
+      width: 100%;
+      justify-content: space-between;
     }
 
     .live-pill {
       font-size: 9px;
       font-weight: 900;
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
       letter-spacing: 0.5px;
-      margin-left: 8px;
       text-transform: uppercase;
     }
     .live-pill.online {
@@ -368,18 +359,6 @@
     @keyframes pulseLive {
       from { opacity: 0.85; }
       to { opacity: 1; }
-    }
-
-    .status-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 6px 8px;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: #e4e4e7;
-      margin-bottom: 6px;
     }
 
     .card-section {
@@ -446,7 +425,7 @@
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
-      min-height: 220px;
+      min-height: 240px;
       margin-bottom: 0;
     }
 
@@ -458,7 +437,7 @@
     textarea#goalsInputArea {
       flex: 1 1 auto !important;
       width: 100% !important;
-      min-height: 140px !important;
+      min-height: 160px !important;
       height: auto !important;
       background: #121215 !important;
       border: 1px solid var(--border) !important;
@@ -477,43 +456,26 @@
     }
     textarea#goalsInputArea:focus { border-color: var(--primary) !important; }
 
-    .btn {
-      background: #18181c;
-      border: 1px solid var(--border);
-      color: #ffffff;
-      border-radius: 4px;
-      padding: 6px 8px;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-      margin-bottom: 4px;
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    .btn:hover:not(:disabled) {
-      background: #24242a;
-      border-color: #3f3f46;
-    }
-
+    /* TOGGLE BUTTON (OVER SAVE BUTTON) */
     .btn-toggle-view {
+      flex-shrink: 0 !important;
       background: #1e1e24;
       border: 1px solid #3a3a44;
       color: #ffffff;
       border-radius: 4px;
-      padding: 6px 8px;
+      padding: 7px 8px;
       font-family: inherit;
       font-size: 11px;
       font-weight: 800;
       cursor: pointer;
       width: 100%;
       text-align: center;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       transition: background 0.15s ease, border-color 0.15s ease;
     }
     .btn-toggle-view:hover { background: #2c2c36; }
 
+    /* SAVE BUTTON (PINNED TO BOTTOM) */
     .btn-primary-action {
       flex-shrink: 0 !important;
       background: #ffffff;
@@ -526,7 +488,7 @@
       font-weight: 900;
       cursor: pointer;
       width: 100%;
-      margin-top: auto;
+      margin-top: 0;
       margin-bottom: 0;
       transition: opacity 0.15s ease;
     }
@@ -582,21 +544,13 @@
   <div id="panelRoot" class="dock-container">
     
     <div class="dock-fixed-top">
+      <!-- CLEAN HEADER (NO VERSION / NO RELOAD BUTTON) -->
       <div class="header-box">
         <span class="header-title">
-          MILSTOLPAR KONTROLL 
-          <span class="version-badge">PRO v7.3</span>
+          MILSTOLPAR KONTROLL
           <span id="obsLivePill" class="live-pill offline">⚪ OBS OFFLINE</span>
         </span>
-        <button class="btn" style="width:auto; margin:0; padding:3px 6px;" onclick="location.reload()">Ladda om</button>
       </div>
-
-      <!-- 👁️ HIDE / SHOW GOALS TOGGLE -->
-      <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
-        👁️ Göm milstolpar på stream
-      </button>
-
-      <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
 
       <!-- ⏱️ STREAMER LIVE-PASS (AUTOMATED & SYNCED WITH OBS TEXT SOURCE) -->
       <div class="card-section">
@@ -610,7 +564,7 @@
       </div>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (EXPANDED TO MAXIMUM AVAILABLE ROOM) -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
     <div class="card-section milestone-editor-card">
       <span class="section-title">✏️ Redigera dina milstolpar</span>
       <div class="hint-text">
@@ -620,6 +574,12 @@
       
       <textarea id="goalsInputArea" placeholder="50 kr - Sill bit&#10;100 kr - Sill bit&#10;150 kr - Sill bit&#10;200 kr - Sill bit&#10;250 kr - Sill bit med ketchup&#10;350 kr - Sill bit&#10;400 kr - Äter 2 bananer.&#10;500 kr - Äter en melon på 2 ben.&#10;600 kr - Dansar.&#10;700 kr - Hoppar på 4 ben och tre armar."></textarea>
 
+      <!-- 👁️ HIDE / SHOW GOALS TOGGLE (POSITIONED OVER SAVE BUTTON) -->
+      <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
+        👁️ Göm milstolpar på stream
+      </button>
+
+      <!-- 💾 SAVE BUTTON (PINNED AT BOTTOM) -->
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara mina milstolpar
       </button>
@@ -749,8 +709,6 @@
     firebase.database().ref('.info/connected').on('value', (snap) => {
       if (snap.val() === true) {
         updateDockDisplay();
-      } else {
-        updateDockStatus("⚠️ Ansluter till Musikhjälpen...", true);
       }
     });
 
@@ -775,13 +733,11 @@
 
     window.addEventListener('obsStreamingStarted', () => {
       updateObsLiveStatus(true);
-      updateDockStatus("🎬 OBS gick LIVE! Nollställer och startar pass...");
       startFreshPassZero();
     });
 
     window.addEventListener('obsStreamingStopped', () => {
       updateObsLiveStatus(false);
-      updateDockStatus("🛑 OBS stoppade streamen. Passet är pausat.");
       
       const key = getStreamerKey(currentStreamerName);
       dbStreamersRef.child(key).update({
@@ -818,14 +774,6 @@
 
     function formatSEK(num) {
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
-    }
-
-    function updateDockStatus(msg, isError = false) {
-      const box = document.getElementById('dockStatusBox');
-      if (box) {
-        box.innerText = msg;
-        box.style.color = isError ? "#ff453a" : "#00ff88";
-      }
     }
 
     function getStreamerKey(name) {
@@ -878,8 +826,6 @@
       if (bus) {
         bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
       }
-
-      updateDockStatus(isGoalsHidden ? "🙈 Milstolpar döljs på stream" : "👀 Milstolpar visas på stream");
     }
 
     // ========================================================
@@ -1148,13 +1094,6 @@
     }
 
     function updateDockDisplay() {
-      const earned = getLiveSessionEarned();
-      if (!streamerBaseline || streamerBaseline <= 0) {
-        updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Starta streamen i OBS för att aktivera.`);
-      } else {
-        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
-      }
-
       const nameInput = document.getElementById('streamerNameInput');
       if (nameInput && !isFocusingInput && currentStreamerName && currentStreamerName !== "Streamer") {
         nameInput.value = currentStreamerName;
@@ -1248,10 +1187,7 @@
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
     function startFreshPassZero() {
-      if (currentGlobalTotal <= 0) {
-        updateDockStatus("⚠️ Vänta, hämtar aktuell total från Musikhjälpen...", true);
-        return;
-      }
+      if (currentGlobalTotal <= 0) return;
 
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -1265,8 +1201,6 @@
       try {
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
       } catch(e) {}
-
-      updateDockStatus(`Startar pass för ${currentStreamerName}...`);
 
       const area = document.getElementById('goalsInputArea');
       const goalsText = area ? area.value : "";
@@ -1285,10 +1219,7 @@
         updateDockDisplay();
         setObsTextSource(currentStreamerName);
         if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-        updateDockStatus(`✅ Automatiskt pass startat för ${currentStreamerName}! Mätaren är 0 kr.`);
-      }).catch(err => {
-        updateDockStatus("❌ Fel: " + err.message, true);
-      });
+      }).catch(() => {});
     }
 
     function loadSavedStreamerPass(optionalTargetName) {
@@ -1306,11 +1237,9 @@
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
       } catch(e) {}
 
-      // Automatically update OBS stream text source
       setObsTextSource(currentStreamerName);
 
       const key = getStreamerKey(currentStreamerName);
-      updateDockStatus(`Läser in pass för ${currentStreamerName}...`);
 
       dbStreamersRef.child(key).once('value').then((snap) => {
         const data = snap.val();
@@ -1328,14 +1257,10 @@
           renderGoalsLadder();
           updateDockDisplay();
           if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-          updateDockStatus(`✅ Profil inläst för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
         } else {
           listenToStreamer(key);
-          updateDockStatus(`Redo för ${currentStreamerName}. Tryck 'Start Streaming' i OBS för att starta passet.`);
         }
-      }).catch(err => {
-        updateDockStatus("❌ Fel: " + err.message, true);
-      });
+      }).catch(() => {});
     }
 
     function saveGoalsFromTextarea() {
@@ -1343,9 +1268,7 @@
       const text = area ? area.value : "";
       const goals = parseLinesToGoalObjects(text);
 
-      if (goals.length === 0) {
-        return updateDockStatus("⚠️ Hittade inga giltiga milstolpar!", true);
-      }
+      if (goals.length === 0) return;
 
       try {
         localStorage.setItem(STORAGE_KEY_GOALS, text);
@@ -1364,7 +1287,12 @@
         secret: WRITE_SECRET
       }).catch(() => {});
 
-      updateDockStatus(`✅ Sparade dina ${goals.length} milstolpar!`);
+      const saveBtn = document.querySelector('.btn-primary-action');
+      if (saveBtn) {
+        const oldText = saveBtn.innerText;
+        saveBtn.innerText = "✓ Sparat!";
+        setTimeout(() => { saveBtn.innerText = oldText; }, 1400);
+      }
     }
 
     function escapeHTML(str) {
@@ -1404,7 +1332,6 @@
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
-    // Connect to OBS-WebSocket and load saved profile
     connectObsWebSocket();
 
     if (currentStreamerName && currentStreamerName !== "Streamer") {
