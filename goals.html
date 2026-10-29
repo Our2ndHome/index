@@ -314,7 +314,7 @@
 
     /* 🎛️ 2. OBS DOCK CONTROLLER */
     .dock-container {
-      max-width: 480px;
+      max-width: 520px;
       margin: 0 auto;
     }
 
@@ -334,6 +334,8 @@
       font-weight: 900;
       text-transform: uppercase;
       color: #ffffff;
+      display: flex;
+      align-items: center;
     }
 
     .version-badge {
@@ -344,6 +346,32 @@
       padding: 1px 5px;
       border-radius: 3px;
       margin-left: 6px;
+    }
+
+    /* Live status badge */
+    .live-pill {
+      font-size: 9px;
+      font-weight: 900;
+      padding: 3px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      margin-left: 8px;
+      text-transform: uppercase;
+    }
+    .live-pill.online {
+      background: #ff3b30;
+      color: #ffffff;
+      box-shadow: 0 0 8px rgba(255, 59, 48, 0.6);
+      animation: pulseLive 1.2s infinite alternate;
+    }
+    .live-pill.offline {
+      background: #27272a;
+      color: #a1a1aa;
+    }
+
+    @keyframes pulseLive {
+      from { opacity: 0.85; }
+      to { opacity: 1; }
     }
 
     .status-box {
@@ -408,22 +436,27 @@
       border-color: #52525b;
     }
 
+    /* ========================================================
+       ✏️ EXPANDED GOALS LIST TEXTAREA (EXTRA ROOMY & CLEAN)
+       ======================================================== */
     textarea {
-      width: 100%;
-      height: 130px;
-      background: #121215;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: #ffffff;
-      padding: 8px;
-      font-family: inherit;
-      font-size: 11px;
-      line-height: 1.5;
-      outline: none;
-      resize: vertical;
-      margin-bottom: 6px;
+      width: 100% !important;
+      min-height: 420px !important; /* Plenty of vertical room for 15+ goals */
+      background: #121215 !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 6px !important;
+      color: #ffffff !important;
+      padding: 12px 14px !important;
+      font-family: 'Consolas', 'Courier New', monospace !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      line-height: 1.85 !important; /* Generous breathing room between each line */
+      outline: none !important;
+      resize: vertical !important;
+      margin-bottom: 8px !important;
+      box-sizing: border-box !important;
     }
-    textarea:focus { border-color: #52525b; }
+    textarea:focus { border-color: var(--primary) !important; }
 
     .btn {
       background: #18181c;
@@ -573,7 +606,11 @@
        ======================================================== -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v6.2</span></span>
+      <span class="header-title">
+        MILSTOLPAR KONTROLL 
+        <span class="version-badge">PRO v7.0</span>
+        <span id="obsLivePill" class="live-pill offline">⚪ OBS OFFLINE</span>
+      </span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
@@ -609,7 +646,7 @@
       </div>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
+    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR (EXPANDED TO 420px) -->
     <div class="card-section">
       <span class="section-title">✏️ Redigera dina milstolpar</span>
       <div class="hint-text">
@@ -667,6 +704,7 @@
     let isGoalsHidden = false;
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
+    let isObsStreaming = false;
 
     try {
       if (!streamerFromUrl) {
@@ -693,6 +731,63 @@
         updateDockStatus("⚠️ Ansluter till Musikhjälpen...", true);
       }
     });
+
+    // ========================================================
+    // 🎬 OBS NATIVE STREAMING EVENTS (AUTO LIVE-PASS)
+    // ========================================================
+    function updateObsLiveStatus(isStreaming) {
+      isObsStreaming = isStreaming;
+      const pill = document.getElementById('obsLivePill');
+      if (pill) {
+        if (isStreaming) {
+          pill.innerText = "🔴 OBS ÄR LIVE";
+          pill.classList.remove('offline');
+          pill.classList.add('online');
+        } else {
+          pill.innerText = "⚪ OBS OFFLINE";
+          pill.classList.remove('online');
+          pill.classList.add('offline');
+        }
+      }
+    }
+
+    // Triggered automatically ONLY by the OBS that clicks "Start Streaming"
+    window.addEventListener('obsStreamingStarted', () => {
+      updateObsLiveStatus(true);
+      updateDockStatus("🎬 OBS gick LIVE! Startar automatiskt nytt pass...");
+      
+      // If no pass was started or baseline is empty, auto-start baseline at current total
+      if (!streamerBaseline || streamerBaseline <= 0) {
+        startFreshPassZero();
+      } else {
+        const key = getStreamerKey(currentStreamerName);
+        dbStreamersRef.child(key).update({
+          isLive: true,
+          secret: WRITE_SECRET,
+          lastLiveStartedUtc: new Date().toISOString()
+        }).catch(() => {});
+      }
+    });
+
+    // Triggered automatically ONLY by the OBS that clicks "Stop Streaming"
+    window.addEventListener('obsStreamingStopped', () => {
+      updateObsLiveStatus(false);
+      updateDockStatus("🛑 OBS stoppade streamen. Passet är pausat.");
+      
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        isLive: false,
+        secret: WRITE_SECRET,
+        lastLiveStoppedUtc: new Date().toISOString()
+      }).catch(() => {});
+    });
+
+    // Initial check if window.obsstudio exists (inside OBS Studio frame)
+    if (window.obsstudio && window.obsstudio.getStatus) {
+      window.obsstudio.getStatus((status) => {
+        if (status) updateObsLiveStatus(status.streaming);
+      });
+    }
 
     function formatSEK(num) {
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
@@ -1161,6 +1256,7 @@
         manualAdjustment: 0,
         goalsText: goalsText,
         secret: WRITE_SECRET,
+        isLive: isObsStreaming,
         timestamp: Date.now()
       }).then(() => {
         listenToStreamer(key);
