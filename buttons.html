@@ -137,9 +137,9 @@
             margin-bottom: 12px;
         }
 
-        /* 4-column row for Properties buttons */
+        /* 5-column row for Properties buttons */
         .grid-props {
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             margin-bottom: 14px;
         }
 
@@ -197,6 +197,7 @@
             margin-top: -2px;
         }
 
+        /* Active Scene Highlight */
         .deck-btn.active-scene {
             background: #1e2922 !important;
             border-color: #00ff88 !important;
@@ -313,12 +314,19 @@
             }
         ];
 
+        // ⚙️ 5 SOURCE PROPERTIES BUTTONS
         const PROPERTIES_BUTTONS = [
             {
-                label: "Spotify",
+                label: "Main Mic",
                 sublabel: "Audio",
-                color: "#1db954",
-                source: "Spotify Audio Source"
+                color: "#ef4444",
+                source: "Main Mic"
+            },
+            {
+                label: "Game",
+                sublabel: "Audio",
+                color: "#3b82f6",
+                source: "Game Audio"
             },
             {
                 label: "Game",
