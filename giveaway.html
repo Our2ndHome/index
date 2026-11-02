@@ -57,19 +57,20 @@
       z-index: 99995;
     }
 
-    /* 📺 1. STREAM OVERLAY */
+    /* ========================================================
+       📺 1. STREAM OVERLAY: LOCKED ROLLER IN DEAD CENTER
+       ======================================================== */
     .giveaway-widget {
       position: absolute;
       top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 800px;
-      padding: 10px;
+      height: var(--viewport-height); /* Fixed 280px height locks the roller */
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 99990;
@@ -85,12 +86,18 @@
       pointer-events: auto;
     }
 
+    /* TOP CONTAINER: ANCHORED STRICTLY ABOVE THE ROLLER */
     .giveaway-title-container {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 6px;
+      margin-bottom: 16px; /* Clean gap above the stationary roller */
+      pointer-events: none;
     }
 
     .giveaway-head-title {
@@ -102,21 +109,23 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
+    /* AKTIVA CHATTARE: Added space below */
     .giveaway-sub-title {
       font-size: 16px;
       font-weight: 800;
       letter-spacing: 0.8px;
       color: rgba(255, 255, 255, 0.85);
       margin-top: 5px;
+      margin-bottom: 14px; /* Generous breathing room before winner text */
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
+    /* TOP TIMER & UNIFIED WINNER CHAT DISPLAY */
     .giveaway-timer-badge {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin-top: 6px;
       color: #ffffff;
       font-size: 18px;
       font-weight: 900;
@@ -137,25 +146,25 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* SINGLE LINE LOCK: Keeps layout compact and clean */
+    /* SINGLE LINE LOCKED TO MAXIMUM 30 CHARACTERS */
     .winner-response-msg {
       font-size: 19px;
       font-weight: 800;
       color: #ffffff;
       letter-spacing: 0.5px;
-      margin-top: 3px;
-      white-space: nowrap;
+      margin-top: 4px;
+      white-space: nowrap; /* Never wraps or shifts the screen */
       max-width: 90%;
       overflow: hidden;
       text-overflow: ellipsis;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 THE 5-SLOT STAGE */
+    /* 🎰 THE 5-SLOT STAGE (STATIONARY ANCHOR) */
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: var(--viewport-height);
+      height: 100%; /* Perfectly matches 280px */
       overflow: hidden;
       background: transparent;
       border: none;
@@ -203,14 +212,18 @@
       transition: color 0.15s ease;
     }
 
+    /* PRIZE CONTAINER: ANCHORED STRICTLY BELOW THE ROLLER */
     .giveaway-prize-display {
-      margin-top: 18px;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      margin-top: 16px; /* Gap below the stationary roller */
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      min-height: 44px;
-      max-width: 90%;
+      pointer-events: none;
     }
 
     .giveaway-prize-label {
@@ -477,16 +490,19 @@
     <canvas id="victoryCanvas"></canvas>
 
     <div class="giveaway-widget" id="giveawayWidget">
+      <!-- STATIONARY TOP ANCHOR -->
       <div class="giveaway-title-container">
         <div class="giveaway-head-title">GIVEAWAY</div>
         <div class="giveaway-sub-title" id="giveawaySubTitle">0 aktiva chattare</div>
         <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
       </div>
       
+      <!-- CENTERED ROLLER VIEWPORT (NEVER MOVES) -->
       <div class="reel-viewport">
         <div class="reel-stage" id="reelStage"></div>
       </div>
 
+      <!-- STATIONARY BOTTOM ANCHOR -->
       <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
     </div>
   </div>
@@ -501,13 +517,16 @@
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
+    <!-- LIVE STATUS BOX -->
     <div class="status-box" id="dockStatusBox">Ansluter direkt till Twitch IRC...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
+    <!-- 🟢/🔒 TOGGLE ENTRIES OPEN / CLOSED -->
     <button id="btnToggleEntries" class="btn btn-toggle-entries is-open" onclick="toggleEntriesState()">
       🟢 Anmälningar är ÖPPNA (Alla som skriver registreras)
     </button>
 
+    <!-- 👥 LISTA: AKTIVA DELTAGARE -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="section-title" style="margin-bottom:0;">👥 Chattdeltagare (1 biljett / person)</span>
@@ -523,15 +542,18 @@
       </div>
     </div>
 
+    <!-- Prize Input -->
     <div class="control-row">
       <span class="control-label">VINST / PRIS:</span>
       <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 60%; text-align: right;">
     </div>
 
+    <!-- Reset List Button -->
     <button class="btn btn-danger" onclick="resetAllChatters()" style="margin-top: 4px;">
       🧹 Rensa deltagarlistan inför nästa giveaway
     </button>
 
+    <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
       Starta dragning (10s)
     </button>
@@ -762,7 +784,7 @@
         }
       }
 
-      // ONLY RECORD FIRST MESSAGE AFTER WIN: prevents spam overwriting
+      // ONLY RECORD FIRST MESSAGE AFTER WIN: prevents subsequent spam
       if (currentWinner && normalizeUserKey(currentWinner) === userKey) {
         if (!winnerHasResponded) {
           displayWinnerChatResponse(username, message, true);
@@ -884,6 +906,7 @@
       } else if (act.type === 'RESET') {
         chatterMap = {};
         currentWinner = null;
+        winnerHasResponded = false;
         finalizeClaimAndHide();
         updateStatsUI();
       } else if (act.type === 'UPDATE_PRIZE') {
@@ -916,6 +939,7 @@
         if (type === 'RESET') {
           chatterMap = {};
           currentWinner = null;
+          winnerHasResponded = false;
           finalizeClaimAndHide();
           updateStatsUI();
         }
