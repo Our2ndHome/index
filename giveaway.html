@@ -60,7 +60,7 @@
     /* 📺 1. STREAM OVERLAY */
     .giveaway-widget {
       position: absolute;
-      top: 50%;
+      top: 45%; /* Moved up to center between top countdown and bottom sponsors */
       left: 50%;
       transform: translate(-50%, -50%);
       width: 800px;
@@ -93,33 +93,36 @@
       margin-bottom: 6px;
     }
 
+    /* GIVEAWAY TITLE: Bigger & #ace600 */
     .giveaway-head-title {
-      font-size: 26px;
+      font-size: 36px;
       font-weight: 900;
-      letter-spacing: 4px;
-      color: #ffffff;
+      letter-spacing: 5px;
+      color: var(--primary);
       text-transform: uppercase;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 0 18px rgba(172, 230, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.95);
     }
 
+    /* AKTIVA CHATTARE: Bigger */
     .giveaway-sub-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: rgba(255, 255, 255, 0.7);
-      margin-top: 4px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 5px;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
     }
 
+    /* COUNTDOWN TIMER: Bigger & #ace600 */
     .giveaway-timer-badge {
       display: block;
       margin-top: 6px;
-      color: #ffffff;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      min-height: 20px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      min-height: 24px;
+      text-shadow: 0 0 14px rgba(172, 230, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
     /* 🎰 THE 5-SLOT STAGE */
@@ -165,13 +168,12 @@
       width: 100%;
       text-align: center;
       white-space: nowrap;
-      color: #ffffff;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
       transform-origin: center center;
       will-change: transform, opacity;
       line-height: 1;
+      transition: color 0.15s ease, text-shadow 0.15s ease;
     }
 
     /* 💬 WINNER CHAT RESPONSE POPUP ON SCREEN */
@@ -229,18 +231,19 @@
       max-width: 90%;
     }
 
+    /* VINST LABEL: #ace600 */
     .giveaway-prize-label {
-      font-size: 12px;
-      font-weight: 800;
+      font-size: 13px;
+      font-weight: 900;
       letter-spacing: 2.5px;
-      color: rgba(255, 255, 255, 0.65);
+      color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 2px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+      margin-bottom: 3px;
+      text-shadow: 0 0 10px rgba(172, 230, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
     .giveaway-prize-val {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 900;
       letter-spacing: 1.5px;
       color: #ffffff;
@@ -362,7 +365,6 @@
       border-color: var(--primary);
     }
 
-    /* 👥 CHATTER PARTICIPANT LIST */
     .chatter-list-container {
       max-height: 240px;
       overflow-y: auto;
@@ -585,7 +587,6 @@
     const STORAGE_KEY_PRIZE = "mh_overlay_prize_text";
     const STORAGE_KEY_ENTRIES_OPEN = "mh_giveaway_entries_open";
 
-    // Target Twitch Channel for live chat monitoring
     const TWITCH_CHANNEL = "our2ndhome";
 
     const EMOTES_FOLDER = "emotes";
@@ -603,6 +604,10 @@
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
     const VICTORY_SOUND_SRC = "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3";
+
+    try {
+      localStorage.removeItem("mh_overlay_donor_tickets");
+    } catch(e) {}
 
     let chatterMap = {};
     let areEntriesOpen = true;
@@ -667,6 +672,8 @@
     const dbChattersRef = firebase.database().ref('giveaway_chatters');
     const dbActionRef = firebase.database().ref('giveaway_action');
 
+    firebase.database().ref('giveaway_donors').remove().catch(() => {});
+
     function preloadEmoteImages() {
       loadedEmoteImages = [];
       CUSTOM_EMOTE_FILES.forEach(filename => {
@@ -681,7 +688,7 @@
     preloadEmoteImages();
 
     // ========================================================
-    // 💬 1. NATIVE TWITCH IRC WEBSOCKET (ZERO EXTERNAL SCRIPTS)
+    // 💬 1. NATIVE TWITCH IRC WEBSOCKET
     // ========================================================
     let twitchSocket = null;
 
@@ -776,7 +783,6 @@
     function handleIncomingChatMessage(username, message) {
       const userKey = normalizeUserKey(username);
 
-      // 1. If entries are open, record chatter (1 ticket per person)
       if (areEntriesOpen) {
         if (!chatterMap[userKey]) {
           chatterMap[userKey] = {
@@ -789,7 +795,6 @@
         }
       }
 
-      // 2. If a winner has been drawn and is currently in the claim window:
       if (currentWinner && normalizeUserKey(currentWinner) === userKey) {
         displayWinnerChatResponse(username, message, true);
       }
@@ -899,6 +904,11 @@
       } else if (act.type === 'CANCEL_CLOSE' && act.actionId && act.actionId !== lastProcessedActionId) {
         lastProcessedActionId = act.actionId;
         finalizeCancelAndHide();
+      } else if (act.type === 'RESET') {
+        chatterMap = {};
+        currentWinner = null;
+        finalizeClaimAndHide();
+        updateStatsUI();
       } else if (act.type === 'UPDATE_PRIZE') {
         setPrizeText(act.prize, false);
       } else if (act.type === 'TOGGLE_ENTRIES') {
@@ -926,6 +936,12 @@
           lastProcessedActionId = payload.actionId;
           finalizeCancelAndHide();
         }
+        if (type === 'RESET') {
+          chatterMap = {};
+          currentWinner = null;
+          finalizeClaimAndHide();
+          updateStatsUI();
+        }
         if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
         if (type === 'TOGGLE_ENTRIES') {
           areEntriesOpen = payload.open;
@@ -934,9 +950,6 @@
       };
     }
 
-    // ========================================================
-    // 🟢/🔒 ENTRIES TOGGLE
-    // ========================================================
     function toggleEntriesState() {
       areEntriesOpen = !areEntriesOpen;
       try {
@@ -981,9 +994,6 @@
       }
     }
 
-    // ========================================================
-    // 👥 CHATTER LIST UI
-    // ========================================================
     function renderChatterListUI() {
       const container = document.getElementById('chatterListContainer');
       const countBadge = document.getElementById('chatterCountBadge');
@@ -1094,14 +1104,14 @@
       const sign = d < 0 ? -1 : 1;
 
       let yOffset = 0;
-      let scale = 1.18;
+      let scale = 1.20;
       let opacity = 1.0;
       let fontWeight = '900';
 
       if (absD <= 1.0) {
         const t = absD;
         yOffset = sign * (54 * t);
-        scale = 1.18 - (1.18 - 0.86) * t;
+        scale = 1.20 - (1.20 - 0.86) * t;
         opacity = 1.0 - (1.0 - 0.60) * t;
         fontWeight = absD < 0.25 ? '900' : '800';
       } else if (absD <= 2.0) {
@@ -1126,6 +1136,7 @@
       };
     }
 
+    /* 🎰 VIRTUAL SLOTS: CENTER ITEM TURNS #ace600 WITH GLOW */
     function renderVirtualSlots(virtualOffset) {
       if (trackNamesList.length === 0) return;
 
@@ -1139,8 +1150,14 @@
         const m = getSlotPhysicalMetrics(d);
 
         if (m.opacity > 0.01) {
+          const isCenter = Math.abs(d) < 0.35;
+          const itemColor = isCenter ? 'var(--primary)' : '#ffffff';
+          const itemGlow = isCenter 
+            ? 'text-shadow: 0 0 18px rgba(172, 230, 0, 0.85), 0 2px 8px #000;' 
+            : 'text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);';
+
           const transform = `translateY(-50%) scale(${m.scale.toFixed(3)})`;
-          const style = `top: ${m.top.toFixed(1)}px; transform: ${transform}; opacity: ${m.opacity.toFixed(3)}; font-weight: ${m.fontWeight}; font-size: 24px;`;
+          const style = `top: ${m.top.toFixed(1)}px; transform: ${transform}; opacity: ${m.opacity.toFixed(3)}; font-weight: ${m.fontWeight}; font-size: 26px; color: ${itemColor}; ${itemGlow}`;
           html += `<div class="slot-item" style="${style}">${escapeHTML(trackNamesList[i])}</div>`;
         }
       }
@@ -1520,8 +1537,13 @@
     function resetAllChatters() {
       if (confirm("Är du säker på att du vill rensa deltagarlistan inför nästa giveaway?")) {
         chatterMap = {};
+        currentWinner = null;
         saveChatters();
         syncChattersToCloud();
+
+        dbActionRef.set({ type: 'RESET', actionId: Date.now(), secret: WRITE_SECRET }).catch(() => {});
+        if (bus) bus.postMessage({ type: 'RESET' });
+
         updateStatsUI();
         initInitialStage();
       }
