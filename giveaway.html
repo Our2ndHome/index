@@ -111,7 +111,6 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* TOP TIMER & UNIFIED WINNER CHAT DISPLAY */
     .giveaway-timer-badge {
       display: flex;
       flex-direction: column;
@@ -130,7 +129,6 @@
       color: var(--primary) !important;
     }
 
-    /* WINNER RESPONSE HEADER & MESSAGE ON OWN ROW IN WHITE */
     .winner-response-header {
       font-size: 18px;
       font-weight: 900;
@@ -139,13 +137,17 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
+    /* SINGLE LINE LOCK: Keeps layout compact and clean */
     .winner-response-msg {
       font-size: 19px;
       font-weight: 800;
       color: #ffffff;
       letter-spacing: 0.5px;
       margin-top: 3px;
-      word-break: break-word;
+      white-space: nowrap;
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
@@ -211,14 +213,13 @@
       max-width: 90%;
     }
 
-    /* VINST LABEL: More space between label and prize value */
     .giveaway-prize-label {
       font-size: 13px;
       font-weight: 900;
       letter-spacing: 2.5px;
       color: var(--primary);
       text-transform: uppercase;
-      margin-bottom: 10px; /* Increased spacing */
+      margin-bottom: 10px;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
@@ -479,7 +480,6 @@
       <div class="giveaway-title-container">
         <div class="giveaway-head-title">GIVEAWAY</div>
         <div class="giveaway-sub-title" id="giveawaySubTitle">0 aktiva chattare</div>
-        <!-- UNIFIED TOP TIMER / WINNER RESPONSE DISPLAY -->
         <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
       </div>
       
@@ -501,16 +501,13 @@
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- LIVE STATUS BOX -->
     <div class="status-box" id="dockStatusBox">Ansluter direkt till Twitch IRC...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
-    <!-- 🟢/🔒 TOGGLE ENTRIES OPEN / CLOSED -->
     <button id="btnToggleEntries" class="btn btn-toggle-entries is-open" onclick="toggleEntriesState()">
       🟢 Anmälningar är ÖPPNA (Alla som skriver registreras)
     </button>
 
-    <!-- 👥 LISTA: AKTIVA DELTAGARE -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="section-title" style="margin-bottom:0;">👥 Chattdeltagare (1 biljett / person)</span>
@@ -526,18 +523,15 @@
       </div>
     </div>
 
-    <!-- Prize Input -->
     <div class="control-row">
       <span class="control-label">VINST / PRIS:</span>
       <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 60%; text-align: right;">
     </div>
 
-    <!-- Reset List Button -->
     <button class="btn btn-danger" onclick="resetAllChatters()" style="margin-top: 4px;">
       🧹 Rensa deltagarlistan inför nästa giveaway
     </button>
 
-    <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
       Starta dragning (10s)
     </button>
@@ -768,19 +762,28 @@
         }
       }
 
+      // ONLY RECORD FIRST MESSAGE AFTER WIN: prevents spam overwriting
       if (currentWinner && normalizeUserKey(currentWinner) === userKey) {
-        displayWinnerChatResponse(username, message, true);
+        if (!winnerHasResponded) {
+          displayWinnerChatResponse(username, message, true);
+        }
       }
     }
 
-    /* UNIFIED WINNER CHAT RESPONSE: TOP CONTAINER, NO CHECKMARK, 2 ROWS */
+    /* UNIFIED WINNER CHAT RESPONSE: CAPPED TO 30 CHARS & FIRST MESSAGE ONLY */
     function displayWinnerChatResponse(username, message, broadcast = true) {
       winnerHasResponded = true;
+
+      // Cap message to 30 characters maximum and append "..." if longer
+      let cleanMsg = (message || '').trim();
+      if (cleanMsg.length > 30) {
+        cleanMsg = cleanMsg.substring(0, 30).trim() + "...";
+      }
 
       if (giveawayTimerBadge) {
         giveawayTimerBadge.innerHTML = `
           <div class="winner-response-header"><span class="timer-val">${escapeHTML(username)}</span> har svarat:</div>
-          <div class="winner-response-msg">"${escapeHTML(message)}"</div>
+          <div class="winner-response-msg">"${escapeHTML(cleanMsg)}"</div>
         `;
       }
 
@@ -794,7 +797,7 @@
         dbActionRef.set({
           type: 'WINNER_CHATTED',
           winner: username,
-          message: message,
+          message: cleanMsg,
           actionId: actionId,
           secret: WRITE_SECRET
         }).catch(() => {});
@@ -802,7 +805,7 @@
         if (bus) {
           bus.postMessage({
             type: 'WINNER_CHATTED',
-            payload: { winner: username, message: message, actionId: actionId }
+            payload: { winner: username, message: cleanMsg, actionId: actionId }
           });
         }
       }
