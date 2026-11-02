@@ -10,6 +10,9 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+  <!-- Twitch Chat Anonymous Client -->
+  <script src="https://cdn.jsdelivr.net/npm/tmi.js@1.8.5/dist/tmi.min.js"></script>
+
   <style>
     :root {
       --text-white: #ffffff;
@@ -135,8 +138,8 @@
         to bottom,
         rgba(0, 0, 0, 0) 0%,
         rgba(0, 0, 0, 0.4) 10%,
-        rgba(0, 0, 0, 1) 28%,
-        rgba(0, 0, 0, 1) 72%,
+        rgba(0, 0, 1) 28%,
+        rgba(0, 0, 1) 72%,
         rgba(0, 0, 0, 0.4) 90%,
         rgba(0, 0, 0, 0) 100%
       );
@@ -144,8 +147,8 @@
         to bottom,
         rgba(0, 0, 0, 0) 0%,
         rgba(0, 0, 0, 0.4) 10%,
-        rgba(0, 0, 0, 1) 28%,
-        rgba(0, 0, 0, 1) 72%,
+        rgba(0, 0, 1) 28%,
+        rgba(0, 0, 1) 72%,
         rgba(0, 0, 0, 0.4) 90%,
         rgba(0, 0, 0, 0) 100%
       );
@@ -174,8 +177,53 @@
       line-height: 1;
     }
 
+    /* 💬 WINNER CHAT RESPONSE POPUP ON SCREEN */
+    .winner-chat-container {
+      margin-top: 10px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      max-width: 90%;
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .winner-chat-container.visible {
+      display: flex !important;
+    }
+
+    .winner-chat-badge {
+      background: var(--primary);
+      color: #000000;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      box-shadow: 0 0 14px rgba(172, 230, 0, 0.8);
+    }
+
+    .winner-chat-bubble {
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid var(--primary);
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.9), 0 0 16px rgba(172, 230, 0, 0.4);
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
     .giveaway-prize-display {
-      margin-top: 14px;
+      margin-top: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -229,14 +277,21 @@
       color: #ffffff;
     }
 
-    .version-badge {
-      background: #ffffff;
-      color: #000000;
+    .status-pill {
       font-size: 9px;
       font-weight: 900;
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-left: 6px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-pill.open {
+      background: var(--primary);
+      color: #000000;
+    }
+    .status-pill.closed {
+      background: #27272a;
+      color: #a1a1aa;
     }
 
     .status-box {
@@ -294,7 +349,7 @@
       white-space: nowrap;
     }
 
-    input[type="text"], input[type="number"], select {
+    input[type="text"], select {
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -305,13 +360,13 @@
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus, input[type="number"]:focus, select:focus {
-      border-color: #52525b;
+    input[type="text"]:focus, select:focus {
+      border-color: var(--primary);
     }
 
-    /* 🎟️ TICKET LISTS */
-    .donor-list-container {
-      max-height: 180px;
+    /* 👥 CHATTER PARTICIPANT LIST */
+    .chatter-list-container {
+      max-height: 220px;
       overflow-y: auto;
       background: #121215;
       border: 1px solid var(--border);
@@ -322,57 +377,27 @@
       gap: 4px;
     }
 
-    .donor-row {
+    .chatter-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 8px;
+      padding: 6px 10px;
       background: #18181c;
       border-radius: 4px;
       border-left: 3px solid var(--primary);
       font-size: 11px;
-    }
-
-    .donor-row.no-ticket-row {
-      border-left: 3px solid #52525b;
-    }
-
-    .donor-name-col {
       font-weight: 800;
       color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
-    .donor-amount-dim {
+    .chatter-time {
       font-size: 10px;
       color: var(--text-dim);
       font-weight: 600;
     }
 
-    .donor-ticket-badge {
-      background: var(--primary);
-      color: #000000;
-      font-weight: 900;
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 3px;
-      white-space: nowrap;
-    }
-
-    .no-ticket-badge {
-      background: #27272a;
-      color: #e4e4e7;
-      font-weight: 800;
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 3px;
-      white-space: nowrap;
-    }
-
-    .empty-donor-list {
-      padding: 12px;
+    .empty-list {
+      padding: 16px;
       text-align: center;
       font-size: 11px;
       color: var(--text-dim);
@@ -400,15 +425,23 @@
     }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    .btn-clean {
-      background: #1e1e24;
-      border: 1px solid #eab308;
-      color: #eab308;
+    .btn-toggle-entries {
+      background: #18181c;
+      border: 1px solid var(--primary);
+      color: var(--primary);
       font-weight: 800;
+      padding: 10px 12px;
+      margin-bottom: 8px;
     }
-    .btn-clean:hover:not(:disabled) {
-      background: #eab308;
-      color: #00ff88;
+    .btn-toggle-entries.is-open {
+      background: #1e2922;
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.25);
+    }
+    .btn-toggle-entries:hover {
+      background: var(--primary);
+      color: #000000;
     }
 
     .btn-primary-action {
@@ -449,40 +482,10 @@
       border-color: #ffffff;
     }
 
-    .manual-row {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-    .manual-row input[name="name"] { flex: 2; }
-    .manual-row input[name="amount"] { flex: 1; }
-    .manual-row button { flex: 1; margin-bottom: 0; }
-
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 6px;
-    }
-
-    .lookup-box {
-      background: #121215;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      margin-top: 8px;
-      margin-bottom: 8px;
-    }
-
-    .lookup-output {
-      margin-top: 6px;
-      font-size: 11px;
-      color: #e4e4e7;
-      font-weight: 700;
-      display: none;
-      padding: 6px 8px;
-      background: #1a1a20;
-      border-radius: 4px;
-      border-left: 2px solid #ffffff;
     }
   </style>
 </head>
@@ -490,18 +493,23 @@
 
   <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
-    <!-- 🌧️ EMOTE RAIN & RADIAL BLAST CANVAS (ONLY ON OVERLAY) -->
     <canvas id="victoryCanvas"></canvas>
 
     <div class="giveaway-widget" id="giveawayWidget">
       <div class="giveaway-title-container">
         <div class="giveaway-head-title">GIVEAWAY</div>
-        <div class="giveaway-sub-title" id="giveawaySubTitle">Totalt 0 biljetter · 0 givare</div>
+        <div class="giveaway-sub-title" id="giveawaySubTitle">0 aktiva chattare</div>
         <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
       </div>
       
       <div class="reel-viewport">
         <div class="reel-stage" id="reelStage"></div>
+      </div>
+
+      <!-- 💬 WINNER CHAT RESPONSE POPUP ON SCREEN -->
+      <div class="winner-chat-container" id="winnerChatContainer">
+        <div class="winner-chat-badge">VINNAREN I CHATTEN</div>
+        <div class="winner-chat-bubble" id="winnerChatBubble"></div>
       </div>
 
       <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
@@ -511,42 +519,34 @@
   <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">GIVEAWAY KONTROLL <span class="version-badge">v9.7 PRO</span></span>
+      <span class="header-title">
+        GIVEAWAY KONTROLL 
+        <span id="entriesStatusPill" class="status-pill open">🟢 ANMÄLNINGAR ÖPPNA</span>
+      </span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
-    <div class="summary-text" id="dockSummaryText"><b>0</b> biljetter fördelade på <b>0</b> givare</div>
+    <div class="status-box" id="dockStatusBox">Ansluter till Twitch chat...</div>
+    <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
-    <!-- 🎟️ LISTA 1: AKTIVA BILJETTHÅLLARE -->
+    <!-- 🟢/🔒 TOGGLE ENTRIES OPEN / CLOSED -->
+    <button id="btnToggleEntries" class="btn btn-toggle-entries is-open" onclick="toggleEntriesState()">
+      🟢 Anmälningar är ÖPPNA (Alla som skriver registreras)
+    </button>
+
+    <!-- 👥 LISTA: AKTIVA DELTAGARE -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span class="section-title" style="margin-bottom:0;">🎟️ Aktiva Biljetthållare</span>
-        <span id="donorCountBadge" style="font-size:10px; font-weight:800; color:var(--primary);">0 givare</span>
+        <span class="section-title" style="margin-bottom:0;">👥 Chattdeltagare (1 biljett / person)</span>
+        <span id="chatterCountBadge" style="font-size:10px; font-weight:800; color:var(--primary);">0 med</span>
       </div>
 
       <div style="margin-bottom:6px;">
-        <input type="text" id="filterDonorInput" placeholder="Sök bland biljetthållare..." style="width:100%;" oninput="renderDonorListUI()">
+        <input type="text" id="filterChatterInput" placeholder="Sök bland deltagare..." style="width:100%;" oninput="renderChatterListUI()">
       </div>
 
-      <div class="donor-list-container" id="donorListContainer">
-        <div class="empty-donor-list">Hämtar biljetter från databasen...</div>
-      </div>
-    </div>
-
-    <!-- ⏳ LISTA 2: GIVARE UTAN BILJETT -->
-    <div class="card-section">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span class="section-title" style="margin-bottom:0;">⏳ Givare utan biljett (än)</span>
-        <span id="noTicketCountBadge" style="font-size:10px; font-weight:800; color:var(--text-dim);">0 givare</span>
-      </div>
-
-      <div style="margin-bottom:6px;">
-        <input type="text" id="filterNoTicketInput" placeholder="Sök bland givare utan biljett..." style="width:100%;" oninput="renderNoTicketListUI()">
-      </div>
-
-      <div class="donor-list-container" id="noTicketListContainer" style="max-height: 140px;">
-        <div class="empty-donor-list">Inga givare utan biljetter just nu.</div>
+      <div class="chatter-list-container" id="chatterListContainer">
+        <div class="empty-list">Väntar på att folk skriver i Twitch chatten...</div>
       </div>
     </div>
 
@@ -565,34 +565,13 @@
         <option value="fanfare">Stadium Victory Brass</option>
       </select>
     </div>
-    <button class="btn" style="padding:6px; font-size:11px;" onclick="playVictorySound()">Provlyssna vinnarljud</button>
 
-    <!-- 💬 !BILJETT CHAT COMMAND TESTER -->
-    <div class="lookup-box">
-      <div style="font-size:10px; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-bottom:4px;">
-        🧪 Testa !biljett-kommando (Chat Simulator):
-      </div>
-      <div style="display:flex; gap:6px;">
-        <input type="text" id="searchDonorInput" placeholder="Skriv namn (t.ex. Marcus)..." style="flex:1;">
-        <button class="btn" style="width:auto; margin:0; padding:6px 10px;" onclick="testChatCommandSimulator()">Kör</button>
-      </div>
-      <div id="lookupOutput" class="lookup-output"></div>
-    </div>
-
-    <!-- Manual Donor Add -->
-    <div class="manual-row" style="margin-top: 6px;">
-      <input type="text" id="manualName" name="name" placeholder="Givarnamn">
-      <input type="number" id="manualAmount" name="amount" placeholder="Kr" style="width:65px;" value="200">
-      <button class="btn" onclick="addManualDonation()">+ Lägg till</button>
-    </div>
-
-    <!-- Actions & Purge Button -->
-    <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">Växla till testläge (500 testbiljetter)</button>
-    
-    <div class="grid-2">
-      <button class="btn btn-clean" onclick="purgeTestBots()">🧹 Rensa test-bottar</button>
-      <button class="btn btn-danger" onclick="resetAllTickets()">Nollställ alla</button>
-    </div>
+    <!-- Actions & Testing -->
+    <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">🧪 Fyll med 100 testchattare</button>
+    <button class="btn" id="btnSimulateChat" onclick="simulateWinnerChatMessage()" style="border-color:#00ff88; color:#00ff88;">
+      💬 Simulera att vinnaren svarar i chatten
+    </button>
+    <button class="btn btn-danger" onclick="resetAllChatters()">🧹 Rensa deltagarlistan</button>
 
     <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
@@ -604,10 +583,10 @@
     
     <div class="grid-2" style="margin-top: 4px;">
       <button class="btn btn-danger" id="btnClose" onclick="claimPrizeAndClose()">
-        🏆 Dela ut vinst (-1 biljett)
+        🏆 Avsluta giveaway (Vinst utdelad)
       </button>
       <button class="btn btn-cancel-safe" id="btnCancel" onclick="cancelWithoutTicket()">
-        ❌ Stäng utan att ta biljett
+        ❌ Avbryt och stäng
       </button>
     </div>
   </div>
@@ -615,13 +594,14 @@
   <script>
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
-    const STORAGE_KEY_DONORS = "mh_overlay_donor_tickets";
+    const STORAGE_KEY_CHATTERS = "mh_overlay_chatters";
     const STORAGE_KEY_PRIZE = "mh_overlay_prize_text";
+    const STORAGE_KEY_ENTRIES_OPEN = "mh_giveaway_entries_open";
 
-    const GITHUB_USERNAME = "Our2ndHome";
-    const GITHUB_REPO = "index";
+    // Target Twitch Channel for live chat monitoring
+    const TWITCH_CHANNEL = "our2ndhome";
+
     const EMOTES_FOLDER = "emotes";
-
     const CUSTOM_EMOTE_FILES = [
       "Favicon-very-new.png",
       "Our2ndHome-EmoteHype-500x500.png",
@@ -634,9 +614,6 @@
       "nordpuls-storlogo-smaller.png"
     ];
 
-    const TICKET_MILESTONE_KR = 200;
-    const MAX_TICKETS_PER_USER = 5;
-
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
 
     const AUDIO_PRESETS = {
@@ -645,11 +622,11 @@
       fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"
     };
 
-    let donorMap = {};
-    let realDonorsBackup = null;
+    let chatterMap = {};
+    let areEntriesOpen = true;
+    let isTestMode = false;
     let currentWinner = null;
     let isSpinning = false;
-    let isTestMode = false;
 
     let currentVirtualOffset = 2.0;
     let trackNamesList = [];
@@ -661,18 +638,12 @@
 
     let lastTickIndex = null;
     let lastTickTime = 0;
-    
-    // 🛡️ PREVENT AUTO-SPIN ON RELOAD: Track action IDs
-    let isInitialActionLoad = true;
     let lastProcessedActionId = 0;
+    let isInitialActionLoad = true;
 
     let loadedEmoteImages = [];
     let celebrationParticles = [];
     let celebrationAnimId = null;
-
-    function formatSEK(num) {
-      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
-    }
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -693,10 +664,11 @@
     const vCtx = victoryCanvas ? victoryCanvas.getContext('2d') : null;
     const soundPresetSelect = document.getElementById('soundPresetSelect');
 
+    const winnerChatContainer = document.getElementById('winnerChatContainer');
+    const winnerChatBubble = document.getElementById('winnerChatBubble');
+
     const btnStart = document.getElementById('btnStart');
     const btnSkip = document.getElementById('btnSkip');
-    const btnClose = document.getElementById('btnClose');
-    const btnCancel = document.getElementById('btnCancel');
 
     function resizeCanvas() {
       if (victoryCanvas && !isPanel) {
@@ -710,9 +682,8 @@
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
-    const dbDonorsRef = firebase.database().ref('giveaway_donors');
+    const dbChattersRef = firebase.database().ref('giveaway_chatters');
     const dbActionRef = firebase.database().ref('giveaway_action');
-    const dbBossaRef = firebase.database().ref('bossa');
 
     function preloadEmoteImages() {
       loadedEmoteImages = [];
@@ -728,134 +699,150 @@
     preloadEmoteImages();
 
     // ========================================================
-    // 🧠 1. DONOR ENGINE
+    // 💬 1. TWITCH CHAT LISTENER (TMI.JS)
     // ========================================================
-    function normalizeDonorKey(name) {
-      if (!name) return "";
-      return name.replace(/^@+/, '').trim().toLowerCase();
+    function normalizeUserKey(name) {
+      return (name || '').replace(/^@+/, '').trim().toLowerCase();
     }
 
-    function recordDonation(rawName, amount) {
-      if (!rawName || amount < 1 || isTestMode) return;
-      const cleanName = rawName.replace(/^@+/, '').trim();
-      const key = normalizeDonorKey(cleanName);
-      if (/anonym|hemlig hjälte/i.test(key)) return;
+    function connectTwitchChat() {
+      try {
+        const client = new tmi.Client({
+          connection: { reconnect: true, secure: true },
+          channels: [TWITCH_CHANNEL]
+        });
 
-      if (!donorMap[key]) {
-        donorMap[key] = {
-          displayName: cleanName,
-          totalAmount: 0,
-          milestonesClaimed: 0,
-          ticketsActive: 0
-        };
-      }
+        client.connect().then(() => {
+          updateDockStatus(`🟢 Lyssnar på chatten (#${TWITCH_CHANNEL})`);
+        }).catch((err) => {
+          updateDockStatus(`⚠️ Kunde inte ansluta till chatten: ${err}`, true);
+        });
 
-      const donor = donorMap[key];
-      donor.displayName = cleanName;
-      donor.totalAmount = (donor.totalAmount || 0) + amount;
+        client.on('message', (channel, tags, message, self) => {
+          const username = tags['display-name'] || tags.username;
+          if (!username) return;
 
-      const totalMilestones = Math.floor(donor.totalAmount / TICKET_MILESTONE_KR);
-      const newMilestones = totalMilestones - (donor.milestonesClaimed || 0);
-
-      if (newMilestones > 0) {
-        donor.ticketsActive = Math.min(MAX_TICKETS_PER_USER, (donor.ticketsActive || 0) + newMilestones);
-        donor.milestonesClaimed = totalMilestones;
-      }
-
-      saveDonors();
-      updateStatsUI();
-      syncDonorsToCloud();
-    }
-
-    function deductWinnerTicket(winnerKey) {
-      if (!winnerKey || isTestMode) return;
-      if (donorMap[winnerKey]) {
-        donorMap[winnerKey].ticketsActive = Math.max(0, (donorMap[winnerKey].ticketsActive || 0) - 1);
-        saveDonors();
-        updateStatsUI();
-        syncDonorsToCloud();
+          handleIncomingChatMessage(username, message);
+        });
+      } catch (e) {
+        updateDockStatus(`⚠️ Chat-fel: ${e.message}`, true);
       }
     }
 
-    function getWeightedTicketPool() {
-      const pool = [];
-      for (const [key, donor] of Object.entries(donorMap)) {
-        for (let i = 0; i < (donor.ticketsActive || 0); i++) {
-          pool.push(donor.displayName || key);
+    function handleIncomingChatMessage(username, message) {
+      const userKey = normalizeUserKey(username);
+
+      // 1. If entries are open, record chatter as giveaway participant
+      if (areEntriesOpen && !isTestMode) {
+        if (!chatterMap[userKey]) {
+          chatterMap[userKey] = {
+            displayName: username,
+            time: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+          };
+          saveChatters();
+          updateStatsUI();
+          syncChattersToCloud();
         }
       }
-      return pool;
+
+      // 2. If a winner has been drawn and is currently in the claim window:
+      if (currentWinner && normalizeUserKey(currentWinner) === userKey) {
+        displayWinnerChatResponse(username, message, true);
+      }
     }
 
-    function getUniqueDonorNames() {
-      return Object.keys(donorMap).filter(k => (donorMap[k].ticketsActive || 0) > 0).map(k => donorMap[k].displayName || k);
+    // Displays the winner's chat response on screen
+    function displayWinnerChatResponse(username, message, broadcast = true) {
+      if (winnerChatContainer && winnerChatBubble) {
+        winnerChatBubble.innerHTML = `<b>${escapeHTML(username)}:</b> "${escapeHTML(message)}"`;
+        winnerChatContainer.classList.add('visible');
+      }
+
+      if (giveawayTimerBadge) {
+        giveawayTimerBadge.innerText = `✅ ${username} har svarat i chatten!`;
+      }
+
+      if (claimTimerInterval) {
+        clearInterval(claimTimerInterval);
+        claimTimerInterval = null;
+      }
+
+      if (broadcast) {
+        const actionId = Date.now();
+        dbActionRef.set({
+          type: 'WINNER_CHATTED',
+          winner: username,
+          message: message,
+          actionId: actionId,
+          secret: WRITE_SECRET
+        }).catch(() => {});
+
+        if (bus) {
+          bus.postMessage({
+            type: 'WINNER_CHATTED',
+            payload: { winner: username, message: message, actionId: actionId }
+          });
+        }
+      }
     }
 
-    function saveDonors() {
+    function simulateWinnerChatMessage() {
+      if (!currentWinner) return alert("Dra en vinnare först för att testa detta!");
+      displayWinnerChatResponse(currentWinner, "Här är jag! Tack så jättemycket!! ❤️🎉", true);
+    }
+
+    function getChattersPool() {
+      return Object.values(chatterMap).map(c => c.displayName);
+    }
+
+    function saveChatters() {
       if (isTestMode) return;
       try {
-        localStorage.setItem(STORAGE_KEY_DONORS, JSON.stringify(donorMap));
+        localStorage.setItem(STORAGE_KEY_CHATTERS, JSON.stringify(chatterMap));
       } catch (e) {}
     }
 
-    function loadDonors() {
+    function loadChatters() {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY_DONORS);
-        if (saved) donorMap = JSON.parse(saved);
+        const saved = localStorage.getItem(STORAGE_KEY_CHATTERS);
+        if (saved) chatterMap = JSON.parse(saved);
+
         const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
         if (savedPrize !== null) setPrizeText(savedPrize, false);
+
+        const savedOpen = localStorage.getItem(STORAGE_KEY_ENTRIES_OPEN);
+        if (savedOpen !== null) areEntriesOpen = (savedOpen === 'true');
       } catch (e) {}
+
+      updateEntriesUI();
       updateStatsUI();
       initInitialStage();
     }
 
-    function syncDonorsToCloud() {
+    function syncChattersToCloud() {
       if (isTestMode) return;
-      dbDonorsRef.set({
-        map: donorMap,
+      dbChattersRef.set({
+        map: chatterMap,
+        areEntriesOpen: areEntriesOpen,
         secret: WRITE_SECRET,
         timestamp: Date.now()
       }).catch(() => {});
     }
 
-    let isInitialBossaLoad = true;
-    let lastObservedAlertId = 0;
-
-    dbBossaRef.on('value', (snap) => {
-      const bData = snap.val();
-      if (!bData) return;
-
-      if (isInitialBossaLoad) {
-        lastObservedAlertId = bData.alertId || 0;
-        isInitialBossaLoad = false;
-        return;
-      }
-
-      if (isPanel && bData.alertId && bData.alertId !== lastObservedAlertId) {
-        lastObservedAlertId = bData.alertId;
-
-        if (Array.isArray(bData.alerts) && bData.alerts.length > 0) {
-          bData.alerts.forEach(item => {
-            if (item.donor && item.amount) recordDonation(item.donor, item.amount);
-          });
-        } else if (bData.donor && bData.diff > 0) {
-          recordDonation(bData.donor, bData.diff);
-        }
-      }
-    });
-
-    dbDonorsRef.on('value', (snap) => {
+    dbChattersRef.on('value', (snap) => {
       if (isTestMode) return;
       const data = snap.val();
       if (data && data.map && !isSpinning) {
-        donorMap = data.map;
-        saveDonors();
+        chatterMap = data.map;
+        if (typeof data.areEntriesOpen === 'boolean') areEntriesOpen = data.areEntriesOpen;
+        saveChatters();
+        updateEntriesUI();
         updateStatsUI();
         if (trackNamesList.length === 0) initInitialStage();
       }
     });
 
-    // 🛡️ REWRITE: IGNORE OLD ACTION ON BOOT (PREVENTS AUTO-SPIN)
+    // 🛡️ ACTION BROADCAST LISTENER
     dbActionRef.on('value', (snap) => {
       const act = snap.val();
       if (!act) return;
@@ -869,6 +856,9 @@
       if (act.type === 'START_SPIN' && act.actionId && act.actionId !== lastProcessedActionId) {
         lastProcessedActionId = act.actionId;
         executeSpin(act.winner, act.delayMs || 10000, act.spinDistance || 75);
+      } else if (act.type === 'WINNER_CHATTED' && act.actionId && act.actionId !== lastProcessedActionId) {
+        lastProcessedActionId = act.actionId;
+        displayWinnerChatResponse(act.winner, act.message, false);
       } else if (act.type === 'CLAIM_CLOSE' && act.actionId && act.actionId !== lastProcessedActionId) {
         lastProcessedActionId = act.actionId;
         finalizeClaimAndHide();
@@ -877,6 +867,9 @@
         finalizeCancelAndHide();
       } else if (act.type === 'UPDATE_PRIZE') {
         setPrizeText(act.prize, false);
+      } else if (act.type === 'TOGGLE_ENTRIES') {
+        areEntriesOpen = act.open;
+        updateEntriesUI();
       }
     });
 
@@ -887,6 +880,10 @@
           lastProcessedActionId = payload.actionId;
           executeSpin(payload.winner, payload.delayMs, payload.spinDistance);
         }
+        if (type === 'WINNER_CHATTED' && payload.actionId !== lastProcessedActionId) {
+          lastProcessedActionId = payload.actionId;
+          displayWinnerChatResponse(payload.winner, payload.message, false);
+        }
         if (type === 'CLAIM_CLOSE' && payload.actionId !== lastProcessedActionId) {
           lastProcessedActionId = payload.actionId;
           finalizeClaimAndHide();
@@ -896,140 +893,95 @@
           finalizeCancelAndHide();
         }
         if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
+        if (type === 'TOGGLE_ENTRIES') {
+          areEntriesOpen = payload.open;
+          updateEntriesUI();
+        }
       };
     }
 
     // ========================================================
-    // 🎟️ LISTA 1: AKTIVA BILJETTHÅLLARE (TICKETS > 0)
+    // 🟢/🔒 ENTRIES TOGGLE
     // ========================================================
-    function renderDonorListUI() {
-      const container = document.getElementById('donorListContainer');
-      const countBadge = document.getElementById('donorCountBadge');
-      if (!container) return;
+    function toggleEntriesState() {
+      areEntriesOpen = !areEntriesOpen;
+      try {
+        localStorage.setItem(STORAGE_KEY_ENTRIES_OPEN, areEntriesOpen ? 'true' : 'false');
+      } catch (e) {}
 
-      const filterInput = document.getElementById('filterDonorInput');
-      const query = filterInput ? filterInput.value.trim().toLowerCase() : '';
+      updateEntriesUI();
+      syncChattersToCloud();
 
-      const activeDonors = Object.keys(donorMap)
-        .map(k => donorMap[k])
-        .filter(d => (d.ticketsActive || 0) > 0)
-        .sort((a, b) => (b.ticketsActive || 0) - (a.ticketsActive || 0) || (b.totalAmount || 0) - (a.totalAmount || 0));
+      dbActionRef.set({
+        type: 'TOGGLE_ENTRIES',
+        open: areEntriesOpen,
+        secret: WRITE_SECRET,
+        timestamp: Date.now()
+      }).catch(() => {});
 
-      if (countBadge) {
-        countBadge.innerText = `${activeDonors.length} givare`;
-      }
-
-      const filtered = activeDonors.filter(d => {
-        if (!query) return true;
-        return (d.displayName || '').toLowerCase().includes(query);
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = query
-          ? `<div class="empty-donor-list">Ingen givare matchar "${escapeHTML(query)}"</div>`
-          : `<div class="empty-donor-list">Inga givare med aktiva biljetter än.</div>`;
-        return;
-      }
-
-      container.innerHTML = filtered.map(d => `
-        <div class="donor-row">
-          <div class="donor-name-col">
-            <span>${escapeHTML(d.displayName || 'Givare')}</span>
-            <span class="donor-amount-dim">(${formatSEK(d.totalAmount || 0)})</span>
-          </div>
-          <span class="donor-ticket-badge">${d.ticketsActive} 🎟️</span>
-        </div>
-      `).join('');
+      if (bus) bus.postMessage({ type: 'TOGGLE_ENTRIES', payload: { open: areEntriesOpen } });
     }
 
-    // ========================================================
-    // ⏳ LISTA 2: GIVARE UTAN BILJETT (TICKETS = 0 & TOTAL > 0)
-    // ========================================================
-    function renderNoTicketListUI() {
-      const container = document.getElementById('noTicketListContainer');
-      const countBadge = document.getElementById('noTicketCountBadge');
-      if (!container) return;
+    function updateEntriesUI() {
+      const btn = document.getElementById('btnToggleEntries');
+      const pill = document.getElementById('entriesStatusPill');
 
-      const filterInput = document.getElementById('filterNoTicketInput');
-      const query = filterInput ? filterInput.value.trim().toLowerCase() : '';
-
-      const noTicketDonors = Object.keys(donorMap)
-        .map(k => donorMap[k])
-        .filter(d => (d.ticketsActive || 0) === 0 && (d.totalAmount || 0) > 0)
-        .sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
-
-      if (countBadge) {
-        countBadge.innerText = `${noTicketDonors.length} givare`;
-      }
-
-      const filtered = noTicketDonors.filter(d => {
-        if (!query) return true;
-        return (d.displayName || '').toLowerCase().includes(query);
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = query
-          ? `<div class="empty-donor-list">Ingen givare matchar "${escapeHTML(query)}"</div>`
-          : `<div class="empty-donor-list">Inga givare utan biljetter just nu.</div>`;
-        return;
-      }
-
-      container.innerHTML = filtered.map(d => {
-        const total = d.totalAmount || 0;
-        const remainder = total % TICKET_MILESTONE_KR;
-        const needed = remainder === 0 ? TICKET_MILESTONE_KR : (TICKET_MILESTONE_KR - remainder);
-
-        return `
-          <div class="donor-row no-ticket-row">
-            <div class="donor-name-col">
-              <span>${escapeHTML(d.displayName || 'Givare')}</span>
-              <span class="donor-amount-dim">(${formatSEK(total)} totalt)</span>
-            </div>
-            <span class="no-ticket-badge">Saknar ${needed} kr</span>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // 🧹 PURGE ALL TEST BOTS (Leaves real donors untouched)
-    function purgeTestBots() {
-      let removedCount = 0;
-      for (const key of Object.keys(donorMap)) {
-        if (/_\d+$/.test(key) || /cosmic|gamerloover|norlands|dunder|pixel/i.test(key)) {
-          delete donorMap[key];
-          removedCount++;
+      if (btn) {
+        if (areEntriesOpen) {
+          btn.innerText = "🟢 Anmälningar är ÖPPNA (Alla som skriver registreras)";
+          btn.classList.add('is-open');
+        } else {
+          btn.innerText = "🔒 Anmälningar är STÄNGDA (Klicka för att öppna)";
+          btn.classList.remove('is-open');
         }
       }
 
-      saveDonors();
-      syncDonorsToCloud();
-      updateStatsUI();
-      initInitialStage();
-
-      alert(`Rensade bort ${removedCount} test-bottar från databasen! Eventuella riktiga givare är kvar.`);
+      if (pill) {
+        if (areEntriesOpen) {
+          pill.innerText = "🟢 ANMÄLNINGAR ÖPPNA";
+          pill.className = "status-pill open";
+        } else {
+          pill.innerText = "🔒 ANMÄLNINGAR LÅSTA";
+          pill.className = "status-pill closed";
+        }
+      }
     }
 
-    function testChatCommandSimulator() {
-      const input = document.getElementById('searchDonorInput');
-      const box = document.getElementById('lookupOutput');
-      if (!input || !box) return;
+    // ========================================================
+    // 👥 CHATTER LIST UI
+    // ========================================================
+    function renderChatterListUI() {
+      const container = document.getElementById('chatterListContainer');
+      const countBadge = document.getElementById('chatterCountBadge');
+      if (!container) return;
 
-      const raw = input.value.trim();
-      if (!raw) {
-        box.style.display = 'block';
-        box.innerHTML = `⚠️ Skriv ett namn att testa (t.ex. <code>Marcus</code>)`;
+      const filterInput = document.getElementById('filterChatterInput');
+      const query = filterInput ? filterInput.value.trim().toLowerCase() : '';
+
+      const list = Object.values(chatterMap);
+
+      if (countBadge) {
+        countBadge.innerText = `${list.length} med`;
+      }
+
+      const filtered = list.filter(c => {
+        if (!query) return true;
+        return (c.displayName || '').toLowerCase().includes(query);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = query
+          ? `<div class="empty-list">Ingen deltagare matchar "${escapeHTML(query)}"</div>`
+          : `<div class="empty-list">Väntar på att folk skriver i Twitch chatten...</div>`;
         return;
       }
 
-      const key = normalizeDonorKey(raw);
-      const match = donorMap[key];
-      box.style.display = 'block';
-
-      if (match) {
-        box.innerHTML = `💬 <b>Bot-svar:</b> @${raw} ➔ ${match.displayName} har donerat <b>${match.totalAmount} kr</b> totalt och har <b>${match.ticketsActive}/5</b> aktiva biljetter i giveaway-hjulet! 🎁`;
-      } else {
-        box.innerHTML = `💬 <b>Bot-svar:</b> @${raw} ➔ Inga biljetter hittades för '${raw}' än. Donera minst 200 kr till bössan för att få din första biljett! 🎟️`;
-      }
+      container.innerHTML = filtered.map(c => `
+        <div class="chatter-row">
+          <span>${escapeHTML(c.displayName)}</span>
+          <span class="chatter-time">${c.time || 'Aktiv'}</span>
+        </div>
+      `).join('');
     }
 
     function setPrizeText(text, broadcast = true) {
@@ -1166,14 +1118,14 @@
     }
 
     function initInitialStage() {
-      const uniqueNames = getUniqueDonorNames();
+      const names = getChattersPool();
       trackNamesList = [];
 
-      if (uniqueNames.length === 0) {
-        trackNamesList = ["Väntar...", "Väntar...", "Väntar på gåvor...", "Väntar...", "Väntar..."];
+      if (names.length === 0) {
+        trackNamesList = ["Väntar på chatten...", "Skriv i chatten...", "Väntar på chatten...", "Skriv i chatten...", "Väntar på chatten..."];
       } else {
         for (let i = 0; i < 7; i++) {
-          trackNamesList.push(uniqueNames[i % uniqueNames.length]);
+          trackNamesList.push(names[i % names.length]);
         }
       }
 
@@ -1193,8 +1145,8 @@
     }
 
     function startDraw(holdDelayMs = 10000) {
-      const pool = getWeightedTicketPool();
-      if (pool.length === 0) return alert("Inga biljetter i potten än!");
+      const pool = getChattersPool();
+      if (pool.length === 0) return alert("Inga aktiva chattare i listan än! Låt folk skriva i chatten först.");
 
       getAudioContext();
       const winner = pool[Math.floor(Math.random() * pool.length)];
@@ -1222,22 +1174,25 @@
       stopTimers();
       clearCelebrationEffects();
 
+      // Reset any previous winner chat bubble
+      if (winnerChatContainer) winnerChatContainer.classList.remove('visible');
+
       isSpinning = true;
       currentWinner = winnerName;
       setButtonsLocked(true);
 
       giveawayWidget.classList.add('active');
 
-      const uniqueNames = getUniqueDonorNames();
+      const names = getChattersPool();
       const startOffset = currentVirtualOffset;
       const targetOffset = Math.round(startOffset) + spinDistance;
       const totalTrackNeeded = targetOffset + 6;
 
       const pickDifferent = (notThis) => {
-        if (uniqueNames.length <= 1) return uniqueNames[0] || winnerName;
+        if (names.length <= 1) return names[0] || winnerName;
         let chosen;
         do {
-          chosen = uniqueNames[Math.floor(Math.random() * uniqueNames.length)];
+          chosen = names[Math.floor(Math.random() * names.length)];
         } while (chosen === notThis);
         return chosen;
       };
@@ -1245,12 +1200,7 @@
       let lastAdded = trackNamesList[trackNamesList.length - 1] || "";
       while (trackNamesList.length < totalTrackNeeded) {
         const nextIdx = trackNamesList.length;
-        let name;
-        if (nextIdx === targetOffset) {
-          name = winnerName;
-        } else {
-          name = pickDifferent(lastAdded);
-        }
+        let name = (nextIdx === targetOffset) ? winnerName : pickDifferent(lastAdded);
         trackNamesList.push(name);
         lastAdded = name;
       }
@@ -1305,20 +1255,25 @@
             stopTimers();
 
             let claimSec = 60;
-            giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
+            giveawayTimerBadge.innerText = `Skriv i chatten för att bekräfta! ${claimSec}s`;
 
             claimTimerInterval = setInterval(() => {
               claimSec--;
               if (claimSec > 0) {
-                giveawayTimerBadge.innerText = `Vill du behålla eller ge vidare? ${claimSec}s`;
+                if (winnerChatContainer && winnerChatContainer.classList.contains('visible')) {
+                  giveawayTimerBadge.innerText = `✅ ${currentWinner} har svarat i chatten!`;
+                } else {
+                  giveawayTimerBadge.innerText = `Skriv i chatten för att bekräfta! ${claimSec}s`;
+                }
               } else {
-                giveawayTimerBadge.innerText = "Tiden har gått ut!";
+                if (!winnerChatContainer || !winnerChatContainer.classList.contains('visible')) {
+                  giveawayTimerBadge.innerText = "Tiden har gått ut!";
+                }
                 clearInterval(claimTimerInterval);
                 claimTimerInterval = null;
               }
             }, 1000);
 
-            // Trigger celebration only on the stream overlay (not in the dock)
             triggerCelebrationBurst();
           }
         }
@@ -1327,13 +1282,10 @@
       }, holdDelayMs);
     }
 
-    // 🏆 CLOSE AND DEDUCT 1 TICKET
+    // 🏆 CLOSE AND AWARD PRIZE
     function claimPrizeAndClose() {
       if (isSpinning) return;
       if (!currentWinner) return alert("Ingen vinnare dragen än!");
-
-      const winnerKey = normalizeDonorKey(currentWinner);
-      deductWinnerTicket(winnerKey);
 
       const actionId = Date.now();
       lastProcessedActionId = actionId;
@@ -1344,7 +1296,7 @@
       finalizeClaimAndHide();
     }
 
-    // ❌ CANCEL AND CLOSE WITHOUT DEDUCTING A TICKET
+    // ❌ CANCEL AND CLOSE
     function cancelWithoutTicket() {
       const actionId = Date.now();
       lastProcessedActionId = actionId;
@@ -1365,6 +1317,7 @@
 
       setTimeout(() => {
         currentWinner = null;
+        if (winnerChatContainer) winnerChatContainer.classList.remove('visible');
         giveawayTimerBadge.innerText = "";
         initInitialStage();
       }, 450);
@@ -1380,13 +1333,14 @@
 
       setTimeout(() => {
         currentWinner = null;
+        if (winnerChatContainer) winnerChatContainer.classList.remove('visible');
         giveawayTimerBadge.innerText = "";
         initInitialStage();
       }, 450);
     }
 
     function triggerCelebrationBurst() {
-      if (isPanel) return; // 🛡️ Never burst emotes or draw canvas inside the dock!
+      if (isPanel) return;
       playVictorySound();
       celebrationParticles = [];
 
@@ -1399,14 +1353,12 @@
       for (let i = 0; i < 45; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 12 + Math.random() * 18;
-
         const hasImages = loadedEmoteImages.length > 0;
         const imgObj = hasImages ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)] : null;
         const fallbackChar = FALLBACK_EMOJIS[Math.floor(Math.random() * FALLBACK_EMOJIS.length)];
 
         celebrationParticles.push({
-          x: cX,
-          y: cY,
+          x: cX, y: cY,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed - 4,
           gravity: 0.32,
@@ -1510,48 +1462,32 @@
     // 🎛️ DOCK UI
     // ========================================================
     function updateStatsUI() {
-      const pool = getWeightedTicketPool();
-      const uniqueCount = getUniqueDonorNames().length;
+      const count = Object.keys(chatterMap).length;
 
       const summaryText = document.getElementById('dockSummaryText');
       if (summaryText) {
-        summaryText.innerHTML = `<b>${pool.length}</b> biljetter fördelade på <b>${uniqueCount}</b> givare`;
+        summaryText.innerHTML = `<b>${count}</b> aktiva chattare i dragningen`;
       }
 
       if (giveawaySubTitle) {
-        giveawaySubTitle.innerText = `Totalt ${pool.length} biljetter · ${uniqueCount} givare`;
+        giveawaySubTitle.innerText = `${count} aktiva chattare`;
       }
 
       const statusBox = document.getElementById('dockStatusBox');
       if (statusBox) {
-        const count = loadedEmoteImages.length;
-        const emoteBadge = count > 0 ? ` (${count} emotes redo)` : '';
-        statusBox.innerText = isTestMode ? `Testläge aktivt${emoteBadge}` : `Ansluten till databas${emoteBadge}`;
+        const emoteCount = loadedEmoteImages.length;
+        const emoteBadge = emoteCount > 0 ? ` (${emoteCount} emotes)` : '';
+        statusBox.innerText = isTestMode
+          ? `🧪 Testläge aktivt (100 chattare)${emoteBadge}`
+          : `🟢 Lyssnar på chatten (#${TWITCH_CHANNEL})${emoteBadge}`;
       }
 
-      renderDonorListUI();
-      renderNoTicketListUI();
+      renderChatterListUI();
     }
 
     function setButtonsLocked(locked) {
       if (btnStart) btnStart.disabled = locked;
       if (btnSkip) btnSkip.disabled = locked;
-    }
-
-    function addManualDonation() {
-      const nameInput = document.getElementById('manualName');
-      const amountInput = document.getElementById('manualAmount');
-
-      const name = nameInput.value.trim();
-      const amount = parseInt(amountInput.value, 10) || 0;
-
-      if (!name) return alert("Ange ett namn!");
-      if (amount <= 0) return alert("Ange ett giltigt belopp!");
-
-      recordDonation(name, amount);
-
-      nameInput.value = "";
-      amountInput.value = "200";
     }
 
     function toggleTestMode() {
@@ -1560,52 +1496,38 @@
 
       if (isTestMode) {
         btn.innerText = "Avsluta testläge";
-        realDonorsBackup = JSON.parse(JSON.stringify(donorMap));
-        generateTestTickets(500);
+        generateTestChatters(100);
       } else {
-        btn.innerText = "Växla till testläge (500 testbiljetter)";
-        donorMap = realDonorsBackup || {};
-        realDonorsBackup = null;
-        loadDonors();
+        btn.innerText = "🧪 Fyll med 100 testchattare";
+        chatterMap = {};
+        loadChatters();
       }
       updateStatsUI();
       initInitialStage();
     }
 
-    function generateTestTickets(targetTickets = 500) {
+    function generateTestChatters(count = 100) {
       const prefixes = ["Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Norrlands", "Super", "Mighty", "Cosmic", "Turbo", "Vinter", "Retro", "Hyper", "Cyber"];
       const suffixes = ["Kungen", "Gud", "Bullen", "Loover", "Svensken", "Master", "Viking", "Räven", "Hjälten", "Kompis", "Tiger", "Björn", "Liraren"];
 
       const testMap = {};
-      let remaining = targetTickets;
-      let idx = 1;
-
-      while (remaining > 0) {
+      for (let i = 1; i <= count; i++) {
         const p = prefixes[Math.floor(Math.random() * prefixes.length)];
         const s = suffixes[Math.floor(Math.random() * suffixes.length)];
-        const rawName = `${p}${s}_${idx}`;
-        const key = normalizeDonorKey(rawName);
-        const tickets = Math.min(remaining, Math.floor(Math.random() * MAX_TICKETS_PER_USER) + 1);
-
-        testMap[key] = {
-          displayName: rawName,
-          totalAmount: tickets * TICKET_MILESTONE_KR,
-          milestonesClaimed: tickets,
-          ticketsActive: tickets
+        const name = `${p}${s}_${i}`;
+        testMap[name.toLowerCase()] = {
+          displayName: name,
+          time: 'Test'
         };
-        remaining -= tickets;
-        idx++;
       }
-
-      donorMap = testMap;
+      chatterMap = testMap;
     }
 
-    function resetAllTickets() {
-      if (confirm("Är du säker på att du vill nollställa alla biljetter och givare?")) {
-        donorMap = {};
-        realDonorsBackup = null;
-        saveDonors();
-        syncDonorsToCloud();
+    function resetAllChatters() {
+      if (confirm("Är du säker på att du vill rensa deltagarlistan inför nästa giveaway?")) {
+        chatterMap = {};
+        saveChatters();
+        syncChattersToCloud();
         updateStatsUI();
         initInitialStage();
       }
@@ -1617,8 +1539,9 @@
       }[t] || t));
     }
 
-    loadDonors();
+    loadChatters();
     initInitialStage();
+    connectTwitchChat();
   </script>
 </body>
 </html>
