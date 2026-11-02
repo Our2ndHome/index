@@ -58,15 +58,15 @@
     }
 
     /* ========================================================
-       📺 1. STREAM OVERLAY: LOCKED ROLLER IN DEAD CENTER
+       📺 1. STREAM OVERLAY: CENTERED STATIONARY ROLLER
        ======================================================== */
     .giveaway-widget {
       position: absolute;
-      top: 45%;
+      top: 53%; /* Moved down to center cleanly between countdown and sponsors */
       left: 50%;
       transform: translate(-50%, -50%);
       width: 800px;
-      height: var(--viewport-height); /* Fixed 280px height locks the roller */
+      height: var(--viewport-height); /* 280px locked center */
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
@@ -86,7 +86,7 @@
       pointer-events: auto;
     }
 
-    /* TOP CONTAINER: ANCHORED STRICTLY ABOVE THE ROLLER */
+    /* ANCHORED STRICTLY ABOVE THE STATIONARY ROLLER */
     .giveaway-title-container {
       position: absolute;
       bottom: 100%;
@@ -96,7 +96,7 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 16px; /* Clean gap above the stationary roller */
+      margin-bottom: 14px;
       pointer-events: none;
     }
 
@@ -109,29 +109,27 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* AKTIVA CHATTARE: Added space below */
     .giveaway-sub-title {
       font-size: 16px;
       font-weight: 800;
       letter-spacing: 0.8px;
       color: rgba(255, 255, 255, 0.85);
       margin-top: 5px;
-      margin-bottom: 14px; /* Generous breathing room before winner text */
+      margin-bottom: 14px; /* Clean gap before winner text/timer */
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* TOP TIMER & UNIFIED WINNER CHAT DISPLAY */
+    /* SINGLE-LINE DISPLAY DURING COUNTDOWN / TWO ROWS WHEN WINNER CHATS */
     .giveaway-timer-badge {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: block;
+      text-align: center;
       color: #ffffff;
       font-size: 18px;
       font-weight: 900;
       letter-spacing: 0.8px;
       min-height: 24px;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+      white-space: nowrap;
     }
 
     .timer-val {
@@ -146,17 +144,14 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* SINGLE LINE LOCKED TO MAXIMUM 30 CHARACTERS */
+    /* SINGLE CLEAN ROW WITH ALWAYS-VISIBLE CLOSING QUOTE */
     .winner-response-msg {
       font-size: 19px;
       font-weight: 800;
       color: #ffffff;
       letter-spacing: 0.5px;
       margin-top: 4px;
-      white-space: nowrap; /* Never wraps or shifts the screen */
-      max-width: 90%;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: nowrap;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
@@ -164,7 +159,7 @@
     .reel-viewport {
       position: relative;
       width: 100%;
-      height: 100%; /* Perfectly matches 280px */
+      height: 100%;
       overflow: hidden;
       background: transparent;
       border: none;
@@ -212,13 +207,13 @@
       transition: color 0.15s ease;
     }
 
-    /* PRIZE CONTAINER: ANCHORED STRICTLY BELOW THE ROLLER */
+    /* ANCHORED STRICTLY BELOW THE STATIONARY ROLLER */
     .giveaway-prize-display {
       position: absolute;
       top: 100%;
       left: 0;
       width: 100%;
-      margin-top: 16px; /* Gap below the stationary roller */
+      margin-top: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -521,12 +516,10 @@
     <div class="status-box" id="dockStatusBox">Ansluter direkt till Twitch IRC...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
-    <!-- 🟢/🔒 TOGGLE ENTRIES OPEN / CLOSED -->
     <button id="btnToggleEntries" class="btn btn-toggle-entries is-open" onclick="toggleEntriesState()">
       🟢 Anmälningar är ÖPPNA (Alla som skriver registreras)
     </button>
 
-    <!-- 👥 LISTA: AKTIVA DELTAGARE -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="section-title" style="margin-bottom:0;">👥 Chattdeltagare (1 biljett / person)</span>
@@ -542,18 +535,15 @@
       </div>
     </div>
 
-    <!-- Prize Input -->
     <div class="control-row">
       <span class="control-label">VINST / PRIS:</span>
       <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 60%; text-align: right;">
     </div>
 
-    <!-- Reset List Button -->
     <button class="btn btn-danger" onclick="resetAllChatters()" style="margin-top: 4px;">
       🧹 Rensa deltagarlistan inför nästa giveaway
     </button>
 
-    <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
       Starta dragning (10s)
     </button>
@@ -792,20 +782,22 @@
       }
     }
 
-    /* UNIFIED WINNER CHAT RESPONSE: CAPPED TO 30 CHARS & FIRST MESSAGE ONLY */
+    /* UNIFIED WINNER CHAT RESPONSE: CAPPED TO 28 CHARS & ALWAYS INCLUDES CLOSING QUOTE */
     function displayWinnerChatResponse(username, message, broadcast = true) {
       winnerHasResponded = true;
 
-      // Cap message to 30 characters maximum and append "..." if longer
-      let cleanMsg = (message || '').trim();
-      if (cleanMsg.length > 30) {
-        cleanMsg = cleanMsg.substring(0, 30).trim() + "...";
+      let rawMsg = (message || '').trim();
+      let formattedMsg = "";
+      if (rawMsg.length > 28) {
+        formattedMsg = `"${rawMsg.substring(0, 28).trim()}..."`;
+      } else {
+        formattedMsg = `"${rawMsg}"`;
       }
 
       if (giveawayTimerBadge) {
         giveawayTimerBadge.innerHTML = `
           <div class="winner-response-header"><span class="timer-val">${escapeHTML(username)}</span> har svarat:</div>
-          <div class="winner-response-msg">"${escapeHTML(cleanMsg)}"</div>
+          <div class="winner-response-msg">${escapeHTML(formattedMsg)}</div>
         `;
       }
 
@@ -819,7 +811,7 @@
         dbActionRef.set({
           type: 'WINNER_CHATTED',
           winner: username,
-          message: cleanMsg,
+          message: rawMsg,
           actionId: actionId,
           secret: WRITE_SECRET
         }).catch(() => {});
@@ -827,7 +819,7 @@
         if (bus) {
           bus.postMessage({
             type: 'WINNER_CHATTED',
-            payload: { winner: username, message: cleanMsg, actionId: actionId }
+            payload: { winner: username, message: rawMsg, actionId: actionId }
           });
         }
       }
