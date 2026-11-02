@@ -347,7 +347,7 @@
       white-space: nowrap;
     }
 
-    input[type="text"], select {
+    input[type="text"] {
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -358,13 +358,13 @@
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus, select:focus {
+    input[type="text"]:focus {
       border-color: var(--primary);
     }
 
     /* 👥 CHATTER PARTICIPANT LIST */
     .chatter-list-container {
-      max-height: 220px;
+      max-height: 240px;
       overflow-y: auto;
       background: #121215;
       border: 1px solid var(--border);
@@ -480,13 +480,6 @@
       border-color: #ffffff;
     }
 
-    .manual-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
-      margin-bottom: 6px;
-    }
-
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -531,7 +524,7 @@
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- LIVE STATUS BOX (Shows exact Twitch connection & latest chat message) -->
+    <!-- LIVE STATUS BOX -->
     <div class="status-box" id="dockStatusBox">Ansluter direkt till Twitch IRC...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
@@ -554,12 +547,6 @@
       <div class="chatter-list-container" id="chatterListContainer">
         <div class="empty-list">Väntar på att folk skriver i Twitch chatten...</div>
       </div>
-
-      <!-- Quick manual test entry -->
-      <div class="manual-row">
-        <input type="text" id="manualName" placeholder="Lägg till manuellt namn..." style="flex:1;">
-        <button class="btn" style="width:auto; margin:0; padding:6px 12px;" onclick="addManualChatter()">+ Lägg till</button>
-      </div>
     </div>
 
     <!-- Prize Input -->
@@ -568,24 +555,9 @@
       <input type="text" id="prizeInput" placeholder="T.ex. Signerad tröja" style="width: 60%; text-align: right;">
     </div>
 
-    <!-- Sound Preset -->
-    <div class="control-row">
-      <span class="control-label">VINNARLJUD:</span>
-      <select id="soundPresetSelect" style="width: 60%;">
-        <option value="hype_win">Level Up / Gold Victory</option>
-        <option value="jackpot">Casino Jackpot Fanfare</option>
-        <option value="fanfare">Stadium Victory Brass</option>
-      </select>
-    </div>
-
-    <!-- Actions & Testing -->
-    <div class="grid-2">
-      <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">🧪 Fyll 100 testare</button>
-      <button class="btn btn-danger" onclick="resetAllChatters()">🧹 Rensa deltagare</button>
-    </div>
-
-    <button class="btn" id="btnSimulateChat" onclick="simulateWinnerChatMessage()" style="border-color:#00ff88; color:#00ff88; margin-top:4px;">
-      💬 Simulera att vinnaren svarar i chatten
+    <!-- Reset List Button -->
+    <button class="btn btn-danger" onclick="resetAllChatters()" style="margin-top: 4px;">
+      🧹 Rensa deltagarlistan inför nästa giveaway
     </button>
 
     <!-- Draw Buttons -->
@@ -630,16 +602,10 @@
     ];
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
-
-    const AUDIO_PRESETS = {
-      hype_win: "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3",
-      jackpot: "https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3",
-      fanfare: "https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"
-    };
+    const VICTORY_SOUND_SRC = "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3";
 
     let chatterMap = {};
     let areEntriesOpen = true;
-    let isTestMode = false;
     let currentWinner = null;
     let isSpinning = false;
     let isTwitchConnected = false;
@@ -679,7 +645,6 @@
     const reelStage = document.getElementById('reelStage');
     const victoryCanvas = document.getElementById('victoryCanvas');
     const vCtx = victoryCanvas ? victoryCanvas.getContext('2d') : null;
-    const soundPresetSelect = document.getElementById('soundPresetSelect');
 
     const winnerChatContainer = document.getElementById('winnerChatContainer');
     const winnerChatBubble = document.getElementById('winnerChatBubble');
@@ -736,7 +701,6 @@
 
         twitchSocket.onopen = () => {
           isTwitchConnected = true;
-          // Anonymous login capabilities
           twitchSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
           twitchSocket.send(`PASS SCHMOOPIIE`);
           twitchSocket.send(`NICK justinfan${Math.floor(Math.random() * 80000 + 1000)}`);
@@ -752,20 +716,18 @@
           for (const line of lines) {
             if (!line) continue;
 
-            // Keepalive PING / PONG
             if (line.startsWith('PING')) {
               twitchSocket.send('PONG :tmi.twitch.tv');
               continue;
             }
 
-            // Normal Twitch Chat Message (PRIVMSG)
             if (line.includes('PRIVMSG')) {
               parseTwitchChatMessage(line);
             }
           }
         };
 
-        twitchSocket.onerror = (err) => {
+        twitchSocket.onerror = () => {
           isTwitchConnected = false;
           updateDockStatus(`⚠️ WebSocket fel mot Twitch. Försöker igen...`, true);
         };
@@ -785,17 +747,14 @@
       try {
         let displayName = "";
 
-        // 1. Extract display-name tag (e.g., @display-name=Our2ndHome;)
         const nameMatch = line.match(/[;@]display-name=([^; ]+)/);
         if (nameMatch && nameMatch[1]) {
           displayName = nameMatch[1];
         } else {
-          // Fallback to IRC nick (e.g., :our2ndhome!our2ndhome@...)
           const nickMatch = line.match(/:([^!@ ]+)!/);
           if (nickMatch && nickMatch[1]) displayName = nickMatch[1];
         }
 
-        // 2. Extract message body after PRIVMSG #channel :
         const privIndex = line.indexOf(' PRIVMSG ');
         if (privIndex === -1) return;
 
@@ -806,7 +765,6 @@
         }
 
         if (displayName) {
-          // Update live indicator in dock so you see every message arrived
           lastChatMessageSummary = `@${displayName}: "${messageText.length > 25 ? messageText.substring(0, 25) + '...' : messageText}"`;
           updateDockStatus(`🟢 Chatt aktiv: ${lastChatMessageSummary}`);
 
@@ -818,8 +776,8 @@
     function handleIncomingChatMessage(username, message) {
       const userKey = normalizeUserKey(username);
 
-      // 1. If entries are open, record chatter as giveaway participant (1 ticket per person)
-      if (areEntriesOpen && !isTestMode) {
+      // 1. If entries are open, record chatter (1 ticket per person)
+      if (areEntriesOpen) {
         if (!chatterMap[userKey]) {
           chatterMap[userKey] = {
             displayName: username,
@@ -837,7 +795,6 @@
       }
     }
 
-    // Displays the winner's chat response on screen
     function displayWinnerChatResponse(username, message, broadcast = true) {
       if (winnerChatContainer && winnerChatBubble) {
         winnerChatBubble.innerHTML = `<b>${escapeHTML(username)}:</b> "${escapeHTML(message)}"`;
@@ -872,34 +829,11 @@
       }
     }
 
-    function simulateWinnerChatMessage() {
-      if (!currentWinner) return alert("Dra en vinnare först för att testa detta!");
-      displayWinnerChatResponse(currentWinner, "Här är jag! Tack så jättemycket!! ❤️🎉", true);
-    }
-
-    function addManualChatter() {
-      const input = document.getElementById('manualName');
-      if (!input) return;
-      const name = input.value.trim();
-      if (!name) return;
-
-      const userKey = normalizeUserKey(name);
-      chatterMap[userKey] = {
-        displayName: name,
-        time: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
-      };
-      saveChatters();
-      updateStatsUI();
-      syncChattersToCloud();
-      input.value = "";
-    }
-
     function getChattersPool() {
       return Object.values(chatterMap).map(c => c.displayName);
     }
 
     function saveChatters() {
-      if (isTestMode) return;
       try {
         localStorage.setItem(STORAGE_KEY_CHATTERS, JSON.stringify(chatterMap));
       } catch (e) {}
@@ -923,7 +857,6 @@
     }
 
     function syncChattersToCloud() {
-      if (isTestMode) return;
       dbChattersRef.set({
         map: chatterMap,
         areEntriesOpen: areEntriesOpen,
@@ -933,7 +866,6 @@
     }
 
     dbChattersRef.on('value', (snap) => {
-      if (isTestMode) return;
       const data = snap.val();
       if (data && data.map && !isSpinning) {
         chatterMap = data.map;
@@ -945,7 +877,6 @@
       }
     });
 
-    // 🛡️ ACTION BROADCAST LISTENER
     dbActionRef.on('value', (snap) => {
       const act = snap.val();
       if (!act) return;
@@ -1151,11 +1082,8 @@
 
     function playVictorySound() {
       getAudioContext();
-      const preset = soundPresetSelect ? soundPresetSelect.value : 'hype_win';
-      const soundSrc = AUDIO_PRESETS[preset] || AUDIO_PRESETS.hype_win;
-
       try {
-        const audio = new Audio(soundSrc);
+        const audio = new Audio(VICTORY_SOUND_SRC);
         audio.volume = 0.55;
         audio.play().catch(() => {});
       } catch (e) {}
@@ -1587,39 +1515,6 @@
     function setButtonsLocked(locked) {
       if (btnStart) btnStart.disabled = locked;
       if (btnSkip) btnSkip.disabled = locked;
-    }
-
-    function toggleTestMode() {
-      isTestMode = !isTestMode;
-      const btn = document.getElementById('btnToggleTest');
-
-      if (isTestMode) {
-        btn.innerText = "Avsluta testläge";
-        generateTestChatters(100);
-      } else {
-        btn.innerText = "🧪 Fyll 100 testare";
-        chatterMap = {};
-        loadChatters();
-      }
-      updateStatsUI();
-      initInitialStage();
-    }
-
-    function generateTestChatters(count = 100) {
-      const prefixes = ["Kaffe", "Pixel", "Ninja", "Katt", "Zelda", "Gamer", "Dunder", "Norrlands", "Super", "Mighty", "Cosmic", "Turbo", "Vinter", "Retro", "Hyper", "Cyber"];
-      const suffixes = ["Kungen", "Gud", "Bullen", "Loover", "Svensken", "Master", "Viking", "Räven", "Hjälten", "Kompis", "Tiger", "Björn", "Liraren"];
-
-      const testMap = {};
-      for (let i = 1; i <= count; i++) {
-        const p = prefixes[Math.floor(Math.random() * prefixes.length)];
-        const s = suffixes[Math.floor(Math.random() * suffixes.length)];
-        const name = `${p}${s}_${i}`;
-        testMap[name.toLowerCase()] = {
-          displayName: name,
-          time: 'Test'
-        };
-      }
-      chatterMap = testMap;
     }
 
     function resetAllChatters() {
