@@ -10,9 +10,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Twitch Chat Anonymous Client -->
-  <script src="https://cdn.jsdelivr.net/npm/tmi.js@1.8.5/dist/tmi.min.js"></script>
-
   <style>
     :root {
       --text-white: #ffffff;
@@ -304,6 +301,7 @@
       font-weight: 700;
       color: #e4e4e7;
       margin-bottom: 8px;
+      word-break: break-all;
     }
 
     .summary-text {
@@ -482,6 +480,13 @@
       border-color: #ffffff;
     }
 
+    .manual-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -526,7 +531,8 @@
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluter till Twitch chat...</div>
+    <!-- LIVE STATUS BOX (Shows exact Twitch connection & latest chat message) -->
+    <div class="status-box" id="dockStatusBox">Ansluter direkt till Twitch IRC...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
     <!-- 🟢/🔒 TOGGLE ENTRIES OPEN / CLOSED -->
@@ -548,6 +554,12 @@
       <div class="chatter-list-container" id="chatterListContainer">
         <div class="empty-list">Väntar på att folk skriver i Twitch chatten...</div>
       </div>
+
+      <!-- Quick manual test entry -->
+      <div class="manual-row">
+        <input type="text" id="manualName" placeholder="Lägg till manuellt namn..." style="flex:1;">
+        <button class="btn" style="width:auto; margin:0; padding:6px 12px;" onclick="addManualChatter()">+ Lägg till</button>
+      </div>
     </div>
 
     <!-- Prize Input -->
@@ -567,11 +579,14 @@
     </div>
 
     <!-- Actions & Testing -->
-    <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">🧪 Fyll med 100 testchattare</button>
-    <button class="btn" id="btnSimulateChat" onclick="simulateWinnerChatMessage()" style="border-color:#00ff88; color:#00ff88;">
+    <div class="grid-2">
+      <button class="btn" id="btnToggleTest" onclick="toggleTestMode()">🧪 Fyll 100 testare</button>
+      <button class="btn btn-danger" onclick="resetAllChatters()">🧹 Rensa deltagare</button>
+    </div>
+
+    <button class="btn" id="btnSimulateChat" onclick="simulateWinnerChatMessage()" style="border-color:#00ff88; color:#00ff88; margin-top:4px;">
       💬 Simulera att vinnaren svarar i chatten
     </button>
-    <button class="btn btn-danger" onclick="resetAllChatters()">🧹 Rensa deltagarlistan</button>
 
     <!-- Draw Buttons -->
     <button class="btn-primary-action" id="btnStart" onclick="startDraw(10000)">
@@ -627,6 +642,8 @@
     let isTestMode = false;
     let currentWinner = null;
     let isSpinning = false;
+    let isTwitchConnected = false;
+    let lastChatMessageSummary = "";
 
     let currentVirtualOffset = 2.0;
     let trackNamesList = [];
@@ -699,40 +716,109 @@
     preloadEmoteImages();
 
     // ========================================================
-    // 💬 1. TWITCH CHAT LISTENER (TMI.JS)
+    // 💬 1. NATIVE TWITCH IRC WEBSOCKET (ZERO EXTERNAL SCRIPTS)
     // ========================================================
+    let twitchSocket = null;
+
     function normalizeUserKey(name) {
       return (name || '').replace(/^@+/, '').trim().toLowerCase();
     }
 
-    function connectTwitchChat() {
+    function connectNativeTwitchIRC() {
       try {
-        const client = new tmi.Client({
-          connection: { reconnect: true, secure: true },
-          channels: [TWITCH_CHANNEL]
-        });
+        if (twitchSocket) {
+          try { twitchSocket.close(); } catch(e) {}
+        }
 
-        client.connect().then(() => {
-          updateDockStatus(`🟢 Lyssnar på chatten (#${TWITCH_CHANNEL})`);
-        }).catch((err) => {
-          updateDockStatus(`⚠️ Kunde inte ansluta till chatten: ${err}`, true);
-        });
+        updateDockStatus(`Ansluter till Twitch IRC (#${TWITCH_CHANNEL})...`);
 
-        client.on('message', (channel, tags, message, self) => {
-          const username = tags['display-name'] || tags.username;
-          if (!username) return;
+        twitchSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
-          handleIncomingChatMessage(username, message);
-        });
+        twitchSocket.onopen = () => {
+          isTwitchConnected = true;
+          // Anonymous login capabilities
+          twitchSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+          twitchSocket.send(`PASS SCHMOOPIIE`);
+          twitchSocket.send(`NICK justinfan${Math.floor(Math.random() * 80000 + 1000)}`);
+          twitchSocket.send(`JOIN #${TWITCH_CHANNEL.toLowerCase().replace('#', '')}`);
+
+          updateDockStatus(`🟢 Ansluten till Twitch (#${TWITCH_CHANNEL})! Redo att ta emot meddelanden.`);
+        };
+
+        twitchSocket.onmessage = (event) => {
+          const raw = event.data || '';
+          const lines = raw.split('\r\n');
+
+          for (const line of lines) {
+            if (!line) continue;
+
+            // Keepalive PING / PONG
+            if (line.startsWith('PING')) {
+              twitchSocket.send('PONG :tmi.twitch.tv');
+              continue;
+            }
+
+            // Normal Twitch Chat Message (PRIVMSG)
+            if (line.includes('PRIVMSG')) {
+              parseTwitchChatMessage(line);
+            }
+          }
+        };
+
+        twitchSocket.onerror = (err) => {
+          isTwitchConnected = false;
+          updateDockStatus(`⚠️ WebSocket fel mot Twitch. Försöker igen...`, true);
+        };
+
+        twitchSocket.onclose = () => {
+          isTwitchConnected = false;
+          updateDockStatus(`⚪ Frånkopplad från Twitch. Återansluter om 3s...`, true);
+          setTimeout(connectNativeTwitchIRC, 3000);
+        };
       } catch (e) {
-        updateDockStatus(`⚠️ Chat-fel: ${e.message}`, true);
+        isTwitchConnected = false;
+        updateDockStatus(`❌ Chat fel: ${e.message}`, true);
       }
+    }
+
+    function parseTwitchChatMessage(line) {
+      try {
+        let displayName = "";
+
+        // 1. Extract display-name tag (e.g., @display-name=Our2ndHome;)
+        const nameMatch = line.match(/[;@]display-name=([^; ]+)/);
+        if (nameMatch && nameMatch[1]) {
+          displayName = nameMatch[1];
+        } else {
+          // Fallback to IRC nick (e.g., :our2ndhome!our2ndhome@...)
+          const nickMatch = line.match(/:([^!@ ]+)!/);
+          if (nickMatch && nickMatch[1]) displayName = nickMatch[1];
+        }
+
+        // 2. Extract message body after PRIVMSG #channel :
+        const privIndex = line.indexOf(' PRIVMSG ');
+        if (privIndex === -1) return;
+
+        const colonIndex = line.indexOf(' :', privIndex);
+        let messageText = "";
+        if (colonIndex !== -1) {
+          messageText = line.substring(colonIndex + 2).trim();
+        }
+
+        if (displayName) {
+          // Update live indicator in dock so you see every message arrived
+          lastChatMessageSummary = `@${displayName}: "${messageText.length > 25 ? messageText.substring(0, 25) + '...' : messageText}"`;
+          updateDockStatus(`🟢 Chatt aktiv: ${lastChatMessageSummary}`);
+
+          handleIncomingChatMessage(displayName, messageText);
+        }
+      } catch (e) {}
     }
 
     function handleIncomingChatMessage(username, message) {
       const userKey = normalizeUserKey(username);
 
-      // 1. If entries are open, record chatter as giveaway participant
+      // 1. If entries are open, record chatter as giveaway participant (1 ticket per person)
       if (areEntriesOpen && !isTestMode) {
         if (!chatterMap[userKey]) {
           chatterMap[userKey] = {
@@ -789,6 +875,23 @@
     function simulateWinnerChatMessage() {
       if (!currentWinner) return alert("Dra en vinnare först för att testa detta!");
       displayWinnerChatResponse(currentWinner, "Här är jag! Tack så jättemycket!! ❤️🎉", true);
+    }
+
+    function addManualChatter() {
+      const input = document.getElementById('manualName');
+      if (!input) return;
+      const name = input.value.trim();
+      if (!name) return;
+
+      const userKey = normalizeUserKey(name);
+      chatterMap[userKey] = {
+        displayName: name,
+        time: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+      };
+      saveChatters();
+      updateStatsUI();
+      syncChattersToCloud();
+      input.value = "";
     }
 
     function getChattersPool() {
@@ -1174,7 +1277,6 @@
       stopTimers();
       clearCelebrationEffects();
 
-      // Reset any previous winner chat bubble
       if (winnerChatContainer) winnerChatContainer.classList.remove('visible');
 
       isSpinning = true;
@@ -1282,7 +1384,6 @@
       }, holdDelayMs);
     }
 
-    // 🏆 CLOSE AND AWARD PRIZE
     function claimPrizeAndClose() {
       if (isSpinning) return;
       if (!currentWinner) return alert("Ingen vinnare dragen än!");
@@ -1296,7 +1397,6 @@
       finalizeClaimAndHide();
     }
 
-    // ❌ CANCEL AND CLOSE
     function cancelWithoutTicket() {
       const actionId = Date.now();
       lastProcessedActionId = actionId;
@@ -1473,16 +1573,15 @@
         giveawaySubTitle.innerText = `${count} aktiva chattare`;
       }
 
+      renderChatterListUI();
+    }
+
+    function updateDockStatus(msg, isError = false) {
       const statusBox = document.getElementById('dockStatusBox');
       if (statusBox) {
-        const emoteCount = loadedEmoteImages.length;
-        const emoteBadge = emoteCount > 0 ? ` (${emoteCount} emotes)` : '';
-        statusBox.innerText = isTestMode
-          ? `🧪 Testläge aktivt (100 chattare)${emoteBadge}`
-          : `🟢 Lyssnar på chatten (#${TWITCH_CHANNEL})${emoteBadge}`;
+        statusBox.innerText = msg;
+        statusBox.style.color = isError ? "#ff453a" : "#00ff88";
       }
-
-      renderChatterListUI();
     }
 
     function setButtonsLocked(locked) {
@@ -1498,7 +1597,7 @@
         btn.innerText = "Avsluta testläge";
         generateTestChatters(100);
       } else {
-        btn.innerText = "🧪 Fyll med 100 testchattare";
+        btn.innerText = "🧪 Fyll 100 testare";
         chatterMap = {};
         loadChatters();
       }
@@ -1541,7 +1640,7 @@
 
     loadChatters();
     initInitialStage();
-    connectTwitchChat();
+    connectNativeTwitchIRC();
   </script>
 </body>
 </html>
