@@ -62,11 +62,11 @@
        ======================================================== */
     .giveaway-widget {
       position: absolute;
-      top: 49%; /* Shifted up by the height of the GIVEAWAY title */
+      top: 49%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 800px;
-      height: var(--viewport-height); /* 280px locked center */
+      height: var(--viewport-height);
       background: transparent !important;
       border: none !important;
       box-shadow: none !important;
@@ -86,7 +86,6 @@
       pointer-events: auto;
     }
 
-    /* ANCHORED STRICTLY ABOVE THE STATIONARY ROLLER */
     .giveaway-title-container {
       position: absolute;
       bottom: 100%;
@@ -109,7 +108,6 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* AKTIVA CHATTARE */
     .giveaway-sub-title {
       font-size: 16px;
       font-weight: 800;
@@ -120,7 +118,6 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* SINGLE-LINE DISPLAY DURING COUNTDOWN / TWO ROWS WHEN WINNER CHATS */
     .giveaway-timer-badge {
       display: block;
       text-align: center;
@@ -145,7 +142,6 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* SINGLE CLEAN ROW WITH ALWAYS-VISIBLE CLOSING QUOTE */
     .winner-response-msg {
       font-size: 19px;
       font-weight: 800;
@@ -156,7 +152,7 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 THE 5-SLOT STAGE (STATIONARY ANCHOR) */
+    /* 🎰 THE 5-SLOT STAGE */
     .reel-viewport {
       position: relative;
       width: 100%;
@@ -208,7 +204,6 @@
       transition: color 0.15s ease;
     }
 
-    /* ANCHORED STRICTLY BELOW THE STATIONARY ROLLER */
     .giveaway-prize-display {
       position: absolute;
       top: 100%;
@@ -265,6 +260,10 @@
       font-weight: 900;
       text-transform: uppercase;
       color: #ffffff;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      justify-content: space-between;
     }
 
     .status-pill {
@@ -417,8 +416,8 @@
 
     .btn-toggle-entries {
       background: #18181c;
-      border: 1px solid var(--primary);
-      color: var(--primary);
+      border: 1px solid var(--border);
+      color: #ffffff;
       font-weight: 800;
       padding: 10px 12px;
       margin-bottom: 8px;
@@ -432,6 +431,7 @@
     .btn-toggle-entries:hover {
       background: var(--primary);
       color: #000000;
+      border-color: var(--primary);
     }
 
     .btn-primary-action {
@@ -505,22 +505,24 @@
 
   <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
+    <!-- HEADER: CLEANED (NO RELOAD BUTTON) -->
     <div class="header-box">
       <span class="header-title">
         GIVEAWAY KONTROLL 
-        <span id="entriesStatusPill" class="status-pill open">🟢 ANMÄLNINGAR ÖPPNA</span>
+        <span id="entriesStatusPill" class="status-pill closed">🔒 ANMÄLNINGAR LÅSTA</span>
       </span>
-      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <!-- LIVE STATUS BOX -->
     <div class="status-box" id="dockStatusBox">Ansluter direkt till Twitch IRC...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
-    <button id="btnToggleEntries" class="btn btn-toggle-entries is-open" onclick="toggleEntriesState()">
-      🟢 Anmälningar är ÖPPNA (Alla som skriver registreras)
+    <!-- 🟢/🔒 TOGGLE ENTRIES (DEFAULT: CLOSED) -->
+    <button id="btnToggleEntries" class="btn btn-toggle-entries" onclick="toggleEntriesState()">
+      🔒 Anmälningar är STÄNGDA (Klicka för att öppna)
     </button>
 
+    <!-- 👥 LISTA: AKTIVA DELTAGARE -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="section-title" style="margin-bottom:0;">👥 Chattdeltagare (1 biljett / person)</span>
@@ -592,7 +594,8 @@
     } catch(e) {}
 
     let chatterMap = {};
-    let areEntriesOpen = true;
+    // DEFAULT IS NOW CLOSED (The streamer must open it manually)
+    let areEntriesOpen = false;
     let currentWinner = null;
     let isSpinning = false;
     let isTwitchConnected = false;
@@ -844,8 +847,8 @@
         const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
         if (savedPrize !== null) setPrizeText(savedPrize, false);
 
-        const savedOpen = localStorage.getItem(STORAGE_KEY_ENTRIES_OPEN);
-        if (savedOpen !== null) areEntriesOpen = (savedOpen === 'true');
+        // ALWAYS DEFAULT TO CLOSED ON FRESH BOOT
+        areEntriesOpen = false;
       } catch (e) {}
 
       updateEntriesUI();
@@ -1525,6 +1528,8 @@
         chatterMap = {};
         currentWinner = null;
         winnerHasResponded = false;
+        areEntriesOpen = false; // Lock entries on list clear
+        updateEntriesUI();
         saveChatters();
         syncChattersToCloud();
 
