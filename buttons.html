@@ -61,7 +61,7 @@
             margin-bottom: 6px;
         }
 
-        /* 🎵 SPOTIFY SKIP BUTTON (INSTANT RAPID CLICK) */
+        /* 🎵 SPOTIFY SKIP BUTTON */
         .btn-spotify-skip {
             width: 100%;
             background: #18181c;
@@ -313,21 +313,22 @@
         const FILTER_MOVE_IN = "Move Value in";
 
         // ========================================================
-        // 🎵 RELIABLE REMOTE SPOTIFY SKIP (ZERO COOLDOWN)
+        // 🎵 SEQUENTIAL SPOTIFY SKIP (350ms AUDIO BUFFER GUARD)
         // ========================================================
         let lastSkipSentTime = 0;
+        let isSkipDebouncing = false;
 
         function remoteSkipSpotify() {
+            if (isSkipDebouncing) return;
+            isSkipDebouncing = true;
+
             const btn = document.getElementById('btn-skip-spotify');
-            
-            // Immediate visual pulse feedback on every click
             if (btn) {
                 btn.classList.add('flashing');
-                setTimeout(() => btn.classList.remove('flashing'), 120);
+                setTimeout(() => btn.classList.remove('flashing'), 140);
             }
 
             const now = Date.now();
-            // Guarantees timestamp is strictly increasing on rapid clicks
             lastSkipSentTime = Math.max(now, lastSkipSentTime + 1);
 
             fetch(`${FIREBASE_DATABASE_URL}/spotify_control.json`, {
@@ -339,6 +340,10 @@
                     secret: WRITE_SECRET
                 })
             }).catch(err => console.error("Firebase skip failed:", err));
+
+            setTimeout(() => {
+                isSkipDebouncing = false;
+            }, 350);
         }
 
         const WEBCAM_BUTTONS = [
@@ -466,7 +471,6 @@
 
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
                     
-                    // Sync Webcam 2: Name tag mirrors state, Twitch chat inverts state
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
                         updateWebcam2ToggleUI(isEnabled);
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, isEnabled);
@@ -486,7 +490,6 @@
                         updateWebcamToggleUI(sceneItemEnabled);
                     } else if (sceneItemId === webcam2ItemId) {
                         updateWebcam2ToggleUI(sceneItemEnabled);
-                        // Name tag follows, chat inverts
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, sceneItemEnabled);
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !sceneItemEnabled);
                     }
