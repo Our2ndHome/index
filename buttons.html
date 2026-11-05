@@ -313,8 +313,10 @@
         const FILTER_MOVE_IN = "Move Value in";
 
         // ========================================================
-        // 🎵 RAPID REMOTE SPOTIFY SKIP (ZERO COOLDOWN)
+        // 🎵 RELIABLE REMOTE SPOTIFY SKIP (ZERO COOLDOWN)
         // ========================================================
+        let lastSkipSentTime = 0;
+
         function remoteSkipSpotify() {
             const btn = document.getElementById('btn-skip-spotify');
             
@@ -324,16 +326,19 @@
                 setTimeout(() => btn.classList.remove('flashing'), 120);
             }
 
-            // High-resolution timestamp so every click is recognized
+            const now = Date.now();
+            // Guarantees timestamp is strictly increasing on rapid clicks
+            lastSkipSentTime = Math.max(now, lastSkipSentTime + 1);
+
             fetch(`${FIREBASE_DATABASE_URL}/spotify_control.json`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'skip',
-                    timestamp: Date.now() + Math.floor(Math.random() * 100),
+                    timestamp: lastSkipSentTime,
                     secret: WRITE_SECRET
                 })
-            }).catch(() => {});
+            }).catch(err => console.error("Firebase skip failed:", err));
         }
 
         const WEBCAM_BUTTONS = [
@@ -461,6 +466,7 @@
 
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
                     
+                    // Sync Webcam 2: Name tag mirrors state, Twitch chat inverts state
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
                         updateWebcam2ToggleUI(isEnabled);
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, isEnabled);
@@ -480,6 +486,7 @@
                         updateWebcamToggleUI(sceneItemEnabled);
                     } else if (sceneItemId === webcam2ItemId) {
                         updateWebcam2ToggleUI(sceneItemEnabled);
+                        // Name tag follows, chat inverts
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, sceneItemEnabled);
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !sceneItemEnabled);
                     }
@@ -765,7 +772,11 @@
                 (id) => webcam2ItemId = id, 
                 (willBeEnabled) => {
                     updateWebcam2ToggleUI(willBeEnabled);
+                    
+                    // 🔗 Follower: Streamer 2 Name mirrors Webcam 2 state
                     setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, willBeEnabled);
+                    
+                    // 🔗 Inverted Follower: twitchchat.html is HIDDEN when Webcam 2 is visible!
                     setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !willBeEnabled);
                 }
             );
