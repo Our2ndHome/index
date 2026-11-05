@@ -44,15 +44,14 @@
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background-color: #eb0400; /* Red when offline */
+            background-color: #eb0400;
         }
 
         .dot.connected {
-            background-color: #00ff88; /* Green when ready */
+            background-color: #00ff88;
             box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
         }
 
-        /* Section Titles */
         .section-title {
             font-size: 9px;
             font-weight: 800;
@@ -62,7 +61,46 @@
             margin-bottom: 6px;
         }
 
-        /* 👥 Combined Same-Row Container for Streamer 2 & Webcam 2 */
+        /* 🎵 SPOTIFY SKIP BUTTON */
+        .btn-spotify-skip {
+            width: 100%;
+            background: #18181c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid #141418;
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            padding: 9px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-spotify-skip:hover {
+            background: #24242c;
+            border-color: #1db954;
+            color: #1db954;
+        }
+
+        .btn-spotify-skip:active {
+            transform: translateY(1px);
+        }
+
+        .spotify-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #1db954;
+            box-shadow: 0 0 6px rgba(29, 185, 84, 0.6);
+        }
+
         .dual-row {
             display: flex;
             gap: 6px;
@@ -119,31 +157,26 @@
             transform: translateY(1px);
         }
 
-        /* Grids */
         .grid {
             display: grid;
             gap: 6px;
         }
 
-        /* 3-column row for Webcam 1 controls */
         .grid-webcam {
             grid-template-columns: repeat(3, 1fr);
             margin-bottom: 12px;
         }
 
-        /* 4-column row for All 4 Scene buttons */
         .grid-scenes {
             grid-template-columns: repeat(4, 1fr);
             margin-bottom: 12px;
         }
 
-        /* 5-column row for Properties buttons */
         .grid-props {
             grid-template-columns: repeat(5, 1fr);
             margin-bottom: 14px;
         }
 
-        /* Stream-Deck Style Buttons */
         .deck-btn {
             background: #1c1c22;
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -197,7 +230,6 @@
             margin-top: -2px;
         }
 
-        /* Active Scene Highlight */
         .deck-btn.active-scene {
             background: #1e2922 !important;
             border-color: #00ff88 !important;
@@ -222,6 +254,13 @@
             <span id="status-text">Connecting...</span>
         </div>
     </div>
+
+    <!-- 🎵 SPOTIFY SKIP BUTTON -->
+    <div class="section-title">Musik (Spotify)</div>
+    <button class="btn-spotify-skip" id="btn-skip-spotify" onclick="remoteSkipSpotify()">
+        <span class="spotify-dot"></span>
+        <span id="spotify-skip-label">⏭️ NÄSTA LÅT (SKIP)</span>
+    </button>
 
     <!-- 📷 ROW 1: WEBCAM 1 CONTROLS -->
     <div class="section-title">Webcam Kontroller</div>
@@ -252,6 +291,9 @@
 
     <script>
         // ================= CONFIGURATION =================
+        const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+        const WRITE_SECRET = "Our2ndHomeSecret2026!";
+
         const TEXT_SOURCE_NAME_2 = "Streamer - Name Source 2";
         const CHAT_SOURCE_NAME = "twitchchat.html";
         const HTML_FILES_SCENE = "Html Files";
@@ -261,6 +303,35 @@
 
         const FILTER_MOVE_OUT = "Move Value out";
         const FILTER_MOVE_IN = "Move Value in";
+
+        // ========================================================
+        // 🎵 REMOTE SPOTIFY SKIP (WORKS FROM ANY PC VIA FIREBASE)
+        // ========================================================
+        function remoteSkipSpotify() {
+            const btn = document.getElementById('btn-skip-spotify');
+            const label = document.getElementById('spotify-skip-label');
+            if (label) label.textContent = "⏳ SKICKAR SKIP...";
+
+            fetch(`${FIREBASE_DATABASE_URL}/spotify_control.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'skip',
+                    timestamp: Date.now(),
+                    secret: WRITE_SECRET
+                })
+            }).then(() => {
+                if (label) label.textContent = "✓ LÅT SKIPPAD!";
+                setTimeout(() => {
+                    if (label) label.textContent = "⏭️ NÄSTA LÅT (SKIP)";
+                }, 1500);
+            }).catch(() => {
+                if (label) label.textContent = "❌ FEL VID SKIP";
+                setTimeout(() => {
+                    if (label) label.textContent = "⏭️ NÄSTA LÅT (SKIP)";
+                }, 1500);
+            });
+        }
 
         const WEBCAM_BUTTONS = [
             {
@@ -387,7 +458,6 @@
 
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
                     
-                    // Sync Webcam 2: Name tag mirrors state, Twitch chat inverts state
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
                         updateWebcam2ToggleUI(isEnabled);
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, isEnabled);
@@ -407,7 +477,6 @@
                         updateWebcamToggleUI(sceneItemEnabled);
                     } else if (sceneItemId === webcam2ItemId) {
                         updateWebcam2ToggleUI(sceneItemEnabled);
-                        // Name tag follows, chat inverts
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, sceneItemEnabled);
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !sceneItemEnabled);
                     }
@@ -693,11 +762,7 @@
                 (id) => webcam2ItemId = id, 
                 (willBeEnabled) => {
                     updateWebcam2ToggleUI(willBeEnabled);
-                    
-                    // 🔗 Follower: Streamer 2 Name mirrors Webcam 2 state
                     setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, willBeEnabled);
-                    
-                    // 🔗 Inverted Follower: twitchchat.html is HIDDEN when Webcam 2 is visible!
                     setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !willBeEnabled);
                 }
             );
