@@ -61,7 +61,7 @@
             margin-bottom: 6px;
         }
 
-        /* 🎵 SPOTIFY SKIP BUTTON */
+        /* 🎵 SPOTIFY SKIP BUTTON (INSTANT RAPID CLICK) */
         .btn-spotify-skip {
             width: 100%;
             background: #18181c;
@@ -80,7 +80,7 @@
             justify-content: center;
             gap: 8px;
             margin-bottom: 12px;
-            transition: all 0.15s ease;
+            transition: all 0.08s ease;
         }
 
         .btn-spotify-skip:hover {
@@ -89,8 +89,11 @@
             color: #1db954;
         }
 
-        .btn-spotify-skip:active {
+        .btn-spotify-skip:active, .btn-spotify-skip.flashing {
             transform: translateY(1px);
+            background: #1db954 !important;
+            color: #000000 !important;
+            border-color: #1db954 !important;
         }
 
         .spotify-dot {
@@ -99,6 +102,11 @@
             border-radius: 50%;
             background-color: #1db954;
             box-shadow: 0 0 6px rgba(29, 185, 84, 0.6);
+            transition: background-color 0.08s ease;
+        }
+
+        .btn-spotify-skip.flashing .spotify-dot {
+            background-color: #000000;
         }
 
         .dual-row {
@@ -305,32 +313,27 @@
         const FILTER_MOVE_IN = "Move Value in";
 
         // ========================================================
-        // 🎵 REMOTE SPOTIFY SKIP (WORKS FROM ANY PC VIA FIREBASE)
+        // 🎵 RAPID REMOTE SPOTIFY SKIP (ZERO COOLDOWN)
         // ========================================================
         function remoteSkipSpotify() {
             const btn = document.getElementById('btn-skip-spotify');
-            const label = document.getElementById('spotify-skip-label');
-            if (label) label.textContent = "⏳ SKICKAR SKIP...";
+            
+            // Immediate visual pulse feedback on every click
+            if (btn) {
+                btn.classList.add('flashing');
+                setTimeout(() => btn.classList.remove('flashing'), 120);
+            }
 
+            // High-resolution timestamp so every click is recognized
             fetch(`${FIREBASE_DATABASE_URL}/spotify_control.json`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'skip',
-                    timestamp: Date.now(),
+                    timestamp: Date.now() + Math.floor(Math.random() * 100),
                     secret: WRITE_SECRET
                 })
-            }).then(() => {
-                if (label) label.textContent = "✓ LÅT SKIPPAD!";
-                setTimeout(() => {
-                    if (label) label.textContent = "⏭️ NÄSTA LÅT (SKIP)";
-                }, 1500);
-            }).catch(() => {
-                if (label) label.textContent = "❌ FEL VID SKIP";
-                setTimeout(() => {
-                    if (label) label.textContent = "⏭️ NÄSTA LÅT (SKIP)";
-                }, 1500);
-            });
+            }).catch(() => {});
         }
 
         const WEBCAM_BUTTONS = [
