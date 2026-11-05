@@ -419,7 +419,7 @@
     }
 
     /* ========================================================
-       ✏️ DYNAMIC RESPONSIVE MILESTONE EDITOR (MAXIMIZED ROOM)
+       ✏️ DYNAMIC RESPONSIVE MILESTONE EDITOR
        ======================================================== */
     .milestone-editor-card {
       flex: 1 1 auto;
@@ -456,7 +456,6 @@
     }
     textarea#goalsInputArea:focus { border-color: var(--primary) !important; }
 
-    /* TOGGLE BUTTON (OVER SAVE BUTTON) */
     .btn-toggle-view {
       flex-shrink: 0 !important;
       background: #1e1e24;
@@ -475,7 +474,6 @@
     }
     .btn-toggle-view:hover { background: #2c2c36; }
 
-    /* SAVE BUTTON (PINNED TO BOTTOM) */
     .btn-primary-action {
       flex-shrink: 0 !important;
       background: #ffffff;
@@ -504,13 +502,9 @@
 </head>
 <body>
 
-  <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW: HORIZONTAL TOP-SPLIT BAR
-       ======================================================== -->
+  <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
     <div class="top-goals-container" id="goalsWidgetContainer">
-      
-      <!-- LEFT WING -->
       <div class="goal-wing" id="leftWing">
         <div class="wing-header">MILSTOLPAR</div>
         <div class="horizontal-track left-track" id="leftTrack">
@@ -521,10 +515,8 @@
         </div>
       </div>
 
-      <!-- EXACT 440px GAP FOR 400px CENTER WIDGET -->
       <div class="center-obstacle-spacer"></div>
 
-      <!-- RIGHT WING -->
       <div class="goal-wing" id="rightWing">
         <div class="wing-header">NÄSTA MÅL</div>
         <div class="horizontal-track right-track" id="rightTrack">
@@ -534,17 +526,12 @@
           <div class="track-nodes-container" id="rightNodesContainer"></div>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel)
-       ======================================================== -->
+  <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
-    
     <div class="dock-fixed-top">
-      <!-- CLEAN HEADER (NO VERSION / NO RELOAD BUTTON) -->
       <div class="header-box">
         <span class="header-title">
           MILSTOLPAR KONTROLL
@@ -552,19 +539,16 @@
         </span>
       </div>
 
-      <!-- ⏱️ STREAMER LIVE-PASS (AUTOMATED & SYNCED WITH OBS TEXT SOURCE) -->
       <div class="card-section">
         <span class="section-title">⏱️ Streamer Live-Pass</span>
-        
         <div class="control-row">
           <span class="control-label">STREAMER:</span>
           <input type="text" id="streamerNameInput" placeholder="T.ex. LordBaconeer" style="width:65%;">
         </div>
-        <span class="auto-badge-note">⚡ Uppdaterar webbkamerans namnskylt och nollställer passet automatiskt vid "Start Streaming".</span>
+        <span class="auto-badge-note">⚡ Uppdaterar Twitch-titel, namnskylt och startar passet automatiskt vid "Start Streaming".</span>
       </div>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
     <div class="card-section milestone-editor-card">
       <span class="section-title">✏️ Redigera dina milstolpar</span>
       <div class="hint-text">
@@ -572,19 +556,16 @@
         Format: <code>Belopp - Beskrivning</code>
       </div>
       
-      <textarea id="goalsInputArea" placeholder="50 kr - Sill bit&#10;100 kr - Sill bit&#10;150 kr - Sill bit&#10;200 kr - Sill bit&#10;250 kr - Sill bit med ketchup&#10;350 kr - Sill bit&#10;400 kr - Äter 2 bananer.&#10;500 kr - Äter en melon på 2 ben.&#10;600 kr - Dansar.&#10;700 kr - Hoppar på 4 ben och tre armar."></textarea>
+      <textarea id="goalsInputArea" placeholder="50 kr - Sill bit&#10;100 kr - Sill bit&#10;150 kr - Sill bit"></textarea>
 
-      <!-- 👁️ HIDE / SHOW GOALS TOGGLE (POSITIONED OVER SAVE BUTTON) -->
       <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
         👁️ Göm milstolpar på stream
       </button>
 
-      <!-- 💾 SAVE BUTTON (PINNED AT BOTTOM) -->
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara mina milstolpar
       </button>
     </div>
-
   </div>
 
   <script>
@@ -594,7 +575,6 @@
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
 
-    // Exact OBS text source name to update automatically
     const OBS_TEXT_SOURCE_NAME = "Streamer - Name Source";
 
     const DEFAULT_GOALS = 
@@ -646,11 +626,7 @@
 
         obsWs.onmessage = (event) => {
           const msg = JSON.parse(event.data);
-
-          if (msg.op === 0) {
-            obsWs.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
-          }
-
+          if (msg.op === 0) obsWs.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
           if (msg.op === 2) {
             isObsWsConnected = true;
             if (currentStreamerName && currentStreamerName !== "Streamer") {
@@ -663,10 +639,7 @@
           isObsWsConnected = false;
           setTimeout(connectObsWebSocket, 3000);
         };
-
-        obsWs.onerror = () => {
-          try { obsWs.close(); } catch(e) {}
-        };
+        obsWs.onerror = () => { try { obsWs.close(); } catch(e) {} };
       } catch (e) {}
     }
 
@@ -706,14 +679,8 @@
     const dbStreamersRef = firebase.database().ref('streamers');
     const dbBossaRef = firebase.database().ref('bossa');
 
-    firebase.database().ref('.info/connected').on('value', (snap) => {
-      if (snap.val() === true) {
-        updateDockDisplay();
-      }
-    });
-
     // ========================================================
-    // 🎬 OBS NATIVE STREAMING EVENTS (100% AUTOMATIC)
+    // 🎬 OBS STREAMING EVENTS: UPDATES PASS & TWITCH TITLE
     // ========================================================
     function updateObsLiveStatus(isStreaming) {
       isObsStreaming = isStreaming;
@@ -745,6 +712,12 @@
         secret: WRITE_SECRET,
         lastLiveStoppedUtc: new Date().toISOString()
       }).catch(() => {});
+
+      // Clear active streamer state
+      firebase.database().ref('active_streamer').update({
+        isLive: false,
+        secret: WRITE_SECRET
+      }).catch(() => {});
     });
 
     if (window.obsstudio && window.obsstudio.getStatus) {
@@ -753,9 +726,6 @@
       });
     }
 
-    // ========================================================
-    // 👤 STREAMER NAME AUTO-LOAD & DIRECT TEXT SOURCE SYNC
-    // ========================================================
     const nameInputEl = document.getElementById('streamerNameInput');
     if (nameInputEl) {
       nameInputEl.addEventListener('change', () => {
@@ -766,9 +736,7 @@
         }
       });
       nameInputEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          nameInputEl.blur();
-        }
+        if (e.key === 'Enter') nameInputEl.blur();
       });
     }
 
@@ -782,23 +750,15 @@
     }
 
     function getLiveSessionEarned() {
-      if (!streamerBaseline || streamerBaseline <= 0) {
-        return 0;
-      }
+      if (!streamerBaseline || streamerBaseline <= 0) return 0;
       return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
     }
 
-    // ========================================================
-    // 👁️ VISIBILITY CONTROLLER
-    // ========================================================
     function applyVisibilityState() {
       const container = document.getElementById('goalsWidgetContainer');
       if (container) {
-        if (isGoalsHidden) {
-          container.classList.add('is-hidden');
-        } else {
-          container.classList.remove('is-hidden');
-        }
+        if (isGoalsHidden) container.classList.add('is-hidden');
+        else container.classList.remove('is-hidden');
       }
 
       const btn = document.getElementById('btnToggleVisibility');
@@ -822,15 +782,9 @@
       } catch(e) {}
 
       applyVisibilityState();
-
-      if (bus) {
-        bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
-      }
+      if (bus) bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
     }
 
-    // ========================================================
-    // 🧠 LINE-BY-LINE PARSER & 25-CHAR TEXT FORMATTER
-    // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
@@ -839,18 +793,15 @@
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const match = line.match(/^([0-9\s]+)(?:kr|:-|sek)?\s*[-:–—]?\s*(.+)$/i);
-
         if (match) {
           const rawAmt = match[1].replace(/[^0-9]/g, '');
           const amount = parseInt(rawAmt, 10);
           const label = match[2].trim().replace(/^[-:–—]\s*/, '');
-
           if (!isNaN(amount) && amount > 0 && label) {
             list.push({ id: `goal_${amount}_${i}`, amount, label });
           }
         }
       }
-
       list.sort((a, b) => a.amount - b.amount);
       return list;
     }
@@ -858,34 +809,24 @@
     function formatMilestoneLabel(rawText, maxCharsPerLine = 25) {
       if (!rawText) return '';
       const text = rawText.trim();
-      if (text.length <= maxCharsPerLine) {
-        return escapeHTML(text);
-      }
+      if (text.length <= maxCharsPerLine) return escapeHTML(text);
 
       const words = text.split(' ');
       const lines = [];
       let currentLine = '';
 
       for (const word of words) {
-        if (!currentLine) {
-          currentLine = word;
-        } else if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
-          currentLine += ' ' + word;
-        } else {
+        if (!currentLine) currentLine = word;
+        else if ((currentLine + ' ' + word).length <= maxCharsPerLine) currentLine += ' ' + word;
+        else {
           lines.push(currentLine);
           currentLine = word;
         }
       }
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-
+      if (currentLine) lines.push(currentLine);
       return lines.map(l => escapeHTML(l)).join('<br>');
     }
 
-    // ========================================================
-    // 🎨 RENDER BALANCED TOP-SPLIT LADDERS
-    // ========================================================
     function renderGoalsLadder() {
       const leftNodesContainer = document.getElementById('leftNodesContainer');
       const rightNodesContainer = document.getElementById('rightNodesContainer');
@@ -906,50 +847,36 @@
       const leftGoalsCount = Math.max(1, Math.floor(parsedGoals.length / 2));
       const leftGoals = parsedGoals.slice(0, leftGoalsCount);
       const rightGoals = parsedGoals.slice(leftGoalsCount);
-
       const liveEarned = getLiveSessionEarned();
 
-      // --- 1. LEFT WING ---
       const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0, false, true);
       leftNodesContainer.appendChild(leftStartEl);
 
       leftGoals.forEach((g, i) => {
         const isLastOfAll = (rightGoals.length === 0 && i === leftGoals.length - 1);
-        const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
-        leftNodesContainer.appendChild(el);
+        leftNodesContainer.appendChild(createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false));
       });
 
-      // --- 2. RIGHT WING ---
       if (rightGoals.length > 0) {
         if (rightWing) rightWing.style.display = 'flex';
         rightGoals.forEach((g, i) => {
           const isLastOfAll = (i === rightGoals.length - 1);
-          const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
-          rightNodesContainer.appendChild(el);
+          rightNodesContainer.appendChild(createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false));
         });
       } else {
         if (rightWing) rightWing.style.display = 'none';
       }
 
-      requestAnimationFrame(() => {
-        updateBridgeProgress(liveEarned, leftGoals, rightGoals);
-      });
+      requestAnimationFrame(() => updateBridgeProgress(liveEarned, leftGoals, rightGoals));
     }
 
     function createNodeEl(amount, label, isReached, isLastGoal = false, isFirstNode = false) {
       const el = document.createElement('div');
       el.className = `h-node ${isReached ? 'reached' : ''} ${isLastGoal ? 'is-last-goal' : ''} ${isFirstNode ? 'is-first-node' : ''}`;
-      
-      const formattedLabel = formatMilestoneLabel(label, 25);
-
       el.innerHTML = `
         <div class="h-node-amount">${formatSEK(amount)}</div>
-        <div class="h-node-tick-wrapper">
-          <div class="h-node-tick"></div>
-        </div>
-        <div class="h-node-label">
-          <span class="node-label-text" title="${escapeHTML(label)}">${formattedLabel}</span>
-        </div>
+        <div class="h-node-tick-wrapper"><div class="h-node-tick"></div></div>
+        <div class="h-node-label"><span class="node-label-text" title="${escapeHTML(label)}">${formatMilestoneLabel(label, 25)}</span></div>
       `;
       return el;
     }
@@ -1005,14 +932,12 @@
         for (let i = 0; i < leftGoals.length; i++) {
           const goalAmt = leftGoals[i].amount;
           const currentX = leftXs[i + 1];
-
           if (liveEarned <= goalAmt) {
             const denom = goalAmt - prevAmt;
             const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
             leftTargetX = prevX + (currentX - prevX) * ratio;
             break;
           }
-
           prevAmt = goalAmt;
           prevX = currentX;
         }
@@ -1069,14 +994,12 @@
           for (let i = 1; i < rightGoals.length; i++) {
             const goalAmt = rightGoals[i].amount;
             const currentX = rightXs[i];
-
             if (liveEarned <= goalAmt) {
               const denom = goalAmt - prevAmt;
               const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
               rightTargetX = prevX + (currentX - prevX) * ratio;
               break;
             }
-
             prevAmt = goalAmt;
             prevX = currentX;
           }
@@ -1100,15 +1023,9 @@
       }
     }
 
-    // ========================================================
-    // ⚡ REAL-TIME DATABASE LISTENERS
-    // ========================================================
     function listenToStreamer(key) {
       if (!key) return;
-
-      if (currentActiveStreamerRef) {
-        currentActiveStreamerRef.off();
-      }
+      if (currentActiveStreamerRef) currentActiveStreamerRef.off();
 
       currentActiveStreamerRef = dbStreamersRef.child(key);
       currentActiveStreamerRef.on('value', (snap) => {
@@ -1133,11 +1050,8 @@
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
       let raw = null;
-      if (typeof data === 'number' || typeof data === 'string') {
-        raw = data;
-      } else if (data && typeof data === 'object') {
-        raw = data.total ?? data.amount ?? data.current;
-      }
+      if (typeof data === 'number' || typeof data === 'string') raw = data;
+      else if (data && typeof data === 'object') raw = data.total ?? data.amount ?? data.current;
 
       if (raw !== null) {
         const parsed = parseInt(String(raw).replace(/[^0-9]/g, ''), 10);
@@ -1186,6 +1100,9 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
+    // ========================================================
+    // 🎬 STARTS PASS & SIGNALS STREAMER.BOT TO UPDATE TITLE
+    // ========================================================
     function startFreshPassZero() {
       if (currentGlobalTotal <= 0) return;
 
@@ -1219,6 +1136,14 @@
         updateDockDisplay();
         setObsTextSource(currentStreamerName);
         if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
+      }).catch(() => {});
+
+      // 🔴 SENDS REAL-TIME TWITCH STREAM TITLE UPDATE TO HOST PC
+      firebase.database().ref('active_streamer').set({
+        name: currentStreamerName,
+        isLive: true,
+        timestamp: Date.now(),
+        secret: WRITE_SECRET
       }).catch(() => {});
     }
 
@@ -1267,7 +1192,6 @@
       const area = document.getElementById('goalsInputArea');
       const text = area ? area.value : "";
       const goals = parseLinesToGoalObjects(text);
-
       if (goals.length === 0) return;
 
       try {
@@ -1277,9 +1201,7 @@
       parsedGoals = goals;
       renderGoalsLadder();
 
-      if (bus) {
-        bus.postMessage({ type: 'LOCAL_GOALS_UPDATED', text: text });
-      }
+      if (bus) bus.postMessage({ type: 'LOCAL_GOALS_UPDATED', text: text });
 
       const key = getStreamerKey(currentStreamerName);
       dbStreamersRef.child(key).update({
@@ -1302,26 +1224,19 @@
     }
 
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        renderGoalsLadder();
-      });
+      document.fonts.ready.then(() => renderGoalsLadder());
     }
 
     if (window.ResizeObserver) {
       const container = document.getElementById('goalsWidgetContainer');
       if (container) {
-        const ro = new ResizeObserver(() => {
-          renderGoalsLadder();
-        });
-        ro.observe(container);
+        new ResizeObserver(() => renderGoalsLadder()).observe(container);
       }
     }
 
     try {
       let cached = localStorage.getItem(STORAGE_KEY_GOALS);
-      if (!cached || !cached.trim()) {
-        cached = DEFAULT_GOALS;
-      }
+      if (!cached || !cached.trim()) cached = DEFAULT_GOALS;
       parsedGoals = parseLinesToGoalObjects(cached);
       const area = document.getElementById('goalsInputArea');
       if (area) area.value = cached;
