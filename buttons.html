@@ -253,6 +253,8 @@
     <script>
         // ================= CONFIGURATION =================
         const TEXT_SOURCE_NAME_2 = "Streamer - Name Source 2";
+        const CHAT_SOURCE_NAME = "twitchchat.html";
+        const HTML_FILES_SCENE = "Html Files";
 
         const SOURCE_WEBCAM = "Webcam Source";
         const SOURCE_WEBCAM_SCENE = "Webcam Scene";
@@ -314,7 +316,6 @@
             }
         ];
 
-        // ⚙️ 5 SOURCE PROPERTIES BUTTONS
         const PROPERTIES_BUTTONS = [
             {
                 label: "Main Mic",
@@ -385,9 +386,12 @@
                     fetchCurrentText(TEXT_SOURCE_NAME_2, 'streamer-name-input-2');
 
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
+                    
+                    // Sync Webcam 2: Name tag mirrors state, Twitch chat inverts state
                     syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
                         updateWebcam2ToggleUI(isEnabled);
-                        setSceneItemState("Html Files", "Streamer - Name Source 2", isEnabled);
+                        setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, isEnabled);
+                        setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !isEnabled);
                     });
                 }
 
@@ -403,7 +407,9 @@
                         updateWebcamToggleUI(sceneItemEnabled);
                     } else if (sceneItemId === webcam2ItemId) {
                         updateWebcam2ToggleUI(sceneItemEnabled);
-                        setSceneItemState("Html Files", "Streamer - Name Source 2", sceneItemEnabled);
+                        // Name tag follows, chat inverts
+                        setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, sceneItemEnabled);
+                        setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !sceneItemEnabled);
                     }
                 }
 
@@ -687,7 +693,12 @@
                 (id) => webcam2ItemId = id, 
                 (willBeEnabled) => {
                     updateWebcam2ToggleUI(willBeEnabled);
-                    setSceneItemState("Html Files", "Streamer - Name Source 2", willBeEnabled);
+                    
+                    // 🔗 Follower: Streamer 2 Name mirrors Webcam 2 state
+                    setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, willBeEnabled);
+                    
+                    // 🔗 Inverted Follower: twitchchat.html is HIDDEN when Webcam 2 is visible!
+                    setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !willBeEnabled);
                 }
             );
         }
