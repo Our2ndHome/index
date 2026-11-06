@@ -700,6 +700,11 @@
           saveChatters();
           updateStatsUI();
           syncChattersToCloud();
+
+          // 🎯 FIXED: Instantly updates wheel to show real chatters the moment the first message arrives!
+          if (!isSpinning) {
+            initInitialStage();
+          }
         }
       }
 
@@ -790,7 +795,7 @@
         saveChatters();
         updateEntriesUI();
         updateStatsUI();
-        if (trackNamesList.length === 0) initInitialStage();
+        initInitialStage();
       }
     });
 
@@ -979,7 +984,6 @@
       return audioCtx;
     }
 
-    // 🎯 FIXED: Only overlay plays audio to eliminate echo
     function playWheelClick(speedRatio = 1.0) {
       if (isPanel) return;
       const ctx = getAudioContext();
@@ -1076,12 +1080,13 @@
       reelStage.innerHTML = html;
     }
 
+    // 🎯 FIXED: Replaced "Väntar på chatten..." with clean stream branding
     function initInitialStage() {
       const names = getChattersPool();
       trackNamesList = [];
 
       if (names.length === 0) {
-        trackNamesList = ["Väntar på chatten...", "Skriv i chatten...", "Väntar på chatten...", "Skriv i chatten...", "Väntar på chatten..."];
+        trackNamesList = ["GIVEAWAY", "MUSIKHJÄLPEN", "OUR2NDHOME", "GIVEAWAY", "MUSIKHJÄLPEN"];
       } else {
         for (let i = 0; i < 7; i++) {
           trackNamesList.push(names[i % names.length]);
@@ -1141,7 +1146,15 @@
       if (giveawayWidget) giveawayWidget.classList.add('active');
 
       const names = getChattersPool();
-      const startOffset = currentVirtualOffset;
+
+      // 🎯 FIXED: Purges any old dummy placeholder text before the spin starts
+      trackNamesList = [];
+      for (let i = 0; i < 7; i++) {
+        trackNamesList.push(names[i % names.length]);
+      }
+
+      const startOffset = 2.0;
+      currentVirtualOffset = startOffset;
       const targetOffset = Math.round(startOffset) + spinDistance;
       const totalTrackNeeded = targetOffset + 6;
 
