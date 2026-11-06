@@ -12,7 +12,7 @@
 
   <style>
     :root {
-      --primary-color: #ace600; /* Lime Green */
+      --primary-color: #ace600;
       --secondary-color: #00ff88;
       --giveaway-color: #ffea00;
       --text-white: #ffffff;
@@ -37,7 +37,6 @@
       user-select: none;
     }
 
-    /* 🔀 HASH ROUTER */
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
 
@@ -47,7 +46,6 @@
       padding: 10px;
     }
 
-    /* 📺 1. STREAM OVERLAY */
     #overlayRoot {
       position: absolute;
       top: 0;
@@ -57,7 +55,6 @@
       pointer-events: none;
     }
 
-    /* 🔄 3D ROTATOR WRAPPER (SPONSORS & THEME CARD) */
     .rotator-wrapper {
       position: absolute;
       bottom: 125px;
@@ -69,7 +66,6 @@
       place-items: center;
     }
 
-    /* Base Card Styling (3D Flip Animation) */
     .sponsor-widget, .theme-widget {
       grid-area: 1 / 1;
       background: rgba(0, 0, 0, 0.9);
@@ -99,7 +95,6 @@
       visibility: hidden;
     }
 
-    /* 🖼️ CARD 1: SPONSOR ROTATOR */
     .sponsor-widget {
       text-align: center;
       display: flex;
@@ -134,10 +129,8 @@
       letter-spacing: 2px;
       text-transform: uppercase;
       display: block;
-      text-shadow: none;
     }
 
-    /* 📻 CARD 2: MUSIKHJÄLPEN ÅRETS TEMA CARD */
     .theme-widget {
       position: relative;
       width: 290px;
@@ -151,7 +144,6 @@
       overflow: hidden;
     }
 
-    /* Increased visibility for Musikhjälpen logo watermark */
     .theme-watermark-logo {
       position: absolute;
       top: 50%;
@@ -161,7 +153,7 @@
       height: 130px;
       object-fit: contain;
       pointer-events: none;
-      opacity: 0.50; /* More visible */
+      opacity: 0.50;
       z-index: 1;
       filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
     }
@@ -208,7 +200,6 @@
       text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* Shared Breathing Motion */
     @keyframes elementFloat {
       0%, 100% {
         transform: translateY(0px);
@@ -220,15 +211,12 @@
       }
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR (1920px FULL-WIDTH) */
     .schedule-widget {
       position: absolute;
       bottom: 0;
       left: 0;
       width: 100vw;
       background: rgba(0, 0, 0, 0.9);
-      border-radius: 0;
-      border: none;
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
       padding: 16px 30px 14px 30px;
       display: flex;
@@ -244,9 +232,7 @@
       opacity: 1;
     }
 
-    .timeline-container.fading {
-      opacity: 0;
-    }
+    .timeline-container.fading { opacity: 0; }
 
     .timeline-line-bg {
       position: absolute;
@@ -316,7 +302,6 @@
       align-items: center;
       text-align: center;
       padding: 0 4px;
-      text-shadow: none;
     }
 
     .node-time {
@@ -329,7 +314,6 @@
       color: #ffffff;
       white-space: nowrap;
       letter-spacing: 1px;
-      text-shadow: none;
     }
 
     .node-tick-wrapper {
@@ -362,21 +346,16 @@
       color: #ffffff;
       white-space: nowrap;
       letter-spacing: 0.8px;
-      text-shadow: none;
     }
 
-    .node-streamer.is-giveaway-text {
-      color: #ffffff;
-      text-shadow: none;
-    }
+    .node-streamer.is-giveaway-text { color: #ffffff; }
 
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
-      text-shadow: none;
     }
 
-    /* 🎛️ 2. OBS DOCK */
+    /* OBS Dock Controller */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -469,9 +448,6 @@
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus, select:focus {
-      border-color: #52525b;
-    }
 
     .btn {
       background: #18181c;
@@ -486,11 +462,6 @@
       width: 100%;
       text-align: center;
       margin-bottom: 6px;
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    .btn:hover:not(:disabled) {
-      background: #24242a;
-      border-color: #3f3f46;
     }
 
     .btn-primary-action {
@@ -506,18 +477,12 @@
       width: 100%;
       margin-top: 6px;
       margin-bottom: 4px;
-      transition: opacity 0.15s ease;
     }
-    .btn-primary-action:hover { opacity: 0.9; }
 
     .btn-danger {
       background: #18181c;
       border: 1px solid #ff453a;
       color: #ff453a;
-    }
-    .btn-danger:hover:not(:disabled) {
-      background: #ff453a;
-      color: #ffffff;
     }
 
     .grid-2 {
@@ -529,15 +494,9 @@
 </head>
 <body>
 
-  <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW (#overlay)
-       ======================================================== -->
+  <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
-    
-    <!-- 🔄 3D ROTATOR: SPONSORS & MUSIKHJÄLPEN THEME CARD -->
     <div class="rotator-wrapper">
-      
-      <!-- Card 1: Sponsor Card -->
       <div class="sponsor-widget card-active" id="sponsorWidget">
         <div class="sponsor-logo-container">
           <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -545,20 +504,16 @@
         <span class="sponsor-label">SPONSORER</span>
       </div>
 
-      <!-- Card 2: Musikhjälpen Theme Card (More visible logo, no dot, no comma/colon) -->
       <div class="theme-widget card-hidden" id="themeWidget">
         <img id="themeMhLogo" class="theme-watermark-logo" src="sponsors/MusikhjalpenLogo.png" alt="Musikhjälpen" />
-
         <div class="theme-content-box">
           <span class="theme-card-header">MUSIKHJÄLPEN</span>
           <span class="theme-card-sublabel">ÅRETS TEMA</span>
           <span class="theme-card-title">För psykisk hälsa i krig och kris</span>
         </div>
       </div>
-
     </div>
 
-    <!-- Timeline Schedule Bar -->
     <div class="schedule-widget" id="scheduleWidget">
       <div class="timeline-container" id="timelineContainer">
         <div class="timeline-line-bg"></div>
@@ -569,18 +524,15 @@
     </div>
   </div>
 
-  <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel)
-       ======================================================== -->
+  <!-- 🎛️ 2. OBS CONTROL DOCK (#panel) -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.4</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.5</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
 
-    <!-- ✏️ LIVE SCHEDULE EDITOR -->
     <div class="card-section">
       <span class="section-title">✏️ Live Schema-Redigerare</span>
       
@@ -599,8 +551,7 @@
 
       <div class="control-row">
         <span class="control-label">VÄLJ PASS:</span>
-        <select id="editSlotSelect" style="width:65%;" onchange="loadSelectedSlotData()">
-        </select>
+        <select id="editSlotSelect" style="width:65%;" onchange="loadSelectedSlotData()"></select>
       </div>
 
       <div class="control-row" style="margin-top:6px;">
@@ -628,7 +579,6 @@
       </div>
     </div>
 
-    <!-- 🕹️ QUICK TOOLS & CONTROLS -->
     <div class="card-section">
       <span class="section-title">🕹️ Sponsor & Test-Verktyg</span>
       <div class="grid-2">
@@ -660,7 +610,8 @@
     const KNOWN_SPONSORS = [
       "sponsors/DisgustingFoodMuseum_Sponsor.png",
       "sponsors/ElinPK_Sponsor.png",
-      "sponsors/EscapeHouse_Sponsor.png"
+      "sponsors/EscapeHouse_Sponsor.png",
+      "sponsors/RandomNerd_Sponsor.png"
     ];
 
     const DAY_BASE_DATES = {
@@ -674,46 +625,39 @@
     };
 
     const DEFAULT_SCHEDULE = [
-      // MÅNDAG 30 NOV
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 12:00", end: "2026-11-30 15:00", timeText: "12:00 - 15:00", name: "Invigning & Morgongänget", giveaway: "" },
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 15:00", end: "2026-11-30 18:00", timeText: "15:00 - 18:00", name: "PixelPionjärerna", giveaway: "" },
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 18:00", end: "2026-11-30 21:00", timeText: "18:00 - 21:00", name: "KaffeKungen", giveaway: "🎁 GIVEAWAY: Gaming Mus" },
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 21:00", end: "2026-12-01 00:00", timeText: "21:00 - 00:00", name: "Nattstreamers", giveaway: "" },
 
-      // TISDAG 1 DEC
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 00:00", end: "2026-12-01 06:00", timeText: "00:00 - 06:00", name: "Nattpatrullen", giveaway: "" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 06:00", end: "2026-12-01 12:00", timeText: "06:00 - 12:00", name: "Morgonsolen", giveaway: "" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 12:00", end: "2026-12-01 16:00", timeText: "12:00 - 16:00", name: "ZeldaMästaren", giveaway: "" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 16:00", end: "2026-12-01 20:00", timeText: "16:00 - 20:00", name: "RetroSpelaren", giveaway: "🎁 GIVEAWAY: Headset" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 20:00", end: "2026-12-02 00:00", timeText: "20:00 - 00:00", name: "KvällsShowen", giveaway: "" },
 
-      // ONSDAG 2 DEC
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 00:00", end: "2026-12-02 08:00", timeText: "00:00 - 08:00", name: "NattUggan", giveaway: "" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 08:00", end: "2026-12-02 14:00", timeText: "08:00 - 14:00", name: "Förmiddagsmys", giveaway: "" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 14:00", end: "2026-12-02 18:00", timeText: "14:00 - 18:00", name: "Speedrunners", giveaway: "" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 18:00", end: "2026-12-02 22:00", timeText: "18:00 - 22:00", name: "Svenska Eliten", giveaway: "🎁 GIVEAWAY: Tangentbord" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 22:00", end: "2026-12-03 00:00", timeText: "22:00 - 00:00", name: "Nattchatt & Musik", giveaway: "" },
 
-      // TORSDAG 3 DEC
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 00:00", end: "2026-12-03 08:00", timeText: "00:00 - 08:00", name: "Nattladdningen", giveaway: "" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 08:00", end: "2026-12-03 14:00", timeText: "08:00 - 14:00", name: "MH-Special Live", giveaway: "" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 14:00", end: "2026-12-03 19:00", timeText: "14:00 - 19:00", name: "Gäster & Turnering", giveaway: "" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 19:00", end: "2026-12-03 23:00", timeText: "19:00 - 23:00", name: "Stora Samlingen", giveaway: "🎁 MEGA GIVEAWAY!" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 23:00", end: "2026-12-04 00:00", timeText: "23:00 - 00:00", name: "Late Night Gaming", giveaway: "" },
 
-      // FREDAG 4 DEC
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 00:00", end: "2026-12-04 09:00", timeText: "00:00 - 09:00", name: "Fredagsnatt", giveaway: "" },
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 09:00", end: "2026-12-04 15:00", timeText: "09:00 - 15:00", name: "Helgstarten", giveaway: "" },
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 15:00", end: "2026-12-04 20:00", timeText: "15:00 - 20:00", name: "Fredagsmys & Esport", giveaway: "" },
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 20:00", end: "2026-12-05 00:00", timeText: "20:00 - 00:00", name: "FredagsGalan", giveaway: "🎁 GIVEAWAY: Konsol" },
 
-      // LÖRDAG 5 DEC
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 00:00", end: "2026-12-05 10:00", timeText: "00:00 - 10:00", name: "Lördagsnatt", giveaway: "" },
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 10:00", end: "2026-12-05 16:00", timeText: "10:00 - 16:00", name: "LördagsSatsningen", giveaway: "" },
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 16:00", end: "2026-12-05 21:00", timeText: "16:00 - 21:00", name: "Kändisduellen", giveaway: "🎁 VIP GIVEAWAY!" },
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 21:00", end: "2026-12-06 00:00", timeText: "21:00 - 00:00", name: "Lördagsparty", giveaway: "" },
 
-      // SÖNDAG 6 DEC
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 00:00", end: "2026-12-06 10:00", timeText: "00:00 - 10:00", name: "Sista Natten", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "10:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 15:00", end: "2026-12-06 20:00", timeText: "15:00 - 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
@@ -776,7 +720,6 @@
       }
     }
 
-    // ⚡ REAL-TIME DATABASE LISTENER
     dbScheduleRef.on('value', (snap) => {
       const data = snap.val();
       if (!data) return;
@@ -808,6 +751,7 @@
       return new Date(dateStr.replace(' ', 'T') + (dateStr.length === 16 ? ':00' : ''));
     }
 
+    // 🎯 FIXED: Local time arithmetic prevents UTC midnight rollback
     function parseTimeRangeToDates(dayId, timeRangeStr) {
       const baseDateStr = DAY_BASE_DATES[dayId] || "2026-11-30";
       const clean = timeRangeStr.replace(/\./g, ':').trim();
@@ -822,10 +766,13 @@
       const isMidnight = endClock === "00:00" || endClock === "24:00";
 
       if (isMidnight) {
-        const baseD = new Date(baseDateStr + "T00:00:00");
+        const parts = baseDateStr.split('-').map(Number);
+        const baseD = new Date(parts[0], parts[1] - 1, parts[2]);
         baseD.setDate(baseD.getDate() + 1);
-        const nextDayStr = baseD.toISOString().split('T')[0];
-        endISO = `${nextDayStr} 00:00`;
+        const nextY = baseD.getFullYear();
+        const nextM = String(baseD.getMonth() + 1).padStart(2, '0');
+        const nextD = String(baseD.getDate()).padStart(2, '0');
+        endISO = `${nextY}-${nextM}-${nextD} 00:00`;
       } else {
         endISO = `${baseDateStr} ${endClock}`;
       }
@@ -855,6 +802,7 @@
       if (scheduleMode === 'test') {
         return generateTestSchedule();
       }
+      if (!currentSchedule || currentSchedule.length === 0) return [];
 
       const now = new Date();
       const firstEvStart = parseDate(currentSchedule[0].start);
@@ -882,9 +830,6 @@
       });
     }
 
-    // ==========================================
-    // 🎨 DOM UPDATE & SMOOTH FADE TRANSITION
-    // ==========================================
     function updateScheduleDOM(activeDayId, schedule, now, isReset = false) {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -972,6 +917,7 @@
       if (isDayTransitioning) return;
 
       const schedule = getActiveSchedule();
+      if (schedule.length === 0) return;
       const now = new Date();
 
       if (isSimulationLocked && currentDisplayedDayId) {
@@ -996,9 +942,6 @@
       updateScheduleDOM(activeDayId, schedule, now, false);
     }
 
-    // ==========================================
-    // 🎛️ DOCK: LIVE SCHEDULE EDITOR
-    // ==========================================
     function populateSlotsDropdown() {
       const daySelect = document.getElementById('editDaySelect');
       const slotSelect = document.getElementById('editSlotSelect');
@@ -1185,9 +1128,6 @@
       updateDockStatus(`Sponsor: ${currentSponsorIndex + 1}/${sponsorFileList.length}`);
     }
 
-    // ==========================================
-    // 🔄 3D CARD TRANSITION CONTROLLER
-    // ==========================================
     function showThemeCard() {
       isShowingTheme = true;
       const sponsorCard = document.getElementById('sponsorWidget');
@@ -1216,7 +1156,6 @@
       }
     }
 
-    // 🔄 REWRITTEN ROTATOR: Cycles through all sponsors with ZERO missing images
     function runRotatorCycle() {
       if (isPanel) return;
 
@@ -1244,22 +1183,17 @@
       }
     }
 
-    // ==========================================
-    // 🖼️ AUTOMATIC GITHUB SPONSOR ENGINE
-    // ==========================================
     async function loadSponsorsAutomatically() {
       try {
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}?_t=${Date.now()}`);
         if (res.ok) {
           const files = await res.json();
           if (Array.isArray(files)) {
-            // Filter out MusikhjalpenLogo so it NEVER appears in the sponsor rotation
             const sponsorFiles = files.filter(f => {
               if (!f.name || !f.name.match(/\.(png|jpe?g|svg|webp)$/i)) return false;
               return !isMhLogo(f.name);
             });
 
-            // Update theme card logo if found
             const mhLogoFile = files.find(f => f.name && isMhLogo(f.name));
             if (mhLogoFile) {
               const mhImg = document.getElementById('themeMhLogo');
@@ -1316,7 +1250,6 @@
       updateSponsorLogo();
     }
 
-    // INIT
     loadSponsorsAutomatically();
     renderSchedule();
     setInterval(renderSchedule, 1000);
