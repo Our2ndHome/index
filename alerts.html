@@ -212,11 +212,16 @@
 
   <script>
     (function () {
-      // 🛡️ DOCK BLOCK: Never run alerts if inside OBS Dock (#panel or dock frame)
+      // 🛡️ DOCK BLOCK: Never run alerts inside OBS Dock frames
       try {
         const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
-        const isParentDock = window.parent && window.parent !== window && 
-                             (window.parent.location.hash.includes('panel') || window.parent.location.hash.includes('dock'));
+        let isParentDock = false;
+        try {
+          if (window.parent && window.parent !== window) {
+            isParentDock = window.parent.location.hash.includes('panel') || window.parent.location.hash.includes('dock');
+          }
+        } catch (e) {}
+
         if (isSelfDock || isParentDock) {
           console.log("Alerts disabled inside panel/dock.");
           return;
@@ -247,19 +252,17 @@
         obsWs.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data);
-            // OpCode 0: Hello from OBS -> Send Identify
+            // 🎯 FIXED: Explicit eventSubscriptions: 1023 ensures scene events are always delivered
             if (msg.op === 0) {
               obsWs.send(JSON.stringify({
                 op: 1,
-                d: { rpcVersion: 1 }
+                d: { rpcVersion: 1, eventSubscriptions: 1023 }
               }));
             }
-            // OpCode 2: Identified -> Ready
             if (msg.op === 2) {
               isObsConnected = true;
               console.log("🔌 [OBS WebSocket] Connected & Ready to Switch Scenes!");
             }
-            // OpCode 7: Request Response
             if (msg.op === 7) {
               const { requestId, requestStatus, responseData } = msg.d;
               if (pendingObsRequests.has(requestId)) {
@@ -314,7 +317,6 @@
 
       function isMatchingScene(currentName, targetName) {
         if (!currentName || !targetName) return false;
-        // Tolerates spacing differences around the pipe (e.g. "Musikhjälpen|Gaming Scene" vs "Musikhjälpen | Gaming Scene")
         const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
         const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
         return cleanA === cleanB;
@@ -333,7 +335,6 @@
         try {
           await sendObsRequest("SetCurrentProgramScene", { sceneName: targetSceneName });
         } catch (e) {
-          // Fallback check with/without space around pipe symbol
           const altName = targetSceneName.includes(" | ")
             ? targetSceneName.replace(/\s*\|\s*/g, "|")
             : targetSceneName.replace(/\|/g, " | ");
@@ -351,26 +352,14 @@
       // 📡 FIREBASE & ASSETS
       // ========================================================
       const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
-      const GITHUB_USERNAME = "Our2ndHome";
-      const GITHUB_REPO = "index";
       const SOUNDS_FOLDER = "sounds";
       const EMOTES_FOLDER = "emotes";
 
-      // 🎵 0 TO 9 SOUND TRACKS LIST
       const CUSTOM_SOUND_FILES = [
-        "0.mp3",
-        "1.mp3",
-        "2.mp3",
-        "3.mp3",
-        "4.mp3",
-        "5.mp3",
-        "6.mp3",
-        "7.mp3",
-        "8.mp3",
-        "9.mp3"
+        "0.mp3", "1.mp3", "2.mp3", "3.mp3", "4.mp3",
+        "5.mp3", "6.mp3", "7.mp3", "8.mp3", "9.mp3"
       ];
 
-      // 🎨 CUSTOM EMOTES LIST
       const CUSTOM_EMOTE_FILES = [
         "Our2ndHome-EmoteHype-500x500.png",
         "Our2ndHome-EmoteLove-500x500.png",
@@ -380,8 +369,6 @@
         "ElinPK_Sponsor.png",
         "EscapeHouse_Sponsor.png",
         "RandomNerd_Sponsor.png"
-        //"SillySanta.png",
-        //"nordpuls-storlogo-smaller.png"
       ];
 
       const EMBEDDED_FALLBACK_EMOTES = [
@@ -406,7 +393,6 @@
       let lastProcessedAlertId = 0;
       let initialLoad = true;
 
-      // 🎲 10-SOUND SHUFFLE BAG
       let soundPool = [];
       let lastPlayedSound = null;
 
@@ -425,8 +411,6 @@
           if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
             [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
           }
-
-          console.log(`🔀 [Sound Deck] Shuffled ${soundPool.length} sounds for a new cycle!`);
         }
 
         const nextSound = soundPool.pop();
@@ -566,7 +550,6 @@
         const banner = document.getElementById('alertBanner');
         const type = (item.type || 'donation').toLowerCase();
 
-        // 🎬 SCENE SWITCHER: Only trigger for donations or raids
         const isDonationOrRaid = (type === 'donation' || type === 'raid');
         let didSwitchScene = false;
         let originalSceneName = "";
@@ -578,7 +561,6 @@
             console.log(`🎬 Switching to Intermission from: ${currentScene}`);
             await setObsScene(SCENE_INTERMISSION);
             didSwitchScene = true;
-            // Short 350ms pause so OBS starts the scene transition before showing the alert
             await new Promise(r => setTimeout(r, 350));
           } else {
             console.log(`🎬 On scene "${currentScene}". Not on Gaming Scene, skipping scene switch.`);
@@ -587,7 +569,6 @@
 
         banner.className = 'alert-banner';
 
-        // 1. Upper Alerts (Donations & Raids)
         if (type === 'donation') {
           banner.innerHTML = `
             <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
@@ -603,8 +584,6 @@
           `;
           banner.classList.add('anim-top-in');
         } 
-
-        // 2. Lower Secondary Alerts (Subs, Bits, Follows)
         else if (type === 'sub') {
           const months = item.months || 1;
           banner.innerHTML = `
@@ -648,13 +627,11 @@
         banner.className = 'alert-banner';
         banner.innerHTML = '';
 
-        // 🎬 SWITCH BACK TO GAMING SCENE: Only if stream hasn't manually moved away
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
             console.log(`🎬 Switching back to: ${originalSceneName}`);
             await setObsScene(originalSceneName);
-            // Brief pause for scene transition
             await new Promise(r => setTimeout(r, 500));
           }
         }
