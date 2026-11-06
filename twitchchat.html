@@ -20,7 +20,6 @@
             font-family: 'Inter', "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
 
-        /* Full-width bottom bar that centers any child content horizontally */
         #chat-container {
             position: absolute;
             bottom: 20px;
@@ -32,10 +31,6 @@
             pointer-events: none;
         }
 
-        /* 
-           Flat black background with 0.9 opacity.
-           Expands up to 1200px wide (or screen width - 40px padding) and 200px tall.
-        */
         .chat-card {
             display: inline-block;
             width: fit-content;
@@ -54,10 +49,7 @@
             overflow-wrap: anywhere;
         }
 
-        /* Badges */
-        .chat-badges {
-            display: inline;
-        }
+        .chat-badges { display: inline; }
 
         .chat-badge {
             display: inline-block;
@@ -68,7 +60,6 @@
             border-radius: 2px;
         }
 
-        /* Username & Colon */
         .chat-username {
             font-weight: 700;
             letter-spacing: -0.2px;
@@ -80,49 +71,29 @@
             margin-right: 6px;
         }
 
-        /* Message */
         .chat-message {
             display: inline;
             font-weight: 400;
             color: #efeff1;
         }
 
-        /* Twitch Emotes */
         .chat-message img.emote {
             vertical-align: middle;
             height: 28px;
             margin: -4px 2px;
         }
 
-        /* Animations */
-        .animate-in {
-            animation: popIn 0.30s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .animate-out {
-            animation: slideOut 0.30s cubic-bezier(0.7, 0, 0.84, 0) forwards;
-        }
+        .animate-in { animation: popIn 0.30s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-out { animation: slideOut 0.30s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
 
         @keyframes popIn {
-            0% {
-                opacity: 0;
-                transform: translateY(16px) scale(0.96);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            0% { opacity: 0; transform: translateY(16px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         @keyframes slideOut {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-12px) scale(0.98);
-            }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-12px) scale(0.98); }
         }
     </style>
 </head>
@@ -131,13 +102,11 @@
     <div id="chat-container"></div>
 
     <script>
-        // ================= CONFIGURATION =================
-        const BASE_DISPLAY_TIME = 3000;  // 3 seconds per message (ms)
-        const FAST_DISPLAY_TIME = 1500;  // Accelerated time if chat is backed up (ms)
-        const ANIMATION_DURATION = 300;  // CSS animation speed (ms)
-        const PAUSE_BETWEEN_MSGS = 200;  // Pause before showing next message (ms)
-        const MAX_QUEUE_LIMIT = 15;      // Max queued backlog
-        // =================================================
+        const BASE_DISPLAY_TIME = 3000;
+        const FAST_DISPLAY_TIME = 1500;
+        const ANIMATION_DURATION = 300;
+        const PAUSE_BETWEEN_MSGS = 200;
+        const MAX_QUEUE_LIMIT = 15;
 
         const BADGE_MAP = {
             'broadcaster': 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1',
@@ -173,12 +142,10 @@
                 const lines = event.data.split('\r\n');
                 for (const line of lines) {
                     if (!line) continue;
-
                     if (line.startsWith('PING')) {
                         ws.send('PONG :tmi.twitch.tv');
                         continue;
                     }
-
                     if (line.includes(`PRIVMSG #${channel}`)) {
                         parseTwitchMessage(line);
                     }
@@ -243,6 +210,7 @@
             return badgesHtml;
         }
 
+        // 🎯 FIXED: Direct string slicing complies with Twitch's UTF-16 offset spec even with emojis
         function parseEmotes(text, emotesTag) {
             if (!emotesTag) return escapeHtml(text);
 
@@ -258,17 +226,16 @@
 
             emoteRanges.sort((a, b) => a.start - b.start);
 
-            const chars = Array.from(text);
             let result = '';
             let lastIndex = 0;
 
             for (const { id, start, end } of emoteRanges) {
-                result += escapeHtml(chars.slice(lastIndex, start).join(''));
+                result += escapeHtml(text.slice(lastIndex, start));
                 const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/2.0`;
                 result += `<img class="emote" src="${emoteUrl}" alt="" onerror="this.remove()">`;
                 lastIndex = end + 1;
             }
-            result += escapeHtml(chars.slice(lastIndex).join(''));
+            result += escapeHtml(text.slice(lastIndex));
             return result;
         }
 
