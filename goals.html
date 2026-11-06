@@ -543,9 +543,9 @@
         <span class="section-title">⏱️ Streamer Live-Pass</span>
         <div class="control-row">
           <span class="control-label">STREAMER:</span>
-          <input type="text" id="streamerNameInput" placeholder="T.ex. LordBaconeer" style="width:65%;">
+          <input type="text" id="streamerNameInput" placeholder="T.ex. Mille" style="width:65%;">
         </div>
-        <span class="auto-badge-note">⚡ Uppdaterar Twitch-titel, namnskylt och startar passet automatiskt vid "Start Streaming".</span>
+        <span class="auto-badge-note">⚡ Sparar automatiskt dina framsteg per streamer. När du sänder igen återupptas dina mål exakt där du slutade.</span>
       </div>
     </div>
 
@@ -606,9 +606,13 @@
 
     let parsedGoals = [];
     let currentGlobalTotal = 0;
-    let streamerBaseline = 0;
-    let manualAdjustment = 0;
+
+    // PERSISTENT STREAMER SHIFT STATE (DOES NOT RESET TO ZERO ON START)
     let currentStreamerName = streamerFromUrl ? streamerFromUrl.trim() : "Streamer";
+    let streamerEarnedSoFar = 0;   // Cumulative total collected by this streamer across previous shifts
+    let streamerShiftStart = 0;    // Snapshot of global total when current shift went live
+    let streamerManualAdj = 0;
+
     let isGoalsHidden = false;
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
@@ -627,12 +631,10 @@
         obsWs.onmessage = (event) => {
           const msg = JSON.parse(event.data);
 
-          // Hello -> Identify
           if (msg.op === 0) {
             obsWs.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
           }
 
-          // Identified -> Query initial stream status
           if (msg.op === 2) {
             isObsWsConnected = true;
 
@@ -649,7 +651,6 @@
             }
           }
 
-          // Response to GetStreamStatus
           if (msg.op === 7 && msg.d && msg.d.requestId === "req-init-stream-status") {
             const isStreaming = msg.d.responseData && msg.d.responseData.outputActive;
             updateObsLiveStatus(!!isStreaming);
@@ -661,10 +662,9 @@
             updateObsLiveStatus(isStreaming);
 
             if (isStreaming) {
-              syncActiveStreamerToFirebase(currentStreamerName);
-              startFreshPassZero();
+              handleStreamerWentLive();
             } else {
-              handleObsStreamingStopped();
+              handleStreamerStoppedLive();
             }
           }
         };
@@ -696,30 +696,64 @@
     }
 
     // ========================================================
-    // 🔴 INSTANT SYNC TO ACTIVE_STREAMER (TWITCH TITLE TRIGGER)
+    // 🔴 STREAMER SHIFT ENGINE (RESUMES WHERE STREAMER LEFT OFF)
     // ========================================================
-    function syncActiveStreamerToFirebase(streamer) {
-      if (!streamer || streamer === "Streamer") return;
-      firebase.database().ref('active_streamer').set({
-        name: streamer,
-        isLive: isObsStreaming,
-        timestamp: Date.now(),
-        secret: WRITE_SECRET
-      }).catch(err => console.error("Firebase error setting active_streamer:", err));
-    }
+    function handleStreamerWentLive() {
+      // 1. Take a snapshot of the current global total for this shift
+      streamerShiftStart = currentGlobalTotal > 0 ? currentGlobalTotal : 450;
 
-    function handleObsStreamingStopped() {
+      // 2. Broadcast active streamer to Host PC for Twitch title update
+      syncActiveStreamerToFirebase(currentStreamerName, true);
+
+      // 3. Save shift snapshot in Firebase under this streamer's profile
       const key = getStreamerKey(currentStreamerName);
       dbStreamersRef.child(key).update({
+        displayName: currentStreamerName,
+        shiftStart: streamerShiftStart,
+        isLive: true,
+        secret: WRITE_SECRET,
+        lastLiveStartedUtc: new Date().toISOString()
+      }).catch(() => {});
+
+      renderGoalsLadder();
+      updateDockDisplay();
+    }
+
+    function handleStreamerStoppedLive() {
+      // 1. Calculate and lock in what this streamer earned during this shift
+      let currentShiftEarned = 0;
+      if (streamerShiftStart > 0 && currentGlobalTotal >= streamerShiftStart) {
+        currentShiftEarned = currentGlobalTotal - streamerShiftStart;
+      }
+
+      // Add to their cumulative total
+      streamerEarnedSoFar += currentShiftEarned;
+      streamerShiftStart = 0;
+
+      // 2. Save final cumulative total in Firebase so next time they start, it resumes here!
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        earnedSoFar: streamerEarnedSoFar,
+        shiftStart: 0,
         isLive: false,
         secret: WRITE_SECRET,
         lastLiveStoppedUtc: new Date().toISOString()
       }).catch(() => {});
 
-      firebase.database().ref('active_streamer').update({
-        isLive: false,
+      syncActiveStreamerToFirebase(currentStreamerName, false);
+
+      renderGoalsLadder();
+      updateDockDisplay();
+    }
+
+    function syncActiveStreamerToFirebase(streamer, liveStatus) {
+      if (!streamer || streamer === "Streamer") return;
+      firebase.database().ref('active_streamer').set({
+        name: streamer,
+        isLive: liveStatus,
+        timestamp: Date.now(),
         secret: WRITE_SECRET
-      }).catch(() => {});
+      }).catch(err => console.error("Firebase error setting active_streamer:", err));
     }
 
     try {
@@ -763,7 +797,6 @@
         if (val && val !== currentStreamerName) {
           loadSavedStreamerPass(val);
           setObsTextSource(val);
-          syncActiveStreamerToFirebase(val);
         }
       });
       nameInputEl.addEventListener('keydown', (e) => {
@@ -780,9 +813,16 @@
       return clean.length > 0 ? clean : "streamer";
     }
 
+    // 🎯 RESUMES AT PREVIOUS SHIFT TOTAL + EARNINGS FROM CURRENT ACTIVE SHIFT
     function getLiveSessionEarned() {
-      if (!streamerBaseline || streamerBaseline <= 0) return 0;
-      return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
+      let earned = streamerEarnedSoFar + streamerManualAdj;
+
+      // If OBS is currently streaming live, add what was collected during this current live shift
+      if (isObsStreaming && streamerShiftStart > 0 && currentGlobalTotal >= streamerShiftStart) {
+        earned += (currentGlobalTotal - streamerShiftStart);
+      }
+
+      return Math.max(0, earned);
     }
 
     function applyVisibilityState() {
@@ -1061,9 +1101,16 @@
       currentActiveStreamerRef = dbStreamersRef.child(key);
       currentActiveStreamerRef.on('value', (snap) => {
         const data = snap.val();
-        if (data && typeof data.baseline === 'number') {
-          streamerBaseline = data.baseline;
-          manualAdjustment = data.manualAdjustment || 0;
+        if (data) {
+          // Read cumulative earnings so far (backward compatible with baseline if needed)
+          if (typeof data.earnedSoFar === 'number') {
+            streamerEarnedSoFar = data.earnedSoFar;
+          } else if (typeof data.baseline === 'number' && data.baseline > 0 && currentGlobalTotal >= data.baseline) {
+            streamerEarnedSoFar = Math.max(0, currentGlobalTotal - data.baseline);
+          }
+
+          streamerShiftStart = typeof data.shiftStart === 'number' ? data.shiftStart : 0;
+          streamerManualAdj = data.manualAdjustment || 0;
           if (data.displayName) currentStreamerName = data.displayName;
 
           if (data.goalsText && typeof data.goalsText === 'string') {
@@ -1096,7 +1143,7 @@
 
     if (bus) {
       bus.onmessage = (e) => {
-        const { type, text, hidden, baseline, streamer } = e.data || {};
+        const { type, text, hidden, streamer } = e.data || {};
         if (type === 'LOCAL_GOALS_UPDATED') {
           parsedGoals = parseLinesToGoalObjects(text);
           renderGoalsLadder();
@@ -1104,7 +1151,6 @@
           isGoalsHidden = hidden;
           applyVisibilityState();
         } else if (type === 'STREAMER_PASS_SYNC') {
-          streamerBaseline = baseline;
           currentStreamerName = streamer;
           renderGoalsLadder();
           updateDockDisplay();
@@ -1131,46 +1177,7 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // ========================================================
-    // 🎬 STARTS PASS & SIGNALS STREAMER.BOT TO UPDATE TITLE
-    // ========================================================
-    function startFreshPassZero() {
-      const inputEl = document.getElementById('streamerNameInput');
-      const inputVal = inputEl ? inputEl.value.trim() : "";
-      currentStreamerName = inputVal || currentStreamerName || "Streamer";
-      if (inputEl) inputEl.value = currentStreamerName;
-
-      // Immediately notify Host PC / Streamer.bot
-      syncActiveStreamerToFirebase(currentStreamerName);
-
-      const key = getStreamerKey(currentStreamerName);
-      streamerBaseline = currentGlobalTotal > 0 ? currentGlobalTotal : 450;
-      manualAdjustment = 0;
-
-      try {
-        localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
-      } catch(e) {}
-
-      const area = document.getElementById('goalsInputArea');
-      const goalsText = area ? area.value : "";
-
-      dbStreamersRef.child(key).set({
-        displayName: currentStreamerName,
-        baseline: streamerBaseline,
-        manualAdjustment: 0,
-        goalsText: goalsText,
-        secret: WRITE_SECRET,
-        isLive: isObsStreaming,
-        timestamp: Date.now()
-      }).then(() => {
-        listenToStreamer(key);
-        renderGoalsLadder();
-        updateDockDisplay();
-        setObsTextSource(currentStreamerName);
-        if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-      }).catch(() => {});
-    }
-
+    // Loads a streamer's saved profile from Firebase (DOES NOT OVERWRITE OR ZERO IT)
     function loadSavedStreamerPass(optionalTargetName) {
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -1187,15 +1194,21 @@
       } catch(e) {}
 
       setObsTextSource(currentStreamerName);
-      syncActiveStreamerToFirebase(currentStreamerName);
+      syncActiveStreamerToFirebase(currentStreamerName, isObsStreaming);
 
       const key = getStreamerKey(currentStreamerName);
 
       dbStreamersRef.child(key).once('value').then((snap) => {
         const data = snap.val();
-        if (data && typeof data.baseline === 'number') {
-          streamerBaseline = data.baseline;
-          manualAdjustment = data.manualAdjustment || 0;
+        if (data) {
+          if (typeof data.earnedSoFar === 'number') {
+            streamerEarnedSoFar = data.earnedSoFar;
+          } else if (typeof data.baseline === 'number' && data.baseline > 0 && currentGlobalTotal >= data.baseline) {
+            streamerEarnedSoFar = Math.max(0, currentGlobalTotal - data.baseline);
+          }
+
+          streamerShiftStart = typeof data.shiftStart === 'number' ? data.shiftStart : 0;
+          streamerManualAdj = data.manualAdjustment || 0;
 
           if (data.goalsText && typeof data.goalsText === 'string') {
             parsedGoals = parseLinesToGoalObjects(data.goalsText);
@@ -1206,9 +1219,14 @@
           listenToStreamer(key);
           renderGoalsLadder();
           updateDockDisplay();
-          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
+          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', streamer: currentStreamerName });
         } else {
+          // Brand new streamer with no previous history -> starts at 0 kr
+          streamerEarnedSoFar = 0;
+          streamerShiftStart = 0;
           listenToStreamer(key);
+          renderGoalsLadder();
+          updateDockDisplay();
         }
       }).catch(() => {});
     }
