@@ -252,7 +252,6 @@
         obsWs.onmessage = (event) => {
           try {
             const msg = JSON.parse(event.data);
-            // 🎯 FIXED: Explicit eventSubscriptions: 1023 ensures scene events are always delivered
             if (msg.op === 0) {
               obsWs.send(JSON.stringify({
                 op: 1,
@@ -385,7 +384,9 @@
 
       const SOUND_VOLUME_MAIN = 0.8;
       const SOUND_VOLUME_MINOR = 0.5;
-      const MIN_ALERT_DISPLAY_MS = 4800;
+
+      // 🎯 HARDCODED: 30 Seconds Alert Display Duration
+      const MIN_ALERT_DISPLAY_MS = 30000;
       const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
       let soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
@@ -445,6 +446,7 @@
       function triggerEmoteRain(count = 75) {
         const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
         const layer = document.getElementById('emoteRainLayer');
+        if (!layer) return;
 
         for (let i = 0; i < count; i++) {
           const img = document.createElement('img');
@@ -504,7 +506,9 @@
               finish();
             };
             audio.play().catch(() => finish());
-            setTimeout(finish, 6500);
+
+            // 🎯 FIXED: Extended to 32 seconds so 30-second audio files finish completely
+            setTimeout(finish, 32000);
           } catch (e) { resolve(); }
         });
       }
@@ -614,11 +618,18 @@
           banner.classList.add('anim-bottom-in');
         }
 
+        // 🎯 FIXED: Initial burst + continuous rain interval keeps rain falling for all 30 seconds
         triggerEmoteRain(75);
+        const rainInterval = setInterval(() => {
+          triggerEmoteRain(35);
+        }, 3500);
+
         const soundPromise = playAlertSound(type);
         const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
 
         await Promise.all([soundPromise, displayPromise]);
+
+        clearInterval(rainInterval);
 
         banner.classList.remove('anim-top-in', 'anim-bottom-in');
         banner.classList.add('anim-exit');
