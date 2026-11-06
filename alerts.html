@@ -38,7 +38,7 @@
       z-index: 99990;
     }
 
-    /* All emotes start strictly above the screen */
+    /* Emotes strictly start above the screen */
     .falling-emote {
       position: absolute;
       top: -100px;
@@ -230,7 +230,7 @@
       } catch (e) {}
 
       // ========================================================
-      // 🎛️ OBS WEBSOCKET v5 AUTOMATIC SCENE SWITCHER
+      // 🎛️ OBS WEBSOCKET v5 SCENE SWITCHER
       // ========================================================
       const OBS_WS_URL = "ws://127.0.0.1:4455";
       const SCENE_GAMING = "Musikhjälpen|Gaming Scene";
@@ -319,7 +319,11 @@
         if (!currentName || !targetName) return false;
         const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
         const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
-        return cleanA === cleanB;
+        if (cleanA === cleanB) return true;
+
+        const baseA = cleanA.split('|').pop().trim();
+        const baseB = cleanB.split('|').pop().trim();
+        return baseA === baseB;
       }
 
       async function getCurrentObsScene() {
@@ -384,7 +388,7 @@
       const SOUND_VOLUME_MAIN = 0.8;
       const SOUND_VOLUME_MINOR = 0.5;
 
-      // 🎯 HARDCODED: 30 Seconds Alert Display
+      // 🎯 HARDCODED: Exactly 30 seconds alert display
       const MIN_ALERT_DISPLAY_MS = 30000;
       const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
@@ -440,7 +444,7 @@
       }
       preloadAudio(soundFileList);
 
-      // 🎯 NATURAL RAIN: All emotes strictly start from above the screen (top: -100px)
+      // Emotes strictly start from above the top (top: -100px) and fall into screen naturally
       function triggerEmoteRain(count = 8) {
         const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
         const layer = document.getElementById('emoteRainLayer');
@@ -460,7 +464,6 @@
           const size = Math.floor(Math.random() * 26) + 38;
           const left = Math.random() * 95;
           const duration = (Math.random() * 2.0 + 4.2).toFixed(2);
-          // Positive delay only (0s to 0.7s) so drops smoothly trickle in from above
           const delay = (Math.random() * 0.7).toFixed(2);
 
           img.style.width = `${size}px`;
@@ -503,7 +506,6 @@
             audio.onerror = () => finish();
             audio.play().catch(() => finish());
 
-            // 🎯 Safety timeout matches 32s for 30s audio
             setTimeout(finish, 32000);
           } catch (e) { resolve(); }
         });
@@ -554,6 +556,7 @@
         let didSwitchScene = false;
         let originalSceneName = "";
 
+        // 🎬 ONLY switches scene. Does NOT touch filters (lets button_deck handle them cleanly)
         if (isDonationOrRaid && isObsConnected) {
           const currentScene = await getCurrentObsScene();
           if (isMatchingScene(currentScene, SCENE_GAMING)) {
@@ -611,10 +614,10 @@
           banner.classList.add('anim-bottom-in');
         }
 
-        // 🎯 1. Initial burst rains down into the screen from the top
+        // 1. Initial burst rains in from top
         triggerEmoteRain(35);
 
-        // 🎯 2. Continuous 900ms trickle drops 8 new emotes in from the top continuously (No gaps!)
+        // 2. Steady 900ms trickle entering from top (zero mid-screen popping)
         const rainInterval = setInterval(() => {
           triggerEmoteRain(8);
         }, 900);
@@ -633,6 +636,7 @@
         banner.className = 'alert-banner';
         banner.innerHTML = '';
 
+        // 🎬 ONLY switches back to original scene cleanly (lets button_deck handle the filter)
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
