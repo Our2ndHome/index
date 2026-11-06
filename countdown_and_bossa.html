@@ -339,7 +339,7 @@
     <div class="status-box" id="dockStatusBox">Ansluter till Firebase...</div>
 
     <div class="summary-text" id="dockSummaryText">
-      <b>0</b> biljetter genererade (Totalt: <b>0 KR</b>)
+      Totalt insamlat: <b>0 KR</b>
     </div>
 
     <button class="btn-resync" onclick="dockRequestResync()">
@@ -391,7 +391,6 @@
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const GOAL_TARGET_KR = 40000;
 
-    // Random generator pools
     const RANDOM_NAMES = ["Lisa", "Erik", "Maja", "Filip", "Klara", "Johan", "Astrid", "Oskar", "Emma", "William", "Alva", "Lucas", "Ebba", "Hugo", "Saga"];
     const RANDOM_AMOUNTS = [50, 100, 150, 200, 250, 300, 400, 500, 750, 1000];
     const RANDOM_COMMENTS = ["Kämpa på!", "För en god sak ❤️", "Heja er allihopa!", "Nu tar vi målet!", "Bästa streamen!", "Kärlek till Musikhjälpen!", "Hälsningar från soffan!", ""];
@@ -417,7 +416,6 @@
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbRef = firebase.database().ref('bossa');
-    const dbDonorsRef = firebase.database().ref('giveaway_donors');
 
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
@@ -453,25 +451,24 @@
 
       const summary = document.getElementById('dockSummaryText');
       if (summary) {
-        const tickets = Math.floor(currentTotal / 200);
-        summary.innerHTML = `<b>${tickets}</b> biljetter genererade (Totalt: <b>${formatSEK(currentTotal)}</b>)`;
+        summary.innerHTML = `Totalt insamlat: <b>${formatSEK(currentTotal)}</b>`;
       }
     }
 
+    // 🎯 Requests real total scrape without overwriting with dummy data
     function dockRequestResync() {
-  const box = document.getElementById('dockStatusBox');
-  if (box) box.innerText = "Hämtar verkligt belopp från bössan...";
+      const box = document.getElementById('dockStatusBox');
+      if (box) box.innerText = "Hämtar verkligt belopp från bössan...";
 
-  // 🎯 Sends forceSync: true WITHOUT overwriting with a fake 400 KR!
-  dbRef.update({
-    forceSync: true,
-    secret: WRITE_SECRET
-  }).then(() => {
-    updateStatusDisplay("Begärde avläsning från bössan...");
-  }).catch(err => {
-    alert("Kunde inte begära synk: " + err.message);
-  });
-}
+      dbRef.update({
+        forceSync: true,
+        secret: WRITE_SECRET
+      }).then(() => {
+        updateStatusDisplay("Begärde avläsning från bössan...");
+      }).catch(err => {
+        alert("Kunde inte begära synk: " + err.message);
+      });
+    }
 
     function dockSetTotal() {
       const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
@@ -479,34 +476,10 @@
       dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET });
     }
 
-    function bridgeDonorToGiveaway(name, amount) {
-      if (!name || amount < 1) return;
-      const cleanName = name.replace(/^@+/, '').trim();
-      const key = cleanName.toLowerCase();
-      if (/anonym|hemlig hjälte/i.test(key)) return;
-
-      dbDonorsRef.child('map').child(key).transaction((current) => {
-        const donor = current || { displayName: cleanName, totalAmount: 0, milestonesClaimed: 0, ticketsActive: 0 };
-        donor.displayName = cleanName;
-        donor.totalAmount = (donor.totalAmount || 0) + amount;
-        
-        const totalMilestones = Math.floor(donor.totalAmount / 200);
-        const newMilestones = totalMilestones - (donor.milestonesClaimed || 0);
-
-        if (newMilestones > 0) {
-          donor.ticketsActive = Math.min(5, (donor.ticketsActive || 0) + newMilestones);
-          donor.milestonesClaimed = totalMilestones;
-        }
-        return donor;
-      });
-    }
-
     function dockSubmitManualDonation() {
       const donor = document.getElementById('dockManualName').value.trim() || "Lisa";
       const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
       const comment = document.getElementById('dockManualComment').value.trim();
-
-      bridgeDonorToGiveaway(donor, amount);
 
       dbRef.set({
         total: currentTotal + amount,
@@ -520,7 +493,6 @@
       });
     }
 
-    // 🕹️ TRIGGER RANDOMIZED TEST ALERTS
     function dockTriggerTestAlert(type) {
       const uniqueId = Date.now();
 
@@ -528,8 +500,6 @@
         const donor = getRandomItem(RANDOM_NAMES);
         const amount = getRandomItem(RANDOM_AMOUNTS);
         const comment = getRandomItem(RANDOM_COMMENTS);
-
-        bridgeDonorToGiveaway(donor, amount);
 
         dbRef.set({
           total: currentTotal + amount,
@@ -587,7 +557,6 @@
     function updateCountdown() {
       const label = document.getElementById('countdownLabel');
       const timerDisplay = document.getElementById('countdownTimer');
-      // 🎯 FIXED: Target set to 6 December 2026 at 20:00 Swedish time (CET / +01:00)
       const targetTime = new Date("2026-12-06T20:00:00+01:00").getTime();
       const diff = targetTime - Date.now();
 
