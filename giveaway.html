@@ -6,7 +6,6 @@
   <title>Musikhjälpen Giveaway Wheel</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
-  <!-- Firebase Realtime Engine -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -35,7 +34,6 @@
       user-select: none;
     }
 
-    /* 🔀 HASH ROUTER */
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
     body.mode-panel #victoryCanvas { display: none !important; }
@@ -46,7 +44,6 @@
       padding: 10px;
     }
 
-    /* 🌧️ EMOTE RAIN CANVAS (OVERLAY ONLY) */
     #victoryCanvas {
       position: fixed;
       top: 0;
@@ -57,9 +54,6 @@
       z-index: 99995;
     }
 
-    /* ========================================================
-       📺 1. STREAM OVERLAY: CENTERED STATIONARY ROLLER
-       ======================================================== */
     .giveaway-widget {
       position: absolute;
       top: 49%;
@@ -67,9 +61,6 @@
       transform: translate(-50%, -50%);
       width: 800px;
       height: var(--viewport-height);
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -130,9 +121,7 @@
       white-space: nowrap;
     }
 
-    .timer-val {
-      color: var(--primary) !important;
-    }
+    .timer-val { color: var(--primary) !important; }
 
     .winner-response-header {
       font-size: 18px;
@@ -152,15 +141,11 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🎰 THE 5-SLOT STAGE */
     .reel-viewport {
       position: relative;
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: transparent;
-      border: none;
-
       -webkit-mask-image: linear-gradient(
         to bottom,
         rgba(0, 0, 0, 0) 0%,
@@ -238,7 +223,6 @@
       line-height: 1.2;
     }
 
-    /* 🎛️ 2. OBS DOCK CONTROLLER */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -274,14 +258,8 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .status-pill.open {
-      background: var(--primary);
-      color: #000000;
-    }
-    .status-pill.closed {
-      background: #27272a;
-      color: #a1a1aa;
-    }
+    .status-pill.open { background: var(--primary); color: #000000; }
+    .status-pill.closed { background: #27272a; color: #a1a1aa; }
 
     .status-box {
       background: var(--card-bg);
@@ -350,9 +328,7 @@
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus {
-      border-color: var(--primary);
-    }
+    input[type="text"]:focus { border-color: var(--primary); }
 
     .chatter-list-container {
       max-height: 240px;
@@ -379,19 +355,8 @@
       color: #ffffff;
     }
 
-    .chatter-time {
-      font-size: 10px;
-      color: var(--text-dim);
-      font-weight: 600;
-    }
-
-    .empty-list {
-      padding: 16px;
-      text-align: center;
-      font-size: 11px;
-      color: var(--text-dim);
-      font-weight: 600;
-    }
+    .chatter-time { font-size: 10px; color: var(--text-dim); font-weight: 600; }
+    .empty-list { padding: 16px; text-align: center; font-size: 11px; color: var(--text-dim); font-weight: 600; }
 
     .btn {
       background: #18181c;
@@ -408,10 +373,7 @@
       margin-bottom: 6px;
       transition: background 0.15s ease, border-color 0.15s ease;
     }
-    .btn:hover:not(:disabled) {
-      background: #24242a;
-      border-color: #3f3f46;
-    }
+    .btn:hover:not(:disabled) { background: #24242a; border-color: #3f3f46; }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
     .btn-toggle-entries {
@@ -428,11 +390,7 @@
       color: #ffffff;
       box-shadow: 0 0 10px rgba(172, 230, 0, 0.25);
     }
-    .btn-toggle-entries:hover {
-      background: var(--primary);
-      color: #000000;
-      border-color: var(--primary);
-    }
+    .btn-toggle-entries:hover { background: var(--primary); color: #000000; border-color: var(--primary); }
 
     .btn-primary-action {
       background: #ffffff;
@@ -447,7 +405,6 @@
       width: 100%;
       margin-top: 8px;
       margin-bottom: 6px;
-      transition: opacity 0.15s ease;
     }
     .btn-primary-action:hover:not(:disabled) { opacity: 0.9; }
 
@@ -456,21 +413,14 @@
       border: 1px solid #ff453a;
       color: #ff453a;
     }
-    .btn-danger:hover:not(:disabled) {
-      background: #ff453a;
-      color: #ffffff;
-    }
+    .btn-danger:hover:not(:disabled) { background: #ff453a; color: #ffffff; }
 
     .btn-cancel-safe {
       background: #1a1a20;
       border: 1px solid #71717a;
       color: #e4e4e7;
     }
-    .btn-cancel-safe:hover:not(:disabled) {
-      background: #272730;
-      color: #ffffff;
-      border-color: #ffffff;
-    }
+    .btn-cancel-safe:hover:not(:disabled) { background: #272730; color: #ffffff; border-color: #ffffff; }
 
     .grid-2 {
       display: grid;
@@ -481,31 +431,25 @@
 </head>
 <body>
 
-  <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
     <canvas id="victoryCanvas"></canvas>
 
     <div class="giveaway-widget" id="giveawayWidget">
-      <!-- STATIONARY TOP ANCHOR -->
       <div class="giveaway-title-container">
         <div class="giveaway-head-title">GIVEAWAY</div>
         <div class="giveaway-sub-title" id="giveawaySubTitle">0 aktiva chattare</div>
         <div class="giveaway-timer-badge" id="giveawayHeaderTimer"></div>
       </div>
       
-      <!-- CENTERED ROLLER VIEWPORT (NEVER MOVES) -->
       <div class="reel-viewport">
         <div class="reel-stage" id="reelStage"></div>
       </div>
 
-      <!-- STATIONARY BOTTOM ANCHOR -->
       <div class="giveaway-prize-display" id="giveawayPrizeDisplay"></div>
     </div>
   </div>
 
-  <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
-    <!-- HEADER: CLEANED (NO RELOAD BUTTON) -->
     <div class="header-box">
       <span class="header-title">
         GIVEAWAY KONTROLL 
@@ -513,16 +457,13 @@
       </span>
     </div>
 
-    <!-- LIVE STATUS BOX -->
     <div class="status-box" id="dockStatusBox">Ansluter direkt till Twitch IRC...</div>
     <div class="summary-text" id="dockSummaryText"><b>0</b> aktiva chattare i dragningen</div>
 
-    <!-- 🟢/🔒 TOGGLE ENTRIES (DEFAULT: CLOSED) -->
     <button id="btnToggleEntries" class="btn btn-toggle-entries" onclick="toggleEntriesState()">
       🔒 Anmälningar är STÄNGDA (Klicka för att öppna)
     </button>
 
-    <!-- 👥 LISTA: AKTIVA DELTAGARE -->
     <div class="card-section">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <span class="section-title" style="margin-bottom:0;">👥 Chattdeltagare (1 biljett / person)</span>
@@ -589,12 +530,7 @@
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_giveaway_bus") : null;
     const VICTORY_SOUND_SRC = "https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3";
 
-    try {
-      localStorage.removeItem("mh_overlay_donor_tickets");
-    } catch(e) {}
-
     let chatterMap = {};
-    // DEFAULT IS NOW CLOSED (The streamer must open it manually)
     let areEntriesOpen = false;
     let currentWinner = null;
     let isSpinning = false;
@@ -655,8 +591,6 @@
     const dbChattersRef = firebase.database().ref('giveaway_chatters');
     const dbActionRef = firebase.database().ref('giveaway_action');
 
-    firebase.database().ref('giveaway_donors').remove().catch(() => {});
-
     function preloadEmoteImages() {
       loadedEmoteImages = [];
       CUSTOM_EMOTE_FILES.forEach(filename => {
@@ -670,9 +604,6 @@
     }
     preloadEmoteImages();
 
-    // ========================================================
-    // 💬 1. NATIVE TWITCH IRC WEBSOCKET
-    // ========================================================
     let twitchSocket = null;
 
     function normalizeUserKey(name) {
@@ -686,7 +617,6 @@
         }
 
         updateDockStatus(`Ansluter till Twitch IRC (#${TWITCH_CHANNEL})...`);
-
         twitchSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
         twitchSocket.onopen = () => {
@@ -695,7 +625,6 @@
           twitchSocket.send(`PASS SCHMOOPIIE`);
           twitchSocket.send(`NICK justinfan${Math.floor(Math.random() * 80000 + 1000)}`);
           twitchSocket.send(`JOIN #${TWITCH_CHANNEL.toLowerCase().replace('#', '')}`);
-
           updateDockStatus(`🟢 Ansluten till Twitch (#${TWITCH_CHANNEL})! Redo att ta emot meddelanden.`);
         };
 
@@ -705,12 +634,10 @@
 
           for (const line of lines) {
             if (!line) continue;
-
             if (line.startsWith('PING')) {
               twitchSocket.send('PONG :tmi.twitch.tv');
               continue;
             }
-
             if (line.includes('PRIVMSG')) {
               parseTwitchChatMessage(line);
             }
@@ -736,7 +663,6 @@
     function parseTwitchChatMessage(line) {
       try {
         let displayName = "";
-
         const nameMatch = line.match(/[;@]display-name=([^; ]+)/);
         if (nameMatch && nameMatch[1]) {
           displayName = nameMatch[1];
@@ -757,7 +683,6 @@
         if (displayName) {
           lastChatMessageSummary = `@${displayName}: "${messageText.length > 25 ? messageText.substring(0, 25) + '...' : messageText}"`;
           updateDockStatus(`🟢 Chatt aktiv: ${lastChatMessageSummary}`);
-
           handleIncomingChatMessage(displayName, messageText);
         }
       } catch (e) {}
@@ -778,7 +703,6 @@
         }
       }
 
-      // ONLY RECORD FIRST MESSAGE AFTER WIN: prevents subsequent spam
       if (currentWinner && normalizeUserKey(currentWinner) === userKey) {
         if (!winnerHasResponded) {
           displayWinnerChatResponse(username, message, true);
@@ -786,17 +710,11 @@
       }
     }
 
-    /* UNIFIED WINNER CHAT RESPONSE: CAPPED TO 28 CHARS & ALWAYS INCLUDES CLOSING QUOTE */
     function displayWinnerChatResponse(username, message, broadcast = true) {
       winnerHasResponded = true;
 
       let rawMsg = (message || '').trim();
-      let formattedMsg = "";
-      if (rawMsg.length > 28) {
-        formattedMsg = `"${rawMsg.substring(0, 28).trim()}..."`;
-      } else {
-        formattedMsg = `"${rawMsg}"`;
-      }
+      let formattedMsg = rawMsg.length > 28 ? `"${rawMsg.substring(0, 28).trim()}..."` : `"${rawMsg}"`;
 
       if (giveawayTimerBadge) {
         giveawayTimerBadge.innerHTML = `
@@ -847,7 +765,6 @@
         const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
         if (savedPrize !== null) setPrizeText(savedPrize, false);
 
-        // ALWAYS DEFAULT TO CLOSED ON FRESH BOOT
         areEntriesOpen = false;
       } catch (e) {}
 
@@ -998,12 +915,9 @@
 
       const filterInput = document.getElementById('filterChatterInput');
       const query = filterInput ? filterInput.value.trim().toLowerCase() : '';
-
       const list = Object.values(chatterMap);
 
-      if (countBadge) {
-        countBadge.innerText = `${list.length} med`;
-      }
+      if (countBadge) countBadge.innerText = `${list.length} med`;
 
       const filtered = list.filter(c => {
         if (!query) return true;
@@ -1027,13 +941,15 @@
 
     function setPrizeText(text, broadcast = true) {
       const clean = (text || '').trim();
-      if (clean) {
-        giveawayPrizeDisplay.innerHTML = `
-          <span class="giveaway-prize-label">VINST:</span>
-          <span class="giveaway-prize-val">${escapeHTML(clean)}</span>
-        `;
-      } else {
-        giveawayPrizeDisplay.innerHTML = '';
+      if (giveawayPrizeDisplay) {
+        if (clean) {
+          giveawayPrizeDisplay.innerHTML = `
+            <span class="giveaway-prize-label">VINST:</span>
+            <span class="giveaway-prize-val">${escapeHTML(clean)}</span>
+          `;
+        } else {
+          giveawayPrizeDisplay.innerHTML = '';
+        }
       }
 
       if (prizeInput) prizeInput.value = clean;
@@ -1063,7 +979,9 @@
       return audioCtx;
     }
 
+    // 🎯 FIXED: Only overlay plays audio to eliminate echo
     function playWheelClick(speedRatio = 1.0) {
+      if (isPanel) return;
       const ctx = getAudioContext();
       if (!ctx) return;
       try {
@@ -1088,6 +1006,7 @@
     }
 
     function playVictorySound() {
+      if (isPanel) return;
       getAudioContext();
       try {
         const audio = new Audio(VICTORY_SOUND_SRC);
@@ -1134,7 +1053,7 @@
     }
 
     function renderVirtualSlots(virtualOffset) {
-      if (trackNamesList.length === 0) return;
+      if (trackNamesList.length === 0 || !reelStage) return;
 
       const centerIndex = Math.round(virtualOffset);
       const minIndex = Math.max(0, centerIndex - 3);
@@ -1219,7 +1138,7 @@
       currentWinner = winnerName;
       setButtonsLocked(true);
 
-      giveawayWidget.classList.add('active');
+      if (giveawayWidget) giveawayWidget.classList.add('active');
 
       const names = getChattersPool();
       const startOffset = currentVirtualOffset;
@@ -1245,6 +1164,7 @@
 
       const endAt = Date.now() + holdDelayMs;
       const tickBadge = () => {
+        if (!giveawayTimerBadge) return;
         const leftSec = Math.ceil(Math.max(0, endAt - Date.now()) / 1000);
         giveawayTimerBadge.innerHTML = leftSec > 0 ? `Startar om <span class="timer-val">${leftSec}s</span>` : "Dragning pågår...";
       };
@@ -1259,7 +1179,7 @@
       }, 200);
 
       holdTimeout = setTimeout(() => {
-        giveawayTimerBadge.innerText = "Dragning pågår...";
+        if (giveawayTimerBadge) giveawayTimerBadge.innerText = "Dragning pågår...";
 
         const spinDuration = holdDelayMs <= 5000 ? 5500 : 8500;
         const startTime = performance.now();
@@ -1268,7 +1188,6 @@
         function spinStep(now) {
           const elapsed = now - startTime;
           const progress = Math.min(1.0, elapsed / spinDuration);
-
           const ease = 1 - Math.pow(1 - progress, 4.5);
           currentVirtualOffset = startOffset + (targetOffset - startOffset) * ease;
 
@@ -1293,16 +1212,16 @@
             stopTimers();
 
             let claimSec = 60;
-            giveawayTimerBadge.innerHTML = `Skriv i chatten för att bekräfta! <span class="timer-val">${claimSec}s</span>`;
+            if (giveawayTimerBadge) giveawayTimerBadge.innerHTML = `Skriv i chatten för att bekräfta! <span class="timer-val">${claimSec}s</span>`;
 
             claimTimerInterval = setInterval(() => {
               claimSec--;
               if (claimSec > 0) {
-                if (!winnerHasResponded) {
+                if (!winnerHasResponded && giveawayTimerBadge) {
                   giveawayTimerBadge.innerHTML = `Skriv i chatten för att bekräfta! <span class="timer-val">${claimSec}s</span>`;
                 }
               } else {
-                if (!winnerHasResponded) {
+                if (!winnerHasResponded && giveawayTimerBadge) {
                   giveawayTimerBadge.innerText = "Tiden har gått ut!";
                 }
                 clearInterval(claimTimerInterval);
@@ -1348,11 +1267,11 @@
       setButtonsLocked(false);
       winnerHasResponded = false;
 
-      giveawayWidget.classList.remove('active');
+      if (giveawayWidget) giveawayWidget.classList.remove('active');
 
       setTimeout(() => {
         currentWinner = null;
-        giveawayTimerBadge.innerHTML = "";
+        if (giveawayTimerBadge) giveawayTimerBadge.innerHTML = "";
         initInitialStage();
       }, 450);
     }
@@ -1364,11 +1283,11 @@
       setButtonsLocked(false);
       winnerHasResponded = false;
 
-      giveawayWidget.classList.remove('active');
+      if (giveawayWidget) giveawayWidget.classList.remove('active');
 
       setTimeout(() => {
         currentWinner = null;
-        giveawayTimerBadge.innerHTML = "";
+        if (giveawayTimerBadge) giveawayTimerBadge.innerHTML = "";
         initInitialStage();
       }, 450);
     }
@@ -1446,7 +1365,6 @@
         p.vy += p.gravity;
         p.vx *= p.drag;
         p.rotation += p.rotSpeed;
-
         p.sway += p.swaySpeed;
         p.x += Math.sin(p.sway) * 1.6;
 
@@ -1469,7 +1387,6 @@
             vCtx.textBaseline = 'middle';
             vCtx.fillText(p.char, 0, 0);
           }
-
           vCtx.restore();
         }
       }
@@ -1492,21 +1409,11 @@
       }
     }
 
-    // ========================================================
-    // 🎛️ DOCK UI
-    // ========================================================
     function updateStatsUI() {
       const count = Object.keys(chatterMap).length;
-
       const summaryText = document.getElementById('dockSummaryText');
-      if (summaryText) {
-        summaryText.innerHTML = `<b>${count}</b> aktiva chattare i dragningen`;
-      }
-
-      if (giveawaySubTitle) {
-        giveawaySubTitle.innerText = `${count} aktiva chattare`;
-      }
-
+      if (summaryText) summaryText.innerHTML = `<b>${count}</b> aktiva chattare i dragningen`;
+      if (giveawaySubTitle) giveawaySubTitle.innerText = `${count} aktiva chattare`;
       renderChatterListUI();
     }
 
@@ -1528,7 +1435,7 @@
         chatterMap = {};
         currentWinner = null;
         winnerHasResponded = false;
-        areEntriesOpen = false; // Lock entries on list clear
+        areEntriesOpen = false;
         updateEntriesUI();
         saveChatters();
         syncChattersToCloud();
