@@ -213,7 +213,6 @@
 
   <script>
     (function () {
-      // 🛡️ DOCK BLOCK: Never run alerts inside OBS Dock frames
       try {
         const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
         let isParentDock = false;
@@ -230,11 +229,14 @@
       } catch (e) {}
 
       // ========================================================
-      // 🎛️ OBS WEBSOCKET v5 SCENE SWITCHER
+      // 🎛️ OBS WEBSOCKET & DIRECT WEBCAM FILTER CONTROL
       // ========================================================
       const OBS_WS_URL = "ws://127.0.0.1:4455";
       const SCENE_GAMING = "Musikhjälpen|Gaming Scene";
       const SCENE_INTERMISSION = "Musikhjälpen|Intermission Scene";
+
+      const SOURCE_WEBCAM = "Webcam Source";
+      const SOURCE_WEBCAM_SCENE = "Webcam Scene";
 
       let obsWs = null;
       let isObsConnected = false;
@@ -315,6 +317,51 @@
         });
       }
 
+      // 🎯 FAST RAW TOGGLE: Triggers move filter directly
+      function sendFilterTrigger(sourceName, filterName) {
+        if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+
+        obsWs.send(JSON.stringify({
+          op: 6,
+          d: {
+            requestType: "SetSourceFilterEnabled",
+            requestId: "flt-off-" + Math.random(),
+            requestData: {
+              sourceName: sourceName,
+              filterName: filterName,
+              filterEnabled: false
+            }
+          }
+        }));
+
+        setTimeout(() => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: {
+              requestType: "SetSourceFilterEnabled",
+              requestId: "flt-on-" + Math.random(),
+              requestData: {
+                sourceName: sourceName,
+                filterName: filterName,
+                filterEnabled: true
+              }
+            }
+          }));
+        }, 20);
+      }
+
+      // 🎯 Direct helper: Matches the exact filter actions of the button deck
+      function triggerWebcamMove(direction) {
+        if (direction === "in") {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        } else {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value out");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        }
+      }
+
       function isMatchingScene(currentName, targetName) {
         if (!currentName || !targetName) return false;
         const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
@@ -387,10 +434,14 @@
 
       const SOUND_VOLUME_MAIN = 0.8;
       const SOUND_VOLUME_MINOR = 0.5;
-
-      // 🎯 HARDCODED: Exactly 30 seconds alert display
-      const MIN_ALERT_DISPLAY_MS = 30000;
       const PAUSE_BETWEEN_ALERTS_MS = 1400;
+
+      // 🎯 DYNAMIC DURATIONS: 30s Donation | 20s Raid | 10s Sub, Bits, Follow
+      function getAlertDuration(type) {
+        if (type === 'donation') return 30000;
+        if (type === 'raid') return 20000;
+        return 10000; // sub, bits, follow
+      }
 
       let soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
       let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
@@ -444,7 +495,6 @@
       }
       preloadAudio(soundFileList);
 
-      // Emotes strictly start from above the top (top: -100px) and fall into screen naturally
       function triggerEmoteRain(count = 8) {
         const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
         const layer = document.getElementById('emoteRainLayer');
@@ -480,7 +530,7 @@
         }
       }
 
-      function playAlertSound(type) {
+      function playAlertSound(type, duration) {
         return new Promise((resolve) => {
           let soundUrl = '';
           let volume = SOUND_VOLUME_MAIN;
@@ -506,7 +556,7 @@
             audio.onerror = () => finish();
             audio.play().catch(() => finish());
 
-            setTimeout(finish, 32000);
+            setTimeout(finish, duration + 2000);
           } catch (e) { resolve(); }
         });
       }
@@ -551,17 +601,19 @@
         const item = alertQueue.shift();
         const banner = document.getElementById('alertBanner');
         const type = (item.type || 'donation').toLowerCase();
+        const displayDuration = getAlertDuration(type);
 
         const isDonationOrRaid = (type === 'donation' || type === 'raid');
         let didSwitchScene = false;
         let originalSceneName = "";
 
-        // 🎬 ONLY switches scene. Does NOT touch filters (lets button_deck handle them cleanly)
+        // 🎬 SWITCH TO INTERMISSION: Triggers camera move first, then switches scene!
         if (isDonationOrRaid && isObsConnected) {
           const currentScene = await getCurrentObsScene();
           if (isMatchingScene(currentScene, SCENE_GAMING)) {
             originalSceneName = currentScene;
-            await setObsScene(SCENE_INTERMISSION);
+            triggerWebcamMove("out"); // 🎯 Move webcam first
+            await setObsScene(SCENE_INTERMISSION); // 🎯 Switch scene
             didSwitchScene = true;
             await new Promise(r => setTimeout(r, 350));
           }
@@ -614,20 +666,24 @@
           banner.classList.add('anim-bottom-in');
         }
 
-        // 1. Initial burst rains in from top
-        triggerEmoteRain(35);
+        // 🎯 Emote rain strictly runs ONLY for donation and raid!
+        let rainInterval = null;
+        if (isDonationOrRaid) {
+          triggerEmoteRain(35);
+          rainInterval = setInterval(() => {
+            triggerEmoteRain(8);
+          }, 900);
+        }
 
-        // 2. Steady 900ms trickle entering from top (zero mid-screen popping)
-        const rainInterval = setInterval(() => {
-          triggerEmoteRain(8);
-        }, 900);
-
-        const soundPromise = playAlertSound(type);
-        const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+        const soundPromise = playAlertSound(type, displayDuration);
+        const displayPromise = new Promise(resolve => setTimeout(resolve, displayDuration));
 
         await Promise.all([soundPromise, displayPromise]);
 
-        clearInterval(rainInterval);
+        if (rainInterval) {
+          clearInterval(rainInterval);
+          rainInterval = null;
+        }
 
         banner.classList.remove('anim-top-in', 'anim-bottom-in');
         banner.classList.add('anim-exit');
@@ -636,11 +692,12 @@
         banner.className = 'alert-banner';
         banner.innerHTML = '';
 
-        // 🎬 ONLY switches back to original scene cleanly (lets button_deck handle the filter)
+        // 🎬 SWITCH BACK TO GAMING: Triggers camera move first, then switches scene!
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
-            await setObsScene(originalSceneName);
+            triggerWebcamMove("in"); // 🎯 Move webcam first
+            await setObsScene(originalSceneName); // 🎯 Switch scene
             await new Promise(r => setTimeout(r, 500));
           }
         }
