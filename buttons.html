@@ -21,7 +21,6 @@
             overflow-y: auto;
         }
 
-        /* Top Status Bar */
         .status-bar {
             display: flex;
             align-items: center;
@@ -61,7 +60,6 @@
             margin-bottom: 6px;
         }
 
-        /* 🎵 SPOTIFY SKIP BUTTON */
         .btn-spotify-skip {
             width: 100%;
             background: #18181c;
@@ -102,7 +100,6 @@
             border-radius: 50%;
             background-color: #1db954;
             box-shadow: 0 0 6px rgba(29, 185, 84, 0.6);
-            transition: background-color 0.08s ease;
         }
 
         .btn-spotify-skip.flashing .spotify-dot {
@@ -134,12 +131,9 @@
             padding: 8px 10px;
             outline: none;
             user-select: auto;
-            transition: border-color 0.15s ease;
         }
 
-        .deck-input:focus {
-            border-color: #00ff88;
-        }
+        .deck-input:focus { border-color: #00ff88; }
 
         .deck-submit-btn {
             background: #1c1c22;
@@ -152,38 +146,16 @@
             font-weight: 700;
             padding: 8px 14px;
             cursor: pointer;
-            transition: all 0.12s ease;
             white-space: nowrap;
         }
 
-        .deck-submit-btn:hover {
-            background: #272730;
-            border-color: #00ff88;
-        }
+        .deck-submit-btn:hover { background: #272730; border-color: #00ff88; }
+        .deck-submit-btn:active { transform: translateY(1px); }
 
-        .deck-submit-btn:active {
-            transform: translateY(1px);
-        }
-
-        .grid {
-            display: grid;
-            gap: 6px;
-        }
-
-        .grid-webcam {
-            grid-template-columns: repeat(3, 1fr);
-            margin-bottom: 12px;
-        }
-
-        .grid-scenes {
-            grid-template-columns: repeat(4, 1fr);
-            margin-bottom: 12px;
-        }
-
-        .grid-props {
-            grid-template-columns: repeat(5, 1fr);
-            margin-bottom: 14px;
-        }
+        .grid { display: grid; gap: 6px; }
+        .grid-webcam { grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; }
+        .grid-scenes { grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
+        .grid-props { grid-template-columns: repeat(5, 1fr); margin-bottom: 14px; }
 
         .deck-btn {
             background: #1c1c22;
@@ -227,7 +199,6 @@
             width: 18px;
             height: 3px;
             border-radius: 2px;
-            transition: background-color 0.2s ease;
         }
 
         .btn-sub {
@@ -244,13 +215,8 @@
             box-shadow: 0 0 10px rgba(0, 255, 136, 0.3) !important;
         }
 
-        .deck-btn.active-scene .btn-sub {
-            color: #00ff88 !important;
-        }
-
-        .deck-btn.webcam-is-hidden {
-            border-color: rgba(0, 255, 136, 0.35);
-        }
+        .deck-btn.active-scene .btn-sub { color: #00ff88 !important; }
+        .deck-btn.webcam-is-hidden { border-color: rgba(0, 255, 136, 0.35); }
     </style>
 </head>
 <body>
@@ -263,26 +229,21 @@
         </div>
     </div>
 
-    <!-- 🎵 SPOTIFY SKIP BUTTON -->
     <div class="section-title">Musik (Spotify)</div>
     <button class="btn-spotify-skip" id="btn-skip-spotify" onclick="remoteSkipSpotify()">
         <span class="spotify-dot"></span>
         <span id="spotify-skip-label">⏭️ NÄSTA LÅT (SKIP)</span>
     </button>
 
-    <!-- 📷 ROW 1: WEBCAM 1 CONTROLS -->
     <div class="section-title">Webcam Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
 
-    <!-- 🎬 ROW 2: SCENES -->
     <div class="section-title">Scener</div>
     <div class="grid grid-scenes" id="scene-grid"></div>
 
-    <!-- ⚙️ ROW 3: ÄNDRA DESSA (SOURCE PROPERTIES) -->
     <div class="section-title">Ändra dessa:</div>
     <div class="grid grid-props" id="props-grid"></div>
 
-    <!-- 👥 ROW 4: STREAMER 2 & WEBCAM 2 -->
     <div class="section-title" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
       Streamer 2 & Extra Webcam (Valfri)
     </div>
@@ -298,7 +259,6 @@
     </div>
 
     <script>
-        // ================= CONFIGURATION =================
         const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
         const WRITE_SECRET = "Our2ndHomeSecret2026!";
 
@@ -309,12 +269,6 @@
         const SOURCE_WEBCAM = "Webcam Source";
         const SOURCE_WEBCAM_SCENE = "Webcam Scene";
 
-        const FILTER_MOVE_OUT = "Move Value out";
-        const FILTER_MOVE_IN = "Move Value in";
-
-        // ========================================================
-        // 🎵 SEQUENTIAL SPOTIFY SKIP (350ms AUDIO BUFFER GUARD)
-        // ========================================================
         let lastSkipSentTime = 0;
         let isSkipDebouncing = false;
 
@@ -341,9 +295,7 @@
                 })
             }).catch(err => console.error("Firebase skip failed:", err));
 
-            setTimeout(() => {
-                isSkipDebouncing = false;
-            }, 350);
+            setTimeout(() => { isSkipDebouncing = false; }, 350);
         }
 
         const WEBCAM_BUTTONS = [
@@ -368,69 +320,24 @@
                 label: "Göm Webcam 1",
                 color: "#f2711c",
                 isToggle1: true,
-                scene: "Musikhjälpen | Gaming Scene",
+                scene: "Musikhjälpen|Gaming Scene",
                 source: "Webcam Scene"
             }
         ];
 
         const SCENE_BUTTONS = [
-            {
-                label: "Start",
-                sublabel: "Scene",
-                color: "#eab308",
-                sceneName: "Musikhjälpen|Starting Scene"
-            },
-            {
-                label: "Gaming",
-                sublabel: "Scene",
-                color: "#00ff88",
-                sceneName: "Musikhjälpen|Gaming Scene"
-            },
-            {
-                label: "Intermission",
-                sublabel: "Scene",
-                color: "#3b82f6",
-                sceneName: "Intermission Scene"
-            },
-            {
-                label: "Ending",
-                sublabel: "Scene",
-                color: "#ef4444",
-                sceneName: "Ending Scene"
-            }
+            { label: "Start", sublabel: "Scene", color: "#eab308", sceneName: "Musikhjälpen|Starting Scene" },
+            { label: "Gaming", sublabel: "Scene", color: "#00ff88", sceneName: "Musikhjälpen|Gaming Scene" },
+            { label: "Intermission", sublabel: "Scene", color: "#3b82f6", sceneName: "Intermission Scene" },
+            { label: "Ending", sublabel: "Scene", color: "#ef4444", sceneName: "Ending Scene" }
         ];
 
         const PROPERTIES_BUTTONS = [
-            {
-                label: "Main Mic",
-                sublabel: "Audio",
-                color: "#ef4444",
-                source: "Main Mic"
-            },
-            {
-                label: "Game",
-                sublabel: "Audio",
-                color: "#3b82f6",
-                source: "Game Audio"
-            },
-            {
-                label: "Game",
-                sublabel: "Capture",
-                color: "#a855f7",
-                source: "Game Capture"
-            },
-            {
-                label: "Display",
-                sublabel: "Capture",
-                color: "#06b6d4",
-                source: "Display Capture"
-            },
-            {
-                label: "Webcam",
-                sublabel: "Source",
-                color: "#f97316",
-                source: "Webcam Source"
-            }
+            { label: "Main Mic", sublabel: "Audio", color: "#ef4444", source: "Main Mic" },
+            { label: "Game", sublabel: "Audio", color: "#3b82f6", source: "Game Audio" },
+            { label: "Game", sublabel: "Capture", color: "#a855f7", source: "Game Capture" },
+            { label: "Display", sublabel: "Capture", color: "#06b6d4", source: "Display Capture" },
+            { label: "Webcam", sublabel: "Source", color: "#f97316", source: "Webcam Source" }
         ];
 
         let ws = null;
@@ -448,10 +355,11 @@
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
 
+                // 🎯 FIXED: Always send eventSubscriptions
                 if (msg.op === 0) {
                     ws.send(JSON.stringify({
                         op: 1,
-                        d: { rpcVersion: 1 }
+                        d: { rpcVersion: 1, eventSubscriptions: 1023 }
                     }));
                 }
 
@@ -469,9 +377,8 @@
 
                     fetchCurrentText(TEXT_SOURCE_NAME_2, 'streamer-name-input-2');
 
-                    syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
-                    
-                    syncWebcamItem("Musikhjälpen | Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
+                    syncWebcamItem("Musikhjälpen|Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
+                    syncWebcamItem("Musikhjälpen|Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
                         updateWebcam2ToggleUI(isEnabled);
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, isEnabled);
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !isEnabled);
@@ -524,9 +431,7 @@
 
         function sendRequest(requestType, requestData = {}) {
             return new Promise((resolve, reject) => {
-                if (!isConnected || !ws) {
-                    return reject(new Error("Not connected to OBS"));
-                }
+                if (!isConnected || !ws) return reject(new Error("Not connected to OBS"));
                 const requestId = "req-" + Math.random().toString(36).substring(2, 9);
                 pendingRequests.set(requestId, { resolve, reject });
                 ws.send(JSON.stringify({
@@ -557,36 +462,25 @@
             setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
         }
 
+        // 🎯 FIXED: Automatically tolerates spaces around "|" for filter targets
         function sendFilterTrigger(sourceName, filterName) {
             if (!isConnected) return;
 
-            ws.send(JSON.stringify({
-                op: 6,
-                d: {
-                    requestType: "SetSourceFilterEnabled",
-                    requestId: "req-" + Math.random(),
-                    requestData: {
-                        sourceName: sourceName,
-                        filterName: filterName,
-                        filterEnabled: false
-                    }
-                }
-            }));
+            const trigger = (target) => {
+                sendRequest("SetSourceFilterEnabled", { sourceName: target, filterName, filterEnabled: false })
+                    .catch(() => {})
+                    .finally(() => {
+                        setTimeout(() => {
+                            sendRequest("SetSourceFilterEnabled", { sourceName: target, filterName, filterEnabled: true }).catch(() => {});
+                        }, 25);
+                    });
+            };
 
-            setTimeout(() => {
-                ws.send(JSON.stringify({
-                    op: 6,
-                    d: {
-                        requestType: "SetSourceFilterEnabled",
-                        requestId: "req-" + Math.random(),
-                        requestData: {
-                            sourceName: sourceName,
-                            filterName: filterName,
-                            filterEnabled: true
-                        }
-                    }
-                }));
-            }, 20);
+            trigger(sourceName);
+            if (sourceName.includes('|') || sourceName.includes(' | ')) {
+                const alt = sourceName.includes(' | ') ? sourceName.replace(/\s*\|\s*/g, '|') : sourceName.replace(/\|/g, ' | ');
+                trigger(alt);
+            }
         }
 
         function isMatchingScene(currentName, targetName) {
@@ -775,11 +669,7 @@
                 (id) => webcam2ItemId = id, 
                 (willBeEnabled) => {
                     updateWebcam2ToggleUI(willBeEnabled);
-                    
-                    // 🔗 Follower: Streamer 2 Name mirrors Webcam 2 state
                     setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, willBeEnabled);
-                    
-                    // 🔗 Inverted Follower: twitchchat.html is HIDDEN when Webcam 2 is visible!
                     setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !willBeEnabled);
                 }
             );
@@ -828,9 +718,12 @@
             }
         }
 
-        document.getElementById('streamer-name-input-2').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') submitStreamerName2();
-        });
+        const input2 = document.getElementById('streamer-name-input-2');
+        if (input2) {
+            input2.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') submitStreamerName2();
+            });
+        }
 
         async function openSourceProperties(inputName) {
             try {
