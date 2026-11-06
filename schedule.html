@@ -355,7 +355,9 @@
       color: var(--primary-color);
     }
 
-    /* OBS Dock Controller */
+    /* ========================================================
+       🎛️ 2. OBS DOCK: VISUAL STREAMLINED SCHEDULE CONTROLLER
+       ======================================================== */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -420,33 +422,128 @@
       display: block;
     }
 
-    .control-row {
+    /* 🎯 1-CLICK DAY PILLS TABS */
+    .day-pills-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .day-pill-btn {
+      background: #18181c;
+      border: 1px solid var(--border);
+      color: #a1a1aa;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 6px 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    .day-pill-btn:hover { background: #22222a; color: #ffffff; }
+    .day-pill-btn.active {
+      background: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      color: #000000 !important;
+      box-shadow: 0 0 8px rgba(172, 230, 0, 0.4);
+    }
+
+    /* 🎯 COMPACT VISUAL SLOT CARDS */
+    .slots-list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 380px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .slot-editor-card {
+      background: #121215;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: border-color 0.15s ease;
+    }
+    .slot-editor-card:focus-within {
+      border-color: #52525b;
+    }
+
+    .slot-card-top-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
       gap: 6px;
     }
 
-    .control-label {
-      font-size: 11px;
-      font-weight: 800;
-      color: #ffffff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+    .slot-num-badge {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--primary-color);
+      background: rgba(172, 230, 0, 0.12);
+      padding: 2px 6px;
+      border-radius: 3px;
       white-space: nowrap;
     }
 
-    input[type="text"], select {
-      background: #121215;
+    .slot-time-input {
+      flex: 1;
+      background: #18181c;
       border: 1px solid var(--border);
       border-radius: 4px;
       color: #ffffff;
-      padding: 6px 8px;
       font-family: inherit;
       font-size: 11px;
+      font-weight: 700;
+      padding: 4px 6px;
       outline: none;
-      transition: border 0.15s ease;
+    }
+
+    .btn-delete-slot {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: color 0.15s ease;
+    }
+    .btn-delete-slot:hover { color: #ff453a; }
+
+    .slot-name-input {
+      width: 100%;
+      background: #18181c;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 8px;
+      outline: none;
+    }
+    .slot-name-input:focus, .slot-time-input:focus, .slot-giveaway-input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .slot-giveaway-input {
+      width: 100%;
+      background: #18181c;
+      border: 1px solid #332d18;
+      border-radius: 4px;
+      color: var(--giveaway-color);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      outline: none;
     }
 
     .btn {
@@ -478,6 +575,7 @@
       margin-top: 6px;
       margin-bottom: 4px;
     }
+    .btn-primary-action:hover { opacity: 0.9; }
 
     .btn-danger {
       background: #18181c;
@@ -527,58 +625,34 @@
   <!-- 🎛️ 2. OBS CONTROL DOCK (#panel) -->
   <div id="panelRoot" class="dock-container">
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.5</span></span>
+      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.6</span></span>
       <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
     <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
 
+    <!-- ✏️ REDESIGNED VISUAL SCHEDULE EDITOR -->
     <div class="card-section">
-      <span class="section-title">✏️ Live Schema-Redigerare</span>
+      <span class="section-title">✏️ Redigera Schema</span>
       
-      <div class="control-row">
-        <span class="control-label">VÄLJ DAG:</span>
-        <select id="editDaySelect" style="width:65%;" onchange="populateSlotsDropdown()">
-          <option value="MON">Måndag 30 nov</option>
-          <option value="TUE">Tisdag 1 dec</option>
-          <option value="WED">Onsdag 2 dec</option>
-          <option value="THU">Torsdag 3 dec</option>
-          <option value="FRI">Fredag 4 dec</option>
-          <option value="SAT">Lördag 5 dec</option>
-          <option value="SUN">Söndag 6 dec</option>
-        </select>
-      </div>
+      <!-- 🎯 1-Click Day Tabs -->
+      <div class="day-pills-row" id="dayPillsRow"></div>
 
-      <div class="control-row">
-        <span class="control-label">VÄLJ PASS:</span>
-        <select id="editSlotSelect" style="width:65%;" onchange="loadSelectedSlotData()"></select>
-      </div>
+      <!-- 🎯 All Passes for the Day in Stacked Cards -->
+      <div class="slots-list-container" id="slotsListContainer"></div>
 
-      <div class="control-row" style="margin-top:6px;">
-        <span class="control-label">TID:</span>
-        <input type="text" id="slotTimeInput" placeholder="T.ex. 18:00 - 19:00" style="width:65%;">
-      </div>
-
-      <div class="control-row">
-        <span class="control-label">STREAMER:</span>
-        <input type="text" id="slotNameInput" placeholder="Streamernamn / Händelse" style="width:65%;">
-      </div>
-
-      <div class="control-row">
-        <span class="control-label">GIVEAWAY:</span>
-        <input type="text" id="slotGiveawayInput" placeholder="Valfri (t.ex. 🎁 GIVEAWAY: Mus)" style="width:65%;">
-      </div>
-
-      <button class="btn-primary-action" onclick="saveSlotChanges()">
-        💾 Spara & Uppdatera alla overlays
+      <!-- Add New Slot Button -->
+      <button class="btn" onclick="addNewSlotToActiveDay()" style="margin-top: 6px; margin-bottom: 2px;">
+        ➕ Lägg till nytt pass denna dag
       </button>
 
-      <div class="grid-2" style="margin-top:4px;">
-        <button class="btn" onclick="addNewSlot()">➕ Lägg till pass</button>
-        <button class="btn btn-danger" onclick="deleteSelectedSlot()">🗑️ Ta bort pass</button>
-      </div>
+      <!-- Save Button -->
+      <button class="btn-primary-action" id="btnSaveSchedule" onclick="saveActiveDaySlots()">
+        💾 Spara ändringar för <span id="saveDayNameText">MÅNDAG</span>
+      </button>
     </div>
 
+    <!-- 🕹️ QUICK TOOLS -->
     <div class="card-section">
       <span class="section-title">🕹️ Sponsor & Test-Verktyg</span>
       <div class="grid-2">
@@ -614,15 +688,17 @@
       "sponsors/RandomNerd_Sponsor.png"
     ];
 
-    const DAY_BASE_DATES = {
-      "MON": "2026-11-30",
-      "TUE": "2026-12-01",
-      "WED": "2026-12-02",
-      "THU": "2026-12-03",
-      "FRI": "2026-12-04",
-      "SAT": "2026-12-05",
-      "SUN": "2026-12-06"
-    };
+    const DAYS_CONFIG = [
+      { id: "MON", label: "MÅN", full: "MÅNDAG 30 NOV", baseDate: "2026-11-30" },
+      { id: "TUE", label: "TIS", full: "TISDAG 1 DEC",   baseDate: "2026-12-01" },
+      { id: "WED", label: "ONS", full: "ONSDAG 2 DEC",   baseDate: "2026-12-02" },
+      { id: "THU", label: "TOR", full: "TORSDAG 3 DEC",  baseDate: "2026-12-03" },
+      { id: "FRI", label: "FRE", full: "FREDAG 4 DEC",   baseDate: "2026-12-04" },
+      { id: "SAT", label: "LÖR", full: "LÖRDAG 5 DEC",   baseDate: "2026-12-05" },
+      { id: "SUN", label: "SÖN", full: "SÖNDAG 6 DEC",   baseDate: "2026-12-06" }
+    ];
+
+    const DAY_BASE_DATES = Object.fromEntries(DAYS_CONFIG.map(d => [d.id, d.baseDate]));
 
     const DEFAULT_SCHEDULE = [
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 12:00", end: "2026-11-30 15:00", timeText: "12:00 - 15:00", name: "Invigning & Morgongänget", giveaway: "" },
@@ -677,6 +753,9 @@
     let isShowingTheme = false;
     let rotatorTimer = null;
 
+    // 🎯 ACTIVE EDITING DAY IN DOCK
+    let activeEditingDayId = "MON";
+
     function isMhLogo(filename) {
       if (!filename) return false;
       const lower = filename.toLowerCase();
@@ -728,7 +807,7 @@
         currentSchedule = data.schedule;
         try { localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule)); } catch(e) {}
         renderSchedule();
-        if (isPanel) populateSlotsDropdown();
+        if (isPanel) renderVisualScheduleEditor();
       }
 
       if (Array.isArray(data.autoSponsors) && data.autoSponsors.length > 0) {
@@ -751,7 +830,6 @@
       return new Date(dateStr.replace(' ', 'T') + (dateStr.length === 16 ? ':00' : ''));
     }
 
-    // 🎯 FIXED: Local time arithmetic prevents UTC midnight rollback
     function parseTimeRangeToDates(dayId, timeRangeStr) {
       const baseDateStr = DAY_BASE_DATES[dayId] || "2026-11-30";
       const clean = timeRangeStr.replace(/\./g, ':').trim();
@@ -942,130 +1020,176 @@
       updateScheduleDOM(activeDayId, schedule, now, false);
     }
 
-    function populateSlotsDropdown() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      if (!daySelect || !slotSelect) return;
+    // ========================================================
+    // 🎛️ DOCK: STREAMLINED VISUAL SCHEDULE MANAGER
+    // ========================================================
+    function renderVisualScheduleEditor() {
+      const pillsContainer = document.getElementById('dayPillsRow');
+      const slotsContainer = document.getElementById('slotsListContainer');
+      const saveLabel = document.getElementById('saveDayNameText');
+      if (!pillsContainer || !slotsContainer) return;
 
-      const selectedDayId = daySelect.value;
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+      const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId) || DAYS_CONFIG[0];
+      if (saveLabel) saveLabel.innerText = activeDayCfg.label;
 
-      slotSelect.innerHTML = daySlots.map((slot, idx) => {
-        const text = `${slot.timeText}: ${slot.name}`;
-        return `<option value="${idx}">${escapeHTML(text)}</option>`;
-      }).join('');
+      // 1. Render 1-Click Day Tabs
+      pillsContainer.innerHTML = DAYS_CONFIG.map(d => `
+        <button class="day-pill-btn ${d.id === activeEditingDayId ? 'active' : ''}" onclick="switchActiveEditingDay('${d.id}')">
+          ${d.label}
+        </button>
+      `).join('');
 
-      loadSelectedSlotData();
-    }
+      // 2. Render all passes for this day as direct editable cards
+      const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
 
-    function loadSelectedSlotData() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      if (!daySelect || !slotSelect) return;
-
-      const selectedDayId = daySelect.value;
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
-      const slotIndex = parseInt(slotSelect.value, 10);
-      const slot = daySlots[slotIndex];
-
-      if (slot) {
-        document.getElementById('slotTimeInput').value = slot.timeText || '';
-        document.getElementById('slotNameInput').value = slot.name || '';
-        document.getElementById('slotGiveawayInput').value = slot.giveaway || '';
-      }
-    }
-
-    function saveSlotChanges() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      const timeIn = document.getElementById('slotTimeInput').value.trim();
-      const nameIn = document.getElementById('slotNameInput').value.trim();
-      const giveawayIn = document.getElementById('slotGiveawayInput').value.trim();
-
-      if (!nameIn) return updateDockStatus("⚠️ Ange ett namn på streamern!", true);
-
-      const selectedDayId = daySelect.value;
-      const parsedTime = parseTimeRangeToDates(selectedDayId, timeIn);
-
-      if (!parsedTime) {
-        return updateDockStatus("⚠️ Ogiltigt tidsformat! (t.ex. 18:00 - 19:00)", true);
+      if (daySlots.length === 0) {
+        slotsContainer.innerHTML = `
+          <div style="padding:16px; text-align:center; color:var(--text-dim); font-size:11px;">
+            Inga pass inlagda för ${activeDayCfg.full}. Klicka nedan för att lägga till.
+          </div>
+        `;
+        return;
       }
 
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
-      const slotIndex = parseInt(slotSelect.value, 10);
-      const targetSlot = daySlots[slotIndex];
+      slotsContainer.innerHTML = daySlots.map((slot, idx) => `
+        <div class="slot-editor-card" data-idx="${idx}">
+          <div class="slot-card-top-row">
+            <span class="slot-num-badge">PASS ${idx + 1}</span>
+            <input type="text" class="slot-time-input" placeholder="T.ex. 18:00 - 21:00" value="${escapeHTML(slot.timeText || '')}">
+            ${daySlots.length > 1 ? `<button class="btn-delete-slot" title="Ta bort pass" onclick="deleteSlotByIndex(${idx})">🗑️</button>` : ''}
+          </div>
+          <input type="text" class="slot-name-input" placeholder="Streamernamn / Händelse" value="${escapeHTML(slot.name || '')}">
+          <input type="text" class="slot-giveaway-input" placeholder="🎁 Valfri Giveaway (lämna tomt om ingen)" value="${escapeHTML(slot.giveaway || '')}">
+        </div>
+      `).join('');
+    }
 
-      if (targetSlot) {
-        targetSlot.timeText = parsedTime.cleanTimeText;
-        targetSlot.start = parsedTime.start;
-        targetSlot.end = parsedTime.end;
-        targetSlot.name = nameIn;
-        targetSlot.giveaway = giveawayIn;
+    function switchActiveEditingDay(dayId) {
+      activeEditingDayId = dayId;
+      renderVisualScheduleEditor();
+    }
 
-        let pruned = false;
-        if (parsedTime.isMidnight) {
-          let foundTarget = false;
-          currentSchedule = currentSchedule.filter(ev => {
-            if (ev.dayId !== selectedDayId) return true;
-            if (ev === targetSlot) {
-              foundTarget = true;
-              return true;
-            }
-            if (foundTarget) {
-              pruned = true;
-              return false;
-            }
-            return true;
-          });
+    // 🎯 1-CLICK SAVE: Saves all edited passes for the selected day directly
+    function saveActiveDaySlots() {
+      const slotsContainer = document.getElementById('slotsListContainer');
+      if (!slotsContainer) return;
+
+      const cards = Array.from(slotsContainer.querySelectorAll('.slot-editor-card'));
+      const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId);
+      const updatedDaySlots = [];
+
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const timeVal = card.querySelector('.slot-time-input').value.trim();
+        const nameVal = card.querySelector('.slot-name-input').value.trim();
+        const giveawayVal = card.querySelector('.slot-giveaway-input').value.trim();
+
+        if (!nameVal) {
+          return updateDockStatus(`⚠️ Pass ${i + 1}: Ange ett streamernamn!`, true);
         }
 
-        syncScheduleToFirebase(pruned ? "✅ Passet sparades & efterföljande pass togs bort!" : "✅ Passet uppdaterades live!");
+        const parsedTime = parseTimeRangeToDates(activeEditingDayId, timeVal);
+        if (!parsedTime) {
+          return updateDockStatus(`⚠️ Pass ${i + 1}: Ogiltig tid! (t.ex. 18:00 - 21:00)`, true);
+        }
+
+        updatedDaySlots.push({
+          day: activeDayCfg.full,
+          dayId: activeEditingDayId,
+          start: parsedTime.start,
+          end: parsedTime.end,
+          timeText: parsedTime.cleanTimeText,
+          name: nameVal,
+          giveaway: giveawayVal
+        });
+      }
+
+      // Replace active day's slots inside currentSchedule preserving day order
+      const newSchedule = [];
+      let replaced = false;
+
+      for (let ev of currentSchedule) {
+        if (ev.dayId === activeEditingDayId) {
+          if (!replaced) {
+            newSchedule.push(...updatedDaySlots);
+            replaced = true;
+          }
+        } else {
+          newSchedule.push(ev);
+        }
+      }
+
+      if (!replaced) newSchedule.push(...updatedDaySlots);
+      currentSchedule = newSchedule;
+
+      syncScheduleToFirebase(`✅ ${activeDayCfg.label} sparades & synkades live!`);
+
+      const saveBtn = document.getElementById('btnSaveSchedule');
+      if (saveBtn) {
+        const oldText = saveBtn.innerHTML;
+        saveBtn.innerHTML = `✓ Sparat!`;
+        saveBtn.style.background = "var(--primary-color)";
+        setTimeout(() => {
+          saveBtn.innerHTML = oldText;
+          saveBtn.style.background = "#ffffff";
+        }, 1200);
       }
     }
 
-    function addNewSlot() {
-      const daySelect = document.getElementById('editDaySelect');
-      const selectedDayId = daySelect.value;
-      const dayName = daySelect.options[daySelect.selectedIndex].text;
-      const baseDateStr = DAY_BASE_DATES[selectedDayId] || "2026-11-30";
+    function addNewSlotToActiveDay() {
+      const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId);
+      const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
+
+      let newStartTime = "20:00";
+      let newEndTime = "22:00";
+
+      if (daySlots.length > 0) {
+        const lastSlot = daySlots[daySlots.length - 1];
+        const match = (lastSlot.timeText || '').match(/-\s*([0-9]{1,2}:[0-9]{2})/);
+        if (match) {
+          newStartTime = match[1];
+          const [h, m] = newStartTime.split(':').map(Number);
+          const nextH = (h + 2) % 24;
+          newEndTime = `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+
+      const timeText = `${newStartTime} - ${newEndTime}`;
+      const parsed = parseTimeRangeToDates(activeEditingDayId, timeText);
 
       const newSlot = {
-        day: dayName.toUpperCase(),
-        dayId: selectedDayId,
-        start: `${baseDateStr} 20:00`,
-        end: `${baseDateStr} 22:00`,
-        timeText: "20:00 - 22:00",
+        day: activeDayCfg.full,
+        dayId: activeEditingDayId,
+        start: parsed ? parsed.start : `${activeDayCfg.baseDate} 20:00`,
+        end: parsed ? parsed.end : `${activeDayCfg.baseDate} 22:00`,
+        timeText: timeText,
         name: "Ny Streamer",
         giveaway: ""
       };
 
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
       if (daySlots.length > 0) {
-        const lastSlot = daySlots[daySlots.length - 1];
-        const lastIdx = currentSchedule.indexOf(lastSlot);
+        const lastIdx = currentSchedule.lastIndexOf(daySlots[daySlots.length - 1]);
         currentSchedule.splice(lastIdx + 1, 0, newSlot);
       } else {
         currentSchedule.push(newSlot);
       }
 
-      syncScheduleToFirebase("✅ Nytt pass lades till!");
+      renderVisualScheduleEditor();
+      syncScheduleToFirebase(`➕ Nytt pass lades till på ${activeDayCfg.label}`);
     }
 
-    function deleteSelectedSlot() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      const selectedDayId = daySelect.value;
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+    function deleteSlotByIndex(daySlotIdx) {
+      const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
+      if (daySlots.length <= 1) {
+        return updateDockStatus("⚠️ En dag måste ha minst ett pass!", true);
+      }
 
-      if (daySlots.length <= 1) return updateDockStatus("⚠️ En dag måste ha minst ett pass!", true);
-
-      const slotIndex = parseInt(slotSelect.value, 10);
-      const targetSlot = daySlots[slotIndex];
-
-      const globalIdx = currentSchedule.indexOf(targetSlot);
+      const target = daySlots[daySlotIdx];
+      const globalIdx = currentSchedule.indexOf(target);
       if (globalIdx !== -1) {
         currentSchedule.splice(globalIdx, 1);
-        syncScheduleToFirebase("🗑️ Passet togs bort!");
+        renderVisualScheduleEditor();
+        syncScheduleToFirebase(`🗑️ Pass ${daySlotIdx + 1} togs bort!`);
       }
     }
 
@@ -1077,7 +1201,6 @@
         timestamp: Date.now()
       }).then(() => {
         renderSchedule();
-        populateSlotsDropdown();
         if (feedbackMsg) updateDockStatus(feedbackMsg);
       }).catch(err => {
         updateDockStatus("❌ Fel vid sparande: " + err.message, true);
@@ -1085,8 +1208,11 @@
     }
 
     function resetScheduleToDefault() {
-      currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-      syncScheduleToFirebase("🔄 Schemat återställdes till standard!");
+      if (confirm("Vill du återställa hela schemat för alla 7 dagar till standardschemat?")) {
+        currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+        renderVisualScheduleEditor();
+        syncScheduleToFirebase("🔄 Schemat återställdes till standard!");
+      }
     }
 
     function simulateDaySwitch() {
@@ -1255,7 +1381,7 @@
     setInterval(renderSchedule, 1000);
 
     if (isPanel) {
-      populateSlotsDropdown();
+      renderVisualScheduleEditor();
     }
   </script>
 </body>
