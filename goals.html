@@ -615,7 +615,7 @@
     let isObsStreaming = false;
 
     // ========================================================
-    // 🔌 NATIVE OBS WEBSOCKET (DIRECT SOURCE TEXT UPDATES)
+    // 🔌 NATIVE OBS WEBSOCKET (STREAM EVENTS & TEXT SYNC)
     // ========================================================
     let obsWs = null;
     let isObsWsConnected = false;
@@ -626,11 +626,45 @@
 
         obsWs.onmessage = (event) => {
           const msg = JSON.parse(event.data);
-          if (msg.op === 0) obsWs.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
+
+          // Hello -> Identify
+          if (msg.op === 0) {
+            obsWs.send(JSON.stringify({ op: 1, d: { rpcVersion: 1 } }));
+          }
+
+          // Identified -> Query initial stream status
           if (msg.op === 2) {
             isObsWsConnected = true;
+
+            obsWs.send(JSON.stringify({
+              op: 6,
+              d: {
+                requestType: "GetStreamStatus",
+                requestId: "req-init-stream-status"
+              }
+            }));
+
             if (currentStreamerName && currentStreamerName !== "Streamer") {
               setObsTextSource(currentStreamerName);
+            }
+          }
+
+          // Response to GetStreamStatus
+          if (msg.op === 7 && msg.d && msg.d.requestId === "req-init-stream-status") {
+            const isStreaming = msg.d.responseData && msg.d.responseData.outputActive;
+            updateObsLiveStatus(!!isStreaming);
+          }
+
+          // 🎬 OBS WEBSOCKET EVENT: Fired when "Start/Stop Streaming" is pressed in OBS!
+          if (msg.op === 5 && msg.d && msg.d.eventType === "StreamStateChanged") {
+            const isStreaming = !!msg.d.eventData.outputActive;
+            updateObsLiveStatus(isStreaming);
+
+            if (isStreaming) {
+              syncActiveStreamerToFirebase(currentStreamerName);
+              startFreshPassZero();
+            } else {
+              handleObsStreamingStopped();
             }
           }
         };
@@ -661,6 +695,33 @@
       } catch (e) {}
     }
 
+    // ========================================================
+    // 🔴 INSTANT SYNC TO ACTIVE_STREAMER (TWITCH TITLE TRIGGER)
+    // ========================================================
+    function syncActiveStreamerToFirebase(streamer) {
+      if (!streamer || streamer === "Streamer") return;
+      firebase.database().ref('active_streamer').set({
+        name: streamer,
+        isLive: isObsStreaming,
+        timestamp: Date.now(),
+        secret: WRITE_SECRET
+      }).catch(err => console.error("Firebase error setting active_streamer:", err));
+    }
+
+    function handleObsStreamingStopped() {
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        isLive: false,
+        secret: WRITE_SECRET,
+        lastLiveStoppedUtc: new Date().toISOString()
+      }).catch(() => {});
+
+      firebase.database().ref('active_streamer').update({
+        isLive: false,
+        secret: WRITE_SECRET
+      }).catch(() => {});
+    }
+
     try {
       if (!streamerFromUrl) {
         const savedStreamer = localStorage.getItem(STORAGE_KEY_STREAMER);
@@ -679,9 +740,6 @@
     const dbStreamersRef = firebase.database().ref('streamers');
     const dbBossaRef = firebase.database().ref('bossa');
 
-    // ========================================================
-    // 🎬 OBS STREAMING EVENTS: UPDATES PASS & TWITCH TITLE
-    // ========================================================
     function updateObsLiveStatus(isStreaming) {
       isObsStreaming = isStreaming;
       const pill = document.getElementById('obsLivePill');
@@ -698,34 +756,6 @@
       }
     }
 
-    window.addEventListener('obsStreamingStarted', () => {
-      updateObsLiveStatus(true);
-      startFreshPassZero();
-    });
-
-    window.addEventListener('obsStreamingStopped', () => {
-      updateObsLiveStatus(false);
-      
-      const key = getStreamerKey(currentStreamerName);
-      dbStreamersRef.child(key).update({
-        isLive: false,
-        secret: WRITE_SECRET,
-        lastLiveStoppedUtc: new Date().toISOString()
-      }).catch(() => {});
-
-      // Clear active streamer state
-      firebase.database().ref('active_streamer').update({
-        isLive: false,
-        secret: WRITE_SECRET
-      }).catch(() => {});
-    });
-
-    if (window.obsstudio && window.obsstudio.getStatus) {
-      window.obsstudio.getStatus((status) => {
-        if (status) updateObsLiveStatus(status.streaming);
-      });
-    }
-
     const nameInputEl = document.getElementById('streamerNameInput');
     if (nameInputEl) {
       nameInputEl.addEventListener('change', () => {
@@ -733,6 +763,7 @@
         if (val && val !== currentStreamerName) {
           loadSavedStreamerPass(val);
           setObsTextSource(val);
+          syncActiveStreamerToFirebase(val);
         }
       });
       nameInputEl.addEventListener('keydown', (e) => {
@@ -1104,15 +1135,16 @@
     // 🎬 STARTS PASS & SIGNALS STREAMER.BOT TO UPDATE TITLE
     // ========================================================
     function startFreshPassZero() {
-      if (currentGlobalTotal <= 0) return;
-
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
       currentStreamerName = inputVal || currentStreamerName || "Streamer";
       if (inputEl) inputEl.value = currentStreamerName;
 
+      // Immediately notify Host PC / Streamer.bot
+      syncActiveStreamerToFirebase(currentStreamerName);
+
       const key = getStreamerKey(currentStreamerName);
-      streamerBaseline = currentGlobalTotal;
+      streamerBaseline = currentGlobalTotal > 0 ? currentGlobalTotal : 450;
       manualAdjustment = 0;
 
       try {
@@ -1137,14 +1169,6 @@
         setObsTextSource(currentStreamerName);
         if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
       }).catch(() => {});
-
-      // 🔴 SENDS REAL-TIME TWITCH STREAM TITLE UPDATE TO HOST PC
-      firebase.database().ref('active_streamer').set({
-        name: currentStreamerName,
-        isLive: true,
-        timestamp: Date.now(),
-        secret: WRITE_SECRET
-      }).catch(() => {});
     }
 
     function loadSavedStreamerPass(optionalTargetName) {
@@ -1163,6 +1187,7 @@
       } catch(e) {}
 
       setObsTextSource(currentStreamerName);
+      syncActiveStreamerToFirebase(currentStreamerName);
 
       const key = getStreamerKey(currentStreamerName);
 
@@ -1247,6 +1272,7 @@
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
+    // Connects to OBS-WebSocket v5
     connectObsWebSocket();
 
     if (currentStreamerName && currentStreamerName !== "Streamer") {
