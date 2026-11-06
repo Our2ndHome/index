@@ -26,37 +26,15 @@
       pointer-events: none;
     }
 
-    /* 🌧️ EMOTE RAIN LAYER */
-    .emote-rain-layer {
+    /* 🌧️ HARDWARE-ACCELERATED EMOTE RAIN CANVAS */
+    #emoteRainCanvas {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
       pointer-events: none;
-      overflow: hidden;
       z-index: 99990;
-    }
-
-    .falling-emote {
-      position: absolute;
-      top: -100px;
-      will-change: transform, opacity;
-      animation: fallDown linear forwards;
-    }
-
-    @keyframes fallDown {
-      0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 0.95;
-      }
-      85% {
-        opacity: 0.95;
-      }
-      100% {
-        transform: translateY(118vh) rotate(360deg);
-        opacity: 0;
-      }
     }
 
     /* 🚨 MAIN ALERT BANNER (Donations & Raids) */
@@ -204,8 +182,8 @@
 </head>
 <body>
 
-  <!-- Falling Emote Layer -->
-  <div class="emote-rain-layer" id="emoteRainLayer"></div>
+  <!-- 🌧️ Continuous Canvas Rain Layer -->
+  <canvas id="emoteRainCanvas"></canvas>
 
   <!-- Main Alert Banner Container -->
   <div class="alert-banner" id="alertBanner"></div>
@@ -298,11 +276,7 @@
           pendingObsRequests.set(requestId, { resolve, reject });
           obsWs.send(JSON.stringify({
             op: 6,
-            d: {
-              requestType,
-              requestId,
-              requestData
-            }
+            d: { requestType, requestId, requestData }
           }));
 
           setTimeout(() => {
@@ -339,9 +313,7 @@
             : targetSceneName.replace(/\|/g, " | ");
           try {
             await sendObsRequest("SetCurrentProgramScene", { sceneName: altName });
-          } catch (e2) {
-            console.warn("Could not switch to scene:", targetSceneName);
-          }
+          } catch (e2) {}
         }
       }
 
@@ -370,30 +342,21 @@
         "RandomNerd_Sponsor.png"
       ];
 
-      const EMBEDDED_FALLBACK_EMOTES = [
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,8 90,36 50,92 10,36" fill="%2300e5ff" stroke="%23ffffff" stroke-width="3"/><polygon points="50,8 50,92 10,36" fill="%2300b0ff"/><polygon points="32,36 50,8 68,36 50,92" fill="%23ffffff" opacity="0.6"/></svg>',
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,5 C55,25 75,35 75,55 C75,75 60,95 50,95 C40,95 25,75 25,55 C25,40 40,25 40,15 C40,15 35,30 50,5 Z" fill="%23ff4500"/><path d="M50,35 C53,45 62,52 62,65 C62,75 55,85 50,85 C45,85 38,75 38,65 C38,55 46,45 46,38 Z" fill="%23ffd700"/></svg>',
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="15,75 85,75 95,30 68,55 50,20 32,55 5,30" fill="%23ffbb00" stroke="%23cc9900" stroke-width="4"/><circle cx="50" cy="20" r="6" fill="%23ace600"/><circle cx="95" cy="30" r="6" fill="%23ace600"/><circle cx="5" cy="30" r="6" fill="%23ace600"/></svg>',
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M35,75 A15,12 0 1,1 20,63 L20,25 L75,15 L75,55 A15,12 0 1,1 60,43 L60,25 L35,30 Z" fill="%2300ffcc" stroke="%2300b399" stroke-width="3"/></svg>'
-      ];
-
       const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"; 
       const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; 
 
       const SOUND_VOLUME_MAIN = 0.8;
       const SOUND_VOLUME_MINOR = 0.5;
 
-      // 🎯 HARDCODED: 30 Seconds Alert Display Duration
+      // 🎯 HARDCODED: Exactly 30 seconds alert display
       const MIN_ALERT_DISPLAY_MS = 30000;
       const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
       let soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
-      let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
       let lastProcessedAlertId = 0;
       let initialLoad = true;
 
+      // 🎲 10-SOUND SHUFFLE BAG
       let soundPool = [];
       let lastPlayedSound = null;
 
@@ -403,12 +366,10 @@
 
         if (soundPool.length === 0) {
           soundPool = [...soundFileList];
-
           for (let i = soundPool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
           }
-
           if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
             [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
           }
@@ -419,20 +380,37 @@
         return nextSound;
       }
 
-      const alertQueue = [];
-      let isProcessingAlert = false;
-
       function formatSEK(num) {
         return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
       }
 
-      function preloadImages(urls) {
-        urls.forEach(url => {
+      // ========================================================
+      // 🌧️ CONTINUOUS HARDWARE-ACCELERATED RAIN ENGINE (NO GAPS)
+      // ========================================================
+      const rainCanvas = document.getElementById('emoteRainCanvas');
+      const rCtx = rainCanvas.getContext('2d');
+      let loadedEmoteImages = [];
+      let activeRainParticles = [];
+      let isRaining = false;
+      let rainAnimFrameId = null;
+
+      function resizeRainCanvas() {
+        if (!rainCanvas) return;
+        rainCanvas.width = window.innerWidth;
+        rainCanvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeRainCanvas);
+      resizeRainCanvas();
+
+      function preloadRainEmotes() {
+        loadedEmoteImages = [];
+        CUSTOM_EMOTE_FILES.forEach(filename => {
           const img = new Image();
-          img.src = url;
+          img.src = `${EMOTES_FOLDER}/${encodeURIComponent(filename)}`;
+          img.onload = () => loadedEmoteImages.push(img);
         });
       }
-      preloadImages(emoteFileList);
+      preloadRainEmotes();
 
       function preloadAudio(urls) {
         urls.forEach(url => {
@@ -443,38 +421,104 @@
       }
       preloadAudio(soundFileList);
 
-      function triggerEmoteRain(count = 75) {
-        const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
-        const layer = document.getElementById('emoteRainLayer');
-        if (!layer) return;
+      class RainParticle {
+        constructor(spawnScattered = false) {
+          this.init(spawnScattered);
+        }
 
-        for (let i = 0; i < count; i++) {
-          const img = document.createElement('img');
-          img.className = 'falling-emote';
+        init(spawnScattered = false) {
+          const W = window.innerWidth;
+          const H = window.innerHeight;
+          this.x = Math.random() * W;
+          // If scattered on start, fill the whole screen immediately so there is no gap!
+          this.y = spawnScattered ? (Math.random() * H - 40) : (-50 - Math.random() * 80);
+          this.vy = 3.6 + Math.random() * 4.6;
+          this.vx = (Math.random() - 0.5) * 1.6;
+          this.size = Math.floor(Math.random() * 24) + 38;
+          this.rotation = Math.random() * 360;
+          this.rotSpeed = (Math.random() - 0.5) * 3.5;
+          this.sway = Math.random() * Math.PI * 2;
+          this.swaySpeed = 0.02 + Math.random() * 0.03;
+          this.opacity = 0.95;
+          this.img = (loadedEmoteImages.length > 0)
+            ? loadedEmoteImages[Math.floor(Math.random() * loadedEmoteImages.length)]
+            : null;
+        }
 
-          img.onerror = function() {
-            this.onerror = null;
-            this.src = EMBEDDED_FALLBACK_EMOTES[i % EMBEDDED_FALLBACK_EMOTES.length];
-          };
+        update() {
+          this.y += this.vy;
+          this.sway += this.swaySpeed;
+          this.x += Math.sin(this.sway) * 1.4 + this.vx;
+          this.rotation += this.rotSpeed;
 
-          img.src = list[Math.floor(Math.random() * list.length)];
+          // Fade out slightly near the very bottom
+          if (this.y > window.innerHeight * 0.88) {
+            this.opacity -= 0.025;
+          }
+        }
+      }
 
-          const size = Math.floor(Math.random() * 26) + 38;
-          const left = Math.random() * 95;
-          const duration = (Math.random() * 2.5 + 4.5).toFixed(2);
-          const delay = (Math.random() * 2.0).toFixed(2);
+      function startContinuousRain() {
+        isRaining = true;
+        activeRainParticles = [];
 
-          img.style.width = `${size}px`;
-          img.style.height = `${size}px`;
-          img.style.left = `${left}vw`;
-          img.style.animationDuration = `${duration}s`;
-          img.style.animationDelay = `${delay}s`;
+        // 1. Immediately scatter 40 drops so the screen is active from second 0
+        for (let i = 0; i < 40; i++) {
+          activeRainParticles.push(new RainParticle(true));
+        }
 
-          img.addEventListener('animationend', () => {
-            img.remove();
-          });
+        if (rainAnimFrameId) cancelAnimationFrame(rainAnimFrameId);
+        runRainLoop();
+      }
 
-          layer.appendChild(img);
+      function stopContinuousRain() {
+        // Stops feeding new drops at the top; current drops fall away naturally
+        isRaining = false;
+      }
+
+      function runRainLoop() {
+        rCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+
+        // Continuous steady trickle (spawns 1-2 new drops every frame while raining)
+        if (isRaining && activeRainParticles.length < 90) {
+          if (Math.random() < 0.75) {
+            activeRainParticles.push(new RainParticle(false));
+          }
+        }
+
+        for (let i = activeRainParticles.length - 1; i >= 0; i--) {
+          const p = activeRainParticles[i];
+          p.update();
+
+          // Render
+          if (p.opacity > 0.02 && p.y < window.innerHeight + 80) {
+            rCtx.save();
+            rCtx.translate(p.x, p.y);
+            rCtx.rotate((p.rotation * Math.PI) / 180);
+            rCtx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
+
+            if (p.img && p.img.complete && p.img.naturalWidth > 0) {
+              rCtx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
+            } else {
+              // Fallback gold star if image still caching
+              rCtx.font = `${Math.round(p.size)}px sans-serif`;
+              rCtx.textAlign = 'center';
+              rCtx.textBaseline = 'middle';
+              rCtx.fillText('⭐', 0, 0);
+            }
+            rCtx.restore();
+          } else {
+            // Remove drops that went off screen
+            activeRainParticles.splice(i, 1);
+          }
+        }
+
+        // Loop continues until all remaining drops fall off screen
+        if (isRaining || activeRainParticles.length > 0) {
+          rainAnimFrameId = requestAnimationFrame(runRainLoop);
+        } else {
+          rCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+          rainAnimFrameId = null;
         }
       }
 
@@ -501,13 +545,10 @@
             let done = false;
             const finish = () => { if (!done) { done = true; resolve(); } };
             audio.onended = finish;
-            audio.onerror = () => {
-              console.warn("⚠️ Sound file failed to load:", soundUrl);
-              finish();
-            };
+            audio.onerror = () => finish();
             audio.play().catch(() => finish());
 
-            // 🎯 FIXED: Extended to 32 seconds so 30-second audio files finish completely
+            // 🎯 Safety timeout matches 32s for 30s audio
             setTimeout(finish, 32000);
           } catch (e) { resolve(); }
         });
@@ -541,6 +582,9 @@
         }
       });
 
+      const alertQueue = [];
+      let isProcessingAlert = false;
+
       function enqueueAlert(item) {
         alertQueue.push(item);
         processAlertQueue();
@@ -562,12 +606,9 @@
           const currentScene = await getCurrentObsScene();
           if (isMatchingScene(currentScene, SCENE_GAMING)) {
             originalSceneName = currentScene;
-            console.log(`🎬 Switching to Intermission from: ${currentScene}`);
             await setObsScene(SCENE_INTERMISSION);
             didSwitchScene = true;
             await new Promise(r => setTimeout(r, 350));
-          } else {
-            console.log(`🎬 On scene "${currentScene}". Not on Gaming Scene, skipping scene switch.`);
           }
         }
 
@@ -618,18 +659,16 @@
           banner.classList.add('anim-bottom-in');
         }
 
-        // 🎯 FIXED: Initial burst + continuous rain interval keeps rain falling for all 30 seconds
-        triggerEmoteRain(75);
-        const rainInterval = setInterval(() => {
-          triggerEmoteRain(35);
-        }, 3500);
+        // 🎯 Starts the smooth, uninterrupted 30-second rain stream
+        startContinuousRain();
 
         const soundPromise = playAlertSound(type);
         const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
 
         await Promise.all([soundPromise, displayPromise]);
 
-        clearInterval(rainInterval);
+        // Gently stops new drops at top so remaining drops exit smoothly
+        stopContinuousRain();
 
         banner.classList.remove('anim-top-in', 'anim-bottom-in');
         banner.classList.add('anim-exit');
@@ -641,7 +680,6 @@
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
-            console.log(`🎬 Switching back to: ${originalSceneName}`);
             await setObsScene(originalSceneName);
             await new Promise(r => setTimeout(r, 500));
           }
