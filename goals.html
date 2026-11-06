@@ -301,6 +301,17 @@
     /* ========================================================
        🎛️ 2. OBS DOCK CONTROLLER (FLEX CONTAINER)
        ======================================================== */
+    body.mode-panel {
+      background-color: var(--dock-bg);
+      height: 100vh;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    }
+
     .dock-container {
       max-width: 520px;
       width: 100%;
@@ -418,9 +429,6 @@
       line-height: 1.3;
     }
 
-    /* ========================================================
-       ✏️ DYNAMIC RESPONSIVE MILESTONE EDITOR
-       ======================================================== */
     .milestone-editor-card {
       flex: 1 1 auto;
       display: flex;
@@ -607,7 +615,6 @@
     let parsedGoals = [];
     let currentGlobalTotal = 0;
 
-    // PERSISTENT STREAMER PROFILE
     let currentStreamerName = streamerFromUrl ? streamerFromUrl.trim() : "Streamer";
     let streamerEarnedSoFar = 0;
     let streamerShiftStart = 0;
@@ -658,7 +665,6 @@
         obsWs.onmessage = (event) => {
           const msg = JSON.parse(event.data);
 
-          // Hello (op 0) -> Send Identify with eventSubscriptions so StreamStateChanged is always delivered
           if (msg.op === 0) {
             obsWs.send(JSON.stringify({
               op: 1,
@@ -669,7 +675,6 @@
             }));
           }
 
-          // Identified (op 2) -> Query initial stream status
           if (msg.op === 2) {
             isObsWsConnected = true;
 
@@ -686,12 +691,10 @@
             }
           }
 
-          // Initial stream status response (op 7)
           if (msg.op === 7 && msg.d && msg.d.requestId === "req-init-stream-status") {
             const isStreaming = !!(msg.d.responseData && msg.d.responseData.outputActive);
             updateObsLiveStatus(isStreaming);
 
-            // Re-sync if OBS is already streaming when dock connects
             if (isStreaming && !isObsStreaming) {
               isObsStreaming = true;
               syncActiveStreamerToFirebase(currentStreamerName, true);
@@ -702,7 +705,6 @@
             }
           }
 
-          // Real-time Event (op 5): Triggered on Start/Stop Streaming
           if (msg.op === 5 && msg.d && msg.d.eventType === "StreamStateChanged") {
             const isStreaming = !!msg.d.eventData.outputActive;
             updateObsLiveStatus(isStreaming);
@@ -742,21 +744,15 @@
       } catch (e) {}
     }
 
-    // ========================================================
-    // 🔴 SHIFT START & STOP
-    // ========================================================
     function handleStreamerWentLive() {
       isObsStreaming = true;
 
-      // Clean baseline snapshot (fallback to 0 instead of arbitrary numbers)
       if (!streamerShiftStart || streamerShiftStart === 0) {
         streamerShiftStart = currentGlobalTotal > 0 ? currentGlobalTotal : 0;
       }
 
-      // 1. Update Twitch Title node for Host PC
       syncActiveStreamerToFirebase(currentStreamerName, true);
 
-      // 2. Mark live in Firebase streamer profile
       const key = getStreamerKey(currentStreamerName);
       dbStreamersRef.child(key).update({
         displayName: currentStreamerName,
@@ -799,7 +795,6 @@
         lastLiveStoppedUtc: new Date().toISOString()
       }).catch(() => {});
 
-      // 1. Revert active streamer live state
       syncActiveStreamerToFirebase(currentStreamerName, false);
 
       if (bus) {
@@ -860,7 +855,6 @@
       }
     }
 
-    // Changing streamer in dock
     const nameInputEl = document.getElementById('streamerNameInput');
     if (nameInputEl) {
       nameInputEl.addEventListener('change', () => {
@@ -891,7 +885,6 @@
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
     }
 
-    // Calculates live progress: only tallies shift donations when live
     function getLiveSessionEarned() {
       let earned = streamerEarnedSoFar + streamerManualAdj;
       const isLiveActive = isObsStreaming || streamerIsLiveFromDb;
@@ -1219,7 +1212,6 @@
         if (!isNaN(parsed) && parsed > 0) {
           currentGlobalTotal = parsed;
 
-          // Auto-save live earned total to prevent progress loss
           if (isObsStreaming && streamerShiftStart > 0 && currentGlobalTotal >= streamerShiftStart) {
             const currentLiveTotal = streamerEarnedSoFar + (currentGlobalTotal - streamerShiftStart);
             const key = getStreamerKey(currentStreamerName);
@@ -1283,7 +1275,6 @@
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
 
-    // Loads unique profile and specific goals for the chosen streamer
     function loadSavedStreamerPass(optionalTargetName) {
       const inputEl = document.getElementById('streamerNameInput');
       const inputVal = inputEl ? inputEl.value.trim() : "";
@@ -1301,7 +1292,6 @@
 
       setObsTextSource(currentStreamerName);
 
-      // Instantly apply this streamer's cached goals while Firebase queries
       const localGoals = getLocalGoalsForStreamer(currentStreamerName);
       parsedGoals = parseLinesToGoalObjects(localGoals);
       const area = document.getElementById('goalsInputArea');
@@ -1329,7 +1319,6 @@
             if (area && !isFocusingInput) area.value = data.goalsText;
           }
         } else {
-          // New streamer without Firebase record
           streamerEarnedSoFar = 0;
           streamerShiftStart = 0;
           streamerManualAdj = 0;
@@ -1349,7 +1338,6 @@
       });
     }
 
-    // Saves custom goals exclusively for the current streamer
     function saveGoalsFromTextarea() {
       const area = document.getElementById('goalsInputArea');
       const text = area ? area.value : "";
@@ -1399,7 +1387,6 @@
       }
     }
 
-    // Initial load for active streamer's goals
     const initialGoals = getLocalGoalsForStreamer(currentStreamerName);
     parsedGoals = parseLinesToGoalObjects(initialGoals);
     const area = document.getElementById('goalsInputArea');
@@ -1408,7 +1395,6 @@
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
-    // Connects to OBS-WebSocket v5
     connectObsWebSocket();
 
     if (currentStreamerName && currentStreamerName !== "Streamer") {
