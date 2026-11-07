@@ -28,7 +28,7 @@
     body.mode-panel {
       background-color: #0b0b0d;
       overflow-y: auto;
-      padding: 10px;
+      padding: 6px;
       user-select: none;
     }
 
@@ -139,7 +139,7 @@
       letter-spacing: 1px;
     }
 
-    /* 🎛️ 2. OBS DOCK (CONTROL PANEL) */
+    /* 🎛️ 2. OBS DOCK (COMPACT NO-WASTE DESIGN) */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -148,48 +148,51 @@
     .header-box {
       border: 1px solid #27272a;
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 7px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #111114;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .header-title {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 900;
       text-transform: uppercase;
       color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
     }
 
-    .version-badge {
-      background: #ffffff;
-      color: #000000;
+    /* 🎯 Consistent Status Pill */
+    .status-pill {
       font-size: 9px;
       font-weight: 900;
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-left: 6px;
-    }
-
-    .status-box {
-      background: #141418;
-      border: 1px solid #27272a;
+      padding: 2px 7px;
       border-radius: 4px;
-      padding: 8px;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: #e4e4e7;
-      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .status-pill.online {
+      background: #143820;
+      color: #00ff88;
+      border: 1px solid #00ff88;
+      box-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+    }
+    .status-pill.syncing {
+      background: #332d18;
+      color: #ffea00;
+      border: 1px solid #ffea00;
     }
 
     .summary-text {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       color: #a1a1aa;
-      margin: 0 0 10px 2px;
+      margin: 0 0 8px 2px;
     }
     .summary-text b { color: #ffffff; }
 
@@ -198,14 +201,14 @@
       border: 1px solid #00ff88;
       color: #00ff88;
       border-radius: 4px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       cursor: pointer;
       width: 100%;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       transition: background 0.15s ease, color 0.15s ease;
     }
     .btn-resync:hover { background: #00ff88; color: #000000; }
@@ -214,12 +217,12 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
-      gap: 8px;
+      margin-bottom: 6px;
+      gap: 6px;
     }
 
     .field-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       color: #ffffff;
       text-transform: uppercase;
@@ -232,9 +235,9 @@
       border: 1px solid #27272a;
       border-radius: 4px;
       color: #ffffff;
-      padding: 7px 10px;
+      padding: 6px 8px;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11px;
       outline: none;
     }
 
@@ -243,9 +246,9 @@
       border: 1px solid #27272a;
       color: #ffffff;
       border-radius: 4px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       width: 100%;
@@ -257,7 +260,7 @@
     .manual-row {
       display: flex;
       gap: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .manual-row input[name="name"] { flex: 2; }
     .manual-row input[name="amount"] { flex: 1; }
@@ -269,16 +272,15 @@
       border-radius: 4px;
       font-family: inherit;
       font-weight: 800;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
     }
 
-    /* 🎮 Alert Testing Buttons Grid */
     .test-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: 5px;
+      margin-bottom: 6px;
     }
 
     .btn-test {
@@ -286,24 +288,20 @@
       border: 1px solid #27272a;
       color: #efeff1;
       border-radius: 4px;
-      padding: 10px 6px;
+      padding: 8px 6px;
       font-family: inherit;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 800;
       cursor: pointer;
       text-align: center;
-      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      transition: all 0.15s ease;
     }
-
     .btn-test:hover {
       background: #27272f;
       border-color: #ace600;
       color: #ace600;
     }
-
-    .btn-test:active {
-      transform: translateY(1px);
-    }
+    .btn-test:active { transform: translateY(1px); }
   </style>
 </head>
 <body>
@@ -329,60 +327,52 @@
     </div>
   </div>
 
-  <!-- 🎛️ 2. OBS DOCK CONTROLLER -->
+  <!-- 🎛️ 2. OBS DOCK CONTROLLER (SPACE-SAVING COMPACT VIEW) -->
   <div id="panelRoot" class="dock-container">
+    
+    <!-- 🎯 Streamlined Header with Live Status Pill -->
     <div class="header-box">
-      <span class="header-title">KONTROLLPANEL <span class="version-badge">v7.2</span></span>
-      <button class="btn-dark" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
+      <span class="header-title">
+        💰 BÖSSA
+        <span id="dockStatusPill" class="status-pill online">🟢 LIVE ANSLUTEN (0 KR)</span>
+      </span>
     </div>
-
-    <div class="status-box" id="dockStatusBox">Ansluter till Firebase...</div>
 
     <div class="summary-text" id="dockSummaryText">
       Totalt insamlat: <b>0 KR</b>
     </div>
 
     <button class="btn-resync" onclick="dockRequestResync()">
-      🔄 Återställ till verkligt belopp
+      🔄 Begär synk från bössan
     </button>
 
     <div class="field-row">
       <span class="field-label">SÄTT BELOPP:</span>
-      <div style="display:flex; gap:4px; width:60%;">
+      <div style="display:flex; gap:4px; width:65%;">
         <input type="number" id="dockDirectTotalInput" placeholder="Belopp (kr)" style="width:100%;">
-        <button class="btn-dark" style="width:auto; margin:0; padding:6px 10px;" onclick="dockSetTotal()">Sätt</button>
+        <button class="btn-dark" style="width:auto; margin:0; padding:5px 8px;" onclick="dockSetTotal()">Sätt</button>
       </div>
     </div>
 
-    <div class="manual-row" style="margin-top: 10px;">
+    <div class="manual-row" style="margin-top: 6px;">
       <input type="text" id="dockManualName" name="name" placeholder="Namn" value="Lisa">
       <input type="number" id="dockManualAmount" name="amount" placeholder="Kr" value="250">
       <button id="dockSubmitDonationBtn" onclick="dockSubmitManualDonation()">+ Lägg till</button>
     </div>
 
-    <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:12px;">
+    <input type="text" id="dockManualComment" placeholder="Kommentar (valfri)..." value="Kämpa på!" style="width:100%; margin-bottom:8px;">
 
     <!-- 🎮 TEST ALERTS SECTION -->
-    <div class="field-label" style="margin-bottom: 6px; color: #a1a1aa; border-top: 1px solid #27272a; padding-top: 10px;">
+    <div class="field-label" style="margin-bottom: 5px; color: #a1a1aa; border-top: 1px solid #27272a; padding-top: 6px;">
       TESTA ALERTS (SLUMPMÄSSIGT):
     </div>
 
     <div class="test-grid">
-      <button class="btn-test" onclick="dockTriggerTestAlert('donation')">
-        🎲 Slump-Donation
-      </button>
-      <button class="btn-test" onclick="dockTriggerTestAlert('raid')">
-        🚀 Slump-Raid
-      </button>
-      <button class="btn-test" onclick="dockTriggerTestAlert('sub')">
-        ⭐ Slump-Sub
-      </button>
-      <button class="btn-test" onclick="dockTriggerTestAlert('bits')">
-        💎 Slump-Bits
-      </button>
-      <button class="btn-test" onclick="dockTriggerTestAlert('follow')" style="grid-column: span 2;">
-        👤 Slump-Följare
-      </button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('donation')">🎲 Donation</button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('raid')">🚀 Raid</button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('sub')">⭐ Sub</button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('bits')">💎 Bits</button>
+      <button class="btn-test" onclick="dockTriggerTestAlert('follow')" style="grid-column: span 2;">👤 Följare</button>
     </div>
   </div>
 
@@ -427,9 +417,9 @@
       updateTotalDisplaySmooth(currentTotal);
 
       if (data.forceSync) {
-        updateStatusDisplay("Hämtar verkligt belopp från bössan...");
+        updateStatusDisplay(true);
       } else {
-        updateStatusDisplay(`Live Ansluten (${formatSEK(currentTotal)})`);
+        updateStatusDisplay(false);
       }
     });
 
@@ -445,9 +435,18 @@
       if (targetText) targetText.innerText = `MÅL: 40 000 KR (${percent.toFixed(1)}%)`;
     }
 
-    function updateStatusDisplay(text) {
-      const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = text;
+    // 🎯 Compact Header Status Pill
+    function updateStatusDisplay(isSyncing = false) {
+      const pill = document.getElementById('dockStatusPill');
+      if (pill) {
+        if (isSyncing) {
+          pill.innerText = "⚡ SYNKAR BÖSSAN...";
+          pill.className = "status-pill syncing";
+        } else {
+          pill.innerText = `🟢 LIVE ANSLUTEN (${formatSEK(currentTotal)})`;
+          pill.className = "status-pill online";
+        }
+      }
 
       const summary = document.getElementById('dockSummaryText');
       if (summary) {
@@ -455,16 +454,12 @@
       }
     }
 
-    // 🎯 Requests real total scrape without overwriting with dummy data
     function dockRequestResync() {
-      const box = document.getElementById('dockStatusBox');
-      if (box) box.innerText = "Hämtar verkligt belopp från bössan...";
+      updateStatusDisplay(true);
 
       dbRef.update({
         forceSync: true,
         secret: WRITE_SECRET
-      }).then(() => {
-        updateStatusDisplay("Begärde avläsning från bössan...");
       }).catch(err => {
         alert("Kunde inte begära synk: " + err.message);
       });
@@ -511,35 +506,18 @@
           forceSync: false,
           secret: WRITE_SECRET
         });
-
-        updateStatusDisplay(`Skickade test-donation: ${donor} (+${amount} kr)`);
         return;
       }
 
       let alertObj = {};
-
       if (type === 'raid') {
-        const raider = getRandomItem(RANDOM_RAIDERS);
-        const viewers = getRandomItem(RANDOM_VIEWERS);
-        alertObj = { type: 'raid', donor: raider, viewers: viewers };
-        updateStatusDisplay(`Skickade test-raid: ${raider} (${viewers} st)`);
-      } 
-      else if (type === 'sub') {
-        const subscriber = getRandomItem(RANDOM_NAMES);
-        const months = getRandomItem(RANDOM_MONTHS);
-        alertObj = { type: 'sub', donor: subscriber, months: months };
-        updateStatusDisplay(`Skickade test-sub: ${subscriber} (${months} mån)`);
-      } 
-      else if (type === 'bits') {
-        const cheerer = getRandomItem(RANDOM_NAMES);
-        const bits = getRandomItem(RANDOM_BITS);
-        alertObj = { type: 'bits', donor: cheerer, bits: bits };
-        updateStatusDisplay(`Skickade test-bits: ${cheerer} (${bits} bits)`);
-      } 
-      else if (type === 'follow') {
-        const follower = getRandomItem(RANDOM_NAMES);
-        alertObj = { type: 'follow', donor: follower };
-        updateStatusDisplay(`Skickade test-följare: ${follower}`);
+        alertObj = { type: 'raid', donor: getRandomItem(RANDOM_RAIDERS), viewers: getRandomItem(RANDOM_VIEWERS) };
+      } else if (type === 'sub') {
+        alertObj = { type: 'sub', donor: getRandomItem(RANDOM_NAMES), months: getRandomItem(RANDOM_MONTHS) };
+      } else if (type === 'bits') {
+        alertObj = { type: 'bits', donor: getRandomItem(RANDOM_NAMES), bits: getRandomItem(RANDOM_BITS) };
+      } else if (type === 'follow') {
+        alertObj = { type: 'follow', donor: getRandomItem(RANDOM_NAMES) };
       }
 
       dbRef.set({
