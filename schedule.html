@@ -14,7 +14,7 @@
     :root {
       --primary-color: #ace600;
       --secondary-color: #00ff88;
-      --giveaway-color: #ffea00;
+      --giveaway-color: #ffea00; /* Vibrant Yellow */
       --text-white: #ffffff;
       --text-dim: #a1a1aa;
       --dock-bg: #0b0b0d;
@@ -346,13 +346,25 @@
       color: #ffffff;
       white-space: nowrap;
       letter-spacing: 0.8px;
+      transition: color 0.2s ease;
     }
 
-    .node-streamer.is-giveaway-text { color: #ffffff; }
+    /* 🎯 FIXED: Giveaway text rendered in vibrant yellow on stream */
+    .node-streamer.is-giveaway-text {
+      color: var(--giveaway-color) !important;
+      text-shadow: 0 0 10px rgba(255, 234, 0, 0.45);
+    }
 
     .timeline-node.active .node-streamer {
       font-size: 16px;
       color: var(--primary-color);
+    }
+
+    /* Active giveaway pass glows even brighter in yellow */
+    .timeline-node.active .node-streamer.is-giveaway-text {
+      color: var(--giveaway-color) !important;
+      font-size: 16px;
+      text-shadow: 0 0 16px rgba(255, 234, 0, 0.8);
     }
 
     /* ========================================================
@@ -753,7 +765,6 @@
     let isShowingTheme = false;
     let rotatorTimer = null;
 
-    // 🎯 ACTIVE EDITING DAY IN DOCK
     let activeEditingDayId = "MON";
 
     function isMhLogo(filename) {
@@ -1032,14 +1043,12 @@
       const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId) || DAYS_CONFIG[0];
       if (saveLabel) saveLabel.innerText = activeDayCfg.label;
 
-      // 1. Render 1-Click Day Tabs
       pillsContainer.innerHTML = DAYS_CONFIG.map(d => `
         <button class="day-pill-btn ${d.id === activeEditingDayId ? 'active' : ''}" onclick="switchActiveEditingDay('${d.id}')">
           ${d.label}
         </button>
       `).join('');
 
-      // 2. Render all passes for this day as direct editable cards
       const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
 
       if (daySlots.length === 0) {
@@ -1069,7 +1078,6 @@
       renderVisualScheduleEditor();
     }
 
-    // 🎯 1-CLICK SAVE: Saves all edited passes for the selected day directly
     function saveActiveDaySlots() {
       const slotsContainer = document.getElementById('slotsListContainer');
       if (!slotsContainer) return;
@@ -1104,7 +1112,6 @@
         });
       }
 
-      // Replace active day's slots inside currentSchedule preserving day order
       const newSchedule = [];
       let replaced = false;
 
