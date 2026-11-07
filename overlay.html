@@ -39,7 +39,7 @@
     /* Layer Depth Order (Lower numbers = further back) */
     #layerAlerts   { z-index: 5; }  /* Alerts & rain slide out from behind */
     #layerSchedule { z-index: 10; } /* Bottom sponsor & timeline bar in front */
-    #layerGoals    { z-index: 15; } /* Top split milestone wings */
+    #layerGoals    { z-index: 15; } /* 🎯 Top split milestone wings */
     #layerBossa    { z-index: 20; } /* Top countdown & goal bar in center */
     #layerGiveaway { z-index: 30; } /* Giveaway wheel pops over everything */
 
@@ -140,8 +140,7 @@
     }
 
     #frameBossa    { height: 560px; }
-    #frameSchedule { height: 420px; }
-    #frameGoals    { height: 500px; }
+    #frameSchedule { height: 440px; }
   </style>
 </head>
 <body>
@@ -150,9 +149,9 @@
        📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
-    <!-- Empty src: Injected dynamically only in stream mode -->
     <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
+    <!-- 🎯 Restored: Milstolpar rendered directly inside master overlay -->
     <iframe id="layerGoals" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGiveaway" class="overlay-frame" allow="autoplay"></iframe>
@@ -175,7 +174,6 @@
     <div class="dock-jump-nav">
       <button class="jump-btn" onclick="scrollToSection('secBossa')">↓ Bössa</button>
       <button class="jump-btn" onclick="scrollToSection('secSchedule')">↓ Schema</button>
-      <button class="jump-btn" onclick="scrollToSection('secGoals')">↓ Milstolpar</button>
     </div>
 
     <!-- Section 1: Bössa & Countdown -->
@@ -190,12 +188,6 @@
     </div>
     <iframe id="frameSchedule" class="stacked-panel-frame"></iframe>
 
-    <!-- Section 3: Streamer Milstolpar -->
-    <div id="secGoals" class="panel-section-divider">
-      <span>🎯 MILSTOLPAR & LIVE-PASS</span>
-    </div>
-    <iframe id="frameGoals" class="stacked-panel-frame"></iframe>
-
   </div>
 
   <script>
@@ -203,20 +195,18 @@
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
     if (isPanel) {
-      // 🎛️ DOCK MODE: Load the control panels in stacked view
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'block';
 
       document.getElementById('frameBossa').src = "countdown_and_bossa.html#panel";
       document.getElementById('frameSchedule').src = "schedule.html#panel";
-      document.getElementById('frameGoals').src = "goals.html#panel";
     } else {
-      // 📺 OVERLAY MODE: Load all visual stream layers in exact z-index order
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
 
       document.getElementById('layerAlerts').src = "alerts.html";
       document.getElementById('layerSchedule').src = "schedule.html#overlay";
+      // 🎯 Restored: Stacks goals on stream without double-layering
       document.getElementById('layerGoals').src = "goals.html#overlay";
       document.getElementById('layerBossa').src = "countdown_and_bossa.html#overlay";
       document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
