@@ -43,7 +43,7 @@
     body.mode-panel {
       background-color: var(--dock-bg);
       overflow-y: auto;
-      padding: 10px;
+      padding: 6px;
     }
 
     #overlayRoot {
@@ -349,7 +349,7 @@
       transition: color 0.2s ease;
     }
 
-    /* 🎯 FIXED: Giveaway text rendered in vibrant yellow on stream */
+    /* 🎯 Giveaway text rendered in bright yellow on stream */
     .node-streamer.is-giveaway-text {
       color: var(--giveaway-color) !important;
       text-shadow: 0 0 10px rgba(255, 234, 0, 0.45);
@@ -360,7 +360,6 @@
       color: var(--primary-color);
     }
 
-    /* Active giveaway pass glows even brighter in yellow */
     .timeline-node.active .node-streamer.is-giveaway-text {
       color: var(--giveaway-color) !important;
       font-size: 16px;
@@ -375,53 +374,56 @@
       margin: 0 auto;
     }
 
+    /* 🎯 Space-saving Header */
     .header-box {
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 7px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #111114;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .header-title {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 900;
       text-transform: uppercase;
       color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
     }
 
-    .version-badge {
-      background: #ffffff;
-      color: #000000;
+    /* 🎯 Consistent Status Pill */
+    .status-pill {
       font-size: 9px;
       font-weight: 900;
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-left: 6px;
-    }
-
-    .status-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
+      padding: 2px 7px;
       border-radius: 4px;
-      padding: 8px;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: #e4e4e7;
-      margin-bottom: 8px;
-      transition: color 0.2s ease;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .status-pill.online {
+      background: #143820;
+      color: #00ff88;
+      border: 1px solid #00ff88;
+      box-shadow: 0 0 6px rgba(0, 255, 136, 0.3);
+    }
+    .status-pill.error {
+      background: #27272a;
+      color: #ff453a;
+      border: 1px solid #ff453a;
     }
 
     .card-section {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 10px;
-      margin-bottom: 8px;
+      padding: 8px;
+      margin-bottom: 6px;
     }
 
     .section-title {
@@ -434,12 +436,12 @@
       display: block;
     }
 
-    /* 🎯 1-CLICK DAY PILLS TABS */
+    /* 🎯 1-Click Day Tabs */
     .day-pills-row {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      margin-bottom: 10px;
+      gap: 3px;
+      margin-bottom: 8px;
     }
 
     .day-pill-btn {
@@ -449,7 +451,7 @@
       font-family: inherit;
       font-size: 10px;
       font-weight: 800;
-      padding: 6px 2px;
+      padding: 6px 1px;
       border-radius: 4px;
       cursor: pointer;
       text-align: center;
@@ -463,11 +465,11 @@
       box-shadow: 0 0 8px rgba(172, 230, 0, 0.4);
     }
 
-    /* 🎯 COMPACT VISUAL SLOT CARDS */
+    /* 🎯 Compact Cards */
     .slots-list-container {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       max-height: 380px;
       overflow-y: auto;
       padding-right: 2px;
@@ -477,10 +479,10 @@
       background: #121215;
       border: 1px solid var(--border);
       border-radius: 5px;
-      padding: 8px;
+      padding: 6px 8px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
       transition: border-color 0.15s ease;
     }
     .slot-editor-card:focus-within {
@@ -495,11 +497,11 @@
     }
 
     .slot-num-badge {
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 900;
       color: var(--primary-color);
       background: rgba(172, 230, 0, 0.12);
-      padding: 2px 6px;
+      padding: 2px 5px;
       border-radius: 3px;
       white-space: nowrap;
     }
@@ -513,7 +515,7 @@
       font-family: inherit;
       font-size: 11px;
       font-weight: 700;
-      padding: 4px 6px;
+      padding: 3px 6px;
       outline: none;
     }
 
@@ -523,7 +525,7 @@
       color: #71717a;
       font-size: 13px;
       cursor: pointer;
-      padding: 2px 4px;
+      padding: 1px 3px;
       border-radius: 3px;
       transition: color 0.15s ease;
     }
@@ -536,9 +538,9 @@
       border-radius: 4px;
       color: #ffffff;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 800;
-      padding: 5px 8px;
+      padding: 4px 7px;
       outline: none;
     }
     .slot-name-input:focus, .slot-time-input:focus, .slot-giveaway-input:focus {
@@ -552,9 +554,9 @@
       border-radius: 4px;
       color: var(--giveaway-color);
       font-family: inherit;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      padding: 4px 8px;
+      padding: 3px 7px;
       outline: none;
     }
 
@@ -563,14 +565,14 @@
       border: 1px solid var(--border);
       color: #ffffff;
       border-radius: 4px;
-      padding: 7px 10px;
+      padding: 6px 8px;
       font-family: inherit;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
       width: 100%;
       text-align: center;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
 
     .btn-primary-action {
@@ -578,14 +580,14 @@
       color: #000000;
       border: none;
       border-radius: 4px;
-      padding: 10px;
+      padding: 9px;
       font-family: inherit;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 900;
       cursor: pointer;
       width: 100%;
-      margin-top: 6px;
-      margin-bottom: 4px;
+      margin-top: 5px;
+      margin-bottom: 3px;
     }
     .btn-primary-action:hover { opacity: 0.9; }
 
@@ -598,7 +600,7 @@
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      gap: 5px;
     }
   </style>
 </head>
@@ -634,31 +636,28 @@
     </div>
   </div>
 
-  <!-- 🎛️ 2. OBS CONTROL DOCK (#panel) -->
+  <!-- 🎛️ 2. OBS CONTROL DOCK (COMPACT NO-WASTE DESIGN) -->
   <div id="panelRoot" class="dock-container">
+    
+    <!-- 🎯 Streamlined Header with Live Status Pill -->
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.6</span></span>
-      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
+      <span class="header-title">
+        📅 SCHEMA
+        <span id="dockStatusPill" class="status-pill online">🟢 LIVE ANSLUTEN (SYNKAD)</span>
+      </span>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
-
-    <!-- ✏️ REDESIGNED VISUAL SCHEDULE EDITOR -->
+    <!-- ✏️ Visual Schedule Editor -->
     <div class="card-section">
       <span class="section-title">✏️ Redigera Schema</span>
       
-      <!-- 🎯 1-Click Day Tabs -->
       <div class="day-pills-row" id="dayPillsRow"></div>
-
-      <!-- 🎯 All Passes for the Day in Stacked Cards -->
       <div class="slots-list-container" id="slotsListContainer"></div>
 
-      <!-- Add New Slot Button -->
-      <button class="btn" onclick="addNewSlotToActiveDay()" style="margin-top: 6px; margin-bottom: 2px;">
+      <button class="btn" onclick="addNewSlotToActiveDay()" style="margin-top: 5px; margin-bottom: 2px;">
         ➕ Lägg till nytt pass denna dag
       </button>
 
-      <!-- Save Button -->
       <button class="btn-primary-action" id="btnSaveSchedule" onclick="saveActiveDaySlots()">
         💾 Spara ändringar för <span id="saveDayNameText">MÅNDAG</span>
       </button>
@@ -673,7 +672,7 @@
       </div>
       <div class="grid-2" style="margin-top:2px;">
         <button class="btn" id="btnModeReal" onclick="setMode('real')">📅 Skarpt Läge</button>
-        <button class="btn" id="btnModeTest" onclick="setMode('test')">⚡ Testläge (Realtid)</button>
+        <button class="btn" id="btnModeTest" onclick="setMode('test')">⚡ Testläge</button>
       </div>
       <button class="btn btn-danger" style="margin-top:4px;" onclick="resetScheduleToDefault()">
         Återställ standardschema
@@ -764,7 +763,6 @@
 
     let isShowingTheme = false;
     let rotatorTimer = null;
-
     let activeEditingDayId = "MON";
 
     function isMhLogo(filename) {
@@ -802,11 +800,17 @@
       if (cachedSched) currentSchedule = JSON.parse(cachedSched);
     } catch(e) {}
 
+    // 🎯 Compact Header Status Pill
     function updateDockStatus(msg, isError = false) {
-      const statusBox = document.getElementById('dockStatusBox');
-      if (statusBox) {
-        statusBox.innerText = msg;
-        statusBox.style.color = isError ? "#ff453a" : "#00ff88";
+      const pill = document.getElementById('dockStatusPill');
+      if (pill) {
+        if (isError) {
+          pill.innerText = `⚠️ ${msg}`;
+          pill.className = "status-pill error";
+        } else {
+          pill.innerText = "🟢 LIVE ANSLUTEN (SYNKAD)";
+          pill.className = "status-pill online";
+        }
       }
     }
 
@@ -833,7 +837,7 @@
         updateSponsorLogo();
       }
 
-      updateDockStatus("Live Ansluten (Synkad)");
+      updateDockStatus("Synkad");
     });
 
     function parseDate(dateStr) {
@@ -1031,9 +1035,6 @@
       updateScheduleDOM(activeDayId, schedule, now, false);
     }
 
-    // ========================================================
-    // 🎛️ DOCK: STREAMLINED VISUAL SCHEDULE MANAGER
-    // ========================================================
     function renderVisualScheduleEditor() {
       const pillsContainer = document.getElementById('dayPillsRow');
       const slotsContainer = document.getElementById('slotsListContainer');
@@ -1093,12 +1094,12 @@
         const giveawayVal = card.querySelector('.slot-giveaway-input').value.trim();
 
         if (!nameVal) {
-          return updateDockStatus(`⚠️ Pass ${i + 1}: Ange ett streamernamn!`, true);
+          return updateDockStatus(`Pass ${i + 1}: Ange namn!`, true);
         }
 
         const parsedTime = parseTimeRangeToDates(activeEditingDayId, timeVal);
         if (!parsedTime) {
-          return updateDockStatus(`⚠️ Pass ${i + 1}: Ogiltig tid! (t.ex. 18:00 - 21:00)`, true);
+          return updateDockStatus(`Pass ${i + 1}: Ogiltig tid!`, true);
         }
 
         updatedDaySlots.push({
@@ -1129,7 +1130,7 @@
       if (!replaced) newSchedule.push(...updatedDaySlots);
       currentSchedule = newSchedule;
 
-      syncScheduleToFirebase(`✅ ${activeDayCfg.label} sparades & synkades live!`);
+      syncScheduleToFirebase(`✅ ${activeDayCfg.label} sparades!`);
 
       const saveBtn = document.getElementById('btnSaveSchedule');
       if (saveBtn) {
@@ -1182,13 +1183,13 @@
       }
 
       renderVisualScheduleEditor();
-      syncScheduleToFirebase(`➕ Nytt pass lades till på ${activeDayCfg.label}`);
+      syncScheduleToFirebase(`➕ Nytt pass: ${activeDayCfg.label}`);
     }
 
     function deleteSlotByIndex(daySlotIdx) {
       const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
       if (daySlots.length <= 1) {
-        return updateDockStatus("⚠️ En dag måste ha minst ett pass!", true);
+        return updateDockStatus("Minst ett pass krävs!", true);
       }
 
       const target = daySlots[daySlotIdx];
@@ -1196,12 +1197,12 @@
       if (globalIdx !== -1) {
         currentSchedule.splice(globalIdx, 1);
         renderVisualScheduleEditor();
-        syncScheduleToFirebase(`🗑️ Pass ${daySlotIdx + 1} togs bort!`);
+        syncScheduleToFirebase(`🗑️ Pass togs bort!`);
       }
     }
 
     function syncScheduleToFirebase(feedbackMsg) {
-      updateDockStatus("Synkar till Firebase...");
+      updateDockStatus("Synkar...");
       dbScheduleRef.update({
         schedule: currentSchedule,
         secret: WRITE_SECRET,
@@ -1210,7 +1211,7 @@
         renderSchedule();
         if (feedbackMsg) updateDockStatus(feedbackMsg);
       }).catch(err => {
-        updateDockStatus("❌ Fel vid sparande: " + err.message, true);
+        updateDockStatus("Fel vid sparande", true);
       });
     }
 
@@ -1218,7 +1219,7 @@
       if (confirm("Vill du återställa hela schemat för alla 7 dagar till standardschemat?")) {
         currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
         renderVisualScheduleEditor();
-        syncScheduleToFirebase("🔄 Schemat återställdes till standard!");
+        syncScheduleToFirebase("Återställt till standard!");
       }
     }
 
@@ -1236,7 +1237,7 @@
       simulationLockTimer = setTimeout(() => { isSimulationLocked = false; }, 12000);
 
       triggerDayTransition(targetDayId, schedule, new Date());
-      updateDockStatus(`Visar ${targetDayId} (Simulering 12s)`);
+      updateDockStatus(`Visar ${targetDayId} (12s)`);
     }
 
     function setMode(mode) {
@@ -1245,7 +1246,7 @@
       if (simulationLockTimer) clearTimeout(simulationLockTimer);
       currentDisplayedDayId = null;
       renderSchedule();
-      updateDockStatus(mode === 'real' ? "📅 Skarpt läge aktivt" : "⚡ Testläge aktivt");
+      updateDockStatus(mode === 'real' ? "Skarpt läge" : "Testläge");
     }
 
     function triggerNextSponsor() {
@@ -1258,7 +1259,7 @@
       });
       showSponsorCard();
       updateSponsorLogo();
-      updateDockStatus(`Sponsor: ${currentSponsorIndex + 1}/${sponsorFileList.length}`);
+      updateDockStatus(`Sponsor ${currentSponsorIndex + 1}/${sponsorFileList.length}`);
     }
 
     function showThemeCard() {
