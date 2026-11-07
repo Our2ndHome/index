@@ -37,20 +37,20 @@
     }
 
     /* Layer Depth Order */
-    #layerAlerts   { z-index: 5; }  /* Alerts & rain slide out from behind */
-    #layerSchedule { z-index: 10; } /* Bottom sponsor & timeline bar in front */
-    #layerGoals    { z-index: 15; } /* Top split milestone wings */
-    #layerBossa    { z-index: 20; } /* Top countdown & goal bar in center */
-    #layerGiveaway { z-index: 30; } /* Giveaway wheel pops over everything */
+    #layerAlerts   { z-index: 5; }
+    #layerSchedule { z-index: 10; }
+    #layerGoals    { z-index: 15; }
+    #layerBossa    { z-index: 20; }
+    #layerGiveaway { z-index: 30; }
 
     /* ========================================================
-       🎛️ 2. OBS DOCK CONTROLLER VIEW (COMPACT SPACE-SAVING)
+       🎛️ 2. OBS DOCK CONTROLLER VIEW (ZERO DEAD SPACE)
        ======================================================== */
     body.mode-panel {
       background-color: #0b0b0d;
       color: #ffffff;
       overflow-y: auto;
-      padding: 6px;
+      padding: 4px;
     }
 
     .dock-container {
@@ -58,15 +58,14 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
 
-    /* 🎯 Slim Header without reload button */
     .dock-master-header {
       background: #111114;
       border: 1px solid #27272a;
-      border-radius: 6px;
-      padding: 7px 10px;
+      border-radius: 5px;
+      padding: 6px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -92,26 +91,45 @@
       border-radius: 3px;
     }
 
-    /* Direct seamless frames without duplicate headers */
+    .btn-swap-order {
+      background: #18181c;
+      border: 1px solid #27272a;
+      color: #a1a1aa;
+      font-family: inherit;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+    }
+    .btn-swap-order:hover {
+      background: #272730;
+      color: #ffffff;
+    }
+
+    /* 🎯 Snug frames with ZERO artificial min-height */
     .stacked-panel-frame {
       width: 100%;
       border: none;
       display: block;
       background: transparent;
-      min-height: 480px;
-      height: auto;
+      height: 310px;
       overflow: hidden;
+      margin: 0;
+      padding: 0;
     }
 
     #frameSchedule {
-      min-height: 540px;
+      height: 480px;
     }
   </style>
 </head>
 <body>
 
   <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW (ALL 5 LAYERS STACKED)
+       📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
     <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
@@ -122,23 +140,22 @@
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS DOCK CONTROLLER VIEW (NO WASTED SPACE)
+       🎛️ 2. OBS DOCK CONTROLLER VIEW
        ======================================================== -->
   <div id="panelContainer" class="dock-container" style="display: none;">
     
-    <!-- Top Bar -->
     <div class="dock-master-header">
       <div class="dock-master-title">
         <span>KONTROLLPANEL</span>
         <span class="badge-hub">MASTER HUB</span>
       </div>
+      <!-- 🎯 1-Click to swap whether Bössa or Schedule sits on top -->
+      <button class="btn-swap-order" onclick="swapPanelOrder()">⇅ Byt ordning</button>
     </div>
 
-    <!-- Section 1: Bössa & Countdown Frame -->
-    <iframe id="frameBossa" class="stacked-panel-frame" onload="autoResizeFrame(this)"></iframe>
-
-    <!-- Section 2: Schedule & Sponsors Frame -->
-    <iframe id="frameSchedule" class="stacked-panel-frame" onload="autoResizeFrame(this)"></iframe>
+    <!-- The 2 Dock Frames -->
+    <iframe id="frameBossa" class="stacked-panel-frame"></iframe>
+    <iframe id="frameSchedule" class="stacked-panel-frame"></iframe>
 
   </div>
 
@@ -146,12 +163,17 @@
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
+    let isOrderSwapped = false;
+
     if (isPanel) {
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'flex';
 
       document.getElementById('frameBossa').src = "countdown_and_bossa.html#panel";
       document.getElementById('frameSchedule').src = "schedule.html#panel";
+
+      // 🎯 Dynamic auto-resizer: Snaps frames tight to their exact content height every 500ms
+      setInterval(autoFitFrames, 500);
     } else {
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
@@ -163,16 +185,30 @@
       document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
     }
 
-    // Automatically adjusts heights so both panels fit with zero nested scrollbars
-    function autoResizeFrame(iframe) {
-      try {
-        if (iframe && iframe.contentWindow && iframe.contentWindow.document.body) {
-          const h = iframe.contentWindow.document.body.scrollHeight;
-          if (h > 150) {
-            iframe.style.height = (h + 6) + 'px';
+    function autoFitFrames() {
+      ['frameBossa', 'frameSchedule'].forEach(id => {
+        const frame = document.getElementById(id);
+        if (frame && frame.contentWindow && frame.contentWindow.document.body) {
+          const contentH = frame.contentWindow.document.body.scrollHeight;
+          if (contentH > 60) {
+            frame.style.height = (contentH + 2) + 'px';
           }
         }
-      } catch(e) {}
+      });
+    }
+
+    function swapPanelOrder() {
+      const container = document.getElementById('panelContainer');
+      const bossa = document.getElementById('frameBossa');
+      const schedule = document.getElementById('frameSchedule');
+      if (!container || !bossa || !schedule) return;
+
+      isOrderSwapped = !isOrderSwapped;
+      if (isOrderSwapped) {
+        container.insertBefore(schedule, bossa);
+      } else {
+        container.insertBefore(bossa, schedule);
+      }
     }
   </script>
 </body>
