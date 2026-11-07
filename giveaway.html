@@ -414,19 +414,6 @@
       color: #ff453a;
     }
     .btn-danger:hover:not(:disabled) { background: #ff453a; color: #ffffff; }
-
-    .btn-cancel-safe {
-      background: #1a1a20;
-      border: 1px solid #71717a;
-      color: #e4e4e7;
-    }
-    .btn-cancel-safe:hover:not(:disabled) { background: #272730; color: #ffffff; border-color: #ffffff; }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
   </style>
 </head>
 <body>
@@ -495,14 +482,10 @@
       Dra ny vinnare (5s)
     </button>
     
-    <div class="grid-2" style="margin-top: 4px;">
-      <button class="btn btn-danger" id="btnClose" onclick="claimPrizeAndClose()">
-        🏆 Avsluta giveaway (Vinst utdelad)
-      </button>
-      <button class="btn btn-cancel-safe" id="btnCancel" onclick="cancelWithoutTicket()">
-        ❌ Avbryt och stäng
-      </button>
-    </div>
+    <!-- 🎯 SINGLE CONSOLIDATED CLOSE BUTTON -->
+    <button class="btn btn-danger" id="btnCloseGiveaway" onclick="closeGiveaway()" style="margin-top: 4px;">
+      🏆 Avsluta giveaway
+    </button>
   </div>
 
   <script>
@@ -701,7 +684,6 @@
           updateStatsUI();
           syncChattersToCloud();
 
-          // 🎯 FIXED: Instantly updates wheel to show real chatters the moment the first message arrives!
           if (!isSpinning) {
             initInitialStage();
           }
@@ -815,17 +797,14 @@
       } else if (act.type === 'WINNER_CHATTED' && act.actionId && act.actionId !== lastProcessedActionId) {
         lastProcessedActionId = act.actionId;
         displayWinnerChatResponse(act.winner, act.message, false);
-      } else if (act.type === 'CLAIM_CLOSE' && act.actionId && act.actionId !== lastProcessedActionId) {
+      } else if ((act.type === 'CLOSE_GIVEAWAY' || act.type === 'CLAIM_CLOSE' || act.type === 'CANCEL_CLOSE') && act.actionId && act.actionId !== lastProcessedActionId) {
         lastProcessedActionId = act.actionId;
-        finalizeClaimAndHide();
-      } else if (act.type === 'CANCEL_CLOSE' && act.actionId && act.actionId !== lastProcessedActionId) {
-        lastProcessedActionId = act.actionId;
-        finalizeCancelAndHide();
+        finalizeCloseAndHide();
       } else if (act.type === 'RESET') {
         chatterMap = {};
         currentWinner = null;
         winnerHasResponded = false;
-        finalizeClaimAndHide();
+        finalizeCloseAndHide();
         updateStatsUI();
       } else if (act.type === 'UPDATE_PRIZE') {
         setPrizeText(act.prize, false);
@@ -846,19 +825,15 @@
           lastProcessedActionId = payload.actionId;
           displayWinnerChatResponse(payload.winner, payload.message, false);
         }
-        if (type === 'CLAIM_CLOSE' && payload.actionId !== lastProcessedActionId) {
+        if ((type === 'CLOSE_GIVEAWAY' || type === 'CLAIM_CLOSE' || type === 'CANCEL_CLOSE') && payload.actionId !== lastProcessedActionId) {
           lastProcessedActionId = payload.actionId;
-          finalizeClaimAndHide();
-        }
-        if (type === 'CANCEL_CLOSE' && payload.actionId !== lastProcessedActionId) {
-          lastProcessedActionId = payload.actionId;
-          finalizeCancelAndHide();
+          finalizeCloseAndHide();
         }
         if (type === 'RESET') {
           chatterMap = {};
           currentWinner = null;
           winnerHasResponded = false;
-          finalizeClaimAndHide();
+          finalizeCloseAndHide();
           updateStatsUI();
         }
         if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
@@ -1080,7 +1055,6 @@
       reelStage.innerHTML = html;
     }
 
-    // 🎯 FIXED: Replaced "Väntar på chatten..." with clean stream branding
     function initInitialStage() {
       const names = getChattersPool();
       trackNamesList = [];
@@ -1146,8 +1120,6 @@
       if (giveawayWidget) giveawayWidget.classList.add('active');
 
       const names = getChattersPool();
-
-      // 🎯 FIXED: Purges any old dummy placeholder text before the spin starts
       trackNamesList = [];
       for (let i = 0; i < 7; i++) {
         trackNamesList.push(names[i % names.length]);
@@ -1250,46 +1222,20 @@
       }, holdDelayMs);
     }
 
-    function claimPrizeAndClose() {
+    // 🎯 SINGLE UNIFIED CLOSE ACTION
+    function closeGiveaway() {
       if (isSpinning) return;
-      if (!currentWinner) return alert("Ingen vinnare dragen än!");
 
       const actionId = Date.now();
       lastProcessedActionId = actionId;
 
-      dbActionRef.set({ type: 'CLAIM_CLOSE', actionId: actionId, secret: WRITE_SECRET, timestamp: actionId });
-      if (bus) bus.postMessage({ type: 'CLAIM_CLOSE', payload: { actionId } });
+      dbActionRef.set({ type: 'CLOSE_GIVEAWAY', actionId: actionId, secret: WRITE_SECRET, timestamp: actionId });
+      if (bus) bus.postMessage({ type: 'CLOSE_GIVEAWAY', payload: { actionId } });
 
-      finalizeClaimAndHide();
+      finalizeCloseAndHide();
     }
 
-    function cancelWithoutTicket() {
-      const actionId = Date.now();
-      lastProcessedActionId = actionId;
-
-      dbActionRef.set({ type: 'CANCEL_CLOSE', actionId: actionId, secret: WRITE_SECRET, timestamp: actionId });
-      if (bus) bus.postMessage({ type: 'CANCEL_CLOSE', payload: { actionId } });
-
-      finalizeCancelAndHide();
-    }
-
-    function finalizeClaimAndHide() {
-      stopTimers();
-      clearCelebrationEffects();
-      isSpinning = false;
-      setButtonsLocked(false);
-      winnerHasResponded = false;
-
-      if (giveawayWidget) giveawayWidget.classList.remove('active');
-
-      setTimeout(() => {
-        currentWinner = null;
-        if (giveawayTimerBadge) giveawayTimerBadge.innerHTML = "";
-        initInitialStage();
-      }, 450);
-    }
-
-    function finalizeCancelAndHide() {
+    function finalizeCloseAndHide() {
       stopTimers();
       clearCelebrationEffects();
       isSpinning = false;
