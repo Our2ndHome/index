@@ -98,10 +98,10 @@
       border-radius: 3px;
     }
 
-    /* 🎯 BÖSSA: Locked snugly to content with ZERO dead space below Följare */
+    /* 🎯 BÖSSA: Adjusted to 355px so the Följare button fits with NO scrollbar */
     #wrapperBossa {
-      flex: 0 0 315px;
-      height: 315px;
+      flex: 0 0 355px;
+      height: 355px;
       width: 100%;
       border: 1px solid #27272a;
       border-radius: 6px;
@@ -111,7 +111,7 @@
       flex-shrink: 0;
     }
 
-    /* 🎯 SCHEMA: Automatically expands to take ALL remaining vertical dock height */
+    /* 🎯 SCHEMA: Automatically expands to fill all remaining height */
     #wrapperSchedule {
       flex: 1 1 auto;
       min-height: 360px;
@@ -159,7 +159,7 @@
       </div>
     </div>
 
-    <!-- 🎯 Tight Bössa Box (Zero dead space) -->
+    <!-- 🎯 Snug Bössa Box (Fits up to Följare with no scrollbar) -->
     <div id="wrapperBossa">
       <iframe id="frameBossa" class="stacked-panel-frame"></iframe>
     </div>
