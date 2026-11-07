@@ -39,7 +39,7 @@
     /* Layer Depth Order (Lower numbers = further back) */
     #layerAlerts   { z-index: 5; }  /* Alerts & rain slide out from behind */
     #layerSchedule { z-index: 10; } /* Bottom sponsor & timeline bar in front */
-    #layerGoals    { z-index: 15; } /* 🎯 Top split milestone wings */
+    #layerGoals    { z-index: 15; } /* Top split milestone wings */
     #layerBossa    { z-index: 20; } /* Top countdown & goal bar in center */
     #layerGiveaway { z-index: 30; } /* Giveaway wheel pops over everything */
 
@@ -49,20 +49,30 @@
     body.mode-panel {
       background-color: #0b0b0d;
       color: #ffffff;
-      overflow-y: auto;
-      padding-bottom: 24px;
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Anti-trap shield during drag */
+    body.is-dragging {
+      cursor: row-resize !important;
+      user-select: none !important;
+    }
+    body.is-dragging iframe {
+      pointer-events: none !important;
     }
 
     .dock-master-header {
       background: #111114;
       border-bottom: 1px solid #27272a;
-      padding: 8px 10px;
+      padding: 7px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 10000;
+      flex-shrink: 0;
     }
 
     .dock-master-title {
@@ -85,22 +95,21 @@
       border-radius: 3px;
     }
 
-    .dock-jump-nav {
-      position: sticky;
-      top: 36px;
-      z-index: 9999;
-      display: flex;
+    /* 🎯 Quick View Switcher */
+    .dock-view-nav {
       background: #141418;
       border-bottom: 1px solid #27272a;
       padding: 6px;
+      display: flex;
       gap: 6px;
+      flex-shrink: 0;
     }
 
-    .jump-btn {
+    .view-btn {
       flex: 1;
       background: #1e1e24;
       border: 1px solid #27272a;
-      color: #ffffff;
+      color: #a1a1aa;
       border-radius: 4px;
       padding: 6px 4px;
       font-family: inherit;
@@ -109,38 +118,97 @@
       cursor: pointer;
       text-align: center;
       text-transform: uppercase;
-      transition: background 0.15s ease, border-color 0.15s ease;
+      transition: all 0.15s ease;
     }
-    .jump-btn:hover { 
-      background: #2b2b34; 
-      border-color: #3f3f46; 
+    .view-btn:hover { background: #272730; color: #ffffff; }
+    .view-btn.active {
+      background: #2b2b36;
+      border-color: #52525b;
+      color: #00ff88;
+    }
+
+    /* Flex Containers */
+    .dock-panels-flex-body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 78px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel-box {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: flex 0.2s ease;
+    }
+
+    .panel-box.collapsed {
+      display: none !important;
     }
 
     .panel-section-divider {
       background: #141418;
-      border: 1px solid #27272a;
-      border-radius: 4px;
+      border-top: 1px solid #27272a;
+      border-bottom: 1px solid #27272a;
       padding: 6px 10px;
-      margin: 12px 8px 6px 8px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 900;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       color: #a1a1aa;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .panel-section-divider:hover {
+      background: #1a1a20;
+      color: #ffffff;
+    }
+
+    .panel-chevron {
+      font-size: 9px;
+      color: #71717a;
     }
 
     .stacked-panel-frame {
       width: 100%;
+      height: 100%;
       border: none;
       display: block;
       background: #0b0b0d;
-      overflow: hidden;
+      flex: 1 1 auto;
     }
 
-    #frameBossa    { height: 560px; }
-    #frameSchedule { height: 440px; }
+    /* 🎯 Draggable Splitter Handle */
+    .splitter-bar {
+      height: 10px;
+      background: #141418;
+      border-top: 1px solid #27272a;
+      border-bottom: 1px solid #27272a;
+      cursor: row-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+      z-index: 100;
+    }
+    .splitter-bar:hover, body.is-dragging .splitter-bar {
+      background: #272730;
+      border-color: #52525b;
+    }
+    .splitter-grip {
+      width: 32px;
+      height: 3px;
+      background: #52525b;
+      border-radius: 2px;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -151,14 +219,13 @@
   <div id="overlayContainer" style="display: none;">
     <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
-    <!-- 🎯 Restored: Milstolpar rendered directly inside master overlay -->
     <iframe id="layerGoals" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGiveaway" class="overlay-frame" allow="autoplay"></iframe>
   </div>
 
   <!-- ========================================================
-       🎛️ 2. OBS DOCK CONTROLLER VIEW
+       🎛️ 2. OBS DOCK CONTROLLER VIEW (FLEX RESIZABLE)
        ======================================================== -->
   <div id="panelContainer" style="display: none;">
     
@@ -167,26 +234,43 @@
         <span>KONTROLLPANEL</span>
         <span class="badge-hub">MASTER HUB</span>
       </div>
-      <button class="jump-btn" style="flex:0; padding: 4px 8px;" onclick="location.reload()">Ladda om</button>
+      <button class="view-btn" style="flex:0; padding: 4px 8px;" onclick="location.reload()">Ladda om</button>
     </div>
 
-    <!-- Quick Jump Navigation -->
-    <div class="dock-jump-nav">
-      <button class="jump-btn" onclick="scrollToSection('secBossa')">↓ Bössa</button>
-      <button class="jump-btn" onclick="scrollToSection('secSchedule')">↓ Schema</button>
+    <!-- 🎯 1-Click View Switcher -->
+    <div class="dock-view-nav">
+      <button id="btnViewBoth" class="view-btn active" onclick="setDockView('both')">↕ Båda (Delad)</button>
+      <button id="btnViewBossa" class="view-btn" onclick="setDockView('bossa')">💰 Endast Bössa</button>
+      <button id="btnViewSchedule" class="view-btn" onclick="setDockView('schedule')">📅 Endast Schema</button>
     </div>
 
-    <!-- Section 1: Bössa & Countdown -->
-    <div id="secBossa" class="panel-section-divider">
-      <span>💰 BÖSSA & INSAMLINGSMÅL</span>
-    </div>
-    <iframe id="frameBossa" class="stacked-panel-frame"></iframe>
+    <!-- 🎯 Dynamic Resizable Split View -->
+    <div class="dock-panels-flex-body" id="dockPanelsBody">
+      
+      <!-- Top Box: Bössa & Countdown -->
+      <div id="boxBossa" class="panel-box">
+        <div class="panel-section-divider" onclick="togglePanelCollapse('bossa')">
+          <span>💰 BÖSSA & INSAMLINGSMÅL</span>
+          <span class="panel-chevron" id="chevronBossa">▼ FÄLL IHOP</span>
+        </div>
+        <iframe id="frameBossa" class="stacked-panel-frame"></iframe>
+      </div>
 
-    <!-- Section 2: Schedule & Sponsors -->
-    <div id="secSchedule" class="panel-section-divider">
-      <span>📅 SCHEMA & SPONSORER</span>
+      <!-- 🎯 Draggable Splitter Divider -->
+      <div id="splitterBar" class="splitter-bar" title="Dra upp/ner för att ändra panelstorlek">
+        <div class="splitter-grip"></div>
+      </div>
+
+      <!-- Bottom Box: Schedule & Sponsors -->
+      <div id="boxSchedule" class="panel-box" style="flex: 1 1 auto;">
+        <div class="panel-section-divider" onclick="togglePanelCollapse('schedule')">
+          <span>📅 SCHEMA & SPONSORER</span>
+          <span class="panel-chevron" id="chevronSchedule">▼ FÄLL IHOP</span>
+        </div>
+        <iframe id="frameSchedule" class="stacked-panel-frame"></iframe>
+      </div>
+
     </div>
-    <iframe id="frameSchedule" class="stacked-panel-frame"></iframe>
 
   </div>
 
@@ -200,22 +284,148 @@
 
       document.getElementById('frameBossa').src = "countdown_and_bossa.html#panel";
       document.getElementById('frameSchedule').src = "schedule.html#panel";
+
+      initResizableDock();
     } else {
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
 
       document.getElementById('layerAlerts').src = "alerts.html";
       document.getElementById('layerSchedule').src = "schedule.html#overlay";
-      // 🎯 Restored: Stacks goals on stream without double-layering
       document.getElementById('layerGoals').src = "goals.html#overlay";
       document.getElementById('layerBossa').src = "countdown_and_bossa.html#overlay";
       document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
     }
 
-    function scrollToSection(id) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // ========================================================
+    // 🎛️ DOCK FLEX RESIZER & LAYOUT MANAGER
+    // ========================================================
+    const STORAGE_KEY_BOSSA_HEIGHT = "mh_hub_bossa_height";
+    const STORAGE_KEY_VIEW_MODE = "mh_hub_view_mode";
+
+    let currentViewMode = "both";
+    let isDraggingSplitter = false;
+
+    function initResizableDock() {
+      const boxBossa = document.getElementById('boxBossa');
+      const splitter = document.getElementById('splitterBar');
+      const flexBody = document.getElementById('dockPanelsBody');
+
+      // Load saved split height (default 50% / 380px)
+      const savedHeight = localStorage.getItem(STORAGE_KEY_BOSSA_HEIGHT);
+      if (savedHeight && boxBossa) {
+        boxBossa.style.height = `${parseInt(savedHeight, 10)}px`;
+        boxBossa.style.flex = "none";
+      } else if (boxBossa) {
+        boxBossa.style.height = "380px";
+        boxBossa.style.flex = "none";
+      }
+
+      // Load saved view mode
+      const savedMode = localStorage.getItem(STORAGE_KEY_VIEW_MODE);
+      if (savedMode) {
+        setDockView(savedMode, false);
+      }
+
+      // Drag splitter logic
+      if (splitter && flexBody) {
+        splitter.addEventListener('mousedown', (e) => {
+          isDraggingSplitter = true;
+          document.body.classList.add('is-dragging');
+          e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!isDraggingSplitter || !boxBossa) return;
+
+          const flexRect = flexBody.getBoundingClientRect();
+          let newHeight = e.clientY - flexRect.top;
+
+          // Min/Max height bounds
+          const minH = 120;
+          const maxH = flexRect.height - 120;
+          newHeight = Math.max(minH, Math.min(maxH, newHeight));
+
+          boxBossa.style.height = `${newHeight}px`;
+          boxBossa.style.flex = "none";
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (isDraggingSplitter && boxBossa) {
+            isDraggingSplitter = false;
+            document.body.classList.remove('is-dragging');
+            try {
+              localStorage.setItem(STORAGE_KEY_BOSSA_HEIGHT, parseInt(boxBossa.style.height, 10));
+            } catch(e) {}
+          }
+        });
+      }
+    }
+
+    function setDockView(mode, save = true) {
+      currentViewMode = mode;
+      if (save) {
+        try { localStorage.setItem(STORAGE_KEY_VIEW_MODE, mode); } catch(e) {}
+      }
+
+      const boxBossa = document.getElementById('boxBossa');
+      const boxSchedule = document.getElementById('boxSchedule');
+      const splitter = document.getElementById('splitterBar');
+
+      const btnBoth = document.getElementById('btnViewBoth');
+      const btnBossa = document.getElementById('btnViewBossa');
+      const btnSchedule = document.getElementById('btnViewSchedule');
+
+      [btnBoth, btnBossa, btnSchedule].forEach(btn => btn && btn.classList.remove('active'));
+
+      if (mode === 'bossa') {
+        if (btnBossa) btnBossa.classList.add('active');
+        if (boxBossa) {
+          boxBossa.classList.remove('collapsed');
+          boxBossa.style.height = "100%";
+          boxBossa.style.flex = "1 1 auto";
+        }
+        if (boxSchedule) boxSchedule.classList.add('collapsed');
+        if (splitter) splitter.style.display = "none";
+      } 
+      else if (mode === 'schedule') {
+        if (btnSchedule) btnSchedule.classList.add('active');
+        if (boxBossa) boxBossa.classList.add('collapsed');
+        if (boxSchedule) {
+          boxSchedule.classList.remove('collapsed');
+          boxSchedule.style.height = "100%";
+          boxSchedule.style.flex = "1 1 auto";
+        }
+        if (splitter) splitter.style.display = "none";
+      } 
+      else {
+        // Both split view
+        if (btnBoth) btnBoth.classList.add('active');
+        if (boxBossa) {
+          boxBossa.classList.remove('collapsed');
+          const savedH = localStorage.getItem(STORAGE_KEY_BOSSA_HEIGHT) || "380";
+          boxBossa.style.height = `${savedH}px`;
+          boxBossa.style.flex = "none";
+        }
+        if (boxSchedule) {
+          boxSchedule.classList.remove('collapsed');
+          boxSchedule.style.flex = "1 1 auto";
+          boxSchedule.style.height = "auto";
+        }
+        if (splitter) splitter.style.display = "flex";
+      }
+    }
+
+    function togglePanelCollapse(panelKey) {
+      if (currentViewMode !== 'both') {
+        setDockView('both');
+        return;
+      }
+
+      if (panelKey === 'bossa') {
+        setDockView('schedule');
+      } else {
+        setDockView('bossa');
       }
     }
   </script>
