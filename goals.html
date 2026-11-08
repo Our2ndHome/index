@@ -20,7 +20,8 @@
       --card-bg: #141418;
       --border: #27272a;
       
-      --wing-bg: rgba(0, 0, 0, 0.80);
+      /* 🎯 EXACT MATCH: 0.9 opacity matches the countdown widget */
+      --wing-bg: rgba(0, 0, 0, 0.9);
 
       /* Exact 20px Grid for 400px Center Widget */
       --wing-width: 720px;
@@ -90,7 +91,7 @@
       visibility: hidden !important;
     }
 
-    /* 🎯 32px Curvature matching the center countdown widget */
+    /* 🎯 Exact 0.9 darkness and 32px curvature matching center countdown */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
@@ -99,7 +100,7 @@
       background: var(--wing-bg);
       padding: 14px 26px 14px 26px;
       border-radius: 32px !important;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
       border: none !important;
       outline: none !important;
     }
