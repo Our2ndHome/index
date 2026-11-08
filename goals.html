@@ -20,7 +20,6 @@
       --card-bg: #141418;
       --border: #27272a;
       
-      /* 🎯 EXACT MATCH: 0.9 opacity matches the countdown widget */
       --wing-bg: rgba(0, 0, 0, 0.9);
 
       /* Exact 20px Grid for 400px Center Widget */
@@ -91,7 +90,6 @@
       visibility: hidden !important;
     }
 
-    /* 🎯 Exact 0.9 darkness and 32px curvature matching center countdown */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
@@ -111,6 +109,7 @@
       flex-shrink: 0;
     }
 
+    /* 🎯 Clean Wing Header (No Text Shadow) */
     .wing-header {
       font-size: 12px;
       font-weight: 900;
@@ -118,7 +117,7 @@
       color: var(--primary);
       text-transform: uppercase;
       margin-bottom: 6px;
-      text-shadow: 0 2px 4px #000, 0 0 2px #000;
+      text-shadow: none !important;
     }
 
     .horizontal-track {
@@ -202,17 +201,18 @@
       transition: opacity 0.3s ease;
     }
 
+    /* 🎯 Clean Amount (No Text Shadow) */
     .h-node-amount {
       font-size: 14px;
       font-weight: 900;
       letter-spacing: 0.8px;
       color: #ffffff;
       white-space: nowrap;
-      text-shadow: 0 2px 4px #000, 0 0 3px #000;
+      text-shadow: none !important;
       line-height: 16px;
       height: 16px;
       margin-bottom: 10px;
-      transition: color 0.3s ease, text-shadow 0.3s ease;
+      transition: color 0.3s ease;
     }
 
     .h-node-tick-wrapper {
@@ -233,6 +233,7 @@
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
+    /* 🎯 Clean Label (No Text Shadow) */
     .h-node-label {
       font-size: 12px;
       font-weight: 800;
@@ -242,13 +243,13 @@
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      text-shadow: 0 2px 4px #000, 0 0 3px #000;
+      text-shadow: none !important;
       max-width: 180px;
       margin-top: 8px;
       text-align: center;
       white-space: normal;
       word-break: break-word;
-      transition: color 0.3s ease, text-shadow 0.3s ease;
+      transition: color 0.3s ease;
     }
 
     .node-label-text {
@@ -256,14 +257,15 @@
       text-align: inherit;
     }
 
+    /* Clean Reached States (No Text Shadow) */
     .h-node.reached .h-node-amount {
       color: rgba(255, 255, 255, 0.38) !important;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+      text-shadow: none !important;
     }
 
     .h-node.reached .h-node-label {
       color: rgba(255, 255, 255, 0.38) !important;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+      text-shadow: none !important;
     }
 
     .h-node.reached .h-node-tick {
