@@ -121,7 +121,7 @@
       padding: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-center: center;
       justify-content: center;
       gap: 3px;
       text-align: center;
@@ -204,10 +204,7 @@
 </head>
 <body>
 
-  <!-- Falling Emote Layer -->
   <div class="emote-rain-layer" id="emoteRainLayer"></div>
-
-  <!-- Main Alert Banner Container -->
   <div class="alert-banner" id="alertBanner"></div>
 
   <script>
@@ -433,7 +430,6 @@
       const SOUND_VOLUME_MINOR = 0.5;
       const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
-      // 🎯 EXACT DURATIONS: 30s Donation | 20s Raid | 10s Sub, Bits, Follow
       function getAlertDuration(type) {
         if (type === 'donation') return 30000;
         if (type === 'raid') return 20000;
@@ -473,6 +469,12 @@
 
       function formatSEK(num) {
         return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
+      }
+
+      function escapeHTML(str) {
+        return String(str || '').replace(/[&<>'"]/g, tag => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag] || tag));
       }
 
       function preloadImages(urls) {
@@ -604,7 +606,7 @@
         let didSwitchScene = false;
         let originalSceneName = "";
 
-        // 🎬 SWITCH TO INTERMISSION: Triggers camera move first, then switches scene!
+        // 🎬 SWITCH TO INTERMISSION: Triggers camera move first, then switches scene
         if (isDonationOrRaid && isObsConnected) {
           const currentScene = await getCurrentObsScene();
           if (isMatchingScene(currentScene, SCENE_GAMING)) {
@@ -618,26 +620,49 @@
 
         banner.className = 'alert-banner';
 
+        // 🎯 1. DONATION ALERT: SMART ANONYMOUS "EN HEMLIG HJÄLTE" DETECTION
         if (type === 'donation') {
-          banner.innerHTML = `
-            <span class="donor-name">${item.donor || item.name || 'Givare'}</span>
-            <div class="alert-subtext">DONERADE <span class="highlight">${formatSEK(item.amount || 50)}</span>!</div>
-            ${item.comment ? `<div class="alert-comment">"${item.comment}"</div>` : ''}
-          `;
+          const rawDonor = String(item.donor || item.name || '').trim();
+          const rawComment = String(item.comment || item.message || '').trim();
+          const amountFormatted = formatSEK(item.amount || 50);
+
+          // Detects "En hemlig hjälte" or anonymous gifts
+          const isSecretHero = /hemlig\s*hj[aä]lte|anonym/i.test(rawDonor) ||
+                               /hemlig\s*hj[aä]lte|anonym/i.test(rawComment) ||
+                               !rawDonor || rawDonor.toLowerCase() === 'givare';
+
+          if (isSecretHero) {
+            // Remove redundant "En hemlig hjälte gav en gåva" from comment if present
+            const cleanComment = /hemlig\s*hj[aä]lte\s*gav\s*en\s*g[aå]va/i.test(rawComment) ? '' : rawComment;
+
+            banner.innerHTML = `
+              <span class="donor-name">EN HEMLIG HJÄLTE</span>
+              <div class="alert-subtext">GAV <span class="highlight">${amountFormatted}</span>!</div>
+              ${cleanComment ? `<div class="alert-comment">"${escapeHTML(cleanComment)}"</div>` : ''}
+            `;
+          } else {
+            banner.innerHTML = `
+              <span class="donor-name">${escapeHTML(rawDonor)}</span>
+              <div class="alert-subtext">DONERADE <span class="highlight">${amountFormatted}</span>!</div>
+              ${rawComment ? `<div class="alert-comment">"${escapeHTML(rawComment)}"</div>` : ''}
+            `;
+          }
           banner.classList.add('anim-top-in');
         } 
+        // 🎯 2. RAID ALERT: "TITTARE" (Not "tittarna")
         else if (type === 'raid') {
           banner.innerHTML = `
-            <span class="donor-name">${item.donor || item.name || 'Raider'}</span>
+            <span class="donor-name">${escapeHTML(item.donor || item.name || 'Raider')}</span>
             <div class="alert-subtext">RAIDAR MED <span class="highlight">${item.viewers || 1}</span> TITTARE!</div>
           `;
           banner.classList.add('anim-top-in');
         } 
+        // 🎯 3. SECONDARY ALERTS (No emote rain)
         else if (type === 'sub') {
           const months = item.months || 1;
           banner.innerHTML = `
             <div class="minor-alert-badge">
-              <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+              <div class="minor-alert-name">${escapeHTML(item.donor || item.name || 'Tittare')}</div>
               <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
             </div>
           `;
@@ -647,7 +672,7 @@
           const bits = item.bits || item.amount || 100;
           banner.innerHTML = `
             <div class="minor-alert-badge">
-              <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+              <div class="minor-alert-name">${escapeHTML(item.donor || item.name || 'Tittare')}</div>
               <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
             </div>
           `;
@@ -656,7 +681,7 @@
         else if (type === 'follow') {
           banner.innerHTML = `
             <div class="minor-alert-badge">
-              <div class="minor-alert-name">${item.donor || item.name || 'Tittare'}</div>
+              <div class="minor-alert-name">${escapeHTML(item.donor || item.name || 'Tittare')}</div>
               <div class="minor-alert-detail">FÖLJER KANALEN!</div>
             </div>
           `;
@@ -689,7 +714,7 @@
         banner.className = 'alert-banner';
         banner.innerHTML = '';
 
-        // 🎬 SWITCH BACK TO GAMING: Triggers camera move first, then switches scene!
+        // 🎬 SWITCH BACK TO GAMING: Triggers camera move first, then switches scene
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
