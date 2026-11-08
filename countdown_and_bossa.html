@@ -40,7 +40,8 @@
       transform: translateX(-50%);
       background-color: rgba(0, 0, 0, 0.9);
       padding: 18px 36px 20px 36px;
-      border-radius: 0 0 32px 32px;
+      /* 🎯 16px bottom curvature for perfect sync with goal wings & sponsors */
+      border-radius: 0 0 16px 16px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
       display: flex;
       flex-direction: column;
@@ -139,7 +140,7 @@
       letter-spacing: 1px;
     }
 
-    /* 🎛️ 2. OBS DOCK (COMPACT NO-WASTE DESIGN) */
+    /* 🎛️ 2. OBS DOCK */
     .dock-container {
       max-width: 480px;
       margin: 0 auto;
@@ -167,7 +168,6 @@
       width: 100%;
     }
 
-    /* 🎯 Consistent Status Pill */
     .status-pill {
       font-size: 9px;
       font-weight: 900;
@@ -327,10 +327,9 @@
     </div>
   </div>
 
-  <!-- 🎛️ 2. OBS DOCK CONTROLLER (SPACE-SAVING COMPACT VIEW) -->
+  <!-- 🎛️ 2. OBS DOCK CONTROLLER -->
   <div id="panelRoot" class="dock-container">
     
-    <!-- 🎯 Streamlined Header with Live Status Pill -->
     <div class="header-box">
       <span class="header-title">
         💰 BÖSSA
@@ -435,7 +434,6 @@
       if (targetText) targetText.innerText = `MÅL: 40 000 KR (${percent.toFixed(1)}%)`;
     }
 
-    // 🎯 Compact Header Status Pill
     function updateStatusDisplay(isSyncing = false) {
       const pill = document.getElementById('dockStatusPill');
       if (pill) {
