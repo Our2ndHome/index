@@ -20,6 +20,8 @@
       --card-bg: #141418;
       --border: #27272a;
       
+      --wing-bg: rgba(0, 0, 0, 0.80);
+
       /* Exact 20px Grid for 400px Center Widget */
       --wing-width: 720px;
       --center-spacer-width: 440px; /* 400px widget + 20px gap on each side */
@@ -88,17 +90,18 @@
       visibility: hidden !important;
     }
 
+    /* 🎯 Rounded corners (24px) matching the center countdown and sponsor widgets */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
       display: flex;
       flex-direction: column;
-      background: rgba(0, 0, 0, 0.9);
-      padding: 12px 18px 12px 18px;
-      border-radius: 8px;
+      background: var(--wing-bg);
+      padding: 12px 22px 12px 22px;
+      border-radius: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
       border: none !important;
       outline: none !important;
-      box-shadow: none !important;
     }
 
     .center-obstacle-spacer {
@@ -585,7 +588,6 @@
 
     const OBS_TEXT_SOURCE_NAME = "Streamer - Name Source";
 
-    // 🎯 UPDATED: Clean standard goals (50 kr to 850 kr)
     const DEFAULT_GOALS = 
       "50 kr - Mål 1\n" +
       "150 kr - Mål 2\n" +
@@ -1200,7 +1202,7 @@
       });
     }
 
-    // LISTENS TO GLOBAL BÖSSA TOTAL (Shared across all streamers)
+    // LISTENS TO GLOBAL BÖSSA TOTAL
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
       let raw = null;
