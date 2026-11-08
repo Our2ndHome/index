@@ -60,7 +60,6 @@
             margin-bottom: 6px;
         }
 
-        /* 🎵 SPOTIFY SKIP BUTTON */
         .btn-spotify-skip {
             width: 100%;
             background: #18181c;
@@ -301,7 +300,6 @@
         const SOURCE_WEBCAM = "Webcam Source";
         const SOURCE_WEBCAM_SCENE = "Webcam Scene";
 
-        // Optional OBS Global Hotkey Dummy Source
         const OBS_HOTKEY_TRIGGER_SOURCE = "Hotkey - Skip Spotify";
 
         let lastSkipSentTime = 0;
@@ -333,9 +331,8 @@
             setTimeout(() => { isSkipDebouncing = false; }, 350);
         }
 
-        // 🎯 KEYBOARD SHORTCUT LISTENER (F9 or Shift + N)
+        // Local hotkey when browser dock has focus
         window.addEventListener('keydown', (e) => {
-            // Ignore if user is currently typing in an input field
             if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
                 return;
             }
@@ -396,7 +393,9 @@
 
         let webcam1ItemId = null;
         let webcam2ItemId = null;
-        let hotkeySkipItemId = null;
+
+        // 🎯 Set containing all item IDs found for "Hotkey - Skip Spotify" across any scene
+        const hotkeyItemIds = new Set();
 
         function connectOBS() {
             ws = new WebSocket('ws://127.0.0.1:4455');
@@ -432,14 +431,16 @@
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !isEnabled);
                     });
 
-                    // Optional OBS Global Hotkey Hook
-                    syncWebcamItem("Musikhjälpen|Gaming Scene", OBS_HOTKEY_TRIGGER_SOURCE, (id) => hotkeySkipItemId = id, () => {});
+                    // 🎯 Universal scanner: Finds the hotkey source across all scenes
+                    scanForHotkeySources();
                 }
 
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
                     const newScene = msg.d.eventData.sceneName;
                     updateActiveSceneUI(newScene);
                     handleSceneAutoFilters(newScene);
+                    // Rescan on scene change in case sources were added
+                    scanForHotkeySources();
                 }
 
                 if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
@@ -451,11 +452,14 @@
                         updateWebcam2ToggleUI(sceneItemEnabled);
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, sceneItemEnabled);
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !sceneItemEnabled);
-                    } else if (sceneItemId === hotkeySkipItemId && sceneItemEnabled) {
-                        // 🎯 OBS Global Hotkey detected!
+                    } 
+                    // 🎯 GLOBAL HOTKEY TRIGGERED IN OBS!
+                    else if (hotkeyItemIds.has(sceneItemId) && sceneItemEnabled) {
                         remoteSkipSpotify();
-                        // Reset source back to hidden so it can be pressed again
-                        setSceneItemState(sceneName || "Musikhjälpen|Gaming Scene", OBS_HOTKEY_TRIGGER_SOURCE, false);
+                        // Reset source to hidden so it can be pressed again immediately
+                        setTimeout(() => {
+                            setSceneItemState(sceneName, OBS_HOTKEY_TRIGGER_SOURCE, false);
+                        }, 60);
                     }
                 }
 
@@ -496,6 +500,26 @@
                     d: { requestType, requestId, requestData }
                 }));
             });
+        }
+
+        // 🎯 Scans all scenes in OBS to find the Item ID of "Hotkey - Skip Spotify"
+        async function scanForHotkeySources() {
+            try {
+                const listRes = await sendRequest("GetSceneList");
+                if (listRes && listRes.scenes) {
+                    for (const sc of listRes.scenes) {
+                        try {
+                            const idRes = await sendRequest("GetSceneItemId", {
+                                sceneName: sc.sceneName,
+                                sourceName: OBS_HOTKEY_TRIGGER_SOURCE
+                            });
+                            if (idRes && typeof idRes.sceneItemId === 'number') {
+                                hotkeyItemIds.add(idRes.sceneItemId);
+                            }
+                        } catch(e) {}
+                    }
+                }
+            } catch(e) {}
         }
 
         function handleSceneAutoFilters(sceneName) {
