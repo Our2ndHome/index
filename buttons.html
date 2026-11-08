@@ -60,6 +60,7 @@
             margin-bottom: 6px;
         }
 
+        /* 🎵 SPOTIFY SKIP BUTTON */
         .btn-spotify-skip {
             width: 100%;
             background: #18181c;
@@ -75,8 +76,7 @@
             cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
+            justify-content: space-between;
             margin-bottom: 12px;
             transition: all 0.08s ease;
         }
@@ -94,6 +94,12 @@
             border-color: #1db954 !important;
         }
 
+        .spotify-left-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .spotify-dot {
             width: 7px;
             height: 7px;
@@ -104,6 +110,24 @@
 
         .btn-spotify-skip.flashing .spotify-dot {
             background-color: #000000;
+        }
+
+        .shortcut-badge {
+            font-size: 9px;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.1);
+            color: #a1a1aa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
+        }
+        .btn-spotify-skip:hover .shortcut-badge {
+            color: #1db954;
+            background: rgba(29, 185, 84, 0.15);
+        }
+        .btn-spotify-skip.flashing .shortcut-badge {
+            color: #000000;
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .dual-row {
@@ -229,21 +253,29 @@
         </div>
     </div>
 
+    <!-- 🎵 SPOTIFY SKIP BUTTON -->
     <div class="section-title">Musik (Spotify)</div>
     <button class="btn-spotify-skip" id="btn-skip-spotify" onclick="remoteSkipSpotify()">
-        <span class="spotify-dot"></span>
-        <span id="spotify-skip-label">⏭️ NÄSTA LÅT (SKIP)</span>
+        <div class="spotify-left-box">
+            <span class="spotify-dot"></span>
+            <span id="spotify-skip-label">⏭️ NÄSTA LÅT (SKIP)</span>
+        </div>
+        <span class="shortcut-badge">F9</span>
     </button>
 
+    <!-- 📷 ROW 1: WEBCAM 1 CONTROLS -->
     <div class="section-title">Webcam Kontroller</div>
     <div class="grid grid-webcam" id="webcam-grid"></div>
 
+    <!-- 🎬 ROW 2: SCENES -->
     <div class="section-title">Scener</div>
     <div class="grid grid-scenes" id="scene-grid"></div>
 
+    <!-- ⚙️ ROW 3: ÄNDRA DESSA (SOURCE PROPERTIES) -->
     <div class="section-title">Ändra dessa:</div>
     <div class="grid grid-props" id="props-grid"></div>
 
+    <!-- 👥 ROW 4: STREAMER 2 & WEBCAM 2 -->
     <div class="section-title" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
       Streamer 2 & Extra Webcam (Valfri)
     </div>
@@ -268,6 +300,9 @@
 
         const SOURCE_WEBCAM = "Webcam Source";
         const SOURCE_WEBCAM_SCENE = "Webcam Scene";
+
+        // Optional OBS Global Hotkey Dummy Source
+        const OBS_HOTKEY_TRIGGER_SOURCE = "Hotkey - Skip Spotify";
 
         let lastSkipSentTime = 0;
         let isSkipDebouncing = false;
@@ -297,6 +332,19 @@
 
             setTimeout(() => { isSkipDebouncing = false; }, 350);
         }
+
+        // 🎯 KEYBOARD SHORTCUT LISTENER (F9 or Shift + N)
+        window.addEventListener('keydown', (e) => {
+            // Ignore if user is currently typing in an input field
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                return;
+            }
+
+            if (e.key === 'F9' || (e.shiftKey && (e.key === 'N' || e.key === 'n'))) {
+                e.preventDefault();
+                remoteSkipSpotify();
+            }
+        });
 
         const WEBCAM_BUTTONS = [
             {
@@ -348,6 +396,7 @@
 
         let webcam1ItemId = null;
         let webcam2ItemId = null;
+        let hotkeySkipItemId = null;
 
         function connectOBS() {
             ws = new WebSocket('ws://127.0.0.1:4455');
@@ -355,7 +404,6 @@
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
 
-                // 🎯 FIXED: Always send eventSubscriptions
                 if (msg.op === 0) {
                     ws.send(JSON.stringify({
                         op: 1,
@@ -383,6 +431,9 @@
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, isEnabled);
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !isEnabled);
                     });
+
+                    // Optional OBS Global Hotkey Hook
+                    syncWebcamItem("Musikhjälpen|Gaming Scene", OBS_HOTKEY_TRIGGER_SOURCE, (id) => hotkeySkipItemId = id, () => {});
                 }
 
                 if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
@@ -392,13 +443,19 @@
                 }
 
                 if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
-                    const { sceneItemId, sceneItemEnabled } = msg.d.eventData;
+                    const { sceneItemId, sceneItemEnabled, sceneName } = msg.d.eventData;
+
                     if (sceneItemId === webcam1ItemId) {
                         updateWebcamToggleUI(sceneItemEnabled);
                     } else if (sceneItemId === webcam2ItemId) {
                         updateWebcam2ToggleUI(sceneItemEnabled);
                         setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, sceneItemEnabled);
                         setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !sceneItemEnabled);
+                    } else if (sceneItemId === hotkeySkipItemId && sceneItemEnabled) {
+                        // 🎯 OBS Global Hotkey detected!
+                        remoteSkipSpotify();
+                        // Reset source back to hidden so it can be pressed again
+                        setSceneItemState(sceneName || "Musikhjälpen|Gaming Scene", OBS_HOTKEY_TRIGGER_SOURCE, false);
                     }
                 }
 
@@ -462,25 +519,37 @@
             setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
         }
 
-        // 🎯 FIXED: Automatically tolerates spaces around "|" for filter targets
         function sendFilterTrigger(sourceName, filterName) {
-            if (!isConnected) return;
+            if (!isConnected || !ws) return;
 
-            const trigger = (target) => {
-                sendRequest("SetSourceFilterEnabled", { sourceName: target, filterName, filterEnabled: false })
-                    .catch(() => {})
-                    .finally(() => {
-                        setTimeout(() => {
-                            sendRequest("SetSourceFilterEnabled", { sourceName: target, filterName, filterEnabled: true }).catch(() => {});
-                        }, 25);
-                    });
-            };
+            ws.send(JSON.stringify({
+                op: 6,
+                d: {
+                    requestType: "SetSourceFilterEnabled",
+                    requestId: "flt-off-" + Math.random(),
+                    requestData: {
+                        sourceName: sourceName,
+                        filterName: filterName,
+                        filterEnabled: false
+                    }
+                }
+            }));
 
-            trigger(sourceName);
-            if (sourceName.includes('|') || sourceName.includes(' | ')) {
-                const alt = sourceName.includes(' | ') ? sourceName.replace(/\s*\|\s*/g, '|') : sourceName.replace(/\|/g, ' | ');
-                trigger(alt);
-            }
+            setTimeout(() => {
+                if (!isConnected || !ws) return;
+                ws.send(JSON.stringify({
+                    op: 6,
+                    d: {
+                        requestType: "SetSourceFilterEnabled",
+                        requestId: "flt-on-" + Math.random(),
+                        requestData: {
+                            sourceName: sourceName,
+                            filterName: filterName,
+                            filterEnabled: true
+                        }
+                    }
+                }));
+            }, 20);
         }
 
         function isMatchingScene(currentName, targetName) {
