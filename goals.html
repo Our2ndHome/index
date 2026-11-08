@@ -90,14 +90,15 @@
       visibility: hidden !important;
     }
 
+    /* 🎯 16px Curvature matching the sponsors and countdown widgets */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
       display: flex;
       flex-direction: column;
       background: var(--wing-bg);
-      padding: 14px 26px 14px 26px;
-      border-radius: 32px !important;
+      padding: 12px 20px 12px 20px;
+      border-radius: 16px !important;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
       border: none !important;
       outline: none !important;
@@ -111,9 +112,9 @@
 
     /* 🎯 Centered Header Titles */
     .wing-header {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       color: var(--primary);
       text-transform: uppercase;
       margin-bottom: 6px;
@@ -527,7 +528,7 @@
       
       <!-- Left Goal Wing -->
       <div class="goal-wing" id="leftWing">
-        <div class="wing-header" id="leftWingHeader">MILSTOLPAR •</div>
+        <div class="wing-header" id="leftWingHeader">• MILSTOLPAR •</div>
         <div class="horizontal-track left-track" id="leftTrack">
           <div class="track-line-bg"></div>
           <div class="track-line-fill" id="leftFill"></div>
@@ -665,7 +666,7 @@
       } catch (e) {}
     }
 
-    // 🎯 DYNAMIC CENTERED WING HEADERS
+    // 🎯 DYNAMIC CENTERED WING HEADERS WITH BULLET POINTS
     function updateWingHeaders() {
       const leftH = document.getElementById('leftWingHeader');
       const rightH = document.getElementById('rightWingHeader');
@@ -676,15 +677,13 @@
         : "";
 
       if (name) {
-        // Swedish genitive grammar rule: if ends in s/x/z, don't add extra s
         const endsInS = /[sxz]$/i.test(name);
         const genitiveName = endsInS ? `${name.toUpperCase()}` : `${name.toUpperCase()}S`;
-        leftH.innerText = `${genitiveName} MILSTOLPAR`;
-        rightH.innerText = `NÄSTA MÅL • DONERA FÖR ATT LÅSA UPP`;
+        leftH.innerText = `• ${genitiveName} MILSTOLPAR •`;
       } else {
-        leftH.innerText = `STREAMERNS MILSTOLPAR`;
-        rightH.innerText = `NÄSTA MÅL • DONERA FÖR ATT LÅSA UPP`;
+        leftH.innerText = `• STREAMERNS MILSTOLPAR •`;
       }
+      rightH.innerText = `• DONERA TILL BÖSSAN FÖR ATT NÅ NÄSTA MÅL •`;
     }
 
     // ========================================================
