@@ -109,15 +109,23 @@
       flex-shrink: 0;
     }
 
-    /* 🎯 Clean Wing Header (No Text Shadow) */
+    /* 🎯 Centered Header Titles */
     .wing-header {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 900;
       letter-spacing: 2px;
       color: var(--primary);
       text-transform: uppercase;
       margin-bottom: 6px;
       text-shadow: none !important;
+      text-align: center;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .horizontal-track {
@@ -201,7 +209,6 @@
       transition: opacity 0.3s ease;
     }
 
-    /* 🎯 Clean Amount (No Text Shadow) */
     .h-node-amount {
       font-size: 14px;
       font-weight: 900;
@@ -233,7 +240,6 @@
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* 🎯 Clean Label (No Text Shadow) */
     .h-node-label {
       font-size: 12px;
       font-weight: 800;
@@ -257,7 +263,6 @@
       text-align: inherit;
     }
 
-    /* Clean Reached States (No Text Shadow) */
     .h-node.reached .h-node-amount {
       color: rgba(255, 255, 255, 0.38) !important;
       text-shadow: none !important;
@@ -519,8 +524,10 @@
   <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
     <div class="top-goals-container" id="goalsWidgetContainer">
+      
+      <!-- Left Goal Wing -->
       <div class="goal-wing" id="leftWing">
-        <div class="wing-header">MILSTOLPAR</div>
+        <div class="wing-header" id="leftWingHeader">MILSTOLPAR</div>
         <div class="horizontal-track left-track" id="leftTrack">
           <div class="track-line-bg"></div>
           <div class="track-line-fill" id="leftFill"></div>
@@ -531,8 +538,9 @@
 
       <div class="center-obstacle-spacer"></div>
 
+      <!-- Right Goal Wing -->
       <div class="goal-wing" id="rightWing">
-        <div class="wing-header">NÄSTA MÅL</div>
+        <div class="wing-header" id="rightWingHeader">NÄSTA MÅL • DONERA FÖR ATT LÅSA UPP</div>
         <div class="horizontal-track right-track" id="rightTrack">
           <div class="track-line-bg"></div>
           <div class="track-line-fill" id="rightFill"></div>
@@ -657,6 +665,28 @@
       } catch (e) {}
     }
 
+    // 🎯 DYNAMIC CENTERED WING HEADERS
+    function updateWingHeaders() {
+      const leftH = document.getElementById('leftWingHeader');
+      const rightH = document.getElementById('rightWingHeader');
+      if (!leftH || !rightH) return;
+
+      const name = (currentStreamerName && currentStreamerName !== "Streamer")
+        ? currentStreamerName.trim()
+        : "";
+
+      if (name) {
+        // Swedish genitive grammar rule: if ends in s/x/z, don't add extra s
+        const endsInS = /[sxz]$/i.test(name);
+        const genitiveName = endsInS ? `${name.toUpperCase()}` : `${name.toUpperCase()}S`;
+        leftH.innerText = `${genitiveName} MILSTOLPAR`;
+        rightH.innerText = `NÄSTA MÅL • DONERA FÖR ATT LÅSA UPP`;
+      } else {
+        leftH.innerText = `STREAMERNS MILSTOLPAR`;
+        rightH.innerText = `NÄSTA MÅL • DONERA FÖR ATT LÅSA UPP`;
+      }
+    }
+
     // ========================================================
     // 🔌 NATIVE OBS WEBSOCKET (REAL-TIME STREAM STATUS)
     // ========================================================
@@ -776,6 +806,7 @@
         });
       }
 
+      updateWingHeaders();
       renderGoalsLadder();
       updateDockDisplay();
     }
@@ -811,6 +842,7 @@
         });
       }
 
+      updateWingHeaders();
       renderGoalsLadder();
       updateDockDisplay();
     }
@@ -975,6 +1007,8 @@
     }
 
     function renderGoalsLadder() {
+      updateWingHeaders();
+
       const leftNodesContainer = document.getElementById('leftNodesContainer');
       const rightNodesContainer = document.getElementById('rightNodesContainer');
       const rightWing = document.getElementById('rightWing');
@@ -1199,6 +1233,7 @@
             if (area && !isFocusingInput) area.value = data.goalsText;
           }
 
+          updateWingHeaders();
           renderGoalsLadder();
           updateDockDisplay();
         }
@@ -1301,6 +1336,8 @@
       parsedGoals = parseLinesToGoalObjects(localGoals);
       const area = document.getElementById('goalsInputArea');
       if (area && !isFocusingInput) area.value = localGoals;
+
+      updateWingHeaders();
       renderGoalsLadder();
 
       const key = getStreamerKey(currentStreamerName);
@@ -1331,6 +1368,7 @@
         }
 
         listenToStreamer(key);
+        updateWingHeaders();
         renderGoalsLadder();
         updateDockDisplay();
 
@@ -1338,6 +1376,7 @@
       }).catch((err) => {
         console.error("Error loading streamer pass:", err);
         listenToStreamer(key);
+        updateWingHeaders();
         renderGoalsLadder();
         updateDockDisplay();
       });
@@ -1397,6 +1436,7 @@
     const area = document.getElementById('goalsInputArea');
     if (area) area.value = initialGoals;
 
+    updateWingHeaders();
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
 
