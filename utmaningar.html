@@ -27,7 +27,7 @@
       justify-content: center;
     }
 
-    /* ⚔️ MAIN UTMANING CONTAINER */
+    /* ⚔️ CLEAN UTMANING CONTAINER */
     .utmaning-overlay {
       position: absolute;
       top: 50%;
@@ -40,127 +40,58 @@
       z-index: 999999;
       pointer-events: none;
       width: 90%;
-      max-width: 820px;
+      max-width: 760px;
     }
 
-    /* 🏷️ TOP BADGE */
-    .utmaning-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: #111114;
-      border: 2px solid #ace600;
-      border-radius: 999px;
-      padding: 8px 24px;
-      font-size: 16px;
-      font-weight: 900;
-      color: #ace600;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      box-shadow: 0 0 20px rgba(172, 230, 0, 0.5), inset 0 0 10px rgba(172, 230, 0, 0.2);
-      margin-bottom: -16px;
-      z-index: 2;
-    }
-
-    .badge-dot {
-      width: 10px;
-      height: 10px;
-      background-color: #ff334b;
-      border-radius: 50%;
-      display: inline-block;
-      box-shadow: 0 0 8px #ff334b;
-      animation: pulseDot 1s infinite alternate;
-    }
-
-    @keyframes pulseDot {
-      0% { transform: scale(0.85); opacity: 0.6; }
-      100% { transform: scale(1.2); opacity: 1; }
-    }
-
-    /* 📦 MAIN GLOW CARD */
+    /* 📦 CLEAN DARK CARD: NO BORDER, NO GLOWS */
     .utmaning-card {
       width: 100%;
-      background: rgba(17, 17, 20, 0.94);
-      border: 3px solid #ace600;
-      border-radius: 18px;
-      padding: 36px 30px 28px 30px;
-      box-shadow: 0 0 40px rgba(172, 230, 0, 0.45), 0 24px 60px rgba(0, 0, 0, 0.9);
-      position: relative;
-      overflow: hidden;
-      animation: cardGlowBreath 3s infinite alternate ease-in-out;
+      background: rgba(14, 14, 18, 0.90);
+      border: none !important;
+      border-radius: 14px;
+      padding: 32px 36px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
 
-    @keyframes cardGlowBreath {
-      0% {
-        box-shadow: 0 0 35px rgba(172, 230, 0, 0.4), 0 20px 50px rgba(0, 0, 0, 0.85);
-        border-color: #ace600;
-      }
-      100% {
-        box-shadow: 0 0 65px rgba(255, 234, 0, 0.65), 0 20px 60px rgba(0, 0, 0, 0.95);
-        border-color: #ffea00;
-      }
-    }
-
-    .utmaning-card::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(172, 230, 0, 0.08) 0%, transparent 65%);
-      pointer-events: none;
-    }
-
+    /* 🏷️ TITLE: SOLID WHITE BOLD */
     .utmaning-title {
       font-size: 46px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin: 0 0 10px 0;
-      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.95);
+      margin: 0;
+      line-height: 1.1;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95);
     }
 
-    .utmaning-title .highlight {
-      color: #ace600;
-      text-shadow: 0 0 20px rgba(172, 230, 0, 0.8);
-    }
-
+    /* 📝 CHALLENGE TEXT */
     .utmaning-text {
       font-size: 26px;
       font-weight: 800;
-      color: #ffea00;
+      color: #ace600;
       text-transform: uppercase;
       line-height: 1.35;
       margin: 0;
-      padding: 0 10px;
       word-break: break-word;
-      text-shadow: 0 3px 12px rgba(0, 0, 0, 0.95), 0 0 15px rgba(255, 234, 0, 0.5);
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
     }
 
-    .utmaning-footer {
-      margin-top: 18px;
-      font-size: 13px;
-      font-weight: 800;
-      color: #a1a1aa;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-    }
-
-    /* 🎬 SLAM IN & SMOOTH EXIT ANIMATIONS */
-    .anim-slam-in {
+    /* 🎬 SMOOTH CLEAN ANIMATIONS */
+    .anim-in {
       display: flex !important;
-      animation: slamIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: alertInSmooth 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    @keyframes slamIn {
+    @keyframes alertInSmooth {
       0% {
         opacity: 0;
-        transform: translate(-50%, -65%) scale(0.65);
-      }
-      70% {
-        transform: translate(-50%, -48%) scale(1.04);
+        transform: translate(-50%, -60%) scale(0.92);
       }
       100% {
         opacity: 1;
@@ -168,18 +99,18 @@
       }
     }
 
-    .anim-slam-out {
-      animation: slamOut 0.4s ease forwards !important;
+    .anim-out {
+      animation: alertOutSmooth 0.4s ease forwards !important;
     }
 
-    @keyframes slamOut {
+    @keyframes alertOutSmooth {
       0% {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
       }
       100% {
         opacity: 0;
-        transform: translate(-50%, -45%) scale(0.8);
+        transform: translate(-50%, -50%) scale(0.92);
       }
     }
   </style>
@@ -187,14 +118,9 @@
 <body>
 
   <div id="utmaningContainer" class="utmaning-overlay">
-    <div class="utmaning-badge">
-      <span class="badge-dot"></span>
-      <span>UTMANING TILL STREAMERN</span>
-    </div>
     <div class="utmaning-card">
-      <h1 class="utmaning-title">STREAMERN <span class="highlight">UTMANAS!</span></h1>
-      <p id="utmaningDesc" class="utmaning-text">GÖR 20 ARMHÄVNINGAR</p>
-      <div class="utmaning-footer">🔴 PÅGÅR JUST NU • MUSIKHJÄLPEN</div>
+      <h1 class="utmaning-title">UTMANING</h1>
+      <p id="utmaningDesc" class="utmaning-text"></p>
     </div>
   </div>
 
@@ -389,10 +315,10 @@
         try {
           const ctx = new (window.AudioContext || window.webkitAudioContext)();
           const notes = [
-            { f: 392.00, t: 0.00, d: 0.14 }, // G4
-            { f: 523.25, t: 0.15, d: 0.14 }, // C5
-            { f: 659.25, t: 0.30, d: 0.16 }, // E5
-            { f: 783.99, t: 0.48, d: 0.85 }  // G5 chord peak
+            { f: 392.00, t: 0.00, d: 0.14 },
+            { f: 523.25, t: 0.15, d: 0.14 },
+            { f: 659.25, t: 0.30, d: 0.16 },
+            { f: 783.99, t: 0.48, d: 0.85 }
           ];
 
           notes.forEach(note => {
@@ -432,7 +358,7 @@
       }
 
       // ========================================================
-      // 📡 FIREBASE & CHANNEL LISTENER
+      // 📡 FIREBASE & CHANNEL LISTENER WITH 15S AUTO-HIDE
       // ========================================================
       const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
       if (!firebase.apps.length) {
@@ -444,17 +370,19 @@
       const descEl = document.getElementById('utmaningDesc');
 
       let isUtmaningActive = false;
+      let isBoxVisible = false;
       let didSwitchScene = false;
       let originalSceneName = "";
+      let autoHideTimer = null;
 
       async function showUtmaning(text) {
         if (isUtmaningActive) {
-          descEl.textContent = text || "GÖR UTMANINGEN!";
+          descEl.textContent = text || "";
           return;
         }
         isUtmaningActive = true;
 
-        // 1. Switch to Intermission if currently Gaming
+        // 1. Switch to Intermission if currently on Gaming scene
         if (isObsConnected) {
           const currentScene = await getCurrentObsScene();
           if (isMatchingScene(currentScene, SCENE_GAMING)) {
@@ -469,22 +397,42 @@
         // 2. Play Horns Sound
         playHornSound();
 
-        // 3. Show card
-        descEl.textContent = text || "GÖR UTMANINGEN!";
-        container.className = 'utmaning-overlay anim-slam-in';
+        // 3. Show clean alert card
+        descEl.textContent = text || "";
+        container.className = 'utmaning-overlay anim-in';
+        isBoxVisible = true;
+
+        // 4. Hide the box automatically after 15 seconds
+        if (autoHideTimer) clearTimeout(autoHideTimer);
+        autoHideTimer = setTimeout(() => {
+          hideBoxOnly();
+        }, 15000);
+      }
+
+      async function hideBoxOnly() {
+        if (!isBoxVisible) return;
+        isBoxVisible = false;
+        container.className = 'utmaning-overlay anim-out';
+        await new Promise(r => setTimeout(r, 400));
+        container.className = 'utmaning-overlay';
+        container.style.display = 'none';
       }
 
       async function hideUtmaning() {
         if (!isUtmaningActive) return;
         isUtmaningActive = false;
 
-        // 1. Animate out
-        container.className = 'utmaning-overlay anim-slam-out';
-        await new Promise(r => setTimeout(r, 400));
-        container.className = 'utmaning-overlay';
-        container.style.display = 'none';
+        if (autoHideTimer) {
+          clearTimeout(autoHideTimer);
+          autoHideTimer = null;
+        }
 
-        // 2. Switch back to previous scene
+        // Hide box if it hasn't faded out yet
+        if (isBoxVisible) {
+          await hideBoxOnly();
+        }
+
+        // Switch back to previous scene when operator clicks stop
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
@@ -508,7 +456,7 @@
         }
       });
 
-      // Local cross-tab / cross-frame fallback
+      // Local cross-tab fallback
       try {
         const broadcast = new BroadcastChannel('mh_utmaning_channel');
         broadcast.onmessage = (event) => {
