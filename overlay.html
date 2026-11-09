@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Musikhjälpen Master Hub</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <style>
     * { box-sizing: border-box; }
 
@@ -37,11 +42,12 @@
     }
 
     /* Layer Depth Order */
-    #layerAlerts   { z-index: 5; }
-    #layerSchedule { z-index: 10; }
-    #layerGoals    { z-index: 15; }
-    #layerBossa    { z-index: 20; }
-    #layerGiveaway { z-index: 30; }
+    #layerAlerts    { z-index: 5; }
+    #layerSchedule  { z-index: 10; }
+    #layerGoals     { z-index: 15; }
+    #layerBossa     { z-index: 20; }
+    #layerUtmaning  { z-index: 25; }
+    #layerGiveaway  { z-index: 30; }
 
     /* ========================================================
        🎛️ 2. OBS DOCK: ZERO DEAD SPACE FLEX ARCHITECTURE
@@ -98,7 +104,112 @@
       border-radius: 3px;
     }
 
-    /* 🎯 BÖSSA: Adjusted to 355px so the Följare button fits with NO scrollbar */
+    /* ⚔️ NEW UTMANING CONTROLLER IN MASTER HUB */
+    .dock-utmaning-box {
+      background: #141418;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .utmaning-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .utmaning-header-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #a1a1aa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-status {
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      background: #27272a;
+      color: #71717a;
+    }
+
+    .badge-status.active {
+      background: #ff334b;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255, 51, 75, 0.6);
+      animation: pulseBadge 1.2s infinite;
+    }
+
+    @keyframes pulseBadge {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .utmaning-input-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .utmaning-input {
+      flex: 1;
+      background: #0b0b0d;
+      border: 1px solid #27272a;
+      border-radius: 4px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 11px;
+      padding: 7px 10px;
+      outline: none;
+    }
+
+    .utmaning-input:focus {
+      border-color: #ace600;
+    }
+
+    .btn-utmaning {
+      background: #ace600;
+      color: #0b0b0d;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-utmaning:hover {
+      background: #c3f524;
+      transform: translateY(-1px);
+    }
+
+    .btn-utmaning.active {
+      background: #ff334b !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 12px rgba(255, 51, 75, 0.6);
+      animation: pulseBtn 1.2s infinite alternate;
+    }
+
+    @keyframes pulseBtn {
+      0% { transform: scale(1); }
+      100% { transform: scale(0.98); }
+    }
+
+    /* 🎯 BÖSSA: Fits up to Följare with no scrollbar */
     #wrapperBossa {
       flex: 0 0 355px;
       height: 355px;
@@ -143,6 +254,7 @@
     <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGoals" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
+    <iframe id="layerUtmaning" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGiveaway" class="overlay-frame" allow="autoplay"></iframe>
   </div>
 
@@ -156,6 +268,21 @@
       <div class="dock-master-title">
         <span>KONTROLLPANEL</span>
         <span class="badge-hub">MASTER HUB</span>
+      </div>
+    </div>
+
+    <!-- ⚔️ UTMANING QUICK CONTROLLER -->
+    <div class="dock-utmaning-box">
+      <div class="utmaning-top-row">
+        <span class="utmaning-header-label">⚔️ UTMANING TILL STREAMERN</span>
+        <span id="utmaningStatusBadge" class="badge-status">AV</span>
+      </div>
+      <div class="utmaning-input-row">
+        <input type="text" id="utmaningCustomText" class="utmaning-input" placeholder="Valfri utmaning (t.ex. Gör 20 armhävningar)..." />
+        <button id="btnToggleUtmaning" class="btn-utmaning" onclick="toggleUtmaning()">
+          <span id="btnUtmaningIcon">⚔️</span>
+          <span id="btnUtmaningText">STARTA UTMANING</span>
+        </button>
       </div>
     </div>
 
@@ -175,6 +302,83 @@
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
+    // ========================================================
+    // 📡 FIREBASE SETUP FOR MASTER HUB
+    // ========================================================
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const utmaningDbRef = firebase.database().ref('utmaning');
+    let utmaningStateActive = false;
+
+    // BroadcastChannel for instant local syncing
+    let localChannel = null;
+    try {
+      localChannel = new BroadcastChannel('mh_utmaning_channel');
+    } catch(e) {}
+
+    function updateUtmaningUI(isActive) {
+      utmaningStateActive = isActive;
+      const btn = document.getElementById('btnToggleUtmaning');
+      const badge = document.getElementById('utmaningStatusBadge');
+      const icon = document.getElementById('btnUtmaningIcon');
+      const text = document.getElementById('btnUtmaningText');
+
+      if (!btn) return;
+
+      if (isActive) {
+        btn.classList.add('active');
+        badge.classList.add('active');
+        badge.textContent = "AKTIV";
+        icon.textContent = "🛑";
+        text.textContent = "AVSLUTA UTMANING";
+      } else {
+        btn.classList.remove('active');
+        badge.classList.remove('active');
+        badge.textContent = "AV";
+        icon.textContent = "⚔️";
+        text.textContent = "STARTA UTMANING";
+      }
+    }
+
+    function toggleUtmaning() {
+      const inputEl = document.getElementById('utmaningCustomText');
+      const customText = inputEl ? inputEl.value.trim() : "";
+      const nextActiveState = !utmaningStateActive;
+
+      const payload = {
+        active: nextActiveState,
+        text: customText || "GÖR UTMANINGEN!",
+        timestamp: Date.now()
+      };
+
+      // 1. Update Firebase
+      utmaningDbRef.set(payload);
+
+      // 2. Broadcast locally
+      if (localChannel) {
+        localChannel.postMessage(payload);
+      }
+
+      updateUtmaningUI(nextActiveState);
+    }
+
+    // Listen to Firebase so dock stays updated across devices
+    utmaningDbRef.on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val) {
+        updateUtmaningUI(Boolean(val.active));
+        const inputEl = document.getElementById('utmaningCustomText');
+        if (inputEl && val.text && !utmaningStateActive) {
+          inputEl.value = val.text;
+        }
+      }
+    });
+
+    // ========================================================
+    // 🚀 ROUTING: DOCK CONTROLLER VS OVERLAY VIEW
+    // ========================================================
     if (isPanel) {
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'flex';
@@ -189,6 +393,7 @@
       document.getElementById('layerSchedule').src = "schedule.html#overlay";
       document.getElementById('layerGoals').src = "goals.html#overlay";
       document.getElementById('layerBossa').src = "countdown_and_bossa.html#overlay";
+      document.getElementById('layerUtmaning').src = "utmaningar.html#overlay";
       document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
     }
   </script>
