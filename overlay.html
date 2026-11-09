@@ -104,7 +104,7 @@
       border-radius: 3px;
     }
 
-    /* ⚔️ NEW UTMANING CONTROLLER IN MASTER HUB */
+    /* ⚔️ UTMANING CONTROLLER IN MASTER HUB */
     .dock-utmaning-box {
       background: #141418;
       border: 1px solid #27272a;
@@ -274,11 +274,11 @@
     <!-- ⚔️ UTMANING QUICK CONTROLLER -->
     <div class="dock-utmaning-box">
       <div class="utmaning-top-row">
-        <span class="utmaning-header-label">⚔️ UTMANING TILL STREAMERN</span>
+        <span class="utmaning-header-label">⚔️ UTMANING</span>
         <span id="utmaningStatusBadge" class="badge-status">AV</span>
       </div>
       <div class="utmaning-input-row">
-        <input type="text" id="utmaningCustomText" class="utmaning-input" placeholder="Valfri utmaning (t.ex. Gör 20 armhävningar)..." />
+        <input type="text" id="utmaningCustomText" class="utmaning-input" placeholder="Skriv utmaning (t.ex. Gör 20 squats)..." />
         <button id="btnToggleUtmaning" class="btn-utmaning" onclick="toggleUtmaning()">
           <span id="btnUtmaningIcon">⚔️</span>
           <span id="btnUtmaningText">STARTA UTMANING</span>
@@ -349,7 +349,7 @@
 
       const payload = {
         active: nextActiveState,
-        text: customText || "GÖR UTMANINGEN!",
+        text: customText,
         timestamp: Date.now()
       };
 
