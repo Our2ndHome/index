@@ -1,1 +1,526 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Utmaning Alert</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
 
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ⚔️ MAIN UTMANING CONTAINER */
+    .utmaning-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      z-index: 999999;
+      pointer-events: none;
+      width: 90%;
+      max-width: 820px;
+    }
+
+    /* 🏷️ TOP BADGE */
+    .utmaning-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #111114;
+      border: 2px solid #ace600;
+      border-radius: 999px;
+      padding: 8px 24px;
+      font-size: 16px;
+      font-weight: 900;
+      color: #ace600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(172, 230, 0, 0.5), inset 0 0 10px rgba(172, 230, 0, 0.2);
+      margin-bottom: -16px;
+      z-index: 2;
+    }
+
+    .badge-dot {
+      width: 10px;
+      height: 10px;
+      background-color: #ff334b;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px #ff334b;
+      animation: pulseDot 1s infinite alternate;
+    }
+
+    @keyframes pulseDot {
+      0% { transform: scale(0.85); opacity: 0.6; }
+      100% { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* 📦 MAIN GLOW CARD */
+    .utmaning-card {
+      width: 100%;
+      background: rgba(17, 17, 20, 0.94);
+      border: 3px solid #ace600;
+      border-radius: 18px;
+      padding: 36px 30px 28px 30px;
+      box-shadow: 0 0 40px rgba(172, 230, 0, 0.45), 0 24px 60px rgba(0, 0, 0, 0.9);
+      position: relative;
+      overflow: hidden;
+      animation: cardGlowBreath 3s infinite alternate ease-in-out;
+    }
+
+    @keyframes cardGlowBreath {
+      0% {
+        box-shadow: 0 0 35px rgba(172, 230, 0, 0.4), 0 20px 50px rgba(0, 0, 0, 0.85);
+        border-color: #ace600;
+      }
+      100% {
+        box-shadow: 0 0 65px rgba(255, 234, 0, 0.65), 0 20px 60px rgba(0, 0, 0, 0.95);
+        border-color: #ffea00;
+      }
+    }
+
+    .utmaning-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(172, 230, 0, 0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .utmaning-title {
+      font-size: 46px;
+      font-weight: 900;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0 0 10px 0;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.95);
+    }
+
+    .utmaning-title .highlight {
+      color: #ace600;
+      text-shadow: 0 0 20px rgba(172, 230, 0, 0.8);
+    }
+
+    .utmaning-text {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffea00;
+      text-transform: uppercase;
+      line-height: 1.35;
+      margin: 0;
+      padding: 0 10px;
+      word-break: break-word;
+      text-shadow: 0 3px 12px rgba(0, 0, 0, 0.95), 0 0 15px rgba(255, 234, 0, 0.5);
+    }
+
+    .utmaning-footer {
+      margin-top: 18px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #a1a1aa;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* 🎬 SLAM IN & SMOOTH EXIT ANIMATIONS */
+    .anim-slam-in {
+      display: flex !important;
+      animation: slamIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes slamIn {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -65%) scale(0.65);
+      }
+      70% {
+        transform: translate(-50%, -48%) scale(1.04);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .anim-slam-out {
+      animation: slamOut 0.4s ease forwards !important;
+    }
+
+    @keyframes slamOut {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -45%) scale(0.8);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="utmaningContainer" class="utmaning-overlay">
+    <div class="utmaning-badge">
+      <span class="badge-dot"></span>
+      <span>UTMANING TILL STREAMERN</span>
+    </div>
+    <div class="utmaning-card">
+      <h1 class="utmaning-title">STREAMERN <span class="highlight">UTMANAS!</span></h1>
+      <p id="utmaningDesc" class="utmaning-text">GÖR 20 ARMHÄVNINGAR</p>
+      <div class="utmaning-footer">🔴 PÅGÅR JUST NU • MUSIKHJÄLPEN</div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Prevent running if opened as an OBS dock panel
+      try {
+        const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
+        let isParentDock = false;
+        try {
+          if (window.parent && window.parent !== window) {
+            isParentDock = window.parent.location.hash.includes('panel') || window.parent.location.hash.includes('dock');
+          }
+        } catch (e) {}
+
+        if (isSelfDock || isParentDock) {
+          console.log("Utmaning alert disabled inside dock/panel.");
+          return;
+        }
+      } catch (e) {}
+
+      // ========================================================
+      // 🎛️ OBS WEBSOCKET & CAMERA CONTROL CONFIGURATION
+      // ========================================================
+      const OBS_WS_URL = "ws://127.0.0.1:4455";
+      const SCENE_GAMING = "Musikhjälpen|Gaming Scene";
+      const SCENE_INTERMISSION = "Musikhjälpen|Intermission Scene";
+
+      const SOURCE_WEBCAM = "Webcam Source";
+      const SOURCE_WEBCAM_SCENE = "Webcam Scene";
+
+      let obsWs = null;
+      let isObsConnected = false;
+      const pendingObsRequests = new Map();
+
+      function connectOBS() {
+        try {
+          obsWs = new WebSocket(OBS_WS_URL);
+        } catch (e) {
+          setTimeout(connectOBS, 5000);
+          return;
+        }
+
+        obsWs.onopen = () => {};
+
+        obsWs.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.op === 0) {
+              obsWs.send(JSON.stringify({
+                op: 1,
+                d: { rpcVersion: 1, eventSubscriptions: 1023 }
+              }));
+            }
+            if (msg.op === 2) {
+              isObsConnected = true;
+              console.log("🔌 [Utmaning OBS] Connected & Ready!");
+            }
+            if (msg.op === 7) {
+              const { requestId, requestStatus, responseData } = msg.d;
+              if (pendingObsRequests.has(requestId)) {
+                const { resolve, reject } = pendingObsRequests.get(requestId);
+                pendingObsRequests.delete(requestId);
+                if (requestStatus && requestStatus.result) {
+                  resolve(responseData);
+                } else {
+                  reject(new Error(requestStatus ? requestStatus.comment : "Request failed"));
+                }
+              }
+            }
+          } catch (e) {}
+        };
+
+        obsWs.onclose = () => {
+          isObsConnected = false;
+          pendingObsRequests.forEach(({ reject }) => reject(new Error("OBS Connection closed")));
+          pendingObsRequests.clear();
+          setTimeout(connectOBS, 4000);
+        };
+
+        obsWs.onerror = () => {
+          try { obsWs.close(); } catch (e) {}
+        };
+      }
+
+      function sendObsRequest(requestType, requestData = {}) {
+        return new Promise((resolve, reject) => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) {
+            return reject(new Error("OBS WebSocket not connected"));
+          }
+          const requestId = "req-utm-" + Math.random().toString(36).substring(2, 9);
+          pendingObsRequests.set(requestId, { resolve, reject });
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: { requestType, requestId, requestData }
+          }));
+
+          setTimeout(() => {
+            if (pendingObsRequests.has(requestId)) {
+              pendingObsRequests.delete(requestId);
+              reject(new Error("OBS request timeout"));
+            }
+          }, 3000);
+        });
+      }
+
+      function sendFilterTrigger(sourceName, filterName) {
+        if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+
+        obsWs.send(JSON.stringify({
+          op: 6,
+          d: {
+            requestType: "SetSourceFilterEnabled",
+            requestId: "flt-off-" + Math.random(),
+            requestData: {
+              sourceName: sourceName,
+              filterName: filterName,
+              filterEnabled: false
+            }
+          }
+        }));
+
+        setTimeout(() => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: {
+              requestType: "SetSourceFilterEnabled",
+              requestId: "flt-on-" + Math.random(),
+              requestData: {
+                sourceName: sourceName,
+                filterName: filterName,
+                filterEnabled: true
+              }
+            }
+          }));
+        }, 20);
+      }
+
+      function triggerWebcamMove(direction) {
+        if (direction === "in") {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        } else {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value out");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        }
+      }
+
+      function isMatchingScene(currentName, targetName) {
+        if (!currentName || !targetName) return false;
+        const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        if (cleanA === cleanB) return true;
+
+        const baseA = cleanA.split('|').pop().trim();
+        const baseB = cleanB.split('|').pop().trim();
+        return baseA === baseB;
+      }
+
+      async function getCurrentObsScene() {
+        try {
+          const res = await sendObsRequest("GetCurrentProgramScene");
+          return res.currentProgramSceneName || "";
+        } catch (e) {
+          return "";
+        }
+      }
+
+      async function setObsScene(targetSceneName) {
+        try {
+          await sendObsRequest("SetCurrentProgramScene", { sceneName: targetSceneName });
+        } catch (e) {
+          const altName = targetSceneName.includes(" | ")
+            ? targetSceneName.replace(/\s*\|\s*/g, "|")
+            : targetSceneName.replace(/\|/g, " | ");
+          try {
+            await sendObsRequest("SetCurrentProgramScene", { sceneName: altName });
+          } catch (e2) {}
+        }
+      }
+
+      connectOBS();
+
+      // ========================================================
+      // 🎺 HORN SOUND EFFECT & WEBAUDIO SYNTH FALLBACK
+      // ========================================================
+      const SOUND_HORN_CUSTOM = "sounds/utmaning.mp3";
+      const SOUND_HORN_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
+
+      function playSynthesizedFanfare() {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const notes = [
+            { f: 392.00, t: 0.00, d: 0.14 }, // G4
+            { f: 523.25, t: 0.15, d: 0.14 }, // C5
+            { f: 659.25, t: 0.30, d: 0.16 }, // E5
+            { f: 783.99, t: 0.48, d: 0.85 }  // G5 chord peak
+          ];
+
+          notes.forEach(note => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(note.f, ctx.currentTime + note.t);
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1400, ctx.currentTime + note.t);
+
+            gain.gain.setValueAtTime(0.001, ctx.currentTime + note.t);
+            gain.gain.exponentialRampToValueAtTime(0.45, ctx.currentTime + note.t + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.t + note.d);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(ctx.currentTime + note.t);
+            osc.stop(ctx.currentTime + note.t + note.d + 0.05);
+          });
+        } catch (e) {}
+      }
+
+      function playHornSound() {
+        const audio = new Audio(SOUND_HORN_CUSTOM);
+        audio.volume = 0.95;
+        audio.play().catch(() => {
+          const fallback = new Audio(SOUND_HORN_FALLBACK);
+          fallback.volume = 0.95;
+          fallback.play().catch(() => {
+            playSynthesizedFanfare();
+          });
+        });
+      }
+
+      // ========================================================
+      // 📡 FIREBASE & CHANNEL LISTENER
+      // ========================================================
+      const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+      if (!firebase.apps.length) {
+        firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+      }
+      const dbRef = firebase.database().ref('utmaning');
+
+      const container = document.getElementById('utmaningContainer');
+      const descEl = document.getElementById('utmaningDesc');
+
+      let isUtmaningActive = false;
+      let didSwitchScene = false;
+      let originalSceneName = "";
+
+      async function showUtmaning(text) {
+        if (isUtmaningActive) {
+          descEl.textContent = text || "GÖR UTMANINGEN!";
+          return;
+        }
+        isUtmaningActive = true;
+
+        // 1. Switch to Intermission if currently Gaming
+        if (isObsConnected) {
+          const currentScene = await getCurrentObsScene();
+          if (isMatchingScene(currentScene, SCENE_GAMING)) {
+            originalSceneName = currentScene;
+            triggerWebcamMove("out");
+            await setObsScene(SCENE_INTERMISSION);
+            didSwitchScene = true;
+            await new Promise(r => setTimeout(r, 350));
+          }
+        }
+
+        // 2. Play Horns Sound
+        playHornSound();
+
+        // 3. Show card
+        descEl.textContent = text || "GÖR UTMANINGEN!";
+        container.className = 'utmaning-overlay anim-slam-in';
+      }
+
+      async function hideUtmaning() {
+        if (!isUtmaningActive) return;
+        isUtmaningActive = false;
+
+        // 1. Animate out
+        container.className = 'utmaning-overlay anim-slam-out';
+        await new Promise(r => setTimeout(r, 400));
+        container.className = 'utmaning-overlay';
+        container.style.display = 'none';
+
+        // 2. Switch back to previous scene
+        if (didSwitchScene && isObsConnected) {
+          const activeScene = await getCurrentObsScene();
+          if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
+            triggerWebcamMove("in");
+            await setObsScene(originalSceneName || SCENE_GAMING);
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
+        didSwitchScene = false;
+        originalSceneName = "";
+      }
+
+      // Sync through Firebase
+      dbRef.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (!val) return;
+        if (val.active) {
+          showUtmaning(val.text || val.title);
+        } else {
+          hideUtmaning();
+        }
+      });
+
+      // Local cross-tab / cross-frame fallback
+      try {
+        const broadcast = new BroadcastChannel('mh_utmaning_channel');
+        broadcast.onmessage = (event) => {
+          if (event.data && event.data.active) {
+            showUtmaning(event.data.text);
+          } else {
+            hideUtmaning();
+          }
+        };
+      } catch (e) {}
+
+    })();
+  </script>
+</body>
+</html>
