@@ -11,26 +11,46 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
-    * { box-sizing: border-box; }
+    * { 
+      box-sizing: border-box; 
+    }
+
+    /* 🎨 CUSTOM SLEEK DARK SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0b0d;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ace600;
+    }
 
     body {
       margin: 0;
-      padding: 12px;
+      padding: 8px;
       background-color: #0b0b0d;
       color: #ffffff;
       font-family: 'Montserrat', Arial, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     /* TOP HEADER */
     .mod-header {
       background: #141418;
       border: 1px solid #27272a;
-      border-radius: 8px;
-      padding: 10px 14px;
+      border-radius: 6px;
+      padding: 8px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -38,12 +58,12 @@
     }
 
     .mod-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .status-group {
@@ -54,8 +74,8 @@
     .status-pill {
       font-size: 9px;
       font-weight: 900;
-      padding: 2px 7px;
-      border-radius: 4px;
+      padding: 2px 6px;
+      border-radius: 3px;
       background: #1c381c;
       color: #ace600;
       border: 1px solid rgba(172, 230, 0, 0.4);
@@ -67,15 +87,54 @@
       border-color: #3f3f46;
     }
 
+    /* 📱 ADAPTIVE RESPONSIVE GRID */
+    .mod-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      width: 100%;
+      flex: 1 1 auto;
+    }
+
+    /* Automatically split into columns when dock is widened */
+    @media (min-width: 640px) {
+      .mod-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .span-2 {
+        grid-column: span 2;
+      }
+    }
+
+    @media (min-width: 1050px) {
+      .mod-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .span-2 {
+        grid-column: span 2;
+      }
+      .span-full {
+        grid-column: 1 / -1;
+      }
+    }
+
     /* CARD CONTAINERS */
     .mod-card {
       background: #141418;
       border: 1px solid #27272a;
-      border-radius: 8px;
-      padding: 12px;
+      border-radius: 6px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
+      transition: all 0.2s ease;
+      height: fit-content;
+    }
+
+    /* Make the schedule card expand fluidly */
+    .mod-card.schedule-card {
+      height: auto;
+      flex: 1 1 auto;
     }
 
     .card-title {
@@ -87,6 +146,33 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .card-title:hover {
+      color: #ffffff;
+    }
+
+    .collapse-btn {
+      font-size: 12px;
+      color: #71717a;
+      transition: transform 0.2s ease;
+    }
+
+    .mod-card.collapsed .collapse-btn {
+      transform: rotate(-90deg);
+    }
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: max-height 0.25s ease;
+    }
+
+    .mod-card.collapsed .card-body {
+      display: none;
     }
 
     /* INPUTS & BUTTONS */
@@ -94,11 +180,11 @@
       width: 100%;
       background: #0b0b0d;
       border: 1px solid #27272a;
-      border-radius: 6px;
+      border-radius: 4px;
       color: #ffffff;
       font-family: inherit;
-      font-size: 12px;
-      padding: 8px 10px;
+      font-size: 11px;
+      padding: 7px 9px;
       outline: none;
     }
 
@@ -112,14 +198,15 @@
       font-weight: 900;
       text-transform: uppercase;
       border: none;
-      border-radius: 6px;
-      padding: 9px 12px;
+      border-radius: 4px;
+      padding: 8px 10px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
       transition: 0.15s ease;
+      white-space: nowrap;
     }
 
     .btn-lime {
@@ -149,14 +236,16 @@
 
     .pill-btn {
       flex: 1;
-      font-size: 10px;
-      padding: 5px 6px;
+      font-size: 9px;
+      padding: 5px 4px;
       background: #1f1f23;
       border: 1px solid #27272a;
       color: #d4d4d8;
-      border-radius: 4px;
+      border-radius: 3px;
       cursor: pointer;
       font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
     }
     .pill-btn.active {
       background: #ace600;
@@ -167,43 +256,55 @@
     /* SOUNDBOARD GRID */
     .sound-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 5px;
     }
 
     .sound-pad {
       background: #1f1f23;
       border: 1px solid #27272a;
-      border-radius: 6px;
+      border-radius: 4px;
       color: #ffffff;
-      padding: 10px 6px;
-      font-size: 10px;
+      padding: 8px 4px;
+      font-size: 9px;
       font-weight: 800;
       text-transform: uppercase;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       text-align: center;
     }
     .sound-pad:hover { border-color: #ace600; background: #27272a; }
     .sound-pad:active { transform: scale(0.97); }
 
-    /* SCHEDULE FRAME */
-    .schedule-frame {
+    /* 📅 FLUID SCHEMA FRAME */
+    .schedule-frame-container {
       width: 100%;
-      height: 380px;
       border: 1px solid #27272a;
       border-radius: 6px;
       background: #0b0b0d;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .schedule-frame {
+      width: 100%;
+      min-height: 420px;
+      height: 480px;
+      border: none;
+      display: block;
+      background: transparent;
+      transition: height 0.2s ease;
     }
 
     /* TOAST ALERT */
     #modToast {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 16px;
+      right: 16px;
       background: #ace600;
       color: #0b0b0d;
       padding: 8px 14px;
@@ -230,81 +331,168 @@
     <div style="font-size: 10px; font-weight: 800; color: #a1a1aa;">MUSIKHJÄLPEN</div>
   </div>
 
-  <!-- 1. UTMANING & SKIPPA LÅT -->
-  <div class="mod-card">
-    <div class="card-title">
-      <span>⚔️ UTMANING & STRÖMKONTROLL</span>
-      <span id="badgeUtmaning" class="status-pill" style="background:#27272a; color:#a1a1aa; border:none;">AV</span>
-    </div>
-    <div style="display: flex; gap: 6px;">
-      <input type="text" id="inputUtmaning" placeholder="Skriv utmaning (t.ex. Gör 20 armhävningar)..." />
-      <button id="btnUtmaning" class="btn btn-lime" onclick="toggleUtmaning()">STARTA</button>
-    </div>
-    <div style="display: flex; gap: 6px; margin-top: 4px;">
-      <button class="btn btn-dark" style="flex: 1;" onclick="skipSong()">⏭️ SKIPPA LÅT</button>
-    </div>
-  </div>
+  <div class="mod-grid">
 
-  <!-- 2. TWITCH MODERATION (TIMEOUT & BAN VIA STREAMER.BOT) -->
-  <div class="mod-card">
-    <div class="card-title">
-      <span>🔨 TWITCH MODERERING</span>
-      <span id="modModeLabel" style="font-size: 9px; color: #71717a;">KLIPPBOARD-LÄGE</span>
-    </div>
-    <input type="text" id="twitchUser" placeholder="@användarnamn..." />
-    <input type="text" id="twitchReason" placeholder="Anledning (valfritt)..." />
-    
-    <div class="duration-pills">
-      <button class="pill-btn" onclick="setDuration(1, this)">1s (Purge)</button>
-      <button class="pill-btn active" onclick="setDuration(600, this)">10 min</button>
-      <button class="pill-btn" onclick="setDuration(3600, this)">1 tim</button>
-      <button class="pill-btn" onclick="setDuration(86400, this)">24 tim</button>
+    <!-- 1. UTMANING & SKIPPA LÅT -->
+    <div class="mod-card" id="cardUtmaning">
+      <div class="card-title" onclick="toggleCard('cardUtmaning')">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span>⚔️ UTMANING & STRÖM</span>
+          <span id="badgeUtmaning" class="status-pill" style="background:#27272a; color:#a1a1aa; border:none;">AV</span>
+        </div>
+        <span class="collapse-btn">▾</span>
+      </div>
+      <div class="card-body">
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="inputUtmaning" placeholder="Skriv utmaning..." />
+          <button id="btnUtmaning" class="btn btn-lime" onclick="toggleUtmaning()">STARTA</button>
+        </div>
+        <button class="btn btn-dark" style="width: 100%;" onclick="skipSong()">⏭️ SKIPPA LÅT</button>
+      </div>
     </div>
 
-    <div style="display: flex; gap: 6px;">
-      <button class="btn btn-dark" style="flex: 1;" onclick="executeModAction('timeout')">⏱️ TIMEOUT</button>
-      <button class="btn btn-red" style="flex: 1;" onclick="executeModAction('ban')">🔨 BAN</button>
-    </div>
-  </div>
+    <!-- 2. TWITCH MODERATION -->
+    <div class="mod-card" id="cardTwitch">
+      <div class="card-title" onclick="toggleCard('cardTwitch')">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span>🔨 TWITCH MOD</span>
+          <span id="modModeLabel" style="font-size: 9px; color: #71717a;">KLIPPBOARD</span>
+        </div>
+        <span class="collapse-btn">▾</span>
+      </div>
+      <div class="card-body">
+        <input type="text" id="twitchUser" placeholder="@användarnamn..." />
+        <input type="text" id="twitchReason" placeholder="Anledning (valfritt)..." />
+        
+        <div class="duration-pills">
+          <button class="pill-btn" onclick="setDuration(1, this)">1s</button>
+          <button class="pill-btn active" onclick="setDuration(600, this)">10m</button>
+          <button class="pill-btn" onclick="setDuration(3600, this)">1h</button>
+          <button class="pill-btn" onclick="setDuration(86400, this)">24h</button>
+        </div>
 
-  <!-- 3. MANUELL DONATION -->
-  <div class="mod-card">
-    <div class="card-title">💰 MANUELL DONATION (ALERT TRIGGER)</div>
-    <div style="display: flex; gap: 6px;">
-      <input type="text" id="donDonor" placeholder="Givare (Namn)" style="flex: 2;" />
-      <input type="number" id="donAmount" placeholder="SEK" style="flex: 1;" />
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-dark" style="flex: 1;" onclick="executeModAction('timeout')">⏱️ TIMEOUT</button>
+          <button class="btn btn-red" style="flex: 1;" onclick="executeModAction('ban')">🔨 BAN</button>
+        </div>
+      </div>
     </div>
-    <input type="text" id="donComment" placeholder="Kommentar / Meddelande..." />
-    <button class="btn btn-lime" onclick="sendManualDonation()">🚀 SKICKA DONATION</button>
-  </div>
 
-  <!-- 4. SOUNDBOARD -->
-  <div class="mod-card">
-    <div class="card-title">
-      <span>🔊 LJUDBRÄDA</span>
-      <input type="range" id="soundVol" min="0" max="1" step="0.05" value="0.8" style="width: 80px;" />
+    <!-- 3. MANUELL DONATION -->
+    <div class="mod-card" id="cardDonation">
+      <div class="card-title" onclick="toggleCard('cardDonation')">
+        <span>💰 MANUELL DONATION</span>
+        <span class="collapse-btn">▾</span>
+      </div>
+      <div class="card-body">
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="donDonor" placeholder="Givare" style="flex: 2;" />
+          <input type="number" id="donAmount" placeholder="SEK" style="flex: 1;" />
+        </div>
+        <input type="text" id="donComment" placeholder="Kommentar..." />
+        <button class="btn btn-lime" onclick="sendManualDonation()">🚀 SKICKA DONATION</button>
+      </div>
     </div>
-    <div class="sound-grid">
-      <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
-      <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
-      <button class="sound-pad" onclick="playSound('drumroll')"><span>🥁</span><span>Trumvirvel</span></button>
-      <button class="sound-pad" onclick="playSound('airhorn')"><span>📯</span><span>Airhorn</span></button>
-      <button class="sound-pad" onclick="playSound('fail')"><span>❌</span><span>Fail</span></button>
-      <button class="sound-pad" onclick="playSound('laugh')"><span>😂</span><span>Skratt</span></button>
-      <button class="sound-pad" onclick="playSound('ding')"><span>🔔</span><span>Ding</span></button>
-      <button class="sound-pad" onclick="playSound('boom')"><span>💥</span><span>Boom</span></button>
-    </div>
-  </div>
 
-  <!-- 5. SCHEMA WIDGET -->
-  <div class="mod-card">
-    <div class="card-title">📅 SCHEMA WIDGET</div>
-    <iframe class="schedule-frame" src="schedule.html#panel"></iframe>
+    <!-- 4. SOUNDBOARD -->
+    <div class="mod-card" id="cardSoundboard">
+      <div class="card-title" onclick="toggleCard('cardSoundboard')">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>🔊 LJUDBRÄDA</span>
+          <input type="range" id="soundVol" min="0" max="1" step="0.05" value="0.8" style="width: 60px; height: 14px;" onclick="event.stopPropagation();" />
+        </div>
+        <span class="collapse-btn">▾</span>
+      </div>
+      <div class="card-body">
+        <div class="sound-grid">
+          <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
+          <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
+          <button class="sound-pad" onclick="playSound('drumroll')"><span>🥁</span><span>Trumma</span></button>
+          <button class="sound-pad" onclick="playSound('airhorn')"><span>📯</span><span>Airhorn</span></button>
+          <button class="sound-pad" onclick="playSound('fail')"><span>❌</span><span>Fail</span></button>
+          <button class="sound-pad" onclick="playSound('laugh')"><span>😂</span><span>Skratt</span></button>
+          <button class="sound-pad" onclick="playSound('ding')"><span>🔔</span><span>Ding</span></button>
+          <button class="sound-pad" onclick="playSound('boom')"><span>💥</span><span>Boom</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. SCHEMA WIDGET (ADAPTIVE EXPANDING CARD) -->
+    <div class="mod-card schedule-card span-2 span-full" id="cardSchedule">
+      <div class="card-title" onclick="toggleCard('cardSchedule')">
+        <span>📅 SCHEMA WIDGET</span>
+        <span class="collapse-btn">▾</span>
+      </div>
+      <div class="card-body" style="flex: 1 1 auto; height: 100%;">
+        <div class="schedule-frame-container">
+          <iframe id="frameSchedule" class="schedule-frame" src="schedule.html#panel" scrolling="no"></iframe>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div id="modToast">Status</div>
 
   <script>
+    // ========================================================
+    // 📐 COLLAPSIBLE CARDS SYSTEM
+    // ========================================================
+    function toggleCard(cardId) {
+      const card = document.getElementById(cardId);
+      if (card) {
+        card.classList.toggle('collapsed');
+      }
+    }
+
+    // ========================================================
+    // 📏 AUTO-RESIZE SCHEMA IFRAME TO FIT CONTENT PERFECTLY
+    // ========================================================
+    function resizeScheduleIframe() {
+      const frame = document.getElementById('frameSchedule');
+      if (!frame) return;
+
+      try {
+        if (frame.contentDocument && frame.contentDocument.body) {
+          const doc = frame.contentDocument;
+          // Calculate the height needed by the inner schedule page
+          const requiredHeight = Math.max(
+            doc.body.scrollHeight, 
+            doc.documentElement.scrollHeight, 
+            doc.body.offsetHeight
+          );
+          if (requiredHeight > 200) {
+            frame.style.height = (requiredHeight + 16) + 'px';
+          }
+        }
+      } catch (e) {
+        // Fallback to generous height if cross-origin
+        frame.style.height = '580px';
+      }
+    }
+
+    const frameSchedule = document.getElementById('frameSchedule');
+    if (frameSchedule) {
+      frameSchedule.addEventListener('load', () => {
+        resizeScheduleIframe();
+
+        // Observe day tab switches inside schedule to auto-adjust height
+        try {
+          if (frameSchedule.contentDocument) {
+            const observer = new MutationObserver(() => resizeScheduleIframe());
+            observer.observe(frameSchedule.contentDocument.body, { 
+              childList: true, 
+              subtree: true, 
+              attributes: true 
+            });
+          }
+        } catch (e) {}
+      });
+    }
+
+    window.addEventListener('resize', resizeScheduleIframe);
+    setInterval(resizeScheduleIframe, 3000);
+
     // ========================================================
     // 📡 FIREBASE REALTIME SETUP
     // ========================================================
@@ -340,20 +528,28 @@
         isSbConnected = true;
         const badge = document.getElementById('badgeStreamerbot');
         const modeLabel = document.getElementById('modModeLabel');
-        badge.className = "status-pill";
-        badge.textContent = "STREAMER.BOT: ON";
-        modeLabel.textContent = "DIREKTLÄGE (AUTOMATISKT)";
-        modeLabel.style.color = "#ace600";
+        if (badge) {
+          badge.className = "status-pill";
+          badge.textContent = "STREAMER.BOT: ON";
+        }
+        if (modeLabel) {
+          modeLabel.textContent = "DIREKTLÄGE";
+          modeLabel.style.color = "#ace600";
+        }
       };
 
       sbWs.onclose = () => {
         isSbConnected = false;
         const badge = document.getElementById('badgeStreamerbot');
         const modeLabel = document.getElementById('modModeLabel');
-        badge.className = "status-pill offline";
-        badge.textContent = "STREAMER.BOT: OFF";
-        modeLabel.textContent = "KLIPPBOARD-LÄGE";
-        modeLabel.style.color = "#71717a";
+        if (badge) {
+          badge.className = "status-pill offline";
+          badge.textContent = "STREAMER.BOT: OFF";
+        }
+        if (modeLabel) {
+          modeLabel.textContent = "KLIPPBOARD";
+          modeLabel.style.color = "#71717a";
+        }
         setTimeout(connectStreamerbot, 4000);
       };
 
@@ -404,7 +600,6 @@
         chatCommand = `/ban ${user} ${reason}`.trim();
       }
 
-      // 1. If Streamer.bot is online, execute automatically
       let sentDirectly = false;
       if (isSbConnected) {
         if (type === 'timeout') {
@@ -423,10 +618,8 @@
         }
       }
 
-      // 2. Always copy command to clipboard as a fallback
       navigator.clipboard.writeText(chatCommand).catch(() => {});
 
-      // 3. Log event to Firebase
       db.ref('moderation/actions').push({
         type: type,
         user: user,
@@ -457,6 +650,8 @@
       isUtmaningActive = active;
       const btn = document.getElementById('btnUtmaning');
       const badge = document.getElementById('badgeUtmaning');
+      if (!btn) return;
+
       if (active) {
         btn.textContent = "AVSLUTA";
         btn.className = "btn btn-red";
@@ -494,7 +689,6 @@
     // ⏭️ SKIPPA LÅT
     // ========================================================
     function skipSong() {
-      // Send directly to Streamer.bot if connected
       if (isSbConnected) {
         sendToStreamerbot("Skip Song", {});
       }
@@ -531,7 +725,6 @@
     function playSound(key) {
       const vol = parseFloat(document.getElementById('soundVol').value) || 0.8;
 
-      // Broadcast to overlay.html centrally
       db.ref('soundboard/trigger').set({
         sound: key,
         volume: vol,
