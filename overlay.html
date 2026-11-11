@@ -303,20 +303,139 @@
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
     // ========================================================
-    // 📡 FIREBASE SETUP FOR MASTER HUB
+    // 🔊 CENTRAL AUDIO ENGINE (ALL SOUNDS PLAY HERE IN OVERLAY)
+    // ========================================================
+    const SOUNDS_FOLDER = "sounds";
+    const CUSTOM_SOUND_FILES = [
+      "0.mp3", "1.mp3", "2.mp3", "3.mp3", "4.mp3",
+      "5.mp3", "6.mp3", "7.mp3", "8.mp3", "9.mp3"
+    ];
+
+    const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
+    const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+    const SOUND_UTMANING_CUSTOM = "sounds/utmaning.mp3";
+    const SOUND_UTMANING_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
+
+    const SOUNDBOARD_URLS = {
+      horns: "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3",
+      applause: "https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3",
+      drumroll: "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3",
+      airhorn: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
+      fail: "https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3",
+      laugh: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3",
+      ding: "https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3",
+      boom: "https://assets.mixkit.co/active_storage/sfx/2872/2872-preview.mp3"
+    };
+
+    const soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
+    let soundPool = [];
+    let lastPlayedSound = null;
+
+    function getNextDonationSound() {
+      if (!soundFileList || soundFileList.length === 0) return '';
+      if (soundFileList.length === 1) return soundFileList[0];
+
+      if (soundPool.length === 0) {
+        soundPool = [...soundFileList];
+        for (let i = soundPool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
+        }
+        if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
+          [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
+        }
+      }
+
+      const next = soundPool.pop();
+      lastPlayedSound = next;
+      return next;
+    }
+
+    // Preload audio files only in overlay mode
+    if (!isPanel) {
+      soundFileList.forEach(src => {
+        const a = new Audio();
+        a.preload = 'auto';
+        a.src = src;
+      });
+    }
+
+    // Central Sound Player Function
+    function playMasterSound(type, soundKey = '', volume = 0.8) {
+      // Docks/Panels must NEVER play sounds (only the stream overlay does)
+      if (isPanel) return;
+
+      let soundUrl = '';
+      let vol = volume;
+
+      if (type === 'donation') {
+        soundUrl = getNextDonationSound();
+        vol = 0.8;
+      } else if (type === 'raid') {
+        soundUrl = SOUND_RAID;
+        vol = 0.8;
+      } else if (type === 'sub' || type === 'bits' || type === 'follow') {
+        soundUrl = SOUND_SUB_BITS_FOLLOW;
+        vol = 0.5;
+      } else if (type === 'utmaning') {
+        soundUrl = SOUND_UTMANING_CUSTOM;
+        vol = 0.95;
+      } else if (type === 'soundboard') {
+        soundUrl = SOUNDBOARD_URLS[soundKey] || '';
+        vol = volume || 0.8;
+      }
+
+      if (!soundUrl) return;
+
+      const audio = new Audio(soundUrl);
+      audio.volume = vol;
+      audio.play().catch(() => {
+        // Fallback for utmaning if local file does not exist
+        if (type === 'utmaning' && SOUND_UTMANING_FALLBACK) {
+          const fb = new Audio(SOUND_UTMANING_FALLBACK);
+          fb.volume = vol;
+          fb.play().catch(() => {});
+        }
+      });
+    }
+
+    // Listen to sound requests from child iframes (alerts, utmaningar, mod_panel)
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'PLAY_SOUND') {
+        playMasterSound(event.data.soundType, event.data.soundKey, event.data.volume);
+      }
+    });
+
+    try {
+      const soundBroadcast = new BroadcastChannel('mh_sound_bus');
+      soundBroadcast.onmessage = (event) => {
+        if (event.data && event.data.type === 'PLAY_SOUND') {
+          playMasterSound(event.data.soundType, event.data.soundKey, event.data.volume);
+        }
+      };
+    } catch(e) {}
+
+    // ========================================================
+    // 📡 FIREBASE SETUP & UTMANING LOGIC
     // ========================================================
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
-    const utmaningDbRef = firebase.database().ref('utmaning');
+    const db = firebase.database();
+    const utmaningDbRef = db.ref('utmaning');
     let utmaningStateActive = false;
 
-    // BroadcastChannel for instant local syncing
-    let localChannel = null;
-    try {
-      localChannel = new BroadcastChannel('mh_utmaning_channel');
-    } catch(e) {}
+    // Listen to Soundboard triggers via Firebase (from Mod Panel)
+    const initTimestamp = Date.now();
+    if (!isPanel) {
+      db.ref('soundboard/trigger').on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val && val.sound && val.timestamp > initTimestamp) {
+          playMasterSound('soundboard', val.sound, val.volume);
+        }
+      });
+    }
 
     function updateUtmaningUI(isActive) {
       utmaningStateActive = isActive;
@@ -353,18 +472,15 @@
         timestamp: Date.now()
       };
 
-      // 1. Update Firebase
       utmaningDbRef.set(payload);
 
-      // 2. Broadcast locally
-      if (localChannel) {
-        localChannel.postMessage(payload);
-      }
+      try {
+        new BroadcastChannel('mh_utmaning_channel').postMessage(payload);
+      } catch(e) {}
 
       updateUtmaningUI(nextActiveState);
     }
 
-    // Listen to Firebase so dock stays updated across devices
     utmaningDbRef.on('value', (snapshot) => {
       const val = snapshot.val();
       if (val) {
