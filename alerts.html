@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -121,7 +121,7 @@
       padding: 0;
       display: flex;
       flex-direction: column;
-      align-center: center;
+      align-items: center;
       justify-content: center;
       gap: 3px;
       text-align: center;
@@ -225,7 +225,7 @@
       } catch (e) {}
 
       // ========================================================
-      // 🎛️ OBS WEBSOCKET & DIRECT WEBCAM FILTER CONTROL
+      // 🎛️ OBS WEBSOCKET & CAMERA CONTROL CONFIGURATION
       // ========================================================
       const OBS_WS_URL = "ws://127.0.0.1:4455";
       const SCENE_GAMING = "Musikhjälpen|Gaming Scene";
@@ -259,7 +259,7 @@
             }
             if (msg.op === 2) {
               isObsConnected = true;
-              console.log("🔌 [OBS WebSocket] Connected & Ready to Switch Scenes!");
+              console.log("🔌 [OBS Alerts WebSocket] Connected & Ready!");
             }
             if (msg.op === 7) {
               const { requestId, requestStatus, responseData } = msg.d;
@@ -395,13 +395,7 @@
       // 📡 FIREBASE & ASSETS
       // ========================================================
       const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
-      const SOUNDS_FOLDER = "sounds";
       const EMOTES_FOLDER = "emotes";
-
-      const CUSTOM_SOUND_FILES = [
-        "0.mp3", "1.mp3", "2.mp3", "3.mp3", "4.mp3",
-        "5.mp3", "6.mp3", "7.mp3", "8.mp3", "9.mp3"
-      ];
 
       const CUSTOM_EMOTE_FILES = [
         "Our2ndHome-EmoteHype-500x500.png",
@@ -423,11 +417,6 @@
         'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M35,75 A15,12 0 1,1 20,63 L20,25 L75,15 L75,55 A15,12 0 1,1 60,43 L60,25 L35,30 Z" fill="%2300ffcc" stroke="%2300b399" stroke-width="3"/></svg>'
       ];
 
-      const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3"; 
-      const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; 
-
-      const SOUND_VOLUME_MAIN = 0.8;
-      const SOUND_VOLUME_MINOR = 0.5;
       const PAUSE_BETWEEN_ALERTS_MS = 1400;
 
       function getAlertDuration(type) {
@@ -436,33 +425,9 @@
         return 10000;
       }
 
-      let soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
       let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
       let lastProcessedAlertId = 0;
       let initialLoad = true;
-
-      let soundPool = [];
-      let lastPlayedSound = null;
-
-      function getNextDonationSound() {
-        if (!soundFileList || soundFileList.length === 0) return '';
-        if (soundFileList.length === 1) return soundFileList[0];
-
-        if (soundPool.length === 0) {
-          soundPool = [...soundFileList];
-          for (let i = soundPool.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
-          }
-          if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
-            [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
-          }
-        }
-
-        const nextSound = soundPool.pop();
-        lastPlayedSound = nextSound;
-        return nextSound;
-      }
 
       const alertQueue = [];
       let isProcessingAlert = false;
@@ -484,15 +449,6 @@
         });
       }
       preloadImages(emoteFileList);
-
-      function preloadAudio(urls) {
-        urls.forEach(url => {
-          const audio = new Audio();
-          audio.preload = 'auto';
-          audio.src = url;
-        });
-      }
-      preloadAudio(soundFileList);
 
       function triggerEmoteRain(count = 8) {
         const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
@@ -529,34 +485,44 @@
         }
       }
 
+      // ========================================================
+      // 🔊 CENTRAL AUDIO ENGINE ROUTER (DEFERRED TO OVERLAY.HTML)
+      // ========================================================
       function playAlertSound(type, duration) {
         return new Promise((resolve) => {
-          let soundUrl = '';
-          let volume = SOUND_VOLUME_MAIN;
-
-          if (type === 'raid') {
-            soundUrl = SOUND_RAID;
-            volume = SOUND_VOLUME_MAIN;
-          } else if (type === 'sub' || type === 'bits' || type === 'follow') {
-            soundUrl = SOUND_SUB_BITS_FOLLOW;
-            volume = SOUND_VOLUME_MINOR;
-          } else {
-            soundUrl = getNextDonationSound();
+          // 1. Post request to parent overlay.html
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'PLAY_SOUND', soundType: type }, '*');
           }
 
-          if (!soundUrl) return resolve();
-
+          // 2. Broadcast across tabs/windows
           try {
-            const audio = new Audio(soundUrl);
-            audio.volume = volume;
-            let done = false;
-            const finish = () => { if (!done) { done = true; resolve(); } };
-            audio.onended = finish;
-            audio.onerror = () => finish();
-            audio.play().catch(() => finish());
+            new BroadcastChannel('mh_sound_bus').postMessage({ type: 'PLAY_SOUND', soundType: type });
+          } catch (e) {}
 
-            setTimeout(finish, duration + 2000);
-          } catch (e) { resolve(); }
+          // 3. Fallback only if opened directly outside overlay.html
+          let isStandalone = false;
+          try {
+            isStandalone = (window.parent === window);
+          } catch (e) {
+            isStandalone = false;
+          }
+
+          if (isStandalone) {
+            try {
+              let localFallback = '';
+              if (type === 'raid') localFallback = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
+              else if (type === 'sub' || type === 'bits' || type === 'follow') localFallback = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+              else localFallback = "sounds/0.mp3";
+
+              const audio = new Audio(localFallback);
+              audio.volume = 0.8;
+              audio.play().catch(() => {});
+            } catch (e) {}
+          }
+
+          // Keep queue timing in sync with sound duration
+          setTimeout(resolve, Math.min(duration, 8000));
         });
       }
 
@@ -606,7 +572,7 @@
         let didSwitchScene = false;
         let originalSceneName = "";
 
-        // 🎬 SWITCH TO INTERMISSION: Triggers camera move first, then switches scene
+        // 🎬 SWITCH TO INTERMISSION SCENE
         if (isDonationOrRaid && isObsConnected) {
           const currentScene = await getCurrentObsScene();
           if (isMatchingScene(currentScene, SCENE_GAMING)) {
@@ -620,19 +586,17 @@
 
         banner.className = 'alert-banner';
 
-        // 🎯 1. DONATION ALERT: SMART ANONYMOUS "EN HEMLIG HJÄLTE" DETECTION
+        // 🎯 1. DONATION ALERT
         if (type === 'donation') {
           const rawDonor = String(item.donor || item.name || '').trim();
           const rawComment = String(item.comment || item.message || '').trim();
           const amountFormatted = formatSEK(item.amount || 50);
 
-          // Detects "En hemlig hjälte" or anonymous gifts
           const isSecretHero = /hemlig\s*hj[aä]lte|anonym/i.test(rawDonor) ||
                                /hemlig\s*hj[aä]lte|anonym/i.test(rawComment) ||
                                !rawDonor || rawDonor.toLowerCase() === 'givare';
 
           if (isSecretHero) {
-            // Remove redundant "En hemlig hjälte gav en gåva" from comment if present
             const cleanComment = /hemlig\s*hj[aä]lte\s*gav\s*en\s*g[aå]va/i.test(rawComment) ? '' : rawComment;
 
             banner.innerHTML = `
@@ -649,7 +613,7 @@
           }
           banner.classList.add('anim-top-in');
         } 
-        // 🎯 2. RAID ALERT: "TITTARE" (Not "tittarna")
+        // 🎯 2. RAID ALERT
         else if (type === 'raid') {
           banner.innerHTML = `
             <span class="donor-name">${escapeHTML(item.donor || item.name || 'Raider')}</span>
@@ -657,7 +621,7 @@
           `;
           banner.classList.add('anim-top-in');
         } 
-        // 🎯 3. SECONDARY ALERTS (No emote rain)
+        // 🎯 3. SECONDARY ALERTS
         else if (type === 'sub') {
           const months = item.months || 1;
           banner.innerHTML = `
@@ -688,7 +652,6 @@
           banner.classList.add('anim-bottom-in');
         }
 
-        // 🎯 Emote rain strictly runs ONLY for donation and raid
         let rainInterval = null;
         if (isDonationOrRaid) {
           triggerEmoteRain(35);
@@ -714,7 +677,7 @@
         banner.className = 'alert-banner';
         banner.innerHTML = '';
 
-        // 🎬 SWITCH BACK TO GAMING: Triggers camera move first, then switches scene
+        // 🎬 SWITCH BACK TO GAMING SCENE
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
