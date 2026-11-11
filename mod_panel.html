@@ -31,10 +31,15 @@
       background: #ace600;
     }
 
-    /* 🧱 TOP-ANCHORED TIGHT STACK (NO DEAD SPACE) */
+    /* 🧱 NO INFINITE SCROLL: TIGHT PACKED & ANCHORED */
+    html {
+      background-color: #0b0b0d;
+      height: auto;
+    }
+
     body {
       margin: 0;
-      padding: 8px;
+      padding: 8px 8px 16px 8px; /* Clean 16px buffer at the bottom */
       background-color: #0b0b0d;
       color: #ffffff;
       font-family: 'Montserrat', Arial, sans-serif;
@@ -43,7 +48,8 @@
       justify-content: flex-start;
       align-items: stretch;
       gap: 8px;
-      min-height: 100vh;
+      height: auto;
+      min-height: auto; /* Prevents phantom expanding space */
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -220,18 +226,18 @@
     .sound-pad:hover { border-color: #ace600; background: #27272a; }
     .sound-pad:active { transform: scale(0.97); }
 
-    /* 📅 SCHEMA FRAME DIRECTLY AS A NATIVE WIDGET (NO NESTED BOXES) */
+    /* 📅 NATIVE SCHEMA FRAME (NO EXPANDING LOOP) */
     .schedule-native-frame {
       width: 100%;
-      min-height: 480px;
-      height: 480px;
+      height: 690px;
+      max-height: 750px;
       border: 1px solid #27272a;
       border-radius: 6px;
       background: #141418;
       display: block;
       flex-shrink: 0;
       overflow: hidden;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     /* TOAST ALERT */
@@ -333,55 +339,54 @@
     </div>
   </div>
 
-  <!-- 5. SCHEMA (STANDALONE NATIVE WIDGET, NO EXTRA OUTER BOX) -->
+  <!-- 5. SCHEMA (LOCKED TO EXACT CONTENT HEIGHT) -->
   <iframe id="frameSchedule" class="schedule-native-frame" src="schedule.html#panel" scrolling="no"></iframe>
 
   <div id="modToast">Status</div>
 
   <script>
     // ========================================================
-    // 📏 DYNAMIC SCHEMA HEIGHT ADJUSTER
+    // 📏 CONTROLLED HEIGHT ADJUSTER (NO EXPANSION LOOPS)
     // ========================================================
-    function resizeScheduleIframe() {
+    function adjustScheduleHeight() {
       const frame = document.getElementById('frameSchedule');
       if (!frame) return;
 
       try {
-        if (frame.contentDocument && frame.contentDocument.body) {
-          const doc = frame.contentDocument;
-          const requiredHeight = Math.max(
-            doc.body.scrollHeight, 
-            doc.documentElement.scrollHeight, 
-            doc.body.offsetHeight
-          );
-          if (requiredHeight > 200) {
-            frame.style.height = (requiredHeight + 10) + 'px';
-          }
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc || !doc.body) return;
+
+        // Measure inner container directly
+        const container = doc.body.firstElementChild || doc.body;
+        const measuredH = container.offsetHeight || container.clientHeight || 0;
+
+        if (measuredH > 200) {
+          // Strictly clamp between 500px and 720px
+          const clamped = Math.min(Math.max(measuredH + 4, 520), 730);
+          frame.style.height = clamped + 'px';
         }
       } catch (e) {
-        frame.style.height = '500px';
+        frame.style.height = '690px';
       }
     }
 
     const frameSchedule = document.getElementById('frameSchedule');
     if (frameSchedule) {
       frameSchedule.addEventListener('load', () => {
-        resizeScheduleIframe();
+        adjustScheduleHeight();
+
+        // Only adjust when clicking day buttons inside the schedule
         try {
           if (frameSchedule.contentDocument) {
-            const observer = new MutationObserver(() => resizeScheduleIframe());
-            observer.observe(frameSchedule.contentDocument.body, { 
-              childList: true, 
-              subtree: true, 
-              attributes: true 
+            frameSchedule.contentDocument.addEventListener('click', () => {
+              setTimeout(adjustScheduleHeight, 150);
             });
           }
         } catch (e) {}
       });
     }
 
-    window.addEventListener('resize', resizeScheduleIframe);
-    setInterval(resizeScheduleIframe, 3000);
+    window.addEventListener('resize', adjustScheduleHeight);
 
     // ========================================================
     // 📡 FIREBASE REALTIME SETUP
