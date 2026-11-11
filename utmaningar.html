@@ -22,15 +22,24 @@
       background: transparent;
       font-family: 'Montserrat', Arial, sans-serif;
       pointer-events: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: relative;
     }
 
-    /* ⚔️ CLEAN UTMANING CONTAINER */
+    /* 🎊 CONFETTI CANNON CANVAS */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ⚔️ BORDERLESS & BACKGROUND-FREE UTMANING TEXT */
     .utmaning-overlay {
       position: absolute;
-      top: 50%;
+      top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
       display: none;
@@ -40,58 +49,46 @@
       z-index: 999999;
       pointer-events: none;
       width: 90%;
-      max-width: 760px;
-    }
-
-    /* 📦 CLEAN DARK CARD: NO BORDER, NO GLOWS */
-    .utmaning-card {
-      width: 100%;
-      background: rgba(14, 14, 18, 0.90);
+      max-width: 900px;
+      background: transparent !important;
       border: none !important;
-      border-radius: 14px;
-      padding: 32px 36px;
-      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.85);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+      box-shadow: none !important;
     }
 
-    /* 🏷️ TITLE: SOLID WHITE BOLD */
+    /* 🏷️ TITLE: SOLID WHITE BOLD TEXT */
     .utmaning-title {
-      font-size: 46px;
+      font-size: 56px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin: 0;
+      letter-spacing: 2px;
+      margin: 0 0 8px 0;
       line-height: 1.1;
-      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
-    /* 📝 CHALLENGE TEXT */
+    /* 📝 CHALLENGE DESCRIPTION TEXT */
     .utmaning-text {
-      font-size: 26px;
+      font-size: 32px;
       font-weight: 800;
       color: #ace600;
       text-transform: uppercase;
-      line-height: 1.35;
+      line-height: 1.3;
       margin: 0;
       word-break: break-word;
-      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 16px rgba(172, 230, 0, 0.4);
     }
 
     /* 🎬 SMOOTH CLEAN ANIMATIONS */
     .anim-in {
       display: flex !important;
-      animation: alertInSmooth 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: alertInSmooth 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes alertInSmooth {
       0% {
         opacity: 0;
-        transform: translate(-50%, -60%) scale(0.92);
+        transform: translate(-50%, -58%) scale(0.92);
       }
       100% {
         opacity: 1;
@@ -110,23 +107,23 @@
       }
       100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.92);
+        transform: translate(-50%, -48%) scale(0.92);
       }
     }
   </style>
 </head>
 <body>
 
+  <canvas id="confettiCanvas"></canvas>
+
   <div id="utmaningContainer" class="utmaning-overlay">
-    <div class="utmaning-card">
-      <h1 class="utmaning-title">UTMANING</h1>
-      <p id="utmaningDesc" class="utmaning-text"></p>
-    </div>
+    <h1 class="utmaning-title">UTMANING</h1>
+    <p id="utmaningDesc" class="utmaning-text"></p>
   </div>
 
   <script>
     (function() {
-      // Prevent running if opened as an OBS dock panel
+      // Prevent running if inside OBS dock panel
       try {
         const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
         let isParentDock = false;
@@ -136,10 +133,7 @@
           }
         } catch (e) {}
 
-        if (isSelfDock || isParentDock) {
-          console.log("Utmaning alert disabled inside dock/panel.");
-          return;
-        }
+        if (isSelfDock || isParentDock) return;
       } catch (e) {}
 
       // ========================================================
@@ -177,7 +171,6 @@
             }
             if (msg.op === 2) {
               isObsConnected = true;
-              console.log("🔌 [Utmaning OBS] Connected & Ready!");
             }
             if (msg.op === 7) {
               const { requestId, requestStatus, responseData } = msg.d;
@@ -235,11 +228,7 @@
           d: {
             requestType: "SetSourceFilterEnabled",
             requestId: "flt-off-" + Math.random(),
-            requestData: {
-              sourceName: sourceName,
-              filterName: filterName,
-              filterEnabled: false
-            }
+            requestData: { sourceName, filterName, filterEnabled: false }
           }
         }));
 
@@ -250,11 +239,7 @@
             d: {
               requestType: "SetSourceFilterEnabled",
               requestId: "flt-on-" + Math.random(),
-              requestData: {
-                sourceName: sourceName,
-                filterName: filterName,
-                filterEnabled: true
-              }
+              requestData: { sourceName, filterName, filterEnabled: true }
             }
           }));
         }, 20);
@@ -306,44 +291,127 @@
       connectOBS();
 
       // ========================================================
-      // 🎺 HORN SOUND EFFECT & WEBAUDIO SYNTH FALLBACK
+      // 🎊 CONFETTI CANNON: EMOTES & SPONSORS BLAST
+      // ========================================================
+      const EMOTES_FOLDER = "emotes";
+      const CUSTOM_EMOTE_FILES = [
+        "Our2ndHome-EmoteHype-500x500.png",
+        "Our2ndHome-EmoteLove-500x500.png",
+        "Our2ndHome-EmoteWoop-500x500.png",
+        "Our2ndHome-IconLogo-512x512x.png",
+        "DisgustingFoodMuseum_Sponsor.png",
+        "ElinPK_Sponsor.png",
+        "EscapeHouse_Sponsor.png",
+        "RandomNerd_Sponsor.png"
+      ];
+
+      const EMBEDDED_FALLBACKS = [
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ace600"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23ffea00"/></svg>'
+      ];
+
+      const loadedImages = [];
+      CUSTOM_EMOTE_FILES.forEach(filename => {
+        const img = new Image();
+        img.src = `${EMOTES_FOLDER}/${encodeURIComponent(filename)}`;
+        img.onload = () => loadedImages.push(img);
+        img.onerror = () => {
+          const fb = new Image();
+          fb.src = EMBEDDED_FALLBACKS[Math.floor(Math.random() * EMBEDDED_FALLBACKS.length)];
+          loadedImages.push(fb);
+        };
+      });
+
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animationFrameId = null;
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      function triggerEmoteCannon() {
+        if (loadedImages.length === 0) return;
+
+        // Position cannon origin at the bottom behind the sponsor banner
+        const originX = canvas.width * 0.5;
+        const originY = canvas.height - 30;
+        const particleCount = 45;
+
+        for (let i = 0; i < particleCount; i++) {
+          const img = loadedImages[Math.floor(Math.random() * loadedImages.length)];
+          const angle = (Math.PI / 2) + (Math.random() * 1.5 - 0.75); // shoots upwards in arc
+          const speed = Math.random() * 16 + 18;
+
+          particles.push({
+            x: originX + (Math.random() * 160 - 80),
+            y: originY,
+            vx: Math.cos(angle) * speed,
+            vy: -Math.sin(angle) * speed,
+            gravity: 0.55,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 8,
+            size: Math.floor(Math.random() * 22) + 36,
+            opacity: 1,
+            img: img
+          });
+        }
+
+        if (!animationFrameId) {
+          updateCannon();
+        }
+      }
+
+      function updateCannon() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.vx *= 0.99;
+          p.rotation += p.rotationSpeed;
+
+          // Fade out near bottom or late in flight
+          if (p.y > canvas.height * 0.45 && p.vy > 0) {
+            p.opacity -= 0.018;
+          }
+
+          if (p.opacity <= 0 || p.y > canvas.height + 80) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.globalAlpha = Math.max(0, p.opacity);
+
+          try {
+            ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
+          } catch(e) {}
+
+          ctx.restore();
+        }
+
+        if (particles.length > 0) {
+          animationFrameId = requestAnimationFrame(updateCannon);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          animationFrameId = null;
+        }
+      }
+
+      // ========================================================
+      // 🎺 HORN SOUND EFFECT
       // ========================================================
       const SOUND_HORN_CUSTOM = "sounds/utmaning.mp3";
       const SOUND_HORN_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
-
-      function playSynthesizedFanfare() {
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const notes = [
-            { f: 392.00, t: 0.00, d: 0.14 },
-            { f: 523.25, t: 0.15, d: 0.14 },
-            { f: 659.25, t: 0.30, d: 0.16 },
-            { f: 783.99, t: 0.48, d: 0.85 }
-          ];
-
-          notes.forEach(note => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(note.f, ctx.currentTime + note.t);
-
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(1400, ctx.currentTime + note.t);
-
-            gain.gain.setValueAtTime(0.001, ctx.currentTime + note.t);
-            gain.gain.exponentialRampToValueAtTime(0.45, ctx.currentTime + note.t + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.t + note.d);
-
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
-
-            osc.start(ctx.currentTime + note.t);
-            osc.stop(ctx.currentTime + note.t + note.d + 0.05);
-          });
-        } catch (e) {}
-      }
 
       function playHornSound() {
         const audio = new Audio(SOUND_HORN_CUSTOM);
@@ -351,14 +419,12 @@
         audio.play().catch(() => {
           const fallback = new Audio(SOUND_HORN_FALLBACK);
           fallback.volume = 0.95;
-          fallback.play().catch(() => {
-            playSynthesizedFanfare();
-          });
+          fallback.play().catch(() => {});
         });
       }
 
       // ========================================================
-      // 📡 FIREBASE & CHANNEL LISTENER WITH 15S AUTO-HIDE
+      // 📡 FIREBASE REALTIME LISTENER WITH 5S AUTO-HIDE
       // ========================================================
       const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
       if (!firebase.apps.length) {
@@ -394,19 +460,20 @@
           }
         }
 
-        // 2. Play Horns Sound
+        // 2. Play Horns Sound & Launch Cannon
         playHornSound();
+        triggerEmoteCannon();
 
-        // 3. Show clean alert card
+        // 3. Render clean alert text
         descEl.textContent = text || "";
         container.className = 'utmaning-overlay anim-in';
         isBoxVisible = true;
 
-        // 4. Hide the box automatically after 15 seconds
+        // 4. Hide box automatically after exactly 5 seconds
         if (autoHideTimer) clearTimeout(autoHideTimer);
         autoHideTimer = setTimeout(() => {
           hideBoxOnly();
-        }, 15000);
+        }, 5000);
       }
 
       async function hideBoxOnly() {
@@ -427,7 +494,6 @@
           autoHideTimer = null;
         }
 
-        // Hide box if it hasn't faded out yet
         if (isBoxVisible) {
           await hideBoxOnly();
         }
@@ -445,7 +511,6 @@
         originalSceneName = "";
       }
 
-      // Sync through Firebase
       dbRef.on('value', (snapshot) => {
         const val = snapshot.val();
         if (!val) return;
@@ -456,7 +521,6 @@
         }
       });
 
-      // Local cross-tab fallback
       try {
         const broadcast = new BroadcastChannel('mh_utmaning_channel');
         broadcast.onmessage = (event) => {
