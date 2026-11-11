@@ -31,16 +31,19 @@
       background: #ace600;
     }
 
+    /* 🧱 TOP-ANCHORED TIGHT STACK (NO DEAD SPACE) */
     body {
       margin: 0;
       padding: 8px;
       background-color: #0b0b0d;
       color: #ffffff;
       font-family: 'Montserrat', Arial, sans-serif;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      justify-content: flex-start;
+      align-items: stretch;
       gap: 8px;
+      min-height: 100vh;
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -55,6 +58,7 @@
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
+      width: 100%;
     }
 
     .mod-title {
@@ -87,38 +91,7 @@
       border-color: #3f3f46;
     }
 
-    /* 📱 ADAPTIVE RESPONSIVE GRID */
-    .mod-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-      width: 100%;
-      flex: 1 1 auto;
-    }
-
-    /* Automatically split into columns when dock is widened */
-    @media (min-width: 640px) {
-      .mod-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .span-2 {
-        grid-column: span 2;
-      }
-    }
-
-    @media (min-width: 1050px) {
-      .mod-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      .span-2 {
-        grid-column: span 2;
-      }
-      .span-full {
-        grid-column: 1 / -1;
-      }
-    }
-
-    /* CARD CONTAINERS */
+    /* CARDS */
     .mod-card {
       background: #141418;
       border: 1px solid #27272a;
@@ -127,14 +100,8 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      transition: all 0.2s ease;
-      height: fit-content;
-    }
-
-    /* Make the schedule card expand fluidly */
-    .mod-card.schedule-card {
-      height: auto;
-      flex: 1 1 auto;
+      flex-shrink: 0;
+      width: 100%;
     }
 
     .card-title {
@@ -147,32 +114,6 @@
       justify-content: space-between;
       align-items: center;
       user-select: none;
-      cursor: pointer;
-    }
-
-    .card-title:hover {
-      color: #ffffff;
-    }
-
-    .collapse-btn {
-      font-size: 12px;
-      color: #71717a;
-      transition: transform 0.2s ease;
-    }
-
-    .mod-card.collapsed .collapse-btn {
-      transform: rotate(-90deg);
-    }
-
-    .card-body {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: max-height 0.25s ease;
-    }
-
-    .mod-card.collapsed .card-body {
-      display: none;
     }
 
     /* INPUTS & BUTTONS */
@@ -256,7 +197,7 @@
     /* SOUNDBOARD GRID */
     .sound-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
       gap: 5px;
     }
 
@@ -279,25 +220,18 @@
     .sound-pad:hover { border-color: #ace600; background: #27272a; }
     .sound-pad:active { transform: scale(0.97); }
 
-    /* 📅 FLUID SCHEMA FRAME */
-    .schedule-frame-container {
+    /* 📅 SCHEMA FRAME DIRECTLY AS A NATIVE WIDGET (NO NESTED BOXES) */
+    .schedule-native-frame {
       width: 100%;
+      min-height: 480px;
+      height: 480px;
       border: 1px solid #27272a;
       border-radius: 6px;
-      background: #0b0b0d;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .schedule-frame {
-      width: 100%;
-      min-height: 420px;
-      height: 480px;
-      border: none;
+      background: #141418;
       display: block;
-      background: transparent;
-      transition: height 0.2s ease;
+      flex-shrink: 0;
+      overflow: hidden;
+      margin-bottom: 8px;
     }
 
     /* TOAST ALERT */
@@ -331,122 +265,82 @@
     <div style="font-size: 10px; font-weight: 800; color: #a1a1aa;">MUSIKHJÄLPEN</div>
   </div>
 
-  <div class="mod-grid">
-
-    <!-- 1. UTMANING & SKIPPA LÅT -->
-    <div class="mod-card" id="cardUtmaning">
-      <div class="card-title" onclick="toggleCard('cardUtmaning')">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span>⚔️ UTMANING & STRÖM</span>
-          <span id="badgeUtmaning" class="status-pill" style="background:#27272a; color:#a1a1aa; border:none;">AV</span>
-        </div>
-        <span class="collapse-btn">▾</span>
-      </div>
-      <div class="card-body">
-        <div style="display: flex; gap: 6px;">
-          <input type="text" id="inputUtmaning" placeholder="Skriv utmaning..." />
-          <button id="btnUtmaning" class="btn btn-lime" onclick="toggleUtmaning()">STARTA</button>
-        </div>
-        <button class="btn btn-dark" style="width: 100%;" onclick="skipSong()">⏭️ SKIPPA LÅT</button>
-      </div>
+  <!-- 1. UTMANING & SKIPPA LÅT -->
+  <div class="mod-card">
+    <div class="card-title">
+      <span>⚔️ UTMANING & STRÖM</span>
+      <span id="badgeUtmaning" class="status-pill" style="background:#27272a; color:#a1a1aa; border:none;">AV</span>
     </div>
-
-    <!-- 2. TWITCH MODERATION -->
-    <div class="mod-card" id="cardTwitch">
-      <div class="card-title" onclick="toggleCard('cardTwitch')">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span>🔨 TWITCH MOD</span>
-          <span id="modModeLabel" style="font-size: 9px; color: #71717a;">KLIPPBOARD</span>
-        </div>
-        <span class="collapse-btn">▾</span>
-      </div>
-      <div class="card-body">
-        <input type="text" id="twitchUser" placeholder="@användarnamn..." />
-        <input type="text" id="twitchReason" placeholder="Anledning (valfritt)..." />
-        
-        <div class="duration-pills">
-          <button class="pill-btn" onclick="setDuration(1, this)">1s</button>
-          <button class="pill-btn active" onclick="setDuration(600, this)">10m</button>
-          <button class="pill-btn" onclick="setDuration(3600, this)">1h</button>
-          <button class="pill-btn" onclick="setDuration(86400, this)">24h</button>
-        </div>
-
-        <div style="display: flex; gap: 6px;">
-          <button class="btn btn-dark" style="flex: 1;" onclick="executeModAction('timeout')">⏱️ TIMEOUT</button>
-          <button class="btn btn-red" style="flex: 1;" onclick="executeModAction('ban')">🔨 BAN</button>
-        </div>
-      </div>
+    <div style="display: flex; gap: 6px;">
+      <input type="text" id="inputUtmaning" placeholder="Skriv utmaning..." />
+      <button id="btnUtmaning" class="btn btn-lime" onclick="toggleUtmaning()">STARTA</button>
     </div>
-
-    <!-- 3. MANUELL DONATION -->
-    <div class="mod-card" id="cardDonation">
-      <div class="card-title" onclick="toggleCard('cardDonation')">
-        <span>💰 MANUELL DONATION</span>
-        <span class="collapse-btn">▾</span>
-      </div>
-      <div class="card-body">
-        <div style="display: flex; gap: 6px;">
-          <input type="text" id="donDonor" placeholder="Givare" style="flex: 2;" />
-          <input type="number" id="donAmount" placeholder="SEK" style="flex: 1;" />
-        </div>
-        <input type="text" id="donComment" placeholder="Kommentar..." />
-        <button class="btn btn-lime" onclick="sendManualDonation()">🚀 SKICKA DONATION</button>
-      </div>
-    </div>
-
-    <!-- 4. SOUNDBOARD -->
-    <div class="mod-card" id="cardSoundboard">
-      <div class="card-title" onclick="toggleCard('cardSoundboard')">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span>🔊 LJUDBRÄDA</span>
-          <input type="range" id="soundVol" min="0" max="1" step="0.05" value="0.8" style="width: 60px; height: 14px;" onclick="event.stopPropagation();" />
-        </div>
-        <span class="collapse-btn">▾</span>
-      </div>
-      <div class="card-body">
-        <div class="sound-grid">
-          <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
-          <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
-          <button class="sound-pad" onclick="playSound('drumroll')"><span>🥁</span><span>Trumma</span></button>
-          <button class="sound-pad" onclick="playSound('airhorn')"><span>📯</span><span>Airhorn</span></button>
-          <button class="sound-pad" onclick="playSound('fail')"><span>❌</span><span>Fail</span></button>
-          <button class="sound-pad" onclick="playSound('laugh')"><span>😂</span><span>Skratt</span></button>
-          <button class="sound-pad" onclick="playSound('ding')"><span>🔔</span><span>Ding</span></button>
-          <button class="sound-pad" onclick="playSound('boom')"><span>💥</span><span>Boom</span></button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. SCHEMA WIDGET (ADAPTIVE EXPANDING CARD) -->
-    <div class="mod-card schedule-card span-2 span-full" id="cardSchedule">
-      <div class="card-title" onclick="toggleCard('cardSchedule')">
-        <span>📅 SCHEMA WIDGET</span>
-        <span class="collapse-btn">▾</span>
-      </div>
-      <div class="card-body" style="flex: 1 1 auto; height: 100%;">
-        <div class="schedule-frame-container">
-          <iframe id="frameSchedule" class="schedule-frame" src="schedule.html#panel" scrolling="no"></iframe>
-        </div>
-      </div>
-    </div>
-
+    <button class="btn btn-dark" style="width: 100%;" onclick="skipSong()">⏭️ SKIPPA LÅT</button>
   </div>
+
+  <!-- 2. TWITCH MODERATION -->
+  <div class="mod-card">
+    <div class="card-title">
+      <span>🔨 TWITCH MOD</span>
+      <span id="modModeLabel" style="font-size: 9px; color: #71717a;">KLIPPBOARD</span>
+    </div>
+    <input type="text" id="twitchUser" placeholder="@användarnamn..." />
+    <input type="text" id="twitchReason" placeholder="Anledning (valfritt)..." />
+    
+    <div class="duration-pills">
+      <button class="pill-btn" onclick="setDuration(1, this)">1s</button>
+      <button class="pill-btn active" onclick="setDuration(600, this)">10m</button>
+      <button class="pill-btn" onclick="setDuration(3600, this)">1h</button>
+      <button class="pill-btn" onclick="setDuration(86400, this)">24h</button>
+    </div>
+
+    <div style="display: flex; gap: 6px;">
+      <button class="btn btn-dark" style="flex: 1;" onclick="executeModAction('timeout')">⏱️ TIMEOUT</button>
+      <button class="btn btn-red" style="flex: 1;" onclick="executeModAction('ban')">🔨 BAN</button>
+    </div>
+  </div>
+
+  <!-- 3. MANUELL DONATION -->
+  <div class="mod-card">
+    <div class="card-title">
+      <span>💰 MANUELL DONATION</span>
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <input type="text" id="donDonor" placeholder="Givare" style="flex: 2;" />
+      <input type="number" id="donAmount" placeholder="SEK" style="flex: 1;" />
+    </div>
+    <input type="text" id="donComment" placeholder="Kommentar..." />
+    <button class="btn btn-lime" onclick="sendManualDonation()">🚀 SKICKA DONATION</button>
+  </div>
+
+  <!-- 4. SOUNDBOARD -->
+  <div class="mod-card">
+    <div class="card-title">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span>🔊 LJUDBRÄDA</span>
+        <input type="range" id="soundVol" min="0" max="1" step="0.05" value="0.8" style="width: 60px; height: 14px;" />
+      </div>
+    </div>
+    <div class="sound-grid">
+      <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
+      <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
+      <button class="sound-pad" onclick="playSound('drumroll')"><span>🥁</span><span>Trumma</span></button>
+      <button class="sound-pad" onclick="playSound('airhorn')"><span>📯</span><span>Airhorn</span></button>
+      <button class="sound-pad" onclick="playSound('fail')"><span>❌</span><span>Fail</span></button>
+      <button class="sound-pad" onclick="playSound('laugh')"><span>😂</span><span>Skratt</span></button>
+      <button class="sound-pad" onclick="playSound('ding')"><span>🔔</span><span>Ding</span></button>
+      <button class="sound-pad" onclick="playSound('boom')"><span>💥</span><span>Boom</span></button>
+    </div>
+  </div>
+
+  <!-- 5. SCHEMA (STANDALONE NATIVE WIDGET, NO EXTRA OUTER BOX) -->
+  <iframe id="frameSchedule" class="schedule-native-frame" src="schedule.html#panel" scrolling="no"></iframe>
 
   <div id="modToast">Status</div>
 
   <script>
     // ========================================================
-    // 📐 COLLAPSIBLE CARDS SYSTEM
-    // ========================================================
-    function toggleCard(cardId) {
-      const card = document.getElementById(cardId);
-      if (card) {
-        card.classList.toggle('collapsed');
-      }
-    }
-
-    // ========================================================
-    // 📏 AUTO-RESIZE SCHEMA IFRAME TO FIT CONTENT PERFECTLY
+    // 📏 DYNAMIC SCHEMA HEIGHT ADJUSTER
     // ========================================================
     function resizeScheduleIframe() {
       const frame = document.getElementById('frameSchedule');
@@ -455,19 +349,17 @@
       try {
         if (frame.contentDocument && frame.contentDocument.body) {
           const doc = frame.contentDocument;
-          // Calculate the height needed by the inner schedule page
           const requiredHeight = Math.max(
             doc.body.scrollHeight, 
             doc.documentElement.scrollHeight, 
             doc.body.offsetHeight
           );
           if (requiredHeight > 200) {
-            frame.style.height = (requiredHeight + 16) + 'px';
+            frame.style.height = (requiredHeight + 10) + 'px';
           }
         }
       } catch (e) {
-        // Fallback to generous height if cross-origin
-        frame.style.height = '580px';
+        frame.style.height = '500px';
       }
     }
 
@@ -475,8 +367,6 @@
     if (frameSchedule) {
       frameSchedule.addEventListener('load', () => {
         resizeScheduleIframe();
-
-        // Observe day tab switches inside schedule to auto-adjust height
         try {
           if (frameSchedule.contentDocument) {
             const observer = new MutationObserver(() => resizeScheduleIframe());
@@ -633,7 +523,7 @@
       if (sentDirectly) {
         showToast(`⚡ Streamer.bot utförde: ${type.toUpperCase()} på ${user}!`);
       } else {
-        showToast(`📋 Kopierade till urklipp: ${chatCommand}`);
+        showToast(`📋 Kopierade: ${chatCommand}`);
       }
 
       document.getElementById('twitchUser').value = "";
