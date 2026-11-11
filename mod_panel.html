@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Mod Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 12px;
+      background-color: #0b0b0d;
+      color: #ffffff;
+      font-family: 'Montserrat', Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* TOP HEADER */
+    .mod-header {
+      background: #141418;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .mod-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-pill {
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: #1c381c;
+      color: #ace600;
+      border: 1px solid rgba(172, 230, 0, 0.4);
+    }
+
+    /* CARD CONTAINERS */
+    .mod-card {
+      background: #141418;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 900;
+      color: #a1a1aa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* INPUTS & BUTTONS */
+    input, select, textarea {
+      width: 100%;
+      background: #0b0b0d;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 12px;
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #ace600;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 6px;
+      padding: 9px 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: 0.15s ease;
+    }
+
+    .btn-lime {
+      background: #ace600;
+      color: #0b0b0d;
+    }
+    .btn-lime:hover { background: #c2f524; }
+
+    .btn-red {
+      background: #ff334b;
+      color: #ffffff;
+    }
+    .btn-red:hover { background: #ff5266; }
+
+    .btn-dark {
+      background: #27272a;
+      color: #ffffff;
+    }
+    .btn-dark:hover { background: #3f3f46; }
+
+    /* TWITCH MOD ROW */
+    .duration-pills {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .pill-btn {
+      flex: 1;
+      font-size: 10px;
+      padding: 5px 6px;
+      background: #1f1f23;
+      border: 1px solid #27272a;
+      color: #d4d4d8;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .pill-btn.active {
+      background: #ace600;
+      color: #0b0b0d;
+      border-color: #ace600;
+    }
+
+    /* SOUNDBOARD GRID */
+    .sound-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 6px;
+    }
+
+    .sound-pad {
+      background: #1f1f23;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      color: #ffffff;
+      padding: 10px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+    .sound-pad:hover { border-color: #ace600; background: #27272a; }
+    .sound-pad:active { transform: scale(0.97); }
+
+    /* SCHEDULE FRAME */
+    .schedule-frame {
+      width: 100%;
+      height: 380px;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      background: #0b0b0d;
+    }
+
+    /* TOAST ALERT */
+    #modToast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #ace600;
+      color: #0b0b0d;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 900;
+      display: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+      z-index: 99999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="mod-header">
+    <div class="mod-title">
+      <span>🛡️ MODERATORPANEL</span>
+      <span class="status-pill">ONLINE</span>
+    </div>
+    <div style="font-size: 10px; font-weight: 800; color: #a1a1aa;">MUSIKHJÄLPEN</div>
+  </div>
+
+  <!-- 1. UTMANING & SKIPPA LÅT -->
+  <div class="mod-card">
+    <div class="card-title">
+      <span>⚔️ UTMANING & STRÖMKONTROLL</span>
+      <span id="badgeUtmaning" class="status-pill" style="background:#27272a; color:#a1a1aa; border:none;">AV</span>
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <input type="text" id="inputUtmaning" placeholder="Skriv utmaning (t.ex. Gör 20 armhävningar)..." />
+      <button id="btnUtmaning" class="btn btn-lime" onclick="toggleUtmaning()">STARTA</button>
+    </div>
+    <div style="display: flex; gap: 6px; margin-top: 4px;">
+      <button class="btn btn-dark" style="flex: 1;" onclick="skipSong()">⏭️ SKIPPA LÅT</button>
+    </div>
+  </div>
+
+  <!-- 2. TWITCH MODERATION (TIMEOUT & BAN) -->
+  <div class="mod-card">
+    <div class="card-title">🔨 TWITCH MODERERING</div>
+    <input type="text" id="twitchUser" placeholder="@användarnamn som ska modereras..." />
+    <input type="text" id="twitchReason" placeholder="Anledning (valfritt)..." />
+    
+    <div class="duration-pills">
+      <button class="pill-btn" onclick="setDuration(1, this)">1s (Purge)</button>
+      <button class="pill-btn active" onclick="setDuration(600, this)">10 min</button>
+      <button class="pill-btn" onclick="setDuration(3600, this)">1 tim</button>
+      <button class="pill-btn" onclick="setDuration(86400, this)">24 tim</button>
+    </div>
+
+    <div style="display: flex; gap: 6px;">
+      <button class="btn btn-dark" style="flex: 1;" onclick="executeModAction('timeout')">⏱️ TIMEOUT</button>
+      <button class="btn btn-red" style="flex: 1;" onclick="executeModAction('ban')">🔨 BAN</button>
+    </div>
+  </div>
+
+  <!-- 3. MANUELL DONATION -->
+  <div class="mod-card">
+    <div class="card-title">💰 MANUELL DONATION (ALERT TRIGGER)</div>
+    <div style="display: flex; gap: 6px;">
+      <input type="text" id="donDonor" placeholder="Givare (Namn)" style="flex: 2;" />
+      <input type="number" id="donAmount" placeholder="SEK" style="flex: 1;" />
+    </div>
+    <input type="text" id="donComment" placeholder="Kommentar / Meddelande..." />
+    <button class="btn btn-lime" onclick="sendManualDonation()">🚀 SKICKA DONATION</button>
+  </div>
+
+  <!-- 4. SOUNDBOARD -->
+  <div class="mod-card">
+    <div class="card-title">
+      <span>🔊 LJUDBRÄDA</span>
+      <input type="range" id="soundVol" min="0" max="1" step="0.05" value="0.8" style="width: 80px;" />
+    </div>
+    <div class="sound-grid">
+      <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
+      <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
+      <button class="sound-pad" onclick="playSound('drumroll')"><span>🥁</span><span>Trumvirvel</span></button>
+      <button class="sound-pad" onclick="playSound('airhorn')"><span>📯</span><span>Airhorn</span></button>
+      <button class="sound-pad" onclick="playSound('fail')"><span>❌</span><span>Fail</span></button>
+      <button class="sound-pad" onclick="playSound('laugh')"><span>😂</span><span>Skratt</span></button>
+      <button class="sound-pad" onclick="playSound('ding')"><span>🔔</span><span>Ding</span></button>
+      <button class="sound-pad" onclick="playSound('boom')"><span>💥</span><span>Boom</span></button>
+    </div>
+  </div>
+
+  <!-- 5. SCHEMA WIDGET -->
+  <div class="mod-card">
+    <div class="card-title">📅 SCHEMA WIDGET</div>
+    <iframe class="schedule-frame" src="schedule.html#panel"></iframe>
+  </div>
+
+  <div id="modToast">Kommando kopierat!</div>
+
+  <script>
+    // ========================================================
+    // 📡 FIREBASE REALTIME SETUP
+    // ========================================================
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const db = firebase.database();
+
+    function showToast(msg) {
+      const toast = document.getElementById('modToast');
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2200);
+    }
+
+    // ========================================================
+    // ⚔️ UTMANING SYNC
+    // ========================================================
+    let isUtmaningActive = false;
+    const utmRef = db.ref('utmaning');
+
+    function updateUtmaningUI(active) {
+      isUtmaningActive = active;
+      const btn = document.getElementById('btnUtmaning');
+      const badge = document.getElementById('badgeUtmaning');
+      if (active) {
+        btn.textContent = "AVSLUTA";
+        btn.className = "btn btn-red";
+        badge.textContent = "AKTIV";
+        badge.style.background = "#ff334b";
+        badge.style.color = "#ffffff";
+      } else {
+        btn.textContent = "STARTA";
+        btn.className = "btn btn-lime";
+        badge.textContent = "AV";
+        badge.style.background = "#27272a";
+        badge.style.color = "#a1a1aa";
+      }
+    }
+
+    function toggleUtmaning() {
+      const text = document.getElementById('inputUtmaning').value.trim();
+      const next = !isUtmaningActive;
+      utmRef.set({
+        active: next,
+        text: text,
+        timestamp: Date.now()
+      });
+      try {
+        new BroadcastChannel('mh_utmaning_channel').postMessage({ active: next, text: text });
+      } catch(e) {}
+    }
+
+    utmRef.on('value', snap => {
+      const val = snap.val();
+      if (val) updateUtmaningUI(Boolean(val.active));
+    });
+
+    // ========================================================
+    // ⏭️ SKIPPA LÅT
+    // ========================================================
+    function skipSong() {
+      db.ref('music/skip').set({ timestamp: Date.now() });
+      showToast("⏭️ Begärde att skippa låt!");
+    }
+
+    // ========================================================
+    // 🔨 TWITCH TIMEOUT & BAN
+    // ========================================================
+    let selectedDuration = 600;
+
+    function setDuration(sec, btn) {
+      selectedDuration = sec;
+      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function executeModAction(type) {
+      const rawUser = document.getElementById('twitchUser').value.trim();
+      const user = rawUser.replace(/^@/, '');
+      const reason = document.getElementById('twitchReason').value.trim();
+
+      if (!user) {
+        alert("Fyll i ett användarnamn!");
+        return;
+      }
+
+      let chatCommand = "";
+      if (type === 'timeout') {
+        chatCommand = `/timeout ${user} ${selectedDuration} ${reason}`.trim();
+      } else {
+        chatCommand = `/ban ${user} ${reason}`.trim();
+      }
+
+      // 1. Copy directly to clipboard so the mod can paste into Twitch chat
+      navigator.clipboard.writeText(chatCommand).catch(() => {});
+
+      // 2. Log action to Firebase
+      db.ref('moderation/actions').push({
+        type: type,
+        user: user,
+        duration: selectedDuration,
+        reason: reason,
+        command: chatCommand,
+        timestamp: Date.now()
+      });
+
+      showToast(`Kopierade: ${chatCommand}`);
+      document.getElementById('twitchUser').value = "";
+      document.getElementById('twitchReason').value = "";
+    }
+
+    // ========================================================
+    // 💰 MANUELL DONATION TILL ALERTS
+    // ========================================================
+    function sendManualDonation() {
+      const donor = document.getElementById('donDonor').value.trim() || "Givare";
+      const amount = parseFloat(document.getElementById('donAmount').value) || 50;
+      const comment = document.getElementById('donComment').value.trim();
+
+      db.ref('bossa').update({
+        alertId: Date.now(),
+        donor: donor,
+        amount: amount,
+        diff: amount,
+        comment: comment,
+        type: 'donation'
+      }).then(() => {
+        showToast("🚀 Donation skickad till stream!");
+        document.getElementById('donDonor').value = "";
+        document.getElementById('donAmount').value = "";
+        document.getElementById('donComment').value = "";
+      });
+    }
+
+    // ========================================================
+    // 🔊 SOUNDBOARD SYSTEM
+    // ========================================================
+    const soundUrls = {
+      horns: "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3",
+      applause: "https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3",
+      drumroll: "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3",
+      airhorn: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
+      fail: "https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3",
+      laugh: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3",
+      ding: "https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3",
+      boom: "https://assets.mixkit.co/active_storage/sfx/2872/2872-preview.mp3"
+    };
+
+    function playSound(key) {
+      const vol = parseFloat(document.getElementById('soundVol').value) || 0.8;
+      
+      // Play locally in mod panel
+      if (soundUrls[key]) {
+        const audio = new Audio(soundUrls[key]);
+        audio.volume = vol;
+        audio.play().catch(() => {});
+      }
+
+      // Sync across to stream overlay
+      db.ref('soundboard/trigger').set({
+        sound: key,
+        volume: vol,
+        timestamp: Date.now()
+      });
+
+      showToast(`Spelar: ${key.toUpperCase()}`);
+    }
+  </script>
+</body>
+</html>
