@@ -25,7 +25,6 @@
       position: relative;
     }
 
-    /* 🎊 CONFETTI CANNON CANVAS */
     #confettiCanvas {
       position: fixed;
       top: 0;
@@ -36,7 +35,6 @@
       z-index: 10;
     }
 
-    /* ⚔️ BORDERLESS & BACKGROUND-FREE UTMANING TEXT */
     .utmaning-overlay {
       position: absolute;
       top: 40%;
@@ -55,7 +53,6 @@
       box-shadow: none !important;
     }
 
-    /* 🏷️ TITLE: SOLID WHITE BOLD TEXT */
     .utmaning-title {
       font-size: 56px;
       font-weight: 900;
@@ -67,7 +64,6 @@
       text-shadow: 0 4px 16px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.9);
     }
 
-    /* 📝 CHALLENGE DESCRIPTION TEXT */
     .utmaning-text {
       font-size: 32px;
       font-weight: 800;
@@ -79,7 +75,6 @@
       text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 16px rgba(172, 230, 0, 0.4);
     }
 
-    /* 🎬 SMOOTH CLEAN ANIMATIONS */
     .anim-in {
       display: flex !important;
       animation: alertInSmooth 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -123,7 +118,6 @@
 
   <script>
     (function() {
-      // Prevent running if inside OBS dock panel
       try {
         const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
         let isParentDock = false;
@@ -337,14 +331,13 @@
       function triggerEmoteCannon() {
         if (loadedImages.length === 0) return;
 
-        // Position cannon origin at the bottom behind the sponsor banner
         const originX = canvas.width * 0.5;
         const originY = canvas.height - 30;
         const particleCount = 45;
 
         for (let i = 0; i < particleCount; i++) {
           const img = loadedImages[Math.floor(Math.random() * loadedImages.length)];
-          const angle = (Math.PI / 2) + (Math.random() * 1.5 - 0.75); // shoots upwards in arc
+          const angle = (Math.PI / 2) + (Math.random() * 1.5 - 0.75);
           const speed = Math.random() * 16 + 18;
 
           particles.push({
@@ -377,7 +370,6 @@
           p.vx *= 0.99;
           p.rotation += p.rotationSpeed;
 
-          // Fade out near bottom or late in flight
           if (p.y > canvas.height * 0.45 && p.vy > 0) {
             p.opacity -= 0.018;
           }
@@ -408,19 +400,16 @@
       }
 
       // ========================================================
-      // 🎺 HORN SOUND EFFECT
+      // 🔊 TRIGGER SOUND IN OVERLAY.HTML
       // ========================================================
-      const SOUND_HORN_CUSTOM = "sounds/utmaning.mp3";
-      const SOUND_HORN_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
-
-      function playHornSound() {
-        const audio = new Audio(SOUND_HORN_CUSTOM);
-        audio.volume = 0.95;
-        audio.play().catch(() => {
-          const fallback = new Audio(SOUND_HORN_FALLBACK);
-          fallback.volume = 0.95;
-          fallback.play().catch(() => {});
-        });
+      function playHornSoundViaOverlay() {
+        // Send signal to parent overlay.html
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'PLAY_SOUND', soundType: 'utmaning' }, '*');
+        }
+        try {
+          new BroadcastChannel('mh_sound_bus').postMessage({ type: 'PLAY_SOUND', soundType: 'utmaning' });
+        } catch(e) {}
       }
 
       // ========================================================
@@ -448,7 +437,6 @@
         }
         isUtmaningActive = true;
 
-        // 1. Switch to Intermission if currently on Gaming scene
         if (isObsConnected) {
           const currentScene = await getCurrentObsScene();
           if (isMatchingScene(currentScene, SCENE_GAMING)) {
@@ -460,16 +448,14 @@
           }
         }
 
-        // 2. Play Horns Sound & Launch Cannon
-        playHornSound();
+        // Sound triggers directly in overlay.html
+        playHornSoundViaOverlay();
         triggerEmoteCannon();
 
-        // 3. Render clean alert text
         descEl.textContent = text || "";
         container.className = 'utmaning-overlay anim-in';
         isBoxVisible = true;
 
-        // 4. Hide box automatically after exactly 5 seconds
         if (autoHideTimer) clearTimeout(autoHideTimer);
         autoHideTimer = setTimeout(() => {
           hideBoxOnly();
@@ -498,7 +484,6 @@
           await hideBoxOnly();
         }
 
-        // Switch back to previous scene when operator clicks stop
         if (didSwitchScene && isObsConnected) {
           const activeScene = await getCurrentObsScene();
           if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
