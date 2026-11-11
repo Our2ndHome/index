@@ -46,6 +46,11 @@
       gap: 8px;
     }
 
+    .status-group {
+      display: flex;
+      gap: 6px;
+    }
+
     .status-pill {
       font-size: 9px;
       font-weight: 900;
@@ -54,6 +59,12 @@
       background: #1c381c;
       color: #ace600;
       border: 1px solid rgba(172, 230, 0, 0.4);
+    }
+
+    .status-pill.offline {
+      background: #27272a;
+      color: #71717a;
+      border-color: #3f3f46;
     }
 
     /* CARD CONTAINERS */
@@ -211,7 +222,10 @@
   <div class="mod-header">
     <div class="mod-title">
       <span>🛡️ MODERATORPANEL</span>
-      <span class="status-pill">ONLINE</span>
+      <div class="status-group">
+        <span id="badgeStreamerbot" class="status-pill offline">STREAMER.BOT: OFF</span>
+        <span class="status-pill">ONLINE</span>
+      </div>
     </div>
     <div style="font-size: 10px; font-weight: 800; color: #a1a1aa;">MUSIKHJÄLPEN</div>
   </div>
@@ -231,10 +245,13 @@
     </div>
   </div>
 
-  <!-- 2. TWITCH MODERATION (TIMEOUT & BAN) -->
+  <!-- 2. TWITCH MODERATION (TIMEOUT & BAN VIA STREAMER.BOT) -->
   <div class="mod-card">
-    <div class="card-title">🔨 TWITCH MODERERING</div>
-    <input type="text" id="twitchUser" placeholder="@användarnamn som ska modereras..." />
+    <div class="card-title">
+      <span>🔨 TWITCH MODERERING</span>
+      <span id="modModeLabel" style="font-size: 9px; color: #71717a;">KLIPPBOARD-LÄGE</span>
+    </div>
+    <input type="text" id="twitchUser" placeholder="@användarnamn..." />
     <input type="text" id="twitchReason" placeholder="Anledning (valfritt)..." />
     
     <div class="duration-pills">
@@ -285,7 +302,7 @@
     <iframe class="schedule-frame" src="schedule.html#panel"></iframe>
   </div>
 
-  <div id="modToast">Kommando kopierat!</div>
+  <div id="modToast">Status</div>
 
   <script>
     // ========================================================
@@ -301,11 +318,137 @@
       const toast = document.getElementById('modToast');
       toast.textContent = msg;
       toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 2200);
+      setTimeout(() => { toast.style.display = 'none'; }, 2500);
     }
 
     // ========================================================
-    // ⚔️ UTMANING SYNC
+    // 🤖 STREAMER.BOT DIRECT WEBSOCKET CONNECTION
+    // ========================================================
+    const SB_WS_URL = "ws://127.0.0.1:8080/";
+    let sbWs = null;
+    let isSbConnected = false;
+
+    function connectStreamerbot() {
+      try {
+        sbWs = new WebSocket(SB_WS_URL);
+      } catch(e) {
+        setTimeout(connectStreamerbot, 5000);
+        return;
+      }
+
+      sbWs.onopen = () => {
+        isSbConnected = true;
+        const badge = document.getElementById('badgeStreamerbot');
+        const modeLabel = document.getElementById('modModeLabel');
+        badge.className = "status-pill";
+        badge.textContent = "STREAMER.BOT: ON";
+        modeLabel.textContent = "DIREKTLÄGE (AUTOMATISKT)";
+        modeLabel.style.color = "#ace600";
+      };
+
+      sbWs.onclose = () => {
+        isSbConnected = false;
+        const badge = document.getElementById('badgeStreamerbot');
+        const modeLabel = document.getElementById('modModeLabel');
+        badge.className = "status-pill offline";
+        badge.textContent = "STREAMER.BOT: OFF";
+        modeLabel.textContent = "KLIPPBOARD-LÄGE";
+        modeLabel.style.color = "#71717a";
+        setTimeout(connectStreamerbot, 4000);
+      };
+
+      sbWs.onerror = () => {
+        try { sbWs.close(); } catch(e) {}
+      };
+    }
+
+    connectStreamerbot();
+
+    function sendToStreamerbot(actionName, args) {
+      if (!isSbConnected || !sbWs || sbWs.readyState !== WebSocket.OPEN) return false;
+
+      sbWs.send(JSON.stringify({
+        request: "DoAction",
+        action: { name: actionName },
+        args: args,
+        id: "mod-" + Math.random().toString(36).substring(2, 9)
+      }));
+      return true;
+    }
+
+    // ========================================================
+    // 🔨 TWITCH TIMEOUT & BAN EXECUTION
+    // ========================================================
+    let selectedDuration = 600;
+
+    function setDuration(sec, btn) {
+      selectedDuration = sec;
+      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function executeModAction(type) {
+      const rawUser = document.getElementById('twitchUser').value.trim();
+      const user = rawUser.replace(/^@/, '');
+      const reason = document.getElementById('twitchReason').value.trim();
+
+      if (!user) {
+        alert("Fyll i ett användarnamn!");
+        return;
+      }
+
+      let chatCommand = "";
+      if (type === 'timeout') {
+        chatCommand = `/timeout ${user} ${selectedDuration} ${reason}`.trim();
+      } else {
+        chatCommand = `/ban ${user} ${reason}`.trim();
+      }
+
+      // 1. If Streamer.bot is online, execute automatically
+      let sentDirectly = false;
+      if (isSbConnected) {
+        if (type === 'timeout') {
+          sentDirectly = sendToStreamerbot("Twitch Timeout", {
+            user: user,
+            duration: selectedDuration,
+            reason: reason || "Timeout via Mod Panel",
+            command: chatCommand
+          });
+        } else {
+          sentDirectly = sendToStreamerbot("Twitch Ban", {
+            user: user,
+            reason: reason || "Banned via Mod Panel",
+            command: chatCommand
+          });
+        }
+      }
+
+      // 2. Always copy command to clipboard as a fallback
+      navigator.clipboard.writeText(chatCommand).catch(() => {});
+
+      // 3. Log event to Firebase
+      db.ref('moderation/actions').push({
+        type: type,
+        user: user,
+        duration: selectedDuration,
+        reason: reason,
+        command: chatCommand,
+        executedByStreamerbot: sentDirectly,
+        timestamp: Date.now()
+      });
+
+      if (sentDirectly) {
+        showToast(`⚡ Streamer.bot utförde: ${type.toUpperCase()} på ${user}!`);
+      } else {
+        showToast(`📋 Kopierade till urklipp: ${chatCommand}`);
+      }
+
+      document.getElementById('twitchUser').value = "";
+      document.getElementById('twitchReason').value = "";
+    }
+
+    // ========================================================
+    // ⚔️ UTMANING LOGIC
     // ========================================================
     let isUtmaningActive = false;
     const utmRef = db.ref('utmaning');
@@ -351,54 +494,12 @@
     // ⏭️ SKIPPA LÅT
     // ========================================================
     function skipSong() {
+      // Send directly to Streamer.bot if connected
+      if (isSbConnected) {
+        sendToStreamerbot("Skip Song", {});
+      }
       db.ref('music/skip').set({ timestamp: Date.now() });
       showToast("⏭️ Begärde att skippa låt!");
-    }
-
-    // ========================================================
-    // 🔨 TWITCH TIMEOUT & BAN
-    // ========================================================
-    let selectedDuration = 600;
-
-    function setDuration(sec, btn) {
-      selectedDuration = sec;
-      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    }
-
-    function executeModAction(type) {
-      const rawUser = document.getElementById('twitchUser').value.trim();
-      const user = rawUser.replace(/^@/, '');
-      const reason = document.getElementById('twitchReason').value.trim();
-
-      if (!user) {
-        alert("Fyll i ett användarnamn!");
-        return;
-      }
-
-      let chatCommand = "";
-      if (type === 'timeout') {
-        chatCommand = `/timeout ${user} ${selectedDuration} ${reason}`.trim();
-      } else {
-        chatCommand = `/ban ${user} ${reason}`.trim();
-      }
-
-      // 1. Copy directly to clipboard so the mod can paste into Twitch chat
-      navigator.clipboard.writeText(chatCommand).catch(() => {});
-
-      // 2. Log action to Firebase
-      db.ref('moderation/actions').push({
-        type: type,
-        user: user,
-        duration: selectedDuration,
-        reason: reason,
-        command: chatCommand,
-        timestamp: Date.now()
-      });
-
-      showToast(`Kopierade: ${chatCommand}`);
-      document.getElementById('twitchUser').value = "";
-      document.getElementById('twitchReason').value = "";
     }
 
     // ========================================================
@@ -427,35 +528,26 @@
     // ========================================================
     // 🔊 SOUNDBOARD SYSTEM
     // ========================================================
-    const soundUrls = {
-      horns: "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3",
-      applause: "https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3",
-      drumroll: "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3",
-      airhorn: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
-      fail: "https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3",
-      laugh: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3",
-      ding: "https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3",
-      boom: "https://assets.mixkit.co/active_storage/sfx/2872/2872-preview.mp3"
-    };
-
     function playSound(key) {
       const vol = parseFloat(document.getElementById('soundVol').value) || 0.8;
-      
-      // Play locally in mod panel
-      if (soundUrls[key]) {
-        const audio = new Audio(soundUrls[key]);
-        audio.volume = vol;
-        audio.play().catch(() => {});
-      }
 
-      // Sync across to stream overlay
+      // Broadcast to overlay.html centrally
       db.ref('soundboard/trigger').set({
         sound: key,
         volume: vol,
         timestamp: Date.now()
       });
 
-      showToast(`Spelar: ${key.toUpperCase()}`);
+      try {
+        new BroadcastChannel('mh_sound_bus').postMessage({
+          type: 'PLAY_SOUND',
+          soundType: 'soundboard',
+          soundKey: key,
+          volume: vol
+        });
+      } catch(e) {}
+
+      showToast(`Spelar ljud: ${key.toUpperCase()}`);
     }
   </script>
 </body>
