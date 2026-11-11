@@ -31,7 +31,6 @@
       background: #ace600;
     }
 
-    /* 🧱 NO INFINITE SCROLL: TIGHT PACKED & ANCHORED */
     html {
       background-color: #0b0b0d;
       height: auto;
@@ -39,7 +38,7 @@
 
     body {
       margin: 0;
-      padding: 8px 8px 16px 8px; /* Clean 16px buffer at the bottom */
+      padding: 8px 8px 16px 8px;
       background-color: #0b0b0d;
       color: #ffffff;
       font-family: 'Montserrat', Arial, sans-serif;
@@ -49,7 +48,7 @@
       align-items: stretch;
       gap: 8px;
       height: auto;
-      min-height: auto; /* Prevents phantom expanding space */
+      min-height: auto;
       overflow-x: hidden;
       overflow-y: auto;
     }
@@ -226,18 +225,14 @@
     .sound-pad:hover { border-color: #ace600; background: #27272a; }
     .sound-pad:active { transform: scale(0.97); }
 
-    /* 📅 NATIVE SCHEMA FRAME (NO EXPANDING LOOP) */
-    .schedule-native-frame {
+    /* 📅 SEAMLESS SCHEMA EMBED */
+    .schedule-embed-frame {
       width: 100%;
-      height: 690px;
-      max-height: 750px;
-      border: 1px solid #27272a;
-      border-radius: 6px;
-      background: #141418;
+      height: 600px;
+      border: none !important;
+      background: transparent !important;
       display: block;
-      flex-shrink: 0;
       overflow: hidden;
-      margin-bottom: 4px;
     }
 
     /* TOAST ALERT */
@@ -339,14 +334,203 @@
     </div>
   </div>
 
-  <!-- 5. SCHEMA (LOCKED TO EXACT CONTENT HEIGHT) -->
-  <iframe id="frameSchedule" class="schedule-native-frame" src="schedule.html#panel" scrolling="no"></iframe>
+  <!-- 5. SCHEMA (UNIFIED NATIVE CARD DESIGN) -->
+  <div class="mod-card">
+    <div class="card-title">
+      <span>📅 SCHEMA & SÄNDNINGSPASS</span>
+      <span class="status-pill">LIVE SYNKAD</span>
+    </div>
+    <iframe id="frameSchedule" class="schedule-embed-frame" src="schedule.html#panel" scrolling="no"></iframe>
+  </div>
 
   <div id="modToast">Status</div>
 
   <script>
     // ========================================================
-    // 📏 CONTROLLED HEIGHT ADJUSTER (NO EXPANSION LOOPS)
+    // 🎨 INJECT UNIFIED DESIGN DIRECTLY INTO SCHEDULE.HTML
+    // ========================================================
+    function applyModernThemeToSchedule() {
+      const frame = document.getElementById('frameSchedule');
+      if (!frame) return;
+
+      try {
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (!doc || !doc.head) return;
+
+        // Check if theme was already injected
+        if (doc.getElementById('mh-injected-theme')) {
+          adjustScheduleHeight();
+          return;
+        }
+
+        const style = doc.createElement('style');
+        style.id = 'mh-injected-theme';
+        style.textContent = `
+          * { box-sizing: border-box !important; }
+          
+          body, html {
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            color: #ffffff !important;
+            font-family: 'Montserrat', Arial, sans-serif !important;
+            overflow: hidden !important;
+          }
+
+          /* Strip out duplicate outer box and borders */
+          .dock-container, .panel-container, .wrapper, [id*="container"], body > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          /* Hide duplicate header ("📅 SCHEMA", "LIVE ANSLUTEN", "REDIGERA SCHEMA") */
+          .dock-master-header, [class*="master-header"], [class*="header"]:first-child,
+          h1, h2, h3, .edit-title, [class*="title"]:first-child {
+            display: none !important;
+          }
+
+          /* RESTYLE DAY BUTTONS TO MATCH TWITCH PILLS */
+          .day-selector, .tabs-container, div:has(> button[data-day]), div:has(> button:nth-child(5)) {
+            display: flex !important;
+            gap: 4px !important;
+            margin-bottom: 8px !important;
+            width: 100% !important;
+          }
+
+          .day-btn, .tab-btn, button[data-day], div:has(> button:nth-child(5)) > button {
+            flex: 1 !important;
+            font-size: 9px !important;
+            padding: 5px 2px !important;
+            background: #1f1f23 !important;
+            border: 1px solid #27272a !important;
+            color: #d4d4d8 !important;
+            border-radius: 3px !important;
+            cursor: pointer !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+            text-transform: uppercase !important;
+            transition: all 0.15s ease !important;
+          }
+
+          .day-btn.active, .tab-btn.active, button.active, [class*="active"] {
+            background: #ace600 !important;
+            color: #0b0b0d !important;
+            border-color: #ace600 !important;
+          }
+
+          /* RESTYLE PASS ITEMS (CLEAN INLINE CARDS) */
+          [class*="pass-card"], [class*="pass-row"], [class*="pass-item"],
+          div:has(> input[placeholder*="15:00"]), div:has(> [class*="badge"]) {
+            background: #0b0b0d !important;
+            border: 1px solid #27272a !important;
+            border-radius: 4px !important;
+            padding: 6px 8px !important;
+            margin-bottom: 6px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+          }
+
+          /* RESTYLE PASS BADGES ("PASS 1", "PASS 2"...) */
+          [class*="badge"], [class*="label"], [class*="pass-tag"] {
+            background: #1f1f23 !important;
+            color: #ace600 !important;
+            font-size: 9px !important;
+            font-weight: 900 !important;
+            padding: 2px 6px !important;
+            border-radius: 3px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            display: inline-block !important;
+            border: 1px solid rgba(172, 230, 0, 0.2) !important;
+          }
+
+          /* RESTYLE INPUTS (MATCHING MOD PANEL INPUTS) */
+          input {
+            width: 100% !important;
+            background: #141418 !important;
+            border: 1px solid #27272a !important;
+            border-radius: 4px !important;
+            color: #ffffff !important;
+            font-family: 'Montserrat', Arial, sans-serif !important;
+            font-size: 11px !important;
+            padding: 6px 8px !important;
+            outline: none !important;
+          }
+          input:focus {
+            border-color: #ace600 !important;
+          }
+
+          /* RESTYLE BUTTONS (MATCHING BTN-LIME, BTN-DARK, BTN-RED) */
+          button {
+            font-family: 'Montserrat', Arial, sans-serif !important;
+            font-size: 11px !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+            border: none !important;
+            border-radius: 4px !important;
+            padding: 8px 10px !important;
+            cursor: pointer !important;
+            transition: 0.15s ease !important;
+          }
+
+          /* ADD PASS BUTTON */
+          button[class*="add"], button:has(svg), button:has(i) {
+            background: #27272a !important;
+            color: #ffffff !important;
+            width: 100% !important;
+            margin-bottom: 6px !important;
+          }
+          button[class*="add"]:hover { background: #3f3f46 !important; }
+
+          /* SAVE BUTTON (LIME) */
+          button[class*="save"] {
+            background: #ace600 !important;
+            color: #0b0b0d !important;
+            width: 100% !important;
+            margin-bottom: 8px !important;
+          }
+          button[class*="save"]:hover { background: #c2f524 !important; }
+
+          /* TOOLS SECTION */
+          [class*="tool"], div:has(> button[class*="reset"]) {
+            background: #0b0b0d !important;
+            border: 1px solid #27272a !important;
+            border-radius: 4px !important;
+            padding: 6px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 5px !important;
+          }
+
+          [class*="tool"] button {
+            background: #1f1f23 !important;
+            color: #ffffff !important;
+            border: 1px solid #27272a !important;
+          }
+
+          /* RESET BUTTON (OUTLINED RED) */
+          button[class*="reset"] {
+            background: transparent !important;
+            border: 1px solid #ff334b !important;
+            color: #ff334b !important;
+          }
+          button[class*="reset"]:hover {
+            background: #ff334b !important;
+            color: #ffffff !important;
+          }
+        `;
+        doc.head.appendChild(style);
+
+        adjustScheduleHeight();
+      } catch (e) {}
+    }
+
+    // ========================================================
+    // 📏 ACCURATE COMPACT HEIGHT ADJUSTER
     // ========================================================
     function adjustScheduleHeight() {
       const frame = document.getElementById('frameSchedule');
@@ -356,30 +540,31 @@
         const doc = frame.contentDocument || frame.contentWindow.document;
         if (!doc || !doc.body) return;
 
-        // Measure inner container directly
         const container = doc.body.firstElementChild || doc.body;
-        const measuredH = container.offsetHeight || container.clientHeight || 0;
+        const measuredH = container.scrollHeight || container.offsetHeight || 0;
 
-        if (measuredH > 200) {
-          // Strictly clamp between 500px and 720px
-          const clamped = Math.min(Math.max(measuredH + 4, 520), 730);
+        if (measuredH > 150) {
+          // Clamp snugly to content
+          const clamped = Math.min(Math.max(measuredH + 6, 460), 720);
           frame.style.height = clamped + 'px';
         }
       } catch (e) {
-        frame.style.height = '690px';
+        frame.style.height = '620px';
       }
     }
 
     const frameSchedule = document.getElementById('frameSchedule');
     if (frameSchedule) {
       frameSchedule.addEventListener('load', () => {
-        adjustScheduleHeight();
+        applyModernThemeToSchedule();
 
-        // Only adjust when clicking day buttons inside the schedule
         try {
           if (frameSchedule.contentDocument) {
             frameSchedule.contentDocument.addEventListener('click', () => {
-              setTimeout(adjustScheduleHeight, 150);
+              setTimeout(() => {
+                applyModernThemeToSchedule();
+                adjustScheduleHeight();
+              }, 120);
             });
           }
         } catch (e) {}
