@@ -379,14 +379,14 @@
             </div>
           </div>
           <div class="sound-grid">
+            <button class="sound-pad" onclick="playSound('knocking')"><span>🚪</span><span>Knackning</span></button>
+            <button class="sound-pad" onclick="playSound('scary')"><span>👻</span><span>Läskigt</span></button>
+            <button class="sound-pad" onclick="playSound('discord')"><span>💬</span><span>Discord</span></button>
             <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
             <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
-            <button class="sound-pad" onclick="playSound('drumroll')"><span>🥁</span><span>Trumma</span></button>
             <button class="sound-pad" onclick="playSound('airhorn')"><span>📯</span><span>Airhorn</span></button>
             <button class="sound-pad" onclick="playSound('fail')"><span>❌</span><span>Fail</span></button>
             <button class="sound-pad" onclick="playSound('laugh')"><span>😂</span><span>Skratt</span></button>
-            <button class="sound-pad" onclick="playSound('ding')"><span>🔔</span><span>Ding</span></button>
-            <button class="sound-pad" onclick="playSound('boom')"><span>💥</span><span>Boom</span></button>
           </div>
         </div>
 
@@ -419,7 +419,6 @@
         const measuredH = container.scrollHeight || container.offsetHeight || 0;
 
         if (measuredH > 200) {
-          // Extra buffer ensures "Återställ standardschema" is never cut off
           frame.style.height = (measuredH + 24) + 'px';
         }
       } catch (e) {
@@ -434,7 +433,6 @@
       try {
         const frameDoc = frame.contentDocument || frame.contentWindow.document;
         if (frameDoc) {
-          // Forwards wheel scrolling inside iframe to the parent window
           frameDoc.addEventListener('wheel', (e) => {
             window.scrollBy({ top: e.deltaY, behavior: 'auto' });
           }, { passive: true });
@@ -687,7 +685,7 @@
     }
 
     // ========================================================
-    // 🔊 SOUNDBOARD SYSTEM
+    // 🔊 SOUNDBOARD SYSTEM (TRIGGERS IN OVERLAY.HTML)
     // ========================================================
     function playSound(key) {
       const vol = parseFloat(document.getElementById('soundVol').value) || 0.8;
@@ -707,7 +705,7 @@
         });
       } catch(e) {}
 
-      showToast(`Spelar ljud: ${key.toUpperCase()}`);
+      showToast(`Spelar: ${key.toUpperCase()}`);
     }
   </script>
 </body>
