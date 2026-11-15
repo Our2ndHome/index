@@ -306,25 +306,42 @@
     // 🔊 CENTRAL AUDIO ENGINE (ALL SOUNDS PLAY HERE IN OVERLAY)
     // ========================================================
     const SOUNDS_FOLDER = "sounds";
+
+    // 10 Random Donation Sounds
     const CUSTOM_SOUND_FILES = [
       "0.mp3", "1.mp3", "2.mp3", "3.mp3", "4.mp3",
       "5.mp3", "6.mp3", "7.mp3", "8.mp3", "9.mp3"
     ];
 
-    const SOUND_RAID = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
-    const SOUND_SUB_BITS_FOLLOW = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
-    const SOUND_UTMANING_CUSTOM = "sounds/utmaning.mp3";
+    // Local Alert Sounds
+    const SOUND_RAID = `${SOUNDS_FOLDER}/raid_alert.mp3`;
+    const SOUND_SUB_BITS_FOLLOW = `${SOUNDS_FOLDER}/ping_alert.mp3`;
+    const SOUND_UTMANING_CUSTOM = `${SOUNDS_FOLDER}/utmaning.mp3`;
     const SOUND_UTMANING_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
 
+    // Grouped Soundboard Sounds (Randomized per click)
+    const SOUNDBOARD_GROUPS = {
+      knocking: [
+        `${SOUNDS_FOLDER}/door_knocking_soundboard.mp3`,
+        `${SOUNDS_FOLDER}/door_knocking2_soundboard.mp3`,
+        `${SOUNDS_FOLDER}/window_knocking_soundboard.mp3`
+      ],
+      scary: [
+        `${SOUNDS_FOLDER}/scary_sound1_soundboard.mp3`,
+        `${SOUNDS_FOLDER}/scary_sound_soundboard2.mp3`
+      ],
+      discord: [
+        `${SOUNDS_FOLDER}/discord_notification_soundboard.mp3`
+      ]
+    };
+
+    // Standard Soundboard Fallbacks
     const SOUNDBOARD_URLS = {
       horns: "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3",
       applause: "https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3",
-      drumroll: "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3",
       airhorn: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3",
       fail: "https://assets.mixkit.co/active_storage/sfx/2874/2874-preview.mp3",
-      laugh: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3",
-      ding: "https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3",
-      boom: "https://assets.mixkit.co/active_storage/sfx/2872/2872-preview.mp3"
+      laugh: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3"
     };
 
     const soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
@@ -353,7 +370,17 @@
 
     // Preload audio files only in overlay mode
     if (!isPanel) {
-      soundFileList.forEach(src => {
+      const allPreloadFiles = [
+        ...soundFileList,
+        SOUND_RAID,
+        SOUND_SUB_BITS_FOLLOW,
+        SOUND_UTMANING_CUSTOM,
+        ...SOUNDBOARD_GROUPS.knocking,
+        ...SOUNDBOARD_GROUPS.scary,
+        ...SOUNDBOARD_GROUPS.discord
+      ];
+
+      allPreloadFiles.forEach(src => {
         const a = new Audio();
         a.preload = 'auto';
         a.src = src;
@@ -362,7 +389,6 @@
 
     // Central Sound Player Function
     function playMasterSound(type, soundKey = '', volume = 0.8) {
-      // Docks/Panels must NEVER play sounds (only the stream overlay does)
       if (isPanel) return;
 
       let soundUrl = '';
@@ -373,16 +399,21 @@
         vol = 0.8;
       } else if (type === 'raid') {
         soundUrl = SOUND_RAID;
-        vol = 0.8;
+        vol = 0.85;
       } else if (type === 'sub' || type === 'bits' || type === 'follow') {
         soundUrl = SOUND_SUB_BITS_FOLLOW;
-        vol = 0.5;
+        vol = 0.65;
       } else if (type === 'utmaning') {
         soundUrl = SOUND_UTMANING_CUSTOM;
         vol = 0.95;
       } else if (type === 'soundboard') {
-        soundUrl = SOUNDBOARD_URLS[soundKey] || '';
         vol = volume || 0.8;
+        if (SOUNDBOARD_GROUPS[soundKey]) {
+          const list = SOUNDBOARD_GROUPS[soundKey];
+          soundUrl = list[Math.floor(Math.random() * list.length)];
+        } else {
+          soundUrl = SOUNDBOARD_URLS[soundKey] || '';
+        }
       }
 
       if (!soundUrl) return;
@@ -390,7 +421,7 @@
       const audio = new Audio(soundUrl);
       audio.volume = vol;
       audio.play().catch(() => {
-        // Fallback for utmaning if local file does not exist
+        // Fallback for utmaning if file fails
         if (type === 'utmaning' && SOUND_UTMANING_FALLBACK) {
           const fb = new Audio(SOUND_UTMANING_FALLBACK);
           fb.volume = vol;
