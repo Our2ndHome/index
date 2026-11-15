@@ -131,6 +131,57 @@
       } catch (e) {}
 
       // ========================================================
+      // 🤖 STREAMER.BOT CHAT BOT CONNECTION
+      // ========================================================
+      const SB_WS_URL = "ws://127.0.0.1:8080/";
+      let sbWs = null;
+      let isSbConnected = false;
+
+      function connectStreamerbot() {
+        try {
+          sbWs = new WebSocket(SB_WS_URL);
+        } catch (e) {
+          setTimeout(connectStreamerbot, 5000);
+          return;
+        }
+
+        sbWs.onopen = () => {
+          isSbConnected = true;
+        };
+
+        sbWs.onclose = () => {
+          isSbConnected = false;
+          setTimeout(connectStreamerbot, 4000);
+        };
+
+        sbWs.onerror = () => {
+          try { sbWs.close(); } catch (e) {}
+        };
+      }
+
+      function sendStreamerbotChat(chatMessage) {
+        if (!isSbConnected || !sbWs || sbWs.readyState !== WebSocket.OPEN) return;
+
+        const reqId = "utm-chat-" + Math.random().toString(36).substring(2, 9);
+
+        sbWs.send(JSON.stringify({
+          request: "SendMessage",
+          id: reqId,
+          message: chatMessage,
+          bot: true
+        }));
+
+        sbWs.send(JSON.stringify({
+          request: "DoAction",
+          action: { name: "Send Twitch Message" },
+          args: { message: chatMessage },
+          id: "act-" + reqId
+        }));
+      }
+
+      connectStreamerbot();
+
+      // ========================================================
       // 🎛️ OBS WEBSOCKET & CAMERA CONTROL CONFIGURATION
       // ========================================================
       const OBS_WS_URL = "ws://127.0.0.1:4455";
@@ -403,7 +454,6 @@
       // 🔊 TRIGGER SOUND IN OVERLAY.HTML
       // ========================================================
       function playHornSoundViaOverlay() {
-        // Send signal to parent overlay.html
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ type: 'PLAY_SOUND', soundType: 'utmaning' }, '*');
         }
@@ -448,13 +498,16 @@
           }
         }
 
-        // Sound triggers directly in overlay.html
         playHornSoundViaOverlay();
         triggerEmoteCannon();
 
-        descEl.textContent = text || "";
+        const challengeContent = text || "Streamern har blivit utmanad!";
+        descEl.textContent = challengeContent;
         container.className = 'utmaning-overlay anim-in';
         isBoxVisible = true;
+
+        // 💬 Send automated message to Twitch chat via Streamer.bot
+        sendStreamerbotChat(`our2ndHomeL UTMANING: ${challengeContent} our2ndHomeR`);
 
         if (autoHideTimer) clearTimeout(autoHideTimer);
         autoHideTimer = setTimeout(() => {
