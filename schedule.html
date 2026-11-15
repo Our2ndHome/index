@@ -25,7 +25,6 @@
 
     * { box-sizing: border-box; }
 
-    /* Custom dark scrollbar for dock mode */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -387,7 +386,7 @@
     }
 
     /* ========================================================
-       🎛️ 2. OBS DOCK: REDESIGNED UNIFIED SCHEDULE CONTROLLER
+       🎛️ 2. OBS DOCK: CONTROLLER (CLEAN NATIVE WIDGET)
        ======================================================== */
     .dock-container {
       width: 100%;
@@ -460,7 +459,6 @@
       display: block;
     }
 
-    /* Sleek Day Pills Matching Twitch Pills */
     .day-pills-row {
       display: flex;
       gap: 4px;
@@ -500,7 +498,6 @@
       width: 100%;
     }
 
-    /* Clean Slot Editor Card */
     .slot-editor-card {
       background: #0b0b0d;
       border: 1px solid var(--border);
@@ -588,7 +585,6 @@
       outline: none;
     }
 
-    /* Unified Button Styles */
     .btn {
       background: #27272a;
       border: none;
@@ -606,7 +602,6 @@
     }
     .btn:hover { background: #3f3f46; }
 
-    /* Electric Lime Save Button */
     .btn-primary-action {
       background: var(--primary-color);
       color: #0b0b0d;
@@ -622,22 +617,6 @@
       transition: background 0.15s ease;
     }
     .btn-primary-action:hover { background: #c2f524; }
-
-    .btn-danger {
-      background: transparent;
-      border: 1px solid #ff453a;
-      color: #ff453a;
-    }
-    .btn-danger:hover {
-      background: #ff453a;
-      color: #ffffff;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
   </style>
 </head>
 <body>
@@ -672,7 +651,7 @@
     </div>
   </div>
 
-  <!-- 🎛️ 2. OBS CONTROL DOCK (UNIFIED NATIVE DESIGN) -->
+  <!-- 🎛️ 2. OBS CONTROL DOCK (CLEAN SCHEDULE CONTROLLER WITHOUT EXTRA BOXES) -->
   <div id="panelRoot" class="dock-container">
     
     <div class="header-box">
@@ -697,16 +676,6 @@
       </button>
     </div>
 
-    <div class="card-section">
-      <span class="section-title">🕹️ Verktyg</span>
-      <div class="grid-2">
-        <button class="btn" onclick="triggerNextSponsor()">⏩ Nästa Sponsor</button>
-        <button class="btn" onclick="simulateDaySwitch()">🔄 Simulera Dag</button>
-      </div>
-      <button class="btn btn-danger" onclick="resetScheduleToDefault()">
-        Återställ standardschema
-      </button>
-    </div>
   </div>
 
   <script>
@@ -1252,53 +1221,6 @@
       }).catch(err => {
         updateDockStatus("Fel vid sparande", true);
       });
-    }
-
-    function resetScheduleToDefault() {
-      if (confirm("Vill du återställa hela schemat till standard?")) {
-        currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-        renderVisualScheduleEditor();
-        syncScheduleToFirebase("Återställt till standard!");
-      }
-    }
-
-    function simulateDaySwitch() {
-      if (isDayTransitioning) return;
-      const schedule = getActiveSchedule();
-      const dayIds = [...new Set(schedule.map(ev => ev.dayId))];
-
-      let currentIndex = dayIds.indexOf(currentDisplayedDayId);
-      let nextIndex = (currentIndex + 1) % dayIds.length;
-      let targetDayId = dayIds[nextIndex];
-
-      isSimulationLocked = true;
-      if (simulationLockTimer) clearTimeout(simulationLockTimer);
-      simulationLockTimer = setTimeout(() => { isSimulationLocked = false; }, 12000);
-
-      triggerDayTransition(targetDayId, schedule, new Date());
-      updateDockStatus(`Visar ${targetDayId} (12s)`);
-    }
-
-    function setMode(mode) {
-      scheduleMode = mode;
-      isSimulationLocked = false;
-      if (simulationLockTimer) clearTimeout(simulationLockTimer);
-      currentDisplayedDayId = null;
-      renderSchedule();
-      updateDockStatus(mode === 'real' ? "Skarpt läge" : "Testläge");
-    }
-
-    function triggerNextSponsor() {
-      if (sponsorFileList.length === 0) return;
-      currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
-      dbScheduleRef.update({
-        sponsorIndex: currentSponsorIndex,
-        secret: WRITE_SECRET,
-        timestamp: Date.now()
-      });
-      showSponsorCard();
-      updateSponsorLogo();
-      updateDockStatus(`Sponsor ${currentSponsorIndex + 1}/${sponsorFileList.length}`);
     }
 
     function showThemeCard() {
