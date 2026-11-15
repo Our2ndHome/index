@@ -104,7 +104,7 @@
       border-radius: 3px;
     }
 
-    /* ⚔️ UTMANING CONTROLLER IN MASTER HUB */
+    /* ⚔️ UTMANING QUICK CONTROLLER */
     .dock-utmaning-box {
       background: #141418;
       border: 1px solid #27272a;
@@ -347,6 +347,7 @@
     const soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
     let soundPool = [];
     let lastPlayedSound = null;
+    let masterSoundboardVolume = 0.8;
 
     function getNextDonationSound() {
       if (!soundFileList || soundFileList.length === 0) return '';
@@ -368,7 +369,6 @@
       return next;
     }
 
-    // Preload audio files only in overlay mode
     if (!isPanel) {
       const allPreloadFiles = [
         ...soundFileList,
@@ -388,11 +388,11 @@
     }
 
     // Central Sound Player Function
-    function playMasterSound(type, soundKey = '', volume = 0.8) {
+    function playMasterSound(type, soundKey = '', volume = null) {
       if (isPanel) return;
 
       let soundUrl = '';
-      let vol = volume;
+      let vol = 0.8;
 
       if (type === 'donation') {
         soundUrl = getNextDonationSound();
@@ -407,7 +407,13 @@
         soundUrl = SOUND_UTMANING_CUSTOM;
         vol = 0.95;
       } else if (type === 'soundboard') {
-        vol = volume || 0.8;
+        // Strict volume check allowing 0% without fallback to 0.8
+        if (typeof volume === 'number' && !isNaN(volume)) {
+          vol = Math.max(0, Math.min(1, volume));
+        } else {
+          vol = masterSoundboardVolume;
+        }
+
         if (SOUNDBOARD_GROUPS[soundKey]) {
           const list = SOUNDBOARD_GROUPS[soundKey];
           soundUrl = list[Math.floor(Math.random() * list.length)];
@@ -419,21 +425,33 @@
       if (!soundUrl) return;
 
       const audio = new Audio(soundUrl);
-      audio.volume = vol;
+      audio.volume = Math.max(0, Math.min(1, vol));
       audio.play().catch(() => {
-        // Fallback for utmaning if file fails
         if (type === 'utmaning' && SOUND_UTMANING_FALLBACK) {
           const fb = new Audio(SOUND_UTMANING_FALLBACK);
-          fb.volume = vol;
+          fb.volume = Math.max(0, Math.min(1, vol));
           fb.play().catch(() => {});
         }
       });
     }
 
-    // Listen to sound requests from child iframes (alerts, utmaningar, mod_panel)
+    // De-duplication handler (prevents double triggers from Firebase + BroadcastChannel)
+    let lastHandledTriggerId = "";
+    function handleSoundRequest(soundType, soundKey, volume, triggerId) {
+      if (triggerId && triggerId === lastHandledTriggerId) return;
+      if (triggerId) lastHandledTriggerId = triggerId;
+
+      playMasterSound(soundType, soundKey, volume);
+    }
+
     window.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'PLAY_SOUND') {
-        playMasterSound(event.data.soundType, event.data.soundKey, event.data.volume);
+        handleSoundRequest(
+          event.data.soundType, 
+          event.data.soundKey, 
+          event.data.volume, 
+          event.data.triggerId
+        );
       }
     });
 
@@ -441,13 +459,18 @@
       const soundBroadcast = new BroadcastChannel('mh_sound_bus');
       soundBroadcast.onmessage = (event) => {
         if (event.data && event.data.type === 'PLAY_SOUND') {
-          playMasterSound(event.data.soundType, event.data.soundKey, event.data.volume);
+          handleSoundRequest(
+            event.data.soundType, 
+            event.data.soundKey, 
+            event.data.volume, 
+            event.data.triggerId
+          );
         }
       };
     } catch(e) {}
 
     // ========================================================
-    // 📡 FIREBASE SETUP & UTMANING LOGIC
+    // 📡 FIREBASE SETUP & REALTIME SYNC
     // ========================================================
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
     if (!firebase.apps.length) {
@@ -457,13 +480,26 @@
     const utmaningDbRef = db.ref('utmaning');
     let utmaningStateActive = false;
 
-    // Listen to Soundboard triggers via Firebase (from Mod Panel)
+    // Listen to real-time volume changes from Mod Panel slider
+    db.ref('soundboard/volume').on('value', (snap) => {
+      const v = snap.val();
+      if (typeof v === 'number' && !isNaN(v)) {
+        masterSoundboardVolume = Math.max(0, Math.min(1, v));
+      }
+    });
+
+    // Listen to Soundboard triggers via Firebase
     const initTimestamp = Date.now();
     if (!isPanel) {
       db.ref('soundboard/trigger').on('value', (snapshot) => {
         const val = snapshot.val();
         if (val && val.sound && val.timestamp > initTimestamp) {
-          playMasterSound('soundboard', val.sound, val.volume);
+          handleSoundRequest(
+            'soundboard', 
+            val.sound, 
+            val.volume, 
+            val.triggerId || ('fb-' + val.timestamp)
+          );
         }
       });
     }
