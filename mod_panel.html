@@ -306,7 +306,7 @@
       border-color: #ace600;
     }
 
-    /* SOUNDBOARD GRID (EXCLUSIVELY 5 CUSTOM SOUNDS) */
+    /* SOUNDBOARD GRID */
     .sound-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
@@ -332,7 +332,7 @@
     .sound-pad:hover { border-color: #ace600; background: #27272a; }
     .sound-pad:active { transform: scale(0.97); }
 
-    /* 📅 SCHEMA FRAME (SNUGGER HEIGHT) */
+    /* 📅 SCHEMA FRAME */
     .schedule-native-frame {
       width: 100%;
       min-height: 480px;
@@ -430,7 +430,7 @@
           <button class="btn btn-lime" onclick="sendManualDonation()">🚀 SKICKA DONATION</button>
         </div>
 
-        <!-- 4. SOUNDBOARD (5 PURE CUSTOM SOUNDS) -->
+        <!-- 4. SOUNDBOARD (7 PURE CUSTOM SOUNDS) -->
         <div class="mod-card">
           <div class="card-title">
             <span>🔊 LJUDBRÄDA</span>
@@ -454,6 +454,8 @@
             <button class="sound-pad" onclick="playSound('discord')"><span>💬</span><span>Discord</span></button>
             <button class="sound-pad" onclick="playSound('homer_bart')"><span>🍩</span><span>Homer & Bart</span></button>
             <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
+            <button class="sound-pad" onclick="playSound('mrb_magic')"><span>✨</span><span>Magic</span></button>
+            <button class="sound-pad" onclick="playSound('mrb_ohno')"><span>😱</span><span>Oh No</span></button>
           </div>
         </div>
 
