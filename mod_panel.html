@@ -206,7 +206,7 @@
       border-radius: 50%;
       background: #ace600;
       cursor: pointer;
-      margin-top: -4px; /* Centers 13px circle on 5px track */
+      margin-top: -4px;
       box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
       border: 1.5px solid #0b0b0d;
       transition: transform 0.1s ease, box-shadow 0.1s ease;
@@ -224,7 +224,7 @@
       min-width: 30px;
       text-align: right;
       letter-spacing: 0.5px;
-      font-variant-numeric: tabular-nums; /* Prevents text shifting */
+      font-variant-numeric: tabular-nums;
       user-select: none;
     }
 
@@ -452,10 +452,10 @@
             <button class="sound-pad" onclick="playSound('knocking')"><span>🚪</span><span>Knackning</span></button>
             <button class="sound-pad" onclick="playSound('scary')"><span>👻</span><span>Läskigt</span></button>
             <button class="sound-pad" onclick="playSound('discord')"><span>💬</span><span>Discord</span></button>
-            <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
+            <button class="sound-pad" onclick="playSound('homer_bart')"><span>🍩</span><span>Homer & Bart</span></button>
             <button class="sound-pad" onclick="playSound('applause')"><span>👏</span><span>Applåder</span></button>
+            <button class="sound-pad" onclick="playSound('horns')"><span>🎺</span><span>Fanfar</span></button>
             <button class="sound-pad" onclick="playSound('airhorn')"><span>📯</span><span>Airhorn</span></button>
-            <button class="sound-pad" onclick="playSound('fail')"><span>❌</span><span>Fail</span></button>
             <button class="sound-pad" onclick="playSound('laugh')"><span>😂</span><span>Skratt</span></button>
           </div>
         </div>
@@ -484,7 +484,6 @@
 
       const slider = document.getElementById('soundVol');
       if (slider) {
-        // Dynamic fill: Left is lime, right is dark
         slider.style.background = `linear-gradient(to right, #ace600 0%, #ace600 ${pct}%, #27272a ${pct}%, #27272a 100%)`;
       }
 
@@ -495,11 +494,9 @@
         localStorage.setItem('mh_soundboard_volume', vol.toString());
       } catch(e) {}
 
-      // Realtime sync to overlay.html
       db.ref('soundboard/volume').set(vol);
     }
 
-    // Restore saved volume and slider background fill on load
     try {
       const savedVol = localStorage.getItem('mh_soundboard_volume');
       const v = (savedVol !== null) ? parseFloat(savedVol) : 0.8;
