@@ -316,7 +316,7 @@
     // Local Alert Sounds
     const SOUND_RAID = `${SOUNDS_FOLDER}/raid_alert.mp3`;
     const SOUND_SUB_BITS_FOLLOW = `${SOUNDS_FOLDER}/ping_alert.mp3`;
-    const SOUND_UTMANING_CUSTOM = `${SOUNDS_FOLDER}/utmaning.mp3`;
+    const SOUND_UTMANING_CUSTOM = `${SOUNDS_FOLDER}/mrb_hello_utmaning.mp3`;
     const SOUND_UTMANING_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
 
     // Grouped Soundboard Sounds (Randomized per click)
@@ -335,10 +335,12 @@
       ]
     };
 
-    // Dedicated Soundboard Sounds (Local custom files)
+    // Dedicated Soundboard Sounds (100% Local Files)
     const SOUNDBOARD_URLS = {
       homer_bart: `${SOUNDS_FOLDER}/homer_and_bart_soundboard.mp3`,
-      applause: `${SOUNDS_FOLDER}/applause_soundboard.mp3`
+      applause: `${SOUNDS_FOLDER}/applause_soundboard.mp3`,
+      mrb_magic: `${SOUNDS_FOLDER}/mrb_magic_soundboard.mp3`,
+      mrb_ohno: `${SOUNDS_FOLDER}/mrb_ohno_soundboard.mp3`
     };
 
     const soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
@@ -374,6 +376,8 @@
         SOUND_UTMANING_CUSTOM,
         SOUNDBOARD_URLS.homer_bart,
         SOUNDBOARD_URLS.applause,
+        SOUNDBOARD_URLS.mrb_magic,
+        SOUNDBOARD_URLS.mrb_ohno,
         ...SOUNDBOARD_GROUPS.knocking,
         ...SOUNDBOARD_GROUPS.scary,
         ...SOUNDBOARD_GROUPS.discord
