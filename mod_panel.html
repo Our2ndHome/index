@@ -168,6 +168,66 @@
       user-select: none;
     }
 
+    /* 🎚️ PIXEL-PERFECT CUSTOM RANGE SLIDER */
+    .vol-slider-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="range"].custom-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 70px;
+      height: 5px;
+      background: linear-gradient(to right, #ace600 0%, #ace600 80%, #27272a 80%, #27272a 100%);
+      border-radius: 999px;
+      outline: none;
+      border: none;
+      margin: 0;
+      padding: 0;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    input[type="range"].custom-slider::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 5px;
+      cursor: pointer;
+      border-radius: 999px;
+      border: none;
+    }
+
+    input[type="range"].custom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #ace600;
+      cursor: pointer;
+      margin-top: -4px; /* Centers 13px circle on 5px track */
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
+      border: 1.5px solid #0b0b0d;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    input[type="range"].custom-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.9);
+    }
+
+    .vol-percentage-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #ace600;
+      min-width: 30px;
+      text-align: right;
+      letter-spacing: 0.5px;
+      font-variant-numeric: tabular-nums; /* Prevents text shifting */
+      user-select: none;
+    }
+
     /* INPUTS & BUTTONS */
     input, select, textarea {
       width: 100%;
@@ -373,10 +433,19 @@
         <!-- 4. SOUNDBOARD -->
         <div class="mod-card">
           <div class="card-title">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span>🔊 LJUDBRÄDA</span>
-              <input type="range" id="soundVol" min="0" max="1" step="0.05" value="0.8" style="width: 65px; height: 14px; cursor: pointer;" oninput="onSoundVolChange(this.value)" />
-              <span id="soundVolText" style="font-size: 10px; font-weight: 800; color: #ace600; min-width: 28px;">80%</span>
+            <span>🔊 LJUDBRÄDA</span>
+            <div class="vol-slider-wrapper">
+              <input 
+                type="range" 
+                id="soundVol" 
+                class="custom-slider"
+                min="0" 
+                max="1" 
+                step="0.05" 
+                value="0.8" 
+                oninput="onSoundVolChange(this.value)" 
+              />
+              <span id="soundVolText" class="vol-percentage-label">80%</span>
             </div>
           </div>
           <div class="sound-grid">
@@ -411,10 +480,16 @@
     function onSoundVolChange(val) {
       const num = parseFloat(val);
       const vol = isNaN(num) ? 0.8 : Math.max(0, Math.min(1, num));
-      const pct = Math.round(vol * 100) + '%';
+      const pct = Math.round(vol * 100);
+
+      const slider = document.getElementById('soundVol');
+      if (slider) {
+        // Dynamic fill: Left is lime, right is dark
+        slider.style.background = `linear-gradient(to right, #ace600 0%, #ace600 ${pct}%, #27272a ${pct}%, #27272a 100%)`;
+      }
 
       const label = document.getElementById('soundVolText');
-      if (label) label.textContent = pct;
+      if (label) label.textContent = pct + '%';
 
       try {
         localStorage.setItem('mh_soundboard_volume', vol.toString());
@@ -424,17 +499,20 @@
       db.ref('soundboard/volume').set(vol);
     }
 
+    // Restore saved volume and slider background fill on load
     try {
       const savedVol = localStorage.getItem('mh_soundboard_volume');
-      if (savedVol !== null) {
-        const v = parseFloat(savedVol);
-        if (!isNaN(v)) {
-          const slider = document.getElementById('soundVol');
-          const label = document.getElementById('soundVolText');
-          if (slider) slider.value = v;
-          if (label) label.textContent = Math.round(v * 100) + '%';
-        }
+      const v = (savedVol !== null) ? parseFloat(savedVol) : 0.8;
+      const initialVol = isNaN(v) ? 0.8 : Math.max(0, Math.min(1, v));
+      const initialPct = Math.round(initialVol * 100);
+
+      const slider = document.getElementById('soundVol');
+      const label = document.getElementById('soundVolText');
+      if (slider) {
+        slider.value = initialVol;
+        slider.style.background = `linear-gradient(to right, #ace600 0%, #ace600 ${initialPct}%, #27272a ${initialPct}%, #27272a 100%)`;
       }
+      if (label) label.textContent = initialPct + '%';
     } catch(e) {}
 
     // ========================================================
@@ -726,7 +804,6 @@
       const vol = isNaN(rawVol) ? 0.8 : Math.max(0, Math.min(1, rawVol));
       const triggerId = "sb-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6);
 
-      // 1. Firebase Trigger
       db.ref('soundboard/trigger').set({
         sound: key,
         volume: vol,
@@ -734,7 +811,6 @@
         timestamp: Date.now()
       });
 
-      // 2. Local Broadcast
       try {
         new BroadcastChannel('mh_sound_bus').postMessage({
           type: 'PLAY_SOUND',
