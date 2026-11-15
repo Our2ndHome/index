@@ -225,6 +225,60 @@
       } catch (e) {}
 
       // ========================================================
+      // 🤖 STREAMER.BOT CHAT BOT CONNECTION
+      // ========================================================
+      const SB_WS_URL = "ws://127.0.0.1:8080/";
+      let sbWs = null;
+      let isSbConnected = false;
+
+      function connectStreamerbot() {
+        try {
+          sbWs = new WebSocket(SB_WS_URL);
+        } catch (e) {
+          setTimeout(connectStreamerbot, 5000);
+          return;
+        }
+
+        sbWs.onopen = () => {
+          isSbConnected = true;
+          console.log("🤖 [Streamer.bot Alerts Chat] Connected & Ready to send messages!");
+        };
+
+        sbWs.onclose = () => {
+          isSbConnected = false;
+          setTimeout(connectStreamerbot, 4000);
+        };
+
+        sbWs.onerror = () => {
+          try { sbWs.close(); } catch (e) {}
+        };
+      }
+
+      function sendStreamerbotChat(chatMessage) {
+        if (!isSbConnected || !sbWs || sbWs.readyState !== WebSocket.OPEN) return;
+
+        const reqId = "chat-" + Math.random().toString(36).substring(2, 9);
+
+        // 1. Native Streamer.bot SendMessage request
+        sbWs.send(JSON.stringify({
+          request: "SendMessage",
+          id: reqId,
+          message: chatMessage,
+          bot: true
+        }));
+
+        // 2. Action fallback (for Action named "Send Twitch Message")
+        sbWs.send(JSON.stringify({
+          request: "DoAction",
+          action: { name: "Send Twitch Message" },
+          args: { message: chatMessage },
+          id: "act-" + reqId
+        }));
+      }
+
+      connectStreamerbot();
+
+      // ========================================================
       // 🎛️ OBS WEBSOCKET & CAMERA CONTROL CONFIGURATION
       // ========================================================
       const OBS_WS_URL = "ws://127.0.0.1:4455";
@@ -490,17 +544,14 @@
       // ========================================================
       function playAlertSound(type, duration) {
         return new Promise((resolve) => {
-          // 1. Post request to parent overlay.html
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: 'PLAY_SOUND', soundType: type }, '*');
           }
 
-          // 2. Broadcast across tabs/windows
           try {
             new BroadcastChannel('mh_sound_bus').postMessage({ type: 'PLAY_SOUND', soundType: type });
           } catch (e) {}
 
-          // 3. Fallback only if opened directly outside overlay.html
           let isStandalone = false;
           try {
             isStandalone = (window.parent === window);
@@ -511,8 +562,8 @@
           if (isStandalone) {
             try {
               let localFallback = '';
-              if (type === 'raid') localFallback = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
-              else if (type === 'sub' || type === 'bits' || type === 'follow') localFallback = "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+              if (type === 'raid') localFallback = "sounds/raid_alert.mp3";
+              else if (type === 'sub' || type === 'bits' || type === 'follow') localFallback = "sounds/ping_alert.mp3";
               else localFallback = "sounds/0.mp3";
 
               const audio = new Audio(localFallback);
@@ -521,7 +572,6 @@
             } catch (e) {}
           }
 
-          // Keep queue timing in sync with sound duration
           setTimeout(resolve, Math.min(duration, 8000));
         });
       }
@@ -585,6 +635,7 @@
         }
 
         banner.className = 'alert-banner';
+        let chatAnnouncement = "";
 
         // 🎯 1. DONATION ALERT
         if (type === 'donation') {
@@ -604,52 +655,75 @@
               <div class="alert-subtext">GAV <span class="highlight">${amountFormatted}</span>!</div>
               ${cleanComment ? `<div class="alert-comment">"${escapeHTML(cleanComment)}"</div>` : ''}
             `;
+
+            chatAnnouncement = `our2ndHomeL En hemlig hjälte gav ${amountFormatted}!${cleanComment ? ` "${cleanComment}"` : ''} our2ndHomeR`;
           } else {
             banner.innerHTML = `
               <span class="donor-name">${escapeHTML(rawDonor)}</span>
               <div class="alert-subtext">DONERADE <span class="highlight">${amountFormatted}</span>!</div>
               ${rawComment ? `<div class="alert-comment">"${escapeHTML(rawComment)}"</div>` : ''}
             `;
+
+            chatAnnouncement = `our2ndHomeL ${rawDonor} donerade ${amountFormatted}!${rawComment ? ` "${rawComment}"` : ''} our2ndHomeR`;
           }
           banner.classList.add('anim-top-in');
         } 
         // 🎯 2. RAID ALERT
         else if (type === 'raid') {
+          const raider = item.donor || item.name || 'Raider';
+          const viewers = item.viewers || 1;
           banner.innerHTML = `
-            <span class="donor-name">${escapeHTML(item.donor || item.name || 'Raider')}</span>
-            <div class="alert-subtext">RAIDAR MED <span class="highlight">${item.viewers || 1}</span> TITTARE!</div>
+            <span class="donor-name">${escapeHTML(raider)}</span>
+            <div class="alert-subtext">RAIDAR MED <span class="highlight">${viewers}</span> TITTARE!</div>
           `;
           banner.classList.add('anim-top-in');
+
+          chatAnnouncement = `our2ndHomeL ${raider} raidar med ${viewers} tittare! our2ndHomeR`;
         } 
         // 🎯 3. SECONDARY ALERTS
         else if (type === 'sub') {
+          const subber = item.donor || item.name || 'Tittare';
           const months = item.months || 1;
           banner.innerHTML = `
             <div class="minor-alert-badge">
-              <div class="minor-alert-name">${escapeHTML(item.donor || item.name || 'Tittare')}</div>
+              <div class="minor-alert-name">${escapeHTML(subber)}</div>
               <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
             </div>
           `;
           banner.classList.add('anim-bottom-in');
+
+          chatAnnouncement = `our2ndHomeL ${subber} prenumererade i ${months} mån! our2ndHomeR`;
         } 
         else if (type === 'bits') {
+          const cheerer = item.donor || item.name || 'Tittare';
           const bits = item.bits || item.amount || 100;
           banner.innerHTML = `
             <div class="minor-alert-badge">
-              <div class="minor-alert-name">${escapeHTML(item.donor || item.name || 'Tittare')}</div>
+              <div class="minor-alert-name">${escapeHTML(cheerer)}</div>
               <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
             </div>
           `;
           banner.classList.add('anim-bottom-in');
+
+          chatAnnouncement = `our2ndHomeL ${cheerer} cheerade ${bits} bits! our2ndHomeR`;
         }
         else if (type === 'follow') {
+          const follower = item.donor || item.name || 'Någon';
           banner.innerHTML = `
             <div class="minor-alert-badge">
-              <div class="minor-alert-name">${escapeHTML(item.donor || item.name || 'Tittare')}</div>
+              <div class="minor-alert-name">${escapeHTML(follower)}</div>
               <div class="minor-alert-detail">FÖLJER KANALEN!</div>
             </div>
           `;
           banner.classList.add('anim-bottom-in');
+
+          // Matches exact requested pattern
+          chatAnnouncement = `our2ndHomeL ${follower} började följa. our2ndHomeR`;
+        }
+
+        // 💬 Send automated message to Twitch chat via Streamer.bot
+        if (chatAnnouncement) {
+          sendStreamerbotChat(chatAnnouncement);
         }
 
         let rainInterval = null;
