@@ -20,6 +20,8 @@
       --card-bg: #141418;
       --border: #27272a;
       
+      --wing-bg: rgba(0, 0, 0, 0.9);
+
       /* Exact 20px Grid for 400px Center Widget */
       --wing-width: 720px;
       --center-spacer-width: 440px; /* 400px widget + 20px gap on each side */
@@ -43,10 +45,18 @@
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
 
+    /* ========================================================
+       🎛️ DOCK PANEL: AUTO-STRETCH TO OBS DOCK HEIGHT
+       ======================================================== */
     body.mode-panel {
       background-color: var(--dock-bg);
+      height: 100vh;
+      max-height: 100vh;
       overflow-y: auto;
-      padding: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
     }
 
     /* ========================================================
@@ -61,12 +71,11 @@
       pointer-events: none;
     }
 
-    /* Exactly 20px from top and sides */
     .top-goals-container {
       position: absolute;
       top: 20px;
       left: 20px;
-      width: 1880px; /* 1920px - 20px left - 20px right */
+      width: 1880px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -81,38 +90,45 @@
       visibility: hidden !important;
     }
 
-    /* Left and Right Wings: Pure background only */
+    /* 🎯 16px Curvature matching the sponsors and countdown widgets */
     .goal-wing {
       position: relative;
       width: var(--wing-width);
       display: flex;
       flex-direction: column;
-      background: rgba(0, 0, 0, 0.9);
-      padding: 12px 18px 12px 18px;
-      border-radius: 8px;
+      background: var(--wing-bg);
+      padding: 12px 20px 12px 20px;
+      border-radius: 16px !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
       border: none !important;
       outline: none !important;
-      box-shadow: none !important;
     }
 
-    /* 440px spacer = 400px middle widget + exact 20px gap on each side */
     .center-obstacle-spacer {
       width: var(--center-spacer-width);
       height: 80px;
       flex-shrink: 0;
     }
 
+    /* 🎯 Centered Header Titles */
     .wing-header {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 900;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       color: var(--primary);
       text-transform: uppercase;
       margin-bottom: 6px;
-      text-shadow: 0 2px 4px #000, 0 0 2px #000;
+      text-shadow: none !important;
+      text-align: center;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* Horizontal Track System: Pinned to flex-start so tick height never shifts */
     .horizontal-track {
       position: relative;
       width: 100%;
@@ -132,15 +148,9 @@
       z-index: 4;
     }
 
-    .left-track .track-nodes-container {
-      padding-right: 20px;
-    }
+    .left-track .track-nodes-container { padding-right: 20px; }
+    .right-track .track-nodes-container { padding-left: 20px; }
 
-    .right-track .track-nodes-container {
-      padding-left: 20px;
-    }
-
-    /* Background line: Locked at Y=36px passing through the middle of the tick */
     .track-line-bg {
       position: absolute;
       top: 36px;
@@ -161,7 +171,6 @@
       transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Cursor centered dead-on the track line at Y=37px */
     .track-cursor {
       position: absolute;
       top: 37px;
@@ -190,7 +199,6 @@
       100% { transform: scale(2.2); opacity: 0; }
     }
 
-    /* HORIZONTAL NODE */
     .h-node {
       position: relative;
       display: flex;
@@ -199,23 +207,22 @@
       z-index: 4;
       min-width: 50px;
       text-align: center;
+      transition: opacity 0.3s ease;
     }
 
-    /* Fixed 16px height + 10px margin = tick wrapper always starts at 26px */
     .h-node-amount {
       font-size: 14px;
       font-weight: 900;
       letter-spacing: 0.8px;
       color: #ffffff;
       white-space: nowrap;
-      text-shadow: 0 2px 4px #000, 0 0 3px #000;
+      text-shadow: none !important;
       line-height: 16px;
       height: 16px;
       margin-bottom: 10px;
       transition: color 0.3s ease;
     }
 
-    /* Crosshair Tick: 14px tall centered in 16px wrapper (center Y = 37px) */
     .h-node-tick-wrapper {
       position: relative;
       height: 16px;
@@ -226,7 +233,6 @@
       z-index: 3;
     }
 
-    /* Ticks with muted opacity (not stark white) */
     .h-node-tick {
       width: 2px;
       height: 12px;
@@ -235,7 +241,6 @@
       transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Milestone Label: Grows downwards below the tick */
     .h-node-label {
       font-size: 12px;
       font-weight: 800;
@@ -243,14 +248,15 @@
       line-height: 1.35;
       letter-spacing: 0.4px;
       display: flex;
+      justify-content: center;
       align-items: flex-start;
-      gap: 5px;
-      text-shadow: 0 2px 4px #000, 0 0 3px #000;
+      text-shadow: none !important;
       max-width: 180px;
       margin-top: 8px;
       text-align: center;
       white-space: normal;
       word-break: break-word;
+      transition: color 0.3s ease;
     }
 
     .node-label-text {
@@ -259,28 +265,20 @@
     }
 
     .h-node.reached .h-node-amount {
-      color: var(--primary) !important;
-      text-shadow: 0 0 8px rgba(172, 230, 0, 0.7);
+      color: rgba(255, 255, 255, 0.38) !important;
+      text-shadow: none !important;
+    }
+
+    .h-node.reached .h-node-label {
+      color: rgba(255, 255, 255, 0.38) !important;
+      text-shadow: none !important;
     }
 
     .h-node.reached .h-node-tick {
       background: var(--primary) !important;
-      box-shadow: 0 0 8px rgba(172, 230, 0, 0.9);
+      box-shadow: 0 0 6px rgba(172, 230, 0, 0.6);
     }
 
-    .h-node .node-check {
-      display: none;
-      color: var(--primary);
-      font-size: 13px;
-      font-weight: 900;
-      line-height: 1.1;
-    }
-
-    .h-node.reached .node-check {
-      display: inline-block;
-    }
-
-    /* 🎯 FLUSH ALIGNMENTS */
     .h-node.is-first-node {
       align-items: flex-start !important;
       text-align: left !important;
@@ -289,9 +287,7 @@
       text-align: left !important;
       align-self: flex-start;
     }
-    .h-node.is-first-node .h-node-tick-wrapper {
-      justify-content: flex-start;
-    }
+    .h-node.is-first-node .h-node-tick-wrapper { justify-content: flex-start; }
     .h-node.is-first-node .h-node-label {
       text-align: left !important;
       justify-content: flex-start;
@@ -306,70 +302,94 @@
       text-align: right !important;
       align-self: flex-end;
     }
-    .h-node.is-last-goal .h-node-tick-wrapper {
-      justify-content: flex-end;
-    }
+    .h-node.is-last-goal .h-node-tick-wrapper { justify-content: flex-end; }
     .h-node.is-last-goal .h-node-label {
       text-align: right !important;
       justify-content: flex-end;
       align-self: flex-end;
     }
-    .h-node.is-last-goal .node-label-text {
-      text-align: right !important;
+    .h-node.is-last-goal .node-label-text { text-align: right !important; }
+
+    /* ========================================================
+       🎛️ 2. OBS DOCK CONTROLLER (FLEX CONTAINER)
+       ======================================================== */
+    body.mode-panel {
+      background-color: var(--dock-bg);
+      height: 100vh;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
     }
 
-    /* 🎛️ 2. OBS DOCK CONTROLLER */
     .dock-container {
-      max-width: 480px;
+      max-width: 520px;
+      width: 100%;
       margin: 0 auto;
+      height: 100%;
+      min-height: calc(100vh - 16px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dock-fixed-top {
+      flex-shrink: 0;
     }
 
     .header-box {
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 7px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #111114;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .header-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 900;
       text-transform: uppercase;
       color: #ffffff;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      justify-content: space-between;
     }
 
-    .version-badge {
-      background: #00ff88;
-      color: #000000;
+    .live-pill {
       font-size: 9px;
       font-weight: 900;
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-left: 6px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .live-pill.online {
+      background: #ff3b30;
+      color: #ffffff;
+      box-shadow: 0 0 8px rgba(255, 59, 48, 0.6);
+      animation: pulseLive 1.2s infinite alternate;
+    }
+    .live-pill.offline {
+      background: #27272a;
+      color: #a1a1aa;
     }
 
-    .status-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 8px;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: #e4e4e7;
-      margin-bottom: 8px;
+    @keyframes pulseLive {
+      from { opacity: 0.85; }
+      to { opacity: 1; }
     }
 
     .card-section {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 10px;
-      margin-bottom: 8px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
     }
 
     .section-title {
@@ -378,7 +398,7 @@
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       display: block;
     }
 
@@ -386,7 +406,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-bottom: 2px;
       gap: 6px;
     }
 
@@ -404,88 +424,78 @@
       border: 1px solid var(--border);
       border-radius: 4px;
       color: #ffffff;
-      padding: 6px 8px;
+      padding: 5px 8px;
       font-family: inherit;
       font-size: 11px;
       outline: none;
       transition: border 0.15s ease;
     }
-    input[type="text"]:focus {
-      border-color: #52525b;
-    }
+    input[type="text"]:focus { border-color: var(--primary); }
 
-    textarea {
-      width: 100%;
-      height: 130px;
-      background: #121215;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: #ffffff;
-      padding: 8px;
-      font-family: inherit;
-      font-size: 11px;
-      line-height: 1.5;
-      outline: none;
-      resize: vertical;
-      margin-bottom: 6px;
-    }
-    textarea:focus { border-color: #52525b; }
-
-    .btn {
-      background: #18181c;
-      border: 1px solid var(--border);
-      color: #ffffff;
-      border-radius: 4px;
-      padding: 8px 10px;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-      margin-bottom: 4px;
-      transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    .btn:hover:not(:disabled) {
-      background: #24242a;
-      border-color: #3f3f46;
-    }
-
-    .btn-resync {
-      background: #18181c;
-      border: 1px solid #00ff88;
+    .auto-badge-note {
+      font-size: 9px;
       color: #00ff88;
-      border-radius: 4px;
-      padding: 10px 12px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      width: 100%;
-      text-align: center;
-      margin-bottom: 4px;
-      transition: background 0.15s ease, color 0.15s ease;
+      font-weight: 700;
+      margin-top: 4px;
+      display: block;
+      line-height: 1.3;
     }
-    .btn-resync:hover { background: #00ff88; color: #000000; }
+
+    .milestone-editor-card {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 240px;
+      margin-bottom: 0;
+    }
+
+    .milestone-editor-card .section-title,
+    .milestone-editor-card .hint-text {
+      flex-shrink: 0;
+    }
+
+    textarea#goalsInputArea {
+      flex: 1 1 auto !important;
+      width: 100% !important;
+      min-height: 160px !important;
+      height: auto !important;
+      background: #121215 !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 5px !important;
+      color: #ffffff !important;
+      padding: 10px 12px !important;
+      font-family: 'Consolas', 'Courier New', monospace !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      line-height: 1.85 !important;
+      outline: none !important;
+      resize: none !important;
+      overflow-y: auto !important;
+      margin-bottom: 6px !important;
+      box-sizing: border-box !important;
+    }
+    textarea#goalsInputArea:focus { border-color: var(--primary) !important; }
 
     .btn-toggle-view {
+      flex-shrink: 0 !important;
       background: #1e1e24;
       border: 1px solid #3a3a44;
       color: #ffffff;
       border-radius: 4px;
-      padding: 8px 10px;
+      padding: 7px 8px;
       font-family: inherit;
       font-size: 11px;
       font-weight: 800;
       cursor: pointer;
       width: 100%;
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       transition: background 0.15s ease, border-color 0.15s ease;
     }
     .btn-toggle-view:hover { background: #2c2c36; }
 
     .btn-primary-action {
+      flex-shrink: 0 !important;
       background: #ffffff;
       color: #000000;
       border: none;
@@ -496,59 +506,29 @@
       font-weight: 900;
       cursor: pointer;
       width: 100%;
-      margin-top: 4px;
-      margin-bottom: 4px;
+      margin-top: 0;
+      margin-bottom: 0;
       transition: opacity 0.15s ease;
     }
     .btn-primary-action:hover { opacity: 0.9; }
 
-    .btn-danger {
-      background: #18181c;
-      border: 1px solid #ff453a;
-      color: #ff453a;
-    }
-    .btn-danger:hover {
-      background: #ff453a;
-      color: #ffffff;
-    }
-
-    .btn-danger.confirm-state {
-      background: #ff453a !important;
-      color: #ffffff !important;
-      font-weight: 900;
-      animation: pulseAlert 0.8s infinite alternate;
-    }
-
-    @keyframes pulseAlert {
-      from { opacity: 0.8; }
-      to { opacity: 1; }
-    }
-
     .hint-text {
       font-size: 10px;
       color: var(--text-dim);
-      margin-bottom: 6px;
-      line-height: 1.4;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
+      margin-bottom: 4px;
+      line-height: 1.35;
     }
   </style>
 </head>
 <body>
 
-  <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW: HORIZONTAL TOP-SPLIT BAR
-       ======================================================== -->
+  <!-- 📺 1. STREAM OVERLAY VIEW (#overlay) -->
   <div id="overlayRoot">
     <div class="top-goals-container" id="goalsWidgetContainer">
       
-      <!-- LEFT WING -->
+      <!-- Left Goal Wing -->
       <div class="goal-wing" id="leftWing">
-        <div class="wing-header">MILSTOLPAR</div>
+        <div class="wing-header" id="leftWingHeader">• MILSTOLPAR •</div>
         <div class="horizontal-track left-track" id="leftTrack">
           <div class="track-line-bg"></div>
           <div class="track-line-fill" id="leftFill"></div>
@@ -557,12 +537,11 @@
         </div>
       </div>
 
-      <!-- EXACT 440px GAP FOR 400px CENTER WIDGET (20px gap on each side) -->
       <div class="center-obstacle-spacer"></div>
 
-      <!-- RIGHT WING -->
+      <!-- Right Goal Wing -->
       <div class="goal-wing" id="rightWing">
-        <div class="wing-header">NÄSTA MÅL</div>
+        <div class="wing-header" id="rightWingHeader">• DONERA TILL BÖSSAN FÖR ATT NÅ NÄSTA MÅL •</div>
         <div class="horizontal-track right-track" id="rightTrack">
           <div class="track-line-bg"></div>
           <div class="track-line-fill" id="rightFill"></div>
@@ -570,60 +549,41 @@
           <div class="track-nodes-container" id="rightNodesContainer"></div>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel)
-       ======================================================== -->
+  <!-- 🎛️ 2. OBS DOCK CONTROLLER (#panel) -->
   <div id="panelRoot" class="dock-container">
-    <div class="header-box">
-      <span class="header-title">MILSTOLPAR KONTROLL <span class="version-badge">PRO v6.2</span></span>
-      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
-    </div>
-
-    <!-- 👁️ HIDE / SHOW GOALS TOGGLE -->
-    <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
-      👁️ Göm milstolpar på stream
-    </button>
-
-    <div class="status-box" id="dockStatusBox">Ansluter till Musikhjälpen...</div>
-
-    <!-- ⏱️ STREAMER PASS CONTROLS -->
-    <div class="card-section">
-      <span class="section-title">⏱️ Streamer Live-Pass</span>
-      
-      <div class="control-row">
-        <span class="control-label">STREAMER:</span>
-        <input type="text" id="streamerNameInput" placeholder="T.ex. LordBaconeer" style="width:65%;">
+    <div class="dock-fixed-top">
+      <div class="header-box">
+        <span class="header-title">
+          MILSTOLPAR KONTROLL
+          <span id="obsLivePill" class="live-pill offline">⚪ OBS OFFLINE</span>
+        </span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
-        <button class="btn-resync" onclick="startFreshPassZero()">
-          🟢 Starta nytt pass (Nollställ till 0 kr)
-        </button>
-
-        <div class="grid-2">
-          <button class="btn" onclick="loadSavedStreamerPass()">
-            🔄 Läs in sparat pass
-          </button>
-          <button class="btn btn-danger" id="btnClearPassBtn" onclick="handleClearPassClick()">
-            🗑️ Rensa pass
-          </button>
+      <div class="card-section">
+        <span class="section-title">⏱️ Streamer Live-Pass</span>
+        <div class="control-row">
+          <span class="control-label">STREAMER:</span>
+          <input type="text" id="streamerNameInput" placeholder="T.ex. Mille" style="width:65%;">
         </div>
+        <span class="auto-badge-note">⚡ Passet och streamtiteln reagerar ENDAST när denna specifika OBS sänder live.</span>
       </div>
     </div>
 
-    <!-- ✏️ LINE-BY-LINE MILESTONE EDITOR -->
-    <div class="card-section">
+    <div class="card-section milestone-editor-card">
       <span class="section-title">✏️ Redigera dina milstolpar</span>
       <div class="hint-text">
         Skriv det <b>lägsta målet överst</b> och det högsta underst.<br>
         Format: <code>Belopp - Beskrivning</code>
       </div>
       
-      <textarea id="goalsInputArea" placeholder="50 kr - Sill bit&#10;100 kr - Sill bit&#10;150 kr - Sill bit&#10;200 kr - Sill bit&#10;250 kr - Sill bit med ketchup&#10;350 kr - Sill bit&#10;400 kr - Äter 2 bananer.&#10;500 kr - Äter en melon på 2 ben.&#10;600 kr - Dansar.&#10;700 kr - Hoppar på 4 ben och tre armar."></textarea>
+      <textarea id="goalsInputArea" placeholder="50 kr - Mål 1&#10;150 kr - Mål 2&#10;250 kr - Mål 3"></textarea>
+
+      <button id="btnToggleVisibility" class="btn-toggle-view" onclick="toggleGoalsVisibility()">
+        👁️ Göm milstolpar på stream
+      </button>
 
       <button class="btn-primary-action" onclick="saveGoalsFromTextarea()">
         💾 Spara mina milstolpar
@@ -638,21 +598,21 @@
     const STORAGE_KEY_STREAMER = "mh_goals_active_streamer";
     const STORAGE_KEY_HIDDEN = "mh_goals_is_hidden";
 
+    const OBS_TEXT_SOURCE_NAME = "Streamer - Name Source";
+
     const DEFAULT_GOALS = 
-      "50 kr - Sill bit\n" +
-      "100 kr - Sill bit\n" +
-      "150 kr - Sill bit\n" +
-      "200 kr - Sill bit\n" +
-      "250 kr - Sill bit med ketchup\n" +
-      "350 kr - Sill bit\n" +
-      "400 kr - Äter 2 bananer.\n" +
-      "500 kr - Äter en melon på 2 ben.\n" +
-      "600 kr - Dansar.\n" +
-      "700 kr - Hoppar på 4 ben och tre armar.";
+      "50 kr - Mål 1\n" +
+      "150 kr - Mål 2\n" +
+      "250 kr - Mål 3\n" +
+      "350 kr - Mål 4\n" +
+      "450 kr - Mål 5\n" +
+      "550 kr - Mål 6\n" +
+      "650 kr - Mål 7\n" +
+      "750 kr - Mål 8\n" +
+      "850 kr - Mål 9";
 
     const bus = ("BroadcastChannel" in window) ? new BroadcastChannel("mh_goals_bus") : null;
 
-    // Checks URL parameter for hardcoded streamer names: ?streamer=LordBaconeer
     const fullUrl = window.location.href;
     const streamerMatch = fullUrl.match(/[?&]streamer=([^&#]+)/i);
     const streamerFromUrl = streamerMatch ? decodeURIComponent(streamerMatch[1]) : null;
@@ -668,12 +628,234 @@
 
     let parsedGoals = [];
     let currentGlobalTotal = 0;
-    let streamerBaseline = 0;
-    let manualAdjustment = 0;
+
     let currentStreamerName = streamerFromUrl ? streamerFromUrl.trim() : "Streamer";
+    let streamerEarnedSoFar = 0;
+    let streamerShiftStart = 0;
+    let streamerManualAdj = 0;
+    let streamerIsLiveFromDb = false;
+
     let isGoalsHidden = false;
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
+    let isObsStreaming = false;
+
+    function getStreamerKey(name) {
+      const clean = (name || "streamer").trim().toLowerCase().replace(/[^a-z0-9åäö]/gi, '');
+      return clean.length > 0 ? clean : "streamer";
+    }
+
+    function getStreamerGoalsStorageKey(streamer) {
+      return STORAGE_KEY_GOALS + "_" + getStreamerKey(streamer);
+    }
+
+    function getLocalGoalsForStreamer(streamer) {
+      try {
+        const key = getStreamerGoalsStorageKey(streamer);
+        const cached = localStorage.getItem(key);
+        if (cached && cached.trim()) return cached;
+      } catch (e) {}
+      return DEFAULT_GOALS;
+    }
+
+    function setLocalGoalsForStreamer(streamer, text) {
+      try {
+        const key = getStreamerGoalsStorageKey(streamer);
+        localStorage.setItem(key, text);
+        localStorage.setItem(STORAGE_KEY_GOALS, text);
+      } catch (e) {}
+    }
+
+    // 🎯 DYNAMIC CENTERED WING HEADERS WITH BULLET POINTS
+    function updateWingHeaders() {
+      const leftH = document.getElementById('leftWingHeader');
+      const rightH = document.getElementById('rightWingHeader');
+      if (!leftH || !rightH) return;
+
+      const name = (currentStreamerName && currentStreamerName !== "Streamer")
+        ? currentStreamerName.trim()
+        : "";
+
+      if (name) {
+        const endsInS = /[sxz]$/i.test(name);
+        const genitiveName = endsInS ? `${name.toUpperCase()}` : `${name.toUpperCase()}S`;
+        leftH.innerText = `• ${genitiveName} MILSTOLPAR •`;
+      } else {
+        leftH.innerText = `• STREAMERNS MILSTOLPAR •`;
+      }
+      rightH.innerText = `• DONERA TILL BÖSSAN FÖR ATT NÅ NÄSTA MÅL •`;
+    }
+
+    // ========================================================
+    // 🔌 NATIVE OBS WEBSOCKET (REAL-TIME STREAM STATUS)
+    // ========================================================
+    let obsWs = null;
+    let isObsWsConnected = false;
+
+    function connectObsWebSocket() {
+      try {
+        obsWs = new WebSocket('ws://127.0.0.1:4455');
+
+        obsWs.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+
+          if (msg.op === 0) {
+            obsWs.send(JSON.stringify({
+              op: 1,
+              d: {
+                rpcVersion: 1,
+                eventSubscriptions: 1023
+              }
+            }));
+          }
+
+          if (msg.op === 2) {
+            isObsWsConnected = true;
+
+            obsWs.send(JSON.stringify({
+              op: 6,
+              d: {
+                requestType: "GetStreamStatus",
+                requestId: "req-init-stream-status"
+              }
+            }));
+
+            if (currentStreamerName && currentStreamerName !== "Streamer") {
+              setObsTextSource(currentStreamerName);
+            }
+          }
+
+          if (msg.op === 7 && msg.d && msg.d.requestId === "req-init-stream-status") {
+            const isStreaming = !!(msg.d.responseData && msg.d.responseData.outputActive);
+            updateObsLiveStatus(isStreaming);
+
+            if (isStreaming && !isObsStreaming) {
+              isObsStreaming = true;
+              syncActiveStreamerToFirebase(currentStreamerName, true);
+              if (!streamerShiftStart || streamerShiftStart === 0) {
+                streamerShiftStart = currentGlobalTotal > 0 ? currentGlobalTotal : 0;
+              }
+              renderGoalsLadder();
+            }
+          }
+
+          if (msg.op === 5 && msg.d && msg.d.eventType === "StreamStateChanged") {
+            const isStreaming = !!msg.d.eventData.outputActive;
+            updateObsLiveStatus(isStreaming);
+
+            if (isStreaming) {
+              handleStreamerWentLive();
+            } else {
+              handleStreamerStoppedLive();
+            }
+          }
+        };
+
+        obsWs.onclose = () => {
+          isObsWsConnected = false;
+          updateObsLiveStatus(false);
+          setTimeout(connectObsWebSocket, 3000);
+        };
+        obsWs.onerror = () => { try { obsWs.close(); } catch(e) {} };
+      } catch (e) {}
+    }
+
+    function setObsTextSource(newName) {
+      if (!obsWs || !isObsWsConnected || !newName || newName === "Streamer") return;
+      try {
+        obsWs.send(JSON.stringify({
+          op: 6,
+          d: {
+            requestType: "SetInputSettings",
+            requestId: "set-streamer-text-" + Date.now(),
+            requestData: {
+              inputName: OBS_TEXT_SOURCE_NAME,
+              inputSettings: { text: newName },
+              overlay: true
+            }
+          }
+        }));
+      } catch (e) {}
+    }
+
+    function handleStreamerWentLive() {
+      isObsStreaming = true;
+
+      if (!streamerShiftStart || streamerShiftStart === 0) {
+        streamerShiftStart = currentGlobalTotal > 0 ? currentGlobalTotal : 0;
+      }
+
+      syncActiveStreamerToFirebase(currentStreamerName, true);
+
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        displayName: currentStreamerName,
+        shiftStart: streamerShiftStart,
+        isLive: true,
+        secret: WRITE_SECRET,
+        lastLiveStartedUtc: new Date().toISOString()
+      }).catch(() => {});
+
+      if (bus) {
+        bus.postMessage({
+          type: 'STREAM_LIVE_STATUS',
+          isStreaming: true,
+          streamer: currentStreamerName,
+          shiftStart: streamerShiftStart
+        });
+      }
+
+      updateWingHeaders();
+      renderGoalsLadder();
+      updateDockDisplay();
+    }
+
+    function handleStreamerStoppedLive() {
+      isObsStreaming = false;
+
+      let currentShiftEarned = 0;
+      if (streamerShiftStart > 0 && currentGlobalTotal >= streamerShiftStart) {
+        currentShiftEarned = currentGlobalTotal - streamerShiftStart;
+      }
+
+      streamerEarnedSoFar += currentShiftEarned;
+      streamerShiftStart = 0;
+
+      const key = getStreamerKey(currentStreamerName);
+      dbStreamersRef.child(key).update({
+        earnedSoFar: streamerEarnedSoFar,
+        shiftStart: 0,
+        isLive: false,
+        secret: WRITE_SECRET,
+        lastLiveStoppedUtc: new Date().toISOString()
+      }).catch(() => {});
+
+      syncActiveStreamerToFirebase(currentStreamerName, false);
+
+      if (bus) {
+        bus.postMessage({
+          type: 'STREAM_LIVE_STATUS',
+          isStreaming: false,
+          streamer: currentStreamerName,
+          earnedSoFar: streamerEarnedSoFar
+        });
+      }
+
+      updateWingHeaders();
+      renderGoalsLadder();
+      updateDockDisplay();
+    }
+
+    function syncActiveStreamerToFirebase(streamer, liveStatus) {
+      if (!streamer || streamer === "Streamer") return;
+      
+      firebase.database().ref('active_streamer').set({
+        name: streamer,
+        isLive: !!liveStatus,
+        timestamp: Date.now(),
+        secret: WRITE_SECRET
+      }).catch(err => console.error("Firebase active_streamer error:", err));
+    }
 
     try {
       if (!streamerFromUrl) {
@@ -693,49 +875,68 @@
     const dbStreamersRef = firebase.database().ref('streamers');
     const dbBossaRef = firebase.database().ref('bossa');
 
-    firebase.database().ref('.info/connected').on('value', (snap) => {
-      if (snap.val() === true) {
-        updateDockDisplay();
-      } else {
-        updateDockStatus("⚠️ Ansluter till Musikhjälpen...", true);
+    function updateObsLiveStatus(isStreaming) {
+      isObsStreaming = isStreaming;
+      const pill = document.getElementById('obsLivePill');
+      if (pill) {
+        if (isStreaming) {
+          pill.innerText = "🔴 OBS ÄR LIVE";
+          pill.classList.remove('offline');
+          pill.classList.add('online');
+        } else {
+          pill.innerText = "⚪ OBS OFFLINE";
+          pill.classList.remove('online');
+          pill.classList.add('offline');
+        }
       }
-    });
+    }
+
+    const nameInputEl = document.getElementById('streamerNameInput');
+    if (nameInputEl) {
+      nameInputEl.addEventListener('change', () => {
+        const val = nameInputEl.value.trim();
+        if (val && val !== currentStreamerName) {
+          if (isObsStreaming) {
+            handleStreamerStoppedLive();
+          }
+
+          loadSavedStreamerPass(val);
+          setObsTextSource(val);
+
+          if (isObsStreaming) {
+            handleStreamerWentLive();
+          }
+
+          if (bus) {
+            bus.postMessage({ type: 'STREAMER_PASS_SYNC', streamer: val });
+          }
+        }
+      });
+      nameInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') nameInputEl.blur();
+      });
+    }
 
     function formatSEK(num) {
       return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' kr';
     }
 
-    function updateDockStatus(msg, isError = false) {
-      const box = document.getElementById('dockStatusBox');
-      if (box) {
-        box.innerText = msg;
-        box.style.color = isError ? "#ff453a" : "#00ff88";
-      }
-    }
-
-    function getStreamerKey(name) {
-      const clean = (name || "streamer").trim().toLowerCase().replace(/[^a-z0-9åäö]/gi, '');
-      return clean.length > 0 ? clean : "streamer";
-    }
-
     function getLiveSessionEarned() {
-      if (!streamerBaseline || streamerBaseline <= 0) {
-        return 0;
+      let earned = streamerEarnedSoFar + streamerManualAdj;
+      const isLiveActive = isObsStreaming || streamerIsLiveFromDb;
+
+      if (isLiveActive && streamerShiftStart > 0 && currentGlobalTotal >= streamerShiftStart) {
+        earned += (currentGlobalTotal - streamerShiftStart);
       }
-      return Math.max(0, (currentGlobalTotal - streamerBaseline) + manualAdjustment);
+
+      return Math.max(0, earned);
     }
 
-    // ========================================================
-    // 👁️ VISIBILITY CONTROLLER
-    // ========================================================
     function applyVisibilityState() {
       const container = document.getElementById('goalsWidgetContainer');
       if (container) {
-        if (isGoalsHidden) {
-          container.classList.add('is-hidden');
-        } else {
-          container.classList.remove('is-hidden');
-        }
+        if (isGoalsHidden) container.classList.add('is-hidden');
+        else container.classList.remove('is-hidden');
       }
 
       const btn = document.getElementById('btnToggleVisibility');
@@ -759,17 +960,9 @@
       } catch(e) {}
 
       applyVisibilityState();
-
-      if (bus) {
-        bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
-      }
-
-      updateDockStatus(isGoalsHidden ? "🙈 Milstolpar döljs på stream" : "👀 Milstolpar visas på stream");
+      if (bus) bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
     }
 
-    // ========================================================
-    // 🧠 LINE-BY-LINE PARSER & 25-CHAR TEXT FORMATTER
-    // ========================================================
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
@@ -778,18 +971,15 @@
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const match = line.match(/^([0-9\s]+)(?:kr|:-|sek)?\s*[-:–—]?\s*(.+)$/i);
-
         if (match) {
           const rawAmt = match[1].replace(/[^0-9]/g, '');
           const amount = parseInt(rawAmt, 10);
           const label = match[2].trim().replace(/^[-:–—]\s*/, '');
-
           if (!isNaN(amount) && amount > 0 && label) {
             list.push({ id: `goal_${amount}_${i}`, amount, label });
           }
         }
       }
-
       list.sort((a, b) => a.amount - b.amount);
       return list;
     }
@@ -797,35 +987,27 @@
     function formatMilestoneLabel(rawText, maxCharsPerLine = 25) {
       if (!rawText) return '';
       const text = rawText.trim();
-      if (text.length <= maxCharsPerLine) {
-        return escapeHTML(text);
-      }
+      if (text.length <= maxCharsPerLine) return escapeHTML(text);
 
       const words = text.split(' ');
       const lines = [];
       let currentLine = '';
 
       for (const word of words) {
-        if (!currentLine) {
-          currentLine = word;
-        } else if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
-          currentLine += ' ' + word;
-        } else {
+        if (!currentLine) currentLine = word;
+        else if ((currentLine + ' ' + word).length <= maxCharsPerLine) currentLine += ' ' + word;
+        else {
           lines.push(currentLine);
           currentLine = word;
         }
       }
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-
+      if (currentLine) lines.push(currentLine);
       return lines.map(l => escapeHTML(l)).join('<br>');
     }
 
-    // ========================================================
-    // 🎨 RENDER BALANCED TOP-SPLIT LADDERS
-    // ========================================================
     function renderGoalsLadder() {
+      updateWingHeaders();
+
       const leftNodesContainer = document.getElementById('leftNodesContainer');
       const rightNodesContainer = document.getElementById('rightNodesContainer');
       const rightWing = document.getElementById('rightWing');
@@ -842,60 +1024,43 @@
         return;
       }
 
-      // ⚖️ BALANCED SPLIT: Counts the "Start" node so wings are equal
       const leftGoalsCount = Math.max(1, Math.floor(parsedGoals.length / 2));
       const leftGoals = parsedGoals.slice(0, leftGoalsCount);
       const rightGoals = parsedGoals.slice(leftGoalsCount);
-
       const liveEarned = getLiveSessionEarned();
 
-      // --- 1. LEFT WING ---
       const leftStartEl = createNodeEl(0, "Start", liveEarned >= 0, false, true);
       leftNodesContainer.appendChild(leftStartEl);
 
       leftGoals.forEach((g, i) => {
         const isLastOfAll = (rightGoals.length === 0 && i === leftGoals.length - 1);
-        const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
-        leftNodesContainer.appendChild(el);
+        leftNodesContainer.appendChild(createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false));
       });
 
-      // --- 2. RIGHT WING ---
       if (rightGoals.length > 0) {
         if (rightWing) rightWing.style.display = 'flex';
         rightGoals.forEach((g, i) => {
           const isLastOfAll = (i === rightGoals.length - 1);
-          const el = createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false);
-          rightNodesContainer.appendChild(el);
+          rightNodesContainer.appendChild(createNodeEl(g.amount, g.label, liveEarned >= g.amount, isLastOfAll, false));
         });
       } else {
         if (rightWing) rightWing.style.display = 'none';
       }
 
-      requestAnimationFrame(() => {
-        updateBridgeProgress(liveEarned, leftGoals, rightGoals);
-      });
+      requestAnimationFrame(() => updateBridgeProgress(liveEarned, leftGoals, rightGoals));
     }
 
     function createNodeEl(amount, label, isReached, isLastGoal = false, isFirstNode = false) {
       const el = document.createElement('div');
       el.className = `h-node ${isReached ? 'reached' : ''} ${isLastGoal ? 'is-last-goal' : ''} ${isFirstNode ? 'is-first-node' : ''}`;
-      
-      const formattedLabel = formatMilestoneLabel(label, 25);
-
       el.innerHTML = `
         <div class="h-node-amount">${formatSEK(amount)}</div>
-        <div class="h-node-tick-wrapper">
-          <div class="h-node-tick"></div>
-        </div>
-        <div class="h-node-label">
-          <span class="node-check">✓</span>
-          <span class="node-label-text" title="${escapeHTML(label)}">${formattedLabel}</span>
-        </div>
+        <div class="h-node-tick-wrapper"><div class="h-node-tick"></div></div>
+        <div class="h-node-label"><span class="node-label-text" title="${escapeHTML(label)}">${formatMilestoneLabel(label, 25)}</span></div>
       `;
       return el;
     }
 
-    // 🎯 BRIDGE PROGRESSION
     function updateBridgeProgress(liveEarned, leftGoals, rightGoals) {
       const leftTrack = document.getElementById('leftTrack');
       const leftFill = document.getElementById('leftFill');
@@ -933,7 +1098,6 @@
       const firstRightAmount = rightGoals.length > 0 ? rightGoals[0].amount : lastLeftAmount;
       const bridgeMidAmount = lastLeftAmount + (firstRightAmount - lastLeftAmount) / 2;
 
-      // --- 1. LEFT WING PROGRESSION ---
       let leftTargetX = leftStartX;
       let showLeftCursor = false;
 
@@ -948,20 +1112,19 @@
         for (let i = 0; i < leftGoals.length; i++) {
           const goalAmt = leftGoals[i].amount;
           const currentX = leftXs[i + 1];
-
           if (liveEarned <= goalAmt) {
             const denom = goalAmt - prevAmt;
             const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
             leftTargetX = prevX + (currentX - prevX) * ratio;
             break;
           }
-
           prevAmt = goalAmt;
           prevX = currentX;
         }
       } else if (rightGoals.length > 0 && liveEarned <= bridgeMidAmount) {
         showLeftCursor = true;
-        const ratio = (liveEarned - lastLeftAmount) / (bridgeMidAmount - lastLeftAmount);
+        const denom = bridgeMidAmount - lastLeftAmount;
+        const ratio = denom > 0 ? Math.min(1, Math.max(0, (liveEarned - lastLeftAmount) / denom)) : 1;
         leftTargetX = lastGoalLeftX + (leftTrackEndX - lastGoalLeftX) * ratio;
       } else {
         leftTargetX = leftLineEndX;
@@ -972,7 +1135,6 @@
       leftCursor.style.left = `${leftTargetX.toFixed(1)}px`;
       leftCursor.style.opacity = showLeftCursor ? '1' : '0';
 
-      // --- 2. RIGHT WING PROGRESSION ---
       if (rightGoals.length > 0 && rightTrack && rightFill && rightCursor && rightBg) {
         const rightTrackRect = rightTrack.getBoundingClientRect();
         const rightNodes = Array.from(rightTrack.querySelectorAll('.h-node'));
@@ -1000,7 +1162,8 @@
           showRightCursor = false;
         } else if (liveEarned <= firstRightAmount) {
           showRightCursor = true;
-          const ratio = (liveEarned - bridgeMidAmount) / (firstRightAmount - bridgeMidAmount);
+          const denom = firstRightAmount - bridgeMidAmount;
+          const ratio = denom > 0 ? Math.min(1, Math.max(0, (liveEarned - bridgeMidAmount) / denom)) : 1;
           rightTargetX = rightTrackStartX + (firstGoalRightX - rightTrackStartX) * ratio;
         } else if (liveEarned >= topGoalAmount) {
           rightTargetX = lastGoalRightX;
@@ -1013,14 +1176,12 @@
           for (let i = 1; i < rightGoals.length; i++) {
             const goalAmt = rightGoals[i].amount;
             const currentX = rightXs[i];
-
             if (liveEarned <= goalAmt) {
               const denom = goalAmt - prevAmt;
               const ratio = denom > 0 ? (liveEarned - prevAmt) / denom : 1;
               rightTargetX = prevX + (currentX - prevX) * ratio;
               break;
             }
-
             prevAmt = goalAmt;
             prevX = currentX;
           }
@@ -1038,62 +1199,67 @@
     }
 
     function updateDockDisplay() {
-      const earned = getLiveSessionEarned();
-      if (!streamerBaseline || streamerBaseline <= 0) {
-        updateDockStatus(`${currentStreamerName}: Inget aktivt pass. Klicka på "Starta nytt pass".`);
-      } else {
-        updateDockStatus(`${currentStreamerName}: ${formatSEK(earned)} insamlat under detta pass`);
-      }
-
       const nameInput = document.getElementById('streamerNameInput');
       if (nameInput && !isFocusingInput && currentStreamerName && currentStreamerName !== "Streamer") {
         nameInput.value = currentStreamerName;
       }
     }
 
-    // ========================================================
-    // ⚡ REAL-TIME DATABASE LISTENERS
-    // ========================================================
     function listenToStreamer(key) {
       if (!key) return;
-
-      if (currentActiveStreamerRef) {
-        currentActiveStreamerRef.off();
-      }
+      if (currentActiveStreamerRef) currentActiveStreamerRef.off();
 
       currentActiveStreamerRef = dbStreamersRef.child(key);
       currentActiveStreamerRef.on('value', (snap) => {
         const data = snap.val();
-        if (data && typeof data.baseline === 'number') {
-          streamerBaseline = data.baseline;
-          manualAdjustment = data.manualAdjustment || 0;
+        if (data) {
+          if (typeof data.earnedSoFar === 'number') {
+            streamerEarnedSoFar = data.earnedSoFar;
+          } else if (typeof data.baseline === 'number' && data.baseline > 0 && currentGlobalTotal >= data.baseline) {
+            streamerEarnedSoFar = Math.max(0, currentGlobalTotal - data.baseline);
+          }
+
+          streamerShiftStart = typeof data.shiftStart === 'number' ? data.shiftStart : 0;
+          streamerManualAdj = data.manualAdjustment || 0;
+          streamerIsLiveFromDb = !!data.isLive;
+
           if (data.displayName) currentStreamerName = data.displayName;
 
           if (data.goalsText && typeof data.goalsText === 'string') {
+            setLocalGoalsForStreamer(currentStreamerName, data.goalsText);
             parsedGoals = parseLinesToGoalObjects(data.goalsText);
             const area = document.getElementById('goalsInputArea');
             if (area && !isFocusingInput) area.value = data.goalsText;
           }
 
+          updateWingHeaders();
           renderGoalsLadder();
           updateDockDisplay();
         }
       });
     }
 
+    // LISTENS TO GLOBAL BÖSSA TOTAL
     dbBossaRef.on('value', (snap) => {
       const data = snap.val();
       let raw = null;
-      if (typeof data === 'number' || typeof data === 'string') {
-        raw = data;
-      } else if (data && typeof data === 'object') {
-        raw = data.total ?? data.amount ?? data.current;
-      }
+      if (typeof data === 'number' || typeof data === 'string') raw = data;
+      else if (data && typeof data === 'object') raw = data.total ?? data.amount ?? data.current;
 
       if (raw !== null) {
         const parsed = parseInt(String(raw).replace(/[^0-9]/g, ''), 10);
         if (!isNaN(parsed) && parsed > 0) {
           currentGlobalTotal = parsed;
+
+          if (isObsStreaming && streamerShiftStart > 0 && currentGlobalTotal >= streamerShiftStart) {
+            const currentLiveTotal = streamerEarnedSoFar + (currentGlobalTotal - streamerShiftStart);
+            const key = getStreamerKey(currentStreamerName);
+            dbStreamersRef.child(key).update({
+              earnedSoFar: currentLiveTotal,
+              secret: WRITE_SECRET
+            }).catch(() => {});
+          }
+
           renderGoalsLadder();
           updateDockDisplay();
         }
@@ -1102,27 +1268,38 @@
 
     if (bus) {
       bus.onmessage = (e) => {
-        const { type, text, hidden, baseline, streamer } = e.data || {};
+        const { type, text, hidden, streamer, isStreaming, shiftStart } = e.data || {};
+
         if (type === 'LOCAL_GOALS_UPDATED') {
-          parsedGoals = parseLinesToGoalObjects(text);
-          renderGoalsLadder();
+          if (!streamer || getStreamerKey(streamer) === getStreamerKey(currentStreamerName)) {
+            parsedGoals = parseLinesToGoalObjects(text);
+            const area = document.getElementById('goalsInputArea');
+            if (area && !isFocusingInput) area.value = text;
+            renderGoalsLadder();
+          }
         } else if (type === 'GOALS_VISIBILITY_TOGGLED') {
           isGoalsHidden = hidden;
           applyVisibilityState();
         } else if (type === 'STREAMER_PASS_SYNC') {
-          streamerBaseline = baseline;
-          currentStreamerName = streamer;
-          renderGoalsLadder();
-          updateDockDisplay();
+          if (streamer && streamer !== currentStreamerName) {
+            loadSavedStreamerPass(streamer);
+          }
+        } else if (type === 'STREAM_LIVE_STATUS') {
+          if (!streamer || getStreamerKey(streamer) === getStreamerKey(currentStreamerName)) {
+            streamerIsLiveFromDb = !!isStreaming;
+            if (typeof shiftStart === 'number') streamerShiftStart = shiftStart;
+            renderGoalsLadder();
+          }
         }
       };
     }
 
     window.addEventListener('storage', (e) => {
-      if (e.key === STORAGE_KEY_GOALS && e.newValue) {
+      const currentStorageKey = getStreamerGoalsStorageKey(currentStreamerName);
+      if ((e.key === currentStorageKey || e.key === STORAGE_KEY_GOALS) && e.newValue) {
         parsedGoals = parseLinesToGoalObjects(e.newValue);
         const area = document.getElementById('goalsInputArea');
-        if (area) area.value = e.newValue;
+        if (area && !isFocusingInput) area.value = e.newValue;
         renderGoalsLadder();
       } else if (e.key === STORAGE_KEY_HIDDEN) {
         isGoalsHidden = e.newValue === 'true';
@@ -1132,55 +1309,10 @@
       }
     });
 
-    // ========================================================
-    // 🎛️ DOCK ACTIONS
-    // ========================================================
     document.addEventListener('focusin', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isFocusingInput = true;
     });
     document.addEventListener('focusout', () => { isFocusingInput = false; });
-
-    function startFreshPassZero() {
-      if (currentGlobalTotal <= 0) {
-        updateDockStatus("⚠️ Vänta, hämtar aktuell total från Musikhjälpen...", true);
-        return;
-      }
-
-      const inputEl = document.getElementById('streamerNameInput');
-      const inputVal = inputEl ? inputEl.value.trim() : "";
-      currentStreamerName = inputVal || currentStreamerName || "Streamer";
-      if (inputEl) inputEl.value = currentStreamerName;
-
-      const key = getStreamerKey(currentStreamerName);
-      streamerBaseline = currentGlobalTotal;
-      manualAdjustment = 0;
-
-      try {
-        localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
-      } catch(e) {}
-
-      updateDockStatus(`Startar pass för ${currentStreamerName}...`);
-
-      const area = document.getElementById('goalsInputArea');
-      const goalsText = area ? area.value : "";
-
-      dbStreamersRef.child(key).set({
-        displayName: currentStreamerName,
-        baseline: streamerBaseline,
-        manualAdjustment: 0,
-        goalsText: goalsText,
-        secret: WRITE_SECRET,
-        timestamp: Date.now()
-      }).then(() => {
-        listenToStreamer(key);
-        renderGoalsLadder();
-        updateDockDisplay();
-        if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-        updateDockStatus(`✅ Nytt pass startat för ${currentStreamerName}! Mätaren är 0 kr.`);
-      }).catch(err => {
-        updateDockStatus("❌ Fel: " + err.message, true);
-      });
-    }
 
     function loadSavedStreamerPass(optionalTargetName) {
       const inputEl = document.getElementById('streamerNameInput');
@@ -1197,94 +1329,88 @@
         localStorage.setItem(STORAGE_KEY_STREAMER, currentStreamerName);
       } catch(e) {}
 
+      setObsTextSource(currentStreamerName);
+
+      const localGoals = getLocalGoalsForStreamer(currentStreamerName);
+      parsedGoals = parseLinesToGoalObjects(localGoals);
+      const area = document.getElementById('goalsInputArea');
+      if (area && !isFocusingInput) area.value = localGoals;
+
+      updateWingHeaders();
+      renderGoalsLadder();
+
       const key = getStreamerKey(currentStreamerName);
-      updateDockStatus(`Läser in pass för ${currentStreamerName}...`);
 
       dbStreamersRef.child(key).once('value').then((snap) => {
         const data = snap.val();
-        if (data && typeof data.baseline === 'number') {
-          streamerBaseline = data.baseline;
-          manualAdjustment = data.manualAdjustment || 0;
-
-          if (data.goalsText && typeof data.goalsText === 'string') {
-            parsedGoals = parseLinesToGoalObjects(data.goalsText);
-            const area = document.getElementById('goalsInputArea');
-            if (area) area.value = data.goalsText;
+        if (data) {
+          if (typeof data.earnedSoFar === 'number') {
+            streamerEarnedSoFar = data.earnedSoFar;
+          } else if (typeof data.baseline === 'number' && data.baseline > 0 && currentGlobalTotal >= data.baseline) {
+            streamerEarnedSoFar = Math.max(0, currentGlobalTotal - data.baseline);
           }
 
-          listenToStreamer(key);
-          renderGoalsLadder();
-          updateDockDisplay();
-          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: streamerBaseline, streamer: currentStreamerName });
-          updateDockStatus(`✅ Sparat pass inläst för ${currentStreamerName} (${formatSEK(getLiveSessionEarned())})!`);
+          streamerShiftStart = typeof data.shiftStart === 'number' ? data.shiftStart : 0;
+          streamerManualAdj = data.manualAdjustment || 0;
+          streamerIsLiveFromDb = !!data.isLive;
+
+          if (data.goalsText && typeof data.goalsText === 'string') {
+            setLocalGoalsForStreamer(currentStreamerName, data.goalsText);
+            parsedGoals = parseLinesToGoalObjects(data.goalsText);
+            if (area && !isFocusingInput) area.value = data.goalsText;
+          }
         } else {
-          listenToStreamer(key);
-          updateDockStatus(`Inget sparat pass hittat för ${currentStreamerName}. Starta ett nytt.`);
+          streamerEarnedSoFar = 0;
+          streamerShiftStart = 0;
+          streamerManualAdj = 0;
+          streamerIsLiveFromDb = false;
         }
-      }).catch(err => {
-        updateDockStatus("❌ Fel: " + err.message, true);
+
+        listenToStreamer(key);
+        updateWingHeaders();
+        renderGoalsLadder();
+        updateDockDisplay();
+
+        if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', streamer: currentStreamerName });
+      }).catch((err) => {
+        console.error("Error loading streamer pass:", err);
+        listenToStreamer(key);
+        updateWingHeaders();
+        renderGoalsLadder();
+        updateDockDisplay();
       });
-    }
-
-    let clearConfirmTimeout = null;
-    function handleClearPassClick() {
-      const btn = document.getElementById('btnClearPassBtn');
-      if (!btn) return;
-
-      if (!btn.classList.contains('confirm-state')) {
-        btn.classList.add('confirm-state');
-        btn.innerText = "⚠️ Klicka igen för att rensa!";
-        clearConfirmTimeout = setTimeout(() => {
-          btn.classList.remove('confirm-state');
-          btn.innerText = "🗑️ Rensa pass";
-        }, 4000);
-      } else {
-        clearTimeout(clearConfirmTimeout);
-        btn.classList.remove('confirm-state');
-        btn.innerText = "🗑️ Rensa pass";
-
-        const key = getStreamerKey(currentStreamerName);
-        streamerBaseline = 0;
-        manualAdjustment = 0;
-
-        dbStreamersRef.child(key).remove().then(() => {
-          renderGoalsLadder();
-          updateDockDisplay();
-          if (bus) bus.postMessage({ type: 'STREAMER_PASS_SYNC', baseline: 0, streamer: currentStreamerName });
-          updateDockStatus(`Passet för ${currentStreamerName} är rensat.`);
-        }).catch(err => {
-          updateDockStatus("❌ Fel: " + err.message, true);
-        });
-      }
     }
 
     function saveGoalsFromTextarea() {
       const area = document.getElementById('goalsInputArea');
       const text = area ? area.value : "";
       const goals = parseLinesToGoalObjects(text);
+      if (goals.length === 0) return;
 
-      if (goals.length === 0) {
-        return updateDockStatus("⚠️ Hittade inga giltiga milstolpar!", true);
-      }
-
-      try {
-        localStorage.setItem(STORAGE_KEY_GOALS, text);
-      } catch(e) {}
-
+      setLocalGoalsForStreamer(currentStreamerName, text);
       parsedGoals = goals;
       renderGoalsLadder();
 
       if (bus) {
-        bus.postMessage({ type: 'LOCAL_GOALS_UPDATED', text: text });
+        bus.postMessage({
+          type: 'LOCAL_GOALS_UPDATED',
+          streamer: currentStreamerName,
+          text: text
+        });
       }
 
       const key = getStreamerKey(currentStreamerName);
       dbStreamersRef.child(key).update({
         goalsText: text,
         secret: WRITE_SECRET
-      }).catch(() => {});
+      }).catch((err) => console.error("Error saving goals to Firebase:", err));
 
-      updateDockStatus(`✅ Sparade dina ${goals.length} milstolpar!`);
+      const saveBtn = document.querySelector('.btn-primary-action');
+      if (saveBtn) {
+        const oldText = saveBtn.innerText;
+        saveBtn.innerText = "✓ Sparat!";
+        setTimeout(() => { saveBtn.innerText = oldText; }, 1400);
+      }
     }
 
     function escapeHTML(str) {
@@ -1294,35 +1420,26 @@
     }
 
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        renderGoalsLadder();
-      });
+      document.fonts.ready.then(() => renderGoalsLadder());
     }
 
     if (window.ResizeObserver) {
       const container = document.getElementById('goalsWidgetContainer');
       if (container) {
-        const ro = new ResizeObserver(() => {
-          renderGoalsLadder();
-        });
-        ro.observe(container);
+        new ResizeObserver(() => renderGoalsLadder()).observe(container);
       }
     }
 
-    try {
-      let cached = localStorage.getItem(STORAGE_KEY_GOALS);
-      if (!cached || !cached.trim()) {
-        cached = DEFAULT_GOALS;
-      }
-      parsedGoals = parseLinesToGoalObjects(cached);
-      const area = document.getElementById('goalsInputArea');
-      if (area) area.value = cached;
-    } catch(e) {
-      parsedGoals = parseLinesToGoalObjects(DEFAULT_GOALS);
-    }
+    const initialGoals = getLocalGoalsForStreamer(currentStreamerName);
+    parsedGoals = parseLinesToGoalObjects(initialGoals);
+    const area = document.getElementById('goalsInputArea');
+    if (area) area.value = initialGoals;
 
+    updateWingHeaders();
     renderGoalsLadder();
     window.addEventListener('resize', renderGoalsLadder);
+
+    connectObsWebSocket();
 
     if (currentStreamerName && currentStreamerName !== "Streamer") {
       loadSavedStreamerPass(currentStreamerName);
