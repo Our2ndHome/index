@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musikhjälpen Utmaning Alert</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Montserrat', Arial, sans-serif;
+      pointer-events: none;
+      position: relative;
+    }
+
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .utmaning-overlay {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      z-index: 999999;
+      pointer-events: none;
+      width: 90%;
+      max-width: 900px;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .utmaning-title {
+      font-size: 56px;
+      font-weight: 900;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin: 0 0 8px 0;
+      line-height: 1.1;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.95), 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .utmaning-text {
+      font-size: 32px;
+      font-weight: 800;
+      color: #ace600;
+      text-transform: uppercase;
+      line-height: 1.3;
+      margin: 0;
+      word-break: break-word;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 16px rgba(172, 230, 0, 0.4);
+    }
+
+    .anim-in {
+      display: flex !important;
+      animation: alertInSmooth 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes alertInSmooth {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -58%) scale(0.92);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .anim-out {
+      animation: alertOutSmooth 0.4s ease forwards !important;
+    }
+
+    @keyframes alertOutSmooth {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -48%) scale(0.92);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <div id="utmaningContainer" class="utmaning-overlay">
+    <h1 class="utmaning-title">UTMANING</h1>
+    <p id="utmaningDesc" class="utmaning-text"></p>
+  </div>
+
+  <script>
+    (function() {
+      try {
+        const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
+        let isParentDock = false;
+        try {
+          if (window.parent && window.parent !== window) {
+            isParentDock = window.parent.location.hash.includes('panel') || window.parent.location.hash.includes('dock');
+          }
+        } catch (e) {}
+
+        if (isSelfDock || isParentDock) return;
+      } catch (e) {}
+
+      // ========================================================
+      // 🤖 STREAMER.BOT CHAT BOT CONNECTION
+      // ========================================================
+      const SB_WS_URL = "ws://127.0.0.1:8080/";
+      let sbWs = null;
+      let isSbConnected = false;
+
+      function connectStreamerbot() {
+        try {
+          sbWs = new WebSocket(SB_WS_URL);
+        } catch (e) {
+          setTimeout(connectStreamerbot, 5000);
+          return;
+        }
+
+        sbWs.onopen = () => {
+          isSbConnected = true;
+        };
+
+        sbWs.onclose = () => {
+          isSbConnected = false;
+          setTimeout(connectStreamerbot, 4000);
+        };
+
+        sbWs.onerror = () => {
+          try { sbWs.close(); } catch (e) {}
+        };
+      }
+
+      function sendStreamerbotChat(chatMessage) {
+        if (!isSbConnected || !sbWs || sbWs.readyState !== WebSocket.OPEN) return;
+
+        const reqId = "utm-chat-" + Math.random().toString(36).substring(2, 9);
+
+        sbWs.send(JSON.stringify({
+          request: "SendMessage",
+          id: reqId,
+          message: chatMessage,
+          bot: true
+        }));
+
+        sbWs.send(JSON.stringify({
+          request: "DoAction",
+          action: { name: "Send Twitch Message" },
+          args: { message: chatMessage },
+          id: "act-" + reqId
+        }));
+      }
+
+      connectStreamerbot();
+
+      // ========================================================
+      // 🎛️ OBS WEBSOCKET & CAMERA CONTROL CONFIGURATION
+      // ========================================================
+      const OBS_WS_URL = "ws://127.0.0.1:4455";
+      const SCENE_GAMING = "Musikhjälpen|Gaming Scene";
+      const SCENE_INTERMISSION = "Musikhjälpen|Intermission Scene";
+
+      const SOURCE_WEBCAM = "Webcam Source";
+      const SOURCE_WEBCAM_SCENE = "Webcam Scene";
+
+      let obsWs = null;
+      let isObsConnected = false;
+      const pendingObsRequests = new Map();
+
+      function connectOBS() {
+        try {
+          obsWs = new WebSocket(OBS_WS_URL);
+        } catch (e) {
+          setTimeout(connectOBS, 5000);
+          return;
+        }
+
+        obsWs.onopen = () => {};
+
+        obsWs.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.op === 0) {
+              obsWs.send(JSON.stringify({
+                op: 1,
+                d: { rpcVersion: 1, eventSubscriptions: 1023 }
+              }));
+            }
+            if (msg.op === 2) {
+              isObsConnected = true;
+            }
+            if (msg.op === 7) {
+              const { requestId, requestStatus, responseData } = msg.d;
+              if (pendingObsRequests.has(requestId)) {
+                const { resolve, reject } = pendingObsRequests.get(requestId);
+                pendingObsRequests.delete(requestId);
+                if (requestStatus && requestStatus.result) {
+                  resolve(responseData);
+                } else {
+                  reject(new Error(requestStatus ? requestStatus.comment : "Request failed"));
+                }
+              }
+            }
+          } catch (e) {}
+        };
+
+        obsWs.onclose = () => {
+          isObsConnected = false;
+          pendingObsRequests.forEach(({ reject }) => reject(new Error("OBS Connection closed")));
+          pendingObsRequests.clear();
+          setTimeout(connectOBS, 4000);
+        };
+
+        obsWs.onerror = () => {
+          try { obsWs.close(); } catch (e) {}
+        };
+      }
+
+      function sendObsRequest(requestType, requestData = {}) {
+        return new Promise((resolve, reject) => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) {
+            return reject(new Error("OBS WebSocket not connected"));
+          }
+          const requestId = "req-utm-" + Math.random().toString(36).substring(2, 9);
+          pendingObsRequests.set(requestId, { resolve, reject });
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: { requestType, requestId, requestData }
+          }));
+
+          setTimeout(() => {
+            if (pendingObsRequests.has(requestId)) {
+              pendingObsRequests.delete(requestId);
+              reject(new Error("OBS request timeout"));
+            }
+          }, 3000);
+        });
+      }
+
+      function sendFilterTrigger(sourceName, filterName) {
+        if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+
+        obsWs.send(JSON.stringify({
+          op: 6,
+          d: {
+            requestType: "SetSourceFilterEnabled",
+            requestId: "flt-off-" + Math.random(),
+            requestData: { sourceName, filterName, filterEnabled: false }
+          }
+        }));
+
+        setTimeout(() => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: {
+              requestType: "SetSourceFilterEnabled",
+              requestId: "flt-on-" + Math.random(),
+              requestData: { sourceName, filterName, filterEnabled: true }
+            }
+          }));
+        }, 20);
+      }
+
+      function triggerWebcamMove(direction) {
+        if (direction === "in") {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        } else {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value out");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        }
+      }
+
+      function isMatchingScene(currentName, targetName) {
+        if (!currentName || !targetName) return false;
+        const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        if (cleanA === cleanB) return true;
+
+        const baseA = cleanA.split('|').pop().trim();
+        const baseB = cleanB.split('|').pop().trim();
+        return baseA === baseB;
+      }
+
+      async function getCurrentObsScene() {
+        try {
+          const res = await sendObsRequest("GetCurrentProgramScene");
+          return res.currentProgramSceneName || "";
+        } catch (e) {
+          return "";
+        }
+      }
+
+      async function setObsScene(targetSceneName) {
+        try {
+          await sendObsRequest("SetCurrentProgramScene", { sceneName: targetSceneName });
+        } catch (e) {
+          const altName = targetSceneName.includes(" | ")
+            ? targetSceneName.replace(/\s*\|\s*/g, "|")
+            : targetSceneName.replace(/\|/g, " | ");
+          try {
+            await sendObsRequest("SetCurrentProgramScene", { sceneName: altName });
+          } catch (e2) {}
+        }
+      }
+
+      connectOBS();
+
+      // ========================================================
+      // 🎊 CONFETTI CANNON: EMOTES & SPONSORS BLAST
+      // ========================================================
+      const EMOTES_FOLDER = "emotes";
+      const CUSTOM_EMOTE_FILES = [
+        "Our2ndHome-EmoteHype-500x500.png",
+        "Our2ndHome-EmoteLove-500x500.png",
+        "Our2ndHome-EmoteWoop-500x500.png",
+        "Our2ndHome-IconLogo-512x512x.png",
+        "DisgustingFoodMuseum_Sponsor.png",
+        "ElinPK_Sponsor.png",
+        "EscapeHouse_Sponsor.png",
+        "RandomNerd_Sponsor.png"
+      ];
+
+      const EMBEDDED_FALLBACKS = [
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ace600"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23ffea00"/></svg>'
+      ];
+
+      const loadedImages = [];
+      CUSTOM_EMOTE_FILES.forEach(filename => {
+        const img = new Image();
+        img.src = `${EMOTES_FOLDER}/${encodeURIComponent(filename)}`;
+        img.onload = () => loadedImages.push(img);
+        img.onerror = () => {
+          const fb = new Image();
+          fb.src = EMBEDDED_FALLBACKS[Math.floor(Math.random() * EMBEDDED_FALLBACKS.length)];
+          loadedImages.push(fb);
+        };
+      });
+
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animationFrameId = null;
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      function triggerEmoteCannon() {
+        if (loadedImages.length === 0) return;
+
+        const originX = canvas.width * 0.5;
+        const originY = canvas.height - 30;
+        const particleCount = 45;
+
+        for (let i = 0; i < particleCount; i++) {
+          const img = loadedImages[Math.floor(Math.random() * loadedImages.length)];
+          const angle = (Math.PI / 2) + (Math.random() * 1.5 - 0.75);
+          const speed = Math.random() * 16 + 18;
+
+          particles.push({
+            x: originX + (Math.random() * 160 - 80),
+            y: originY,
+            vx: Math.cos(angle) * speed,
+            vy: -Math.sin(angle) * speed,
+            gravity: 0.55,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 8,
+            size: Math.floor(Math.random() * 22) + 36,
+            opacity: 1,
+            img: img
+          });
+        }
+
+        if (!animationFrameId) {
+          updateCannon();
+        }
+      }
+
+      function updateCannon() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.vx *= 0.99;
+          p.rotation += p.rotationSpeed;
+
+          if (p.y > canvas.height * 0.45 && p.vy > 0) {
+            p.opacity -= 0.018;
+          }
+
+          if (p.opacity <= 0 || p.y > canvas.height + 80) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.globalAlpha = Math.max(0, p.opacity);
+
+          try {
+            ctx.drawImage(p.img, -p.size / 2, -p.size / 2, p.size, p.size);
+          } catch(e) {}
+
+          ctx.restore();
+        }
+
+        if (particles.length > 0) {
+          animationFrameId = requestAnimationFrame(updateCannon);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          animationFrameId = null;
+        }
+      }
+
+      // ========================================================
+      // 🔊 TRIGGER SOUND IN OVERLAY.HTML
+      // ========================================================
+      function playHornSoundViaOverlay() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'PLAY_SOUND', soundType: 'utmaning' }, '*');
+        }
+        try {
+          new BroadcastChannel('mh_sound_bus').postMessage({ type: 'PLAY_SOUND', soundType: 'utmaning' });
+        } catch(e) {}
+      }
+
+      // ========================================================
+      // 📡 FIREBASE REALTIME LISTENER WITH 5S AUTO-HIDE
+      // ========================================================
+      const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+      if (!firebase.apps.length) {
+        firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+      }
+      const dbRef = firebase.database().ref('utmaning');
+
+      const container = document.getElementById('utmaningContainer');
+      const descEl = document.getElementById('utmaningDesc');
+
+      let isUtmaningActive = false;
+      let isBoxVisible = false;
+      let didSwitchScene = false;
+      let originalSceneName = "";
+      let autoHideTimer = null;
+
+      async function showUtmaning(text) {
+        if (isUtmaningActive) {
+          descEl.textContent = text || "";
+          return;
+        }
+        isUtmaningActive = true;
+
+        if (isObsConnected) {
+          const currentScene = await getCurrentObsScene();
+          if (isMatchingScene(currentScene, SCENE_GAMING)) {
+            originalSceneName = currentScene;
+            triggerWebcamMove("out");
+            await setObsScene(SCENE_INTERMISSION);
+            didSwitchScene = true;
+            await new Promise(r => setTimeout(r, 350));
+          }
+        }
+
+        playHornSoundViaOverlay();
+        triggerEmoteCannon();
+
+        const challengeContent = text || "Streamern har blivit utmanad!";
+        descEl.textContent = challengeContent;
+        container.className = 'utmaning-overlay anim-in';
+        isBoxVisible = true;
+
+        // 💬 Send automated message to Twitch chat via Streamer.bot
+        sendStreamerbotChat(`our2ndHomeL UTMANING: ${challengeContent} our2ndHomeR`);
+
+        if (autoHideTimer) clearTimeout(autoHideTimer);
+        autoHideTimer = setTimeout(() => {
+          hideBoxOnly();
+        }, 5000);
+      }
+
+      async function hideBoxOnly() {
+        if (!isBoxVisible) return;
+        isBoxVisible = false;
+        container.className = 'utmaning-overlay anim-out';
+        await new Promise(r => setTimeout(r, 400));
+        container.className = 'utmaning-overlay';
+        container.style.display = 'none';
+      }
+
+      async function hideUtmaning() {
+        if (!isUtmaningActive) return;
+        isUtmaningActive = false;
+
+        if (autoHideTimer) {
+          clearTimeout(autoHideTimer);
+          autoHideTimer = null;
+        }
+
+        if (isBoxVisible) {
+          await hideBoxOnly();
+        }
+
+        if (didSwitchScene && isObsConnected) {
+          const activeScene = await getCurrentObsScene();
+          if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
+            triggerWebcamMove("in");
+            await setObsScene(originalSceneName || SCENE_GAMING);
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
+        didSwitchScene = false;
+        originalSceneName = "";
+      }
+
+      dbRef.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (!val) return;
+        if (val.active) {
+          showUtmaning(val.text || val.title);
+        } else {
+          hideUtmaning();
+        }
+      });
+
+      try {
+        const broadcast = new BroadcastChannel('mh_utmaning_channel');
+        broadcast.onmessage = (event) => {
+          if (event.data && event.data.active) {
+            showUtmaning(event.data.text);
+          } else {
+            hideUtmaning();
+          }
+        };
+      } catch (e) {}
+
+    })();
+  </script>
+</body>
+</html>
