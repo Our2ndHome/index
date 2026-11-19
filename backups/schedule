@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Musikhjälpen Schedule & Sponsors Overlay</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- Firebase Realtime Engine -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -12,7 +12,7 @@
 
   <style>
     :root {
-      --primary-color: #ace600; /* Lime Green */
+      --primary-color: #ace600;
       --secondary-color: #00ff88;
       --giveaway-color: #ffea00;
       --text-white: #ffffff;
@@ -24,6 +24,21 @@
     }
 
     * { box-sizing: border-box; }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0b0d;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ace600;
+    }
 
     body {
       margin: 0;
@@ -37,17 +52,21 @@
       user-select: none;
     }
 
-    /* 🔀 HASH ROUTER */
     body.mode-overlay #panelRoot { display: none !important; }
     body.mode-panel #overlayRoot { display: none !important; }
 
     body.mode-panel {
-      background-color: var(--dock-bg);
+      background-color: transparent;
       overflow-y: auto;
-      padding: 10px;
+      overflow-x: hidden;
+      padding: 0;
+      height: auto;
+      min-height: auto;
     }
 
-    /* 📺 1. STREAM OVERLAY */
+    /* ========================================================
+       📺 1. STREAM OVERLAY VIEW (#overlayRoot)
+       ======================================================== */
     #overlayRoot {
       position: absolute;
       top: 0;
@@ -57,7 +76,6 @@
       pointer-events: none;
     }
 
-    /* 🔄 3D ROTATOR WRAPPER (SPONSORS & THEME CARD) */
     .rotator-wrapper {
       position: absolute;
       bottom: 125px;
@@ -69,7 +87,6 @@
       place-items: center;
     }
 
-    /* Base Card Styling (3D Flip Animation) */
     .sponsor-widget, .theme-widget {
       grid-area: 1 / 1;
       background: rgba(0, 0, 0, 0.9);
@@ -99,7 +116,6 @@
       visibility: hidden;
     }
 
-    /* 🖼️ CARD 1: SPONSOR ROTATOR */
     .sponsor-widget {
       text-align: center;
       display: flex;
@@ -134,10 +150,8 @@
       letter-spacing: 2px;
       text-transform: uppercase;
       display: block;
-      text-shadow: none;
     }
 
-    /* 📻 CARD 2: MUSIKHJÄLPEN ÅRETS TEMA CARD */
     .theme-widget {
       position: relative;
       width: 290px;
@@ -156,11 +170,13 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 115px;
-      height: 115px;
+      width: 130px;
+      height: 130px;
+      object-fit: contain;
       pointer-events: none;
-      opacity: 0.16;
+      opacity: 0.50;
       z-index: 1;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
     }
 
     .theme-content-box {
@@ -181,15 +197,8 @@
       margin-bottom: 4px;
       display: flex;
       align-items: center;
-      gap: 6px;
-    }
-
-    .theme-accent-dot {
-      width: 6px;
-      height: 6px;
-      background: #ace600;
-      border-radius: 50%;
-      display: inline-block;
+      justify-content: center;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
     .theme-card-sublabel {
@@ -199,6 +208,7 @@
       letter-spacing: 1.5px;
       text-transform: uppercase;
       margin-bottom: 5px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
     .theme-card-title {
@@ -208,9 +218,9 @@
       line-height: 1.35;
       max-width: 245px;
       letter-spacing: 0.4px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
     }
 
-    /* Shared Breathing Motion */
     @keyframes elementFloat {
       0%, 100% {
         transform: translateY(0px);
@@ -222,15 +232,12 @@
       }
     }
 
-    /* 📅 SCHEDULE TIMELINE BAR (1920px FULL-WIDTH, STRAIGHT SIDES) */
     .schedule-widget {
       position: absolute;
       bottom: 0;
       left: 0;
       width: 100vw;
       background: rgba(0, 0, 0, 0.9);
-      border-radius: 0;
-      border: none;
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
       padding: 16px 30px 14px 30px;
       display: flex;
@@ -246,9 +253,7 @@
       opacity: 1;
     }
 
-    .timeline-container.fading {
-      opacity: 0;
-    }
+    .timeline-container.fading { opacity: 0; }
 
     .timeline-line-bg {
       position: absolute;
@@ -318,7 +323,6 @@
       align-items: center;
       text-align: center;
       padding: 0 4px;
-      text-shadow: none;
     }
 
     .node-time {
@@ -331,7 +335,6 @@
       color: #ffffff;
       white-space: nowrap;
       letter-spacing: 1px;
-      text-shadow: none;
     }
 
     .node-tick-wrapper {
@@ -364,65 +367,76 @@
       color: #ffffff;
       white-space: nowrap;
       letter-spacing: 0.8px;
-      text-shadow: none;
     }
 
     .node-streamer.is-giveaway-text {
-      color: #ffffff;
-      text-shadow: none;
+      color: var(--giveaway-color) !important;
+      text-shadow: 0 0 10px rgba(255, 234, 0, 0.45);
     }
 
     .timeline-node.active .node-streamer {
       font-size: 16px;
-      color: var(--primary-color);
-      text-shadow: none;
+      color: var(--primary-color) !important;
     }
 
-    /* 🎛️ 2. OBS DOCK: BLACK & WHITE THEME */
+    .timeline-node.active .node-streamer.is-giveaway-text {
+      color: var(--giveaway-color) !important;
+      font-size: 16px;
+      text-shadow: 0 0 16px rgba(255, 234, 0, 0.8);
+    }
+
+    /* ========================================================
+       🎛️ 2. OBS DOCK: CONTROLLER (CLEAN NATIVE WIDGET)
+       ======================================================== */
     .dock-container {
-      max-width: 480px;
-      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
     }
 
     .header-box {
+      background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 8px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #111114;
-      margin-bottom: 8px;
+      width: 100%;
     }
 
     .header-title {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 900;
       text-transform: uppercase;
-      color: #ffffff;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
     }
 
-    .version-badge {
-      background: #ffffff;
-      color: #000000;
+    .status-pill {
       font-size: 9px;
       font-weight: 900;
-      padding: 1px 5px;
+      padding: 2px 6px;
       border-radius: 3px;
-      margin-left: 6px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
-
-    .status-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 8px;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: #e4e4e7;
-      margin-bottom: 8px;
-      transition: color 0.2s ease;
+    .status-pill.online {
+      background: #1c381c;
+      color: var(--primary-color);
+      border: 1px solid rgba(172, 230, 0, 0.4);
+    }
+    .status-pill.error {
+      background: #27272a;
+      color: #ff453a;
+      border: 1px solid #ff453a;
     }
 
     .card-section {
@@ -430,116 +444,186 @@
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 10px;
-      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
     }
 
     .section-title {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 900;
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 6px;
       display: block;
     }
 
-    .control-row {
+    .day-pills-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-      gap: 6px;
-    }
-
-    .control-label {
-      font-size: 11px;
-      font-weight: 800;
-      color: #ffffff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-
-    input[type="text"], select {
-      background: #121215;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: #ffffff;
-      padding: 6px 8px;
-      font-family: inherit;
-      font-size: 11px;
-      outline: none;
-      transition: border 0.15s ease;
-    }
-    input[type="text"]:focus, select:focus {
-      border-color: #52525b;
-    }
-
-    .btn {
-      background: #18181c;
-      border: 1px solid var(--border);
-      color: #ffffff;
-      border-radius: 4px;
-      padding: 7px 10px;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
+      gap: 4px;
       width: 100%;
-      text-align: center;
-      margin-bottom: 6px;
-      transition: background 0.15s ease, border-color 0.15s ease;
     }
-    .btn:hover:not(:disabled) {
-      background: #24242a;
+
+    .day-pill-btn {
+      flex: 1;
+      background: #1f1f23;
+      border: 1px solid var(--border);
+      color: #d4d4d8;
+      font-family: inherit;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 6px 2px;
+      border-radius: 3px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      text-transform: uppercase;
+    }
+    .day-pill-btn:hover { 
+      background: #27272a; 
+      color: #ffffff; 
+    }
+    .day-pill-btn.active {
+      background: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      color: #0b0b0d !important;
+      font-weight: 900;
+    }
+
+    .slots-list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .slot-editor-card {
+      background: #0b0b0d;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .slot-editor-card:focus-within {
       border-color: #3f3f46;
     }
 
-    .btn-primary-action {
-      background: #ffffff;
-      color: #000000;
-      border: none;
-      border-radius: 4px;
-      padding: 10px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 900;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 6px;
-      margin-bottom: 4px;
-      transition: opacity 0.15s ease;
-    }
-    .btn-primary-action:hover { opacity: 0.9; }
-
-    .btn-danger {
-      background: #18181c;
-      border: 1px solid #ff453a;
-      color: #ff453a;
-    }
-    .btn-danger:hover:not(:disabled) {
-      background: #ff453a;
-      color: #ffffff;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .slot-card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       gap: 6px;
     }
+
+    .slot-num-badge {
+      font-size: 9px;
+      font-weight: 900;
+      color: var(--primary-color);
+      background: #1f1f23;
+      border: 1px solid rgba(172, 230, 0, 0.25);
+      padding: 2px 6px;
+      border-radius: 3px;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .slot-time-input {
+      flex: 1;
+      background: #141418;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 8px;
+      outline: none;
+    }
+
+    .btn-delete-slot {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: color 0.15s ease;
+    }
+    .btn-delete-slot:hover { color: #ff453a; }
+
+    .slot-name-input {
+      width: 100%;
+      background: #141418;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 8px;
+      outline: none;
+    }
+    .slot-name-input:focus, .slot-time-input:focus, .slot-giveaway-input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .slot-giveaway-input {
+      width: 100%;
+      background: #141418;
+      border: 1px solid #3b3519;
+      border-radius: 4px;
+      color: var(--giveaway-color);
+      font-family: inherit;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 5px 8px;
+      outline: none;
+    }
+
+    .btn {
+      background: #27272a;
+      border: none;
+      color: #ffffff;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      transition: background 0.15s ease;
+    }
+    .btn:hover { background: #3f3f46; }
+
+    .btn-primary-action {
+      background: var(--primary-color);
+      color: #0b0b0d;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s ease;
+    }
+    .btn-primary-action:hover { background: #c2f524; }
   </style>
 </head>
 <body>
 
-  <!-- ========================================================
-       📺 1. STREAM OVERLAY VIEW (#overlay)
-       ======================================================== -->
+  <!-- 📺 1. STREAM OVERLAY VIEW -->
   <div id="overlayRoot">
-    
-    <!-- 🔄 3D ROTATOR: SPONSORS & MUSIKHJÄLPEN THEME CARD -->
     <div class="rotator-wrapper">
-      
-      <!-- Card 1: Sponsor Card (Active by Default) -->
       <div class="sponsor-widget card-active" id="sponsorWidget">
         <div class="sponsor-logo-container">
           <img id="sponsorLogo" class="sponsor-logo" src="" alt="Sponsor Logo" />
@@ -547,26 +631,16 @@
         <span class="sponsor-label">SPONSORER</span>
       </div>
 
-      <!-- Card 2: Musikhjälpen Theme Card (Hidden by Default) -->
       <div class="theme-widget card-hidden" id="themeWidget">
-        <!-- Watermark Logo -->
-        <svg class="theme-watermark-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 82C50 82 18 58 18 36C18 24 28 16 38 18C44 19 48 23 50 27C52 23 56 19 62 18C72 16 82 24 82 36C82 58 50 82 50 82Z" fill="#ace600"/>
-          <path d="M14 44C14 22 30 12 50 12C70 12 86 22 86 44" stroke="#ace600" stroke-width="5" stroke-linecap="round"/>
-          <rect x="10" y="40" width="8" height="18" rx="4" fill="#ace600"/>
-          <rect x="82" y="40" width="8" height="18" rx="4" fill="#ace600"/>
-        </svg>
-
+        <img id="themeMhLogo" class="theme-watermark-logo" src="sponsors/MusikhjalpenLogo.png" alt="Musikhjälpen" />
         <div class="theme-content-box">
-          <span class="theme-card-header"><span class="theme-accent-dot"></span>MUSIKHJÄLPEN</span>
-          <span class="theme-card-sublabel">ÅRETS TEMA:</span>
+          <span class="theme-card-header">MUSIKHJÄLPEN</span>
+          <span class="theme-card-sublabel">ÅRETS TEMA</span>
           <span class="theme-card-title">För psykisk hälsa i krig och kris</span>
         </div>
       </div>
-
     </div>
 
-    <!-- Timeline Schedule Bar -->
     <div class="schedule-widget" id="scheduleWidget">
       <div class="timeline-container" id="timelineContainer">
         <div class="timeline-line-bg"></div>
@@ -577,81 +651,31 @@
     </div>
   </div>
 
-  <!-- ========================================================
-       🎛️ 2. OBS CONTROL DOCK (#panel)
-       ======================================================== -->
+  <!-- 🎛️ 2. OBS CONTROL DOCK (CLEAN SCHEDULE CONTROLLER WITHOUT EXTRA BOXES) -->
   <div id="panelRoot" class="dock-container">
+    
     <div class="header-box">
-      <span class="header-title">SCHEMA & SPONSORER <span class="version-badge">v9.2</span></span>
-      <button class="btn" style="width:auto; margin:0; padding:4px 8px;" onclick="location.reload()">Ladda om</button>
+      <span class="header-title">
+        <span>📅 SCHEMA</span>
+        <span id="dockStatusPill" class="status-pill online">LIVE SYNKAD</span>
+      </span>
     </div>
 
-    <div class="status-box" id="dockStatusBox">Ansluten till databas...</div>
-
-    <!-- ✏️ LIVE SCHEDULE EDITOR -->
     <div class="card-section">
-      <span class="section-title">✏️ Live Schema-Redigerare</span>
+      <span class="section-title">✏️ Redigera Schema</span>
       
-      <div class="control-row">
-        <span class="control-label">VÄLJ DAG:</span>
-        <select id="editDaySelect" style="width:65%;" onchange="populateSlotsDropdown()">
-          <option value="MON">Måndag 30 nov</option>
-          <option value="TUE">Tisdag 1 dec</option>
-          <option value="WED">Onsdag 2 dec</option>
-          <option value="THU">Torsdag 3 dec</option>
-          <option value="FRI">Fredag 4 dec</option>
-          <option value="SAT">Lördag 5 dec</option>
-          <option value="SUN">Söndag 6 dec</option>
-        </select>
-      </div>
+      <div class="day-pills-row" id="dayPillsRow"></div>
+      <div class="slots-list-container" id="slotsListContainer"></div>
 
-      <div class="control-row">
-        <span class="control-label">VÄLJ PASS:</span>
-        <select id="editSlotSelect" style="width:65%;" onchange="loadSelectedSlotData()">
-          <!-- Populated dynamically -->
-        </select>
-      </div>
-
-      <div class="control-row" style="margin-top:6px;">
-        <span class="control-label">TID:</span>
-        <input type="text" id="slotTimeInput" placeholder="T.ex. 18:00 - 19:00" style="width:65%;">
-      </div>
-
-      <div class="control-row">
-        <span class="control-label">STREAMER:</span>
-        <input type="text" id="slotNameInput" placeholder="Streamernamn / Händelse" style="width:65%;">
-      </div>
-
-      <div class="control-row">
-        <span class="control-label">GIVEAWAY:</span>
-        <input type="text" id="slotGiveawayInput" placeholder="Valfri (t.ex. 🎁 GIVEAWAY: Mus)" style="width:65%;">
-      </div>
-
-      <button class="btn-primary-action" onclick="saveSlotChanges()">
-        💾 Spara & Uppdatera alla overlays
+      <button class="btn" onclick="addNewSlotToActiveDay()" style="margin-top: 2px;">
+        ➕ Lägg till nytt pass denna dag
       </button>
 
-      <div class="grid-2" style="margin-top:4px;">
-        <button class="btn" onclick="addNewSlot()">➕ Lägg till pass</button>
-        <button class="btn btn-danger" onclick="deleteSelectedSlot()">🗑️ Ta bort pass</button>
-      </div>
-    </div>
-
-    <!-- 🕹️ QUICK TOOLS & CONTROLS -->
-    <div class="card-section">
-      <span class="section-title">🕹️ Sponsor & Test-Verktyg</span>
-      <div class="grid-2">
-        <button class="btn" onclick="triggerNextSponsor()">⏩ Nästa Sponsor</button>
-        <button class="btn" onclick="simulateDaySwitch()">🔄 Simulera Dagswitch</button>
-      </div>
-      <div class="grid-2" style="margin-top:2px;">
-        <button class="btn" id="btnModeReal" onclick="setMode('real')">📅 Skarpt Läge</button>
-        <button class="btn" id="btnModeTest" onclick="setMode('test')">⚡ Testläge (Realtid)</button>
-      </div>
-      <button class="btn btn-danger" style="margin-top:4px;" onclick="resetScheduleToDefault()">
-        Återställ standardschema
+      <button class="btn-primary-action" id="btnSaveSchedule" onclick="saveActiveDaySlots()">
+        💾 Spara ändringar för <span id="saveDayNameText">MÅN</span>
       </button>
     </div>
+
   </div>
 
   <script>
@@ -664,59 +688,61 @@
     const GITHUB_REPO = "index";
     const SPONSORS_FOLDER = "sponsors";
     const SPONSOR_ROTATE_SECONDS = 15;
-    const THEME_SPOTLIGHT_SECONDS = 10; // Theme card display duration
+    const THEME_SPOTLIGHT_SECONDS = 10;
 
-    const DAY_BASE_DATES = {
-      "MON": "2026-11-30",
-      "TUE": "2026-12-01",
-      "WED": "2026-12-02",
-      "THU": "2026-12-03",
-      "FRI": "2026-12-04",
-      "SAT": "2026-12-05",
-      "SUN": "2026-12-06"
-    };
+    const KNOWN_SPONSORS = [
+      "sponsors/DisgustingFoodMuseum_Sponsor.png",
+      "sponsors/ElinPK_Sponsor.png",
+      "sponsors/EscapeHouse_Sponsor.png",
+      "sponsors/RandomNerd_Sponsor.png"
+    ];
+
+    const DAYS_CONFIG = [
+      { id: "MON", label: "MÅN", full: "MÅNDAG 30 NOV", baseDate: "2026-11-30" },
+      { id: "TUE", label: "TIS", full: "TISDAG 1 DEC",   baseDate: "2026-12-01" },
+      { id: "WED", label: "ONS", full: "ONSDAG 2 DEC",   baseDate: "2026-12-02" },
+      { id: "THU", label: "TOR", full: "TORSDAG 3 DEC",  baseDate: "2026-12-03" },
+      { id: "FRI", label: "FRE", full: "FREDAG 4 DEC",   baseDate: "2026-12-04" },
+      { id: "SAT", label: "LÖR", full: "LÖRDAG 5 DEC",   baseDate: "2026-12-05" },
+      { id: "SUN", label: "SÖN", full: "SÖNDAG 6 DEC",   baseDate: "2026-12-06" }
+    ];
+
+    const DAY_BASE_DATES = Object.fromEntries(DAYS_CONFIG.map(d => [d.id, d.baseDate]));
 
     const DEFAULT_SCHEDULE = [
-      // MÅNDAG 30 NOV
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 12:00", end: "2026-11-30 15:00", timeText: "12:00 - 15:00", name: "Invigning & Morgongänget", giveaway: "" },
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 15:00", end: "2026-11-30 18:00", timeText: "15:00 - 18:00", name: "PixelPionjärerna", giveaway: "" },
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 18:00", end: "2026-11-30 21:00", timeText: "18:00 - 21:00", name: "KaffeKungen", giveaway: "🎁 GIVEAWAY: Gaming Mus" },
       { day: "MÅNDAG 30 NOV", dayId: "MON", start: "2026-11-30 21:00", end: "2026-12-01 00:00", timeText: "21:00 - 00:00", name: "Nattstreamers", giveaway: "" },
 
-      // TISDAG 1 DEC
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 00:00", end: "2026-12-01 06:00", timeText: "00:00 - 06:00", name: "Nattpatrullen", giveaway: "" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 06:00", end: "2026-12-01 12:00", timeText: "06:00 - 12:00", name: "Morgonsolen", giveaway: "" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 12:00", end: "2026-12-01 16:00", timeText: "12:00 - 16:00", name: "ZeldaMästaren", giveaway: "" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 16:00", end: "2026-12-01 20:00", timeText: "16:00 - 20:00", name: "RetroSpelaren", giveaway: "🎁 GIVEAWAY: Headset" },
       { day: "TISDAG 1 DEC", dayId: "TUE", start: "2026-12-01 20:00", end: "2026-12-02 00:00", timeText: "20:00 - 00:00", name: "KvällsShowen", giveaway: "" },
 
-      // ONSDAG 2 DEC
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 00:00", end: "2026-12-02 08:00", timeText: "00:00 - 08:00", name: "NattUggan", giveaway: "" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 08:00", end: "2026-12-02 14:00", timeText: "08:00 - 14:00", name: "Förmiddagsmys", giveaway: "" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 14:00", end: "2026-12-02 18:00", timeText: "14:00 - 18:00", name: "Speedrunners", giveaway: "" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 18:00", end: "2026-12-02 22:00", timeText: "18:00 - 22:00", name: "Svenska Eliten", giveaway: "🎁 GIVEAWAY: Tangentbord" },
       { day: "ONSDAG 2 DEC", dayId: "WED", start: "2026-12-02 22:00", end: "2026-12-03 00:00", timeText: "22:00 - 00:00", name: "Nattchatt & Musik", giveaway: "" },
 
-      // TORSDAG 3 DEC
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 00:00", end: "2026-12-03 08:00", timeText: "00:00 - 08:00", name: "Nattladdningen", giveaway: "" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 08:00", end: "2026-12-03 14:00", timeText: "08:00 - 14:00", name: "MH-Special Live", giveaway: "" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 14:00", end: "2026-12-03 19:00", timeText: "14:00 - 19:00", name: "Gäster & Turnering", giveaway: "" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 19:00", end: "2026-12-03 23:00", timeText: "19:00 - 23:00", name: "Stora Samlingen", giveaway: "🎁 MEGA GIVEAWAY!" },
       { day: "TORSDAG 3 DEC", dayId: "THU", start: "2026-12-03 23:00", end: "2026-12-04 00:00", timeText: "23:00 - 00:00", name: "Late Night Gaming", giveaway: "" },
 
-      // FREDAG 4 DEC
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 00:00", end: "2026-12-04 09:00", timeText: "00:00 - 09:00", name: "Fredagsnatt", giveaway: "" },
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 09:00", end: "2026-12-04 15:00", timeText: "09:00 - 15:00", name: "Helgstarten", giveaway: "" },
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 15:00", end: "2026-12-04 20:00", timeText: "15:00 - 20:00", name: "Fredagsmys & Esport", giveaway: "" },
       { day: "FREDAG 4 DEC", dayId: "FRI", start: "2026-12-04 20:00", end: "2026-12-05 00:00", timeText: "20:00 - 00:00", name: "FredagsGalan", giveaway: "🎁 GIVEAWAY: Konsol" },
 
-      // LÖRDAG 5 DEC
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 00:00", end: "2026-12-05 10:00", timeText: "00:00 - 10:00", name: "Lördagsnatt", giveaway: "" },
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 10:00", end: "2026-12-05 16:00", timeText: "10:00 - 16:00", name: "LördagsSatsningen", giveaway: "" },
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 16:00", end: "2026-12-05 21:00", timeText: "16:00 - 21:00", name: "Kändisduellen", giveaway: "🎁 VIP GIVEAWAY!" },
       { day: "LÖRDAG 5 DEC", dayId: "SAT", start: "2026-12-05 21:00", end: "2026-12-06 00:00", timeText: "21:00 - 00:00", name: "Lördagsparty", giveaway: "" },
 
-      // SÖNDAG 6 DEC
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 00:00", end: "2026-12-06 10:00", timeText: "00:00 - 10:00", name: "Sista Natten", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "10:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 15:00", end: "2026-12-06 20:00", timeText: "15:00 - 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
@@ -724,7 +750,7 @@
     ];
 
     let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-    let sponsorFileList = [];
+    let sponsorFileList = [...KNOWN_SPONSORS];
     let currentSponsorIndex = 0;
     let scheduleMode = 'real';
 
@@ -735,13 +761,21 @@
 
     let isShowingTheme = false;
     let rotatorTimer = null;
+    let activeEditingDayId = "MON";
 
-    // ⚡ 1. Auto-load cached sponsors from previous session instantly
+    function isMhLogo(filename) {
+      if (!filename) return false;
+      const lower = filename.toLowerCase();
+      return lower.includes('musikhjalpen') || lower.includes('musikhjälpen');
+    }
+
     try {
       const cached = localStorage.getItem(STORAGE_KEY_SPONSORS);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) sponsorFileList = parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          sponsorFileList = parsed.filter(url => !isMhLogo(url));
+        }
       }
     } catch(e) {}
 
@@ -765,14 +799,18 @@
     } catch(e) {}
 
     function updateDockStatus(msg, isError = false) {
-      const statusBox = document.getElementById('dockStatusBox');
-      if (statusBox) {
-        statusBox.innerText = msg;
-        statusBox.style.color = isError ? "#ff453a" : "#00ff88";
+      const pill = document.getElementById('dockStatusPill');
+      if (pill) {
+        if (isError) {
+          pill.innerText = `⚠️ ${msg}`;
+          pill.className = "status-pill error";
+        } else {
+          pill.innerText = "LIVE SYNKAD";
+          pill.className = "status-pill online";
+        }
       }
     }
 
-    // ⚡ REAL-TIME DATABASE LISTENER
     dbScheduleRef.on('value', (snap) => {
       const data = snap.val();
       if (!data) return;
@@ -781,11 +819,11 @@
         currentSchedule = data.schedule;
         try { localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule)); } catch(e) {}
         renderSchedule();
-        if (isPanel) populateSlotsDropdown();
+        if (isPanel) renderVisualScheduleEditor();
       }
 
       if (Array.isArray(data.autoSponsors) && data.autoSponsors.length > 0) {
-        sponsorFileList = data.autoSponsors;
+        sponsorFileList = data.autoSponsors.filter(url => !isMhLogo(url));
         try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsorFileList)); } catch(e) {}
         updateSponsorLogo();
       }
@@ -796,7 +834,7 @@
         updateSponsorLogo();
       }
 
-      updateDockStatus("Live Ansluten (Synkad)");
+      updateDockStatus("Synkad");
     });
 
     function parseDate(dateStr) {
@@ -806,9 +844,12 @@
 
     function parseTimeRangeToDates(dayId, timeRangeStr) {
       const baseDateStr = DAY_BASE_DATES[dayId] || "2026-11-30";
-      const clean = timeRangeStr.replace(/\./g, ':').trim();
-      const match = clean.match(/([0-9]{1,2}:[0-9]{2})\s*-\s*([0-9]{1,2}:[0-9]{2})/);
-      if (!match) return null;
+      const clean = (timeRangeStr || '').replace(/\./g, ':').trim();
+      const match = clean.match(/([0-9]{1,2}:[0-9]{2})\s*[-–—]\s*([0-9]{1,2}:[0-9]{2})/);
+      
+      if (!match) {
+        return null;
+      }
 
       const startClock = match[1].padStart(5, '0');
       const endClock = match[2].padStart(5, '0');
@@ -818,10 +859,13 @@
       const isMidnight = endClock === "00:00" || endClock === "24:00";
 
       if (isMidnight) {
-        const baseD = new Date(baseDateStr + "T00:00:00");
+        const parts = baseDateStr.split('-').map(Number);
+        const baseD = new Date(parts[0], parts[1] - 1, parts[2]);
         baseD.setDate(baseD.getDate() + 1);
-        const nextDayStr = baseD.toISOString().split('T')[0];
-        endISO = `${nextDayStr} 00:00`;
+        const nextY = baseD.getFullYear();
+        const nextM = String(baseD.getMonth() + 1).padStart(2, '0');
+        const nextD = String(baseD.getDate()).padStart(2, '0');
+        endISO = `${nextY}-${nextM}-${nextD} 00:00`;
       } else {
         endISO = `${baseDateStr} ${endClock}`;
       }
@@ -851,6 +895,7 @@
       if (scheduleMode === 'test') {
         return generateTestSchedule();
       }
+      if (!currentSchedule || currentSchedule.length === 0) return [];
 
       const now = new Date();
       const firstEvStart = parseDate(currentSchedule[0].start);
@@ -878,9 +923,6 @@
       });
     }
 
-    // ==========================================
-    // 🎨 DOM UPDATE & SMOOTH FADE TRANSITION
-    // ==========================================
     function updateScheduleDOM(activeDayId, schedule, now, isReset = false) {
       const eventsRowEl = document.getElementById('scheduleEventsRow');
       const fillLineEl = document.getElementById('timelineProgressFill');
@@ -930,7 +972,7 @@
       }
 
       eventsRowEl.innerHTML = dayEvents.map((ev, index) => {
-        const isLiveNow = now >= ev.start && now < ev.end;
+        const isLiveNow = (index === activeSlotIndex);
         const hasGiveaway = Boolean(ev.giveaway && ev.giveaway.trim());
         const primaryText = escapeHTML(hasGiveaway ? ev.giveaway : ev.name);
 
@@ -968,6 +1010,7 @@
       if (isDayTransitioning) return;
 
       const schedule = getActiveSchedule();
+      if (schedule.length === 0) return;
       const now = new Date();
 
       if (isSimulationLocked && currentDisplayedDayId) {
@@ -992,198 +1035,194 @@
       updateScheduleDOM(activeDayId, schedule, now, false);
     }
 
-    // ==========================================
-    // 🎛️ DOCK: LIVE SCHEDULE EDITOR
-    // ==========================================
-    function populateSlotsDropdown() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      if (!daySelect || !slotSelect) return;
+    function renderVisualScheduleEditor() {
+      const pillsContainer = document.getElementById('dayPillsRow');
+      const slotsContainer = document.getElementById('slotsListContainer');
+      const saveLabel = document.getElementById('saveDayNameText');
+      if (!pillsContainer || !slotsContainer) return;
 
-      const selectedDayId = daySelect.value;
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+      const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId) || DAYS_CONFIG[0];
+      if (saveLabel) saveLabel.innerText = activeDayCfg.label;
 
-      slotSelect.innerHTML = daySlots.map((slot, idx) => {
-        const text = `${slot.timeText}: ${slot.name}`;
-        return `<option value="${idx}">${escapeHTML(text)}</option>`;
-      }).join('');
+      pillsContainer.innerHTML = DAYS_CONFIG.map(d => `
+        <button class="day-pill-btn ${d.id === activeEditingDayId ? 'active' : ''}" onclick="switchActiveEditingDay('${d.id}')">
+          ${d.label}
+        </button>
+      `).join('');
 
-      loadSelectedSlotData();
-    }
+      const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
 
-    function loadSelectedSlotData() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      if (!daySelect || !slotSelect) return;
-
-      const selectedDayId = daySelect.value;
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
-      const slotIndex = parseInt(slotSelect.value, 10);
-      const slot = daySlots[slotIndex];
-
-      if (slot) {
-        document.getElementById('slotTimeInput').value = slot.timeText || '';
-        document.getElementById('slotNameInput').value = slot.name || '';
-        document.getElementById('slotGiveawayInput').value = slot.giveaway || '';
-      }
-    }
-
-    function saveSlotChanges() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      const timeIn = document.getElementById('slotTimeInput').value.trim();
-      const nameIn = document.getElementById('slotNameInput').value.trim();
-      const giveawayIn = document.getElementById('slotGiveawayInput').value.trim();
-
-      if (!nameIn) return updateDockStatus("⚠️ Ange ett namn på streamern!", true);
-
-      const selectedDayId = daySelect.value;
-      const parsedTime = parseTimeRangeToDates(selectedDayId, timeIn);
-
-      if (!parsedTime) {
-        return updateDockStatus("⚠️ Ogiltigt tidsformat! (t.ex. 18:00 - 19:00)", true);
+      if (daySlots.length === 0) {
+        slotsContainer.innerHTML = `
+          <div style="padding:12px; text-align:center; color:var(--text-dim); font-size:11px;">
+            Inga pass för ${activeDayCfg.full}. Klicka nedan för att lägga till.
+          </div>
+        `;
+        return;
       }
 
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
-      const slotIndex = parseInt(slotSelect.value, 10);
-      const targetSlot = daySlots[slotIndex];
+      slotsContainer.innerHTML = daySlots.map((slot, idx) => `
+        <div class="slot-editor-card" data-idx="${idx}">
+          <div class="slot-card-top-row">
+            <span class="slot-num-badge">PASS ${idx + 1}</span>
+            <input type="text" class="slot-time-input" placeholder="18:00 - 21:00" value="${escapeHTML(slot.timeText || '')}">
+            ${daySlots.length > 1 ? `<button class="btn-delete-slot" title="Ta bort pass" onclick="deleteSlotByIndex(${idx})">🗑️</button>` : ''}
+          </div>
+          <input type="text" class="slot-name-input" placeholder="Streamernamn / Händelse" value="${escapeHTML(slot.name || '')}">
+          <input type="text" class="slot-giveaway-input" placeholder="🎁 Giveaway (valfri)" value="${escapeHTML(slot.giveaway || '')}">
+        </div>
+      `).join('');
+    }
 
-      if (targetSlot) {
-        targetSlot.timeText = parsedTime.cleanTimeText;
-        targetSlot.start = parsedTime.start;
-        targetSlot.end = parsedTime.end;
-        targetSlot.name = nameIn;
-        targetSlot.giveaway = giveawayIn;
+    function switchActiveEditingDay(dayId) {
+      activeEditingDayId = dayId;
+      renderVisualScheduleEditor();
+    }
 
-        let pruned = false;
-        if (parsedTime.isMidnight) {
-          let foundTarget = false;
-          currentSchedule = currentSchedule.filter(ev => {
-            if (ev.dayId !== selectedDayId) return true;
-            if (ev === targetSlot) {
-              foundTarget = true;
-              return true;
-            }
-            if (foundTarget) {
-              pruned = true;
-              return false;
-            }
-            return true;
-          });
+    function saveActiveDaySlots() {
+      const slotsContainer = document.getElementById('slotsListContainer');
+      if (!slotsContainer) return;
+
+      const cards = Array.from(slotsContainer.querySelectorAll('.slot-editor-card'));
+      const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId);
+      const updatedDaySlots = [];
+
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const timeVal = card.querySelector('.slot-time-input').value.trim();
+        const rawNameVal = card.querySelector('.slot-name-input').value.trim();
+        const giveawayVal = card.querySelector('.slot-giveaway-input').value.trim();
+
+        const finalName = rawNameVal || (giveawayVal ? giveawayVal : `Pass ${i + 1}`);
+        const parsedTime = parseTimeRangeToDates(activeEditingDayId, timeVal);
+
+        if (!parsedTime) {
+          return updateDockStatus(`Pass ${i + 1}: Ogiltig tid (t.ex. 18:00 - 21:00)`, true);
         }
 
-        syncScheduleToFirebase(pruned ? "✅ Passet sparades & efterföljande pass togs bort!" : "✅ Passet uppdaterades live!");
+        updatedDaySlots.push({
+          day: activeDayCfg.full,
+          dayId: activeEditingDayId,
+          start: parsedTime.start,
+          end: parsedTime.end,
+          timeText: parsedTime.cleanTimeText,
+          name: finalName,
+          giveaway: giveawayVal
+        });
+      }
+
+      const newSchedule = [];
+      let replaced = false;
+
+      for (let ev of currentSchedule) {
+        if (ev.dayId === activeEditingDayId) {
+          if (!replaced) {
+            newSchedule.push(...updatedDaySlots);
+            replaced = true;
+          }
+        } else {
+          newSchedule.push(ev);
+        }
+      }
+
+      if (!replaced) newSchedule.push(...updatedDaySlots);
+      currentSchedule = newSchedule;
+
+      try {
+        localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule));
+      } catch(e) {}
+
+      renderVisualScheduleEditor();
+      renderSchedule();
+      syncScheduleToFirebase(`✅ ${activeDayCfg.label} sparades!`);
+
+      const saveBtn = document.getElementById('btnSaveSchedule');
+      if (saveBtn) {
+        const oldText = saveBtn.innerHTML;
+        saveBtn.innerHTML = `✓ Sparat!`;
+        saveBtn.style.background = "#c2f524";
+        setTimeout(() => {
+          saveBtn.innerHTML = oldText;
+          saveBtn.style.background = "var(--primary-color)";
+        }, 1200);
       }
     }
 
-    function addNewSlot() {
-      const daySelect = document.getElementById('editDaySelect');
-      const selectedDayId = daySelect.value;
-      const dayName = daySelect.options[daySelect.selectedIndex].text;
-      const baseDateStr = DAY_BASE_DATES[selectedDayId] || "2026-11-30";
+    function addNewSlotToActiveDay() {
+      const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId);
+      const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
+
+      let newStartTime = "20:00";
+      let newEndTime = "22:00";
+
+      if (daySlots.length > 0) {
+        const lastSlot = daySlots[daySlots.length - 1];
+        const match = (lastSlot.timeText || '').match(/-\s*([0-9]{1,2}:[0-9]{2})/);
+        if (match) {
+          newStartTime = match[1];
+          const [h, m] = newStartTime.split(':').map(Number);
+          const nextH = (h + 2) % 24;
+          newEndTime = `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+
+      const timeText = `${newStartTime} - ${newEndTime}`;
+      const parsed = parseTimeRangeToDates(activeEditingDayId, timeText);
 
       const newSlot = {
-        day: dayName.toUpperCase(),
-        dayId: selectedDayId,
-        start: `${baseDateStr} 20:00`,
-        end: `${baseDateStr} 22:00`,
-        timeText: "20:00 - 22:00",
+        day: activeDayCfg.full,
+        dayId: activeEditingDayId,
+        start: parsed ? parsed.start : `${activeDayCfg.baseDate} 20:00`,
+        end: parsed ? parsed.end : `${activeDayCfg.baseDate} 22:00`,
+        timeText: timeText,
         name: "Ny Streamer",
         giveaway: ""
       };
 
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
       if (daySlots.length > 0) {
-        const lastSlot = daySlots[daySlots.length - 1];
-        const lastIdx = currentSchedule.indexOf(lastSlot);
+        const lastIdx = currentSchedule.lastIndexOf(daySlots[daySlots.length - 1]);
         currentSchedule.splice(lastIdx + 1, 0, newSlot);
       } else {
         currentSchedule.push(newSlot);
       }
 
-      syncScheduleToFirebase("✅ Nytt pass lades till!");
+      renderVisualScheduleEditor();
+      syncScheduleToFirebase(`➕ Nytt pass: ${activeDayCfg.label}`);
     }
 
-    function deleteSelectedSlot() {
-      const daySelect = document.getElementById('editDaySelect');
-      const slotSelect = document.getElementById('editSlotSelect');
-      const selectedDayId = daySelect.value;
-      const daySlots = currentSchedule.filter(ev => ev.dayId === selectedDayId);
+    function deleteSlotByIndex(daySlotIdx) {
+      const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
+      if (daySlots.length <= 1) {
+        return updateDockStatus("Minst ett pass krävs!", true);
+      }
 
-      if (daySlots.length <= 1) return updateDockStatus("⚠️ En dag måste ha minst ett pass!", true);
-
-      const slotIndex = parseInt(slotSelect.value, 10);
-      const targetSlot = daySlots[slotIndex];
-
-      const globalIdx = currentSchedule.indexOf(targetSlot);
+      const target = daySlots[daySlotIdx];
+      const globalIdx = currentSchedule.indexOf(target);
       if (globalIdx !== -1) {
         currentSchedule.splice(globalIdx, 1);
-        syncScheduleToFirebase("🗑️ Passet togs bort!");
+        renderVisualScheduleEditor();
+        syncScheduleToFirebase(`🗑️ Pass togs bort!`);
       }
     }
 
     function syncScheduleToFirebase(feedbackMsg) {
-      updateDockStatus("Synkar till Firebase...");
+      try {
+        localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule));
+      } catch(e) {}
+
+      updateDockStatus("Synkar...");
       dbScheduleRef.update({
         schedule: currentSchedule,
         secret: WRITE_SECRET,
         timestamp: Date.now()
       }).then(() => {
         renderSchedule();
-        populateSlotsDropdown();
         if (feedbackMsg) updateDockStatus(feedbackMsg);
       }).catch(err => {
-        updateDockStatus("❌ Fel vid sparande: " + err.message, true);
+        updateDockStatus("Fel vid sparande", true);
       });
     }
 
-    function resetScheduleToDefault() {
-      currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-      syncScheduleToFirebase("🔄 Schemat återställdes till standard!");
-    }
-
-    function simulateDaySwitch() {
-      if (isDayTransitioning) return;
-      const schedule = getActiveSchedule();
-      const dayIds = [...new Set(schedule.map(ev => ev.dayId))];
-
-      let currentIndex = dayIds.indexOf(currentDisplayedDayId);
-      let nextIndex = (currentIndex + 1) % dayIds.length;
-      let targetDayId = dayIds[nextIndex];
-
-      isSimulationLocked = true;
-      if (simulationLockTimer) clearTimeout(simulationLockTimer);
-      simulationLockTimer = setTimeout(() => { isSimulationLocked = false; }, 12000);
-
-      triggerDayTransition(targetDayId, schedule, new Date());
-      updateDockStatus(`Visar ${targetDayId} (Simulering 12s)`);
-    }
-
-    function setMode(mode) {
-      scheduleMode = mode;
-      isSimulationLocked = false;
-      if (simulationLockTimer) clearTimeout(simulationLockTimer);
-      currentDisplayedDayId = null;
-      renderSchedule();
-      updateDockStatus(mode === 'real' ? "📅 Skarpt läge aktivt" : "⚡ Testläge aktivt");
-    }
-
-    function triggerNextSponsor() {
-      if (sponsorFileList.length === 0) return;
-      currentSponsorIndex = (currentSponsorIndex + 1) % sponsorFileList.length;
-      dbScheduleRef.update({
-        sponsorIndex: currentSponsorIndex,
-        secret: WRITE_SECRET,
-        timestamp: Date.now()
-      });
-      showSponsorCard();
-      updateSponsorLogo();
-      updateDockStatus(`Sponsor: ${currentSponsorIndex + 1}/${sponsorFileList.length}`);
-    }
-
-    // ==========================================
-    // 🔄 3D CARD TRANSITION CONTROLLER
-    // ==========================================
     function showThemeCard() {
       isShowingTheme = true;
       const sponsorCard = document.getElementById('sponsorWidget');
@@ -1216,58 +1255,65 @@
       if (isPanel) return;
 
       if (isShowingTheme) {
-        // Theme spotlight finished -> Flip back to sponsors
+        currentSponsorIndex = 0;
+        updateSponsorLogo();
         showSponsorCard();
         rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
       } else {
         if (sponsorFileList.length > 0) {
           const nextIndex = currentSponsorIndex + 1;
-          
-          // If all sponsor images have been shown once
-          if (nextIndex >= sponsorFileList.length) {
-            currentSponsorIndex = 0; // Reset index for next cycle
-            showThemeCard();         // 3D Flip to Musikhjälpen Theme Card
-            rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
-          } else {
+
+          if (nextIndex < sponsorFileList.length) {
             currentSponsorIndex = nextIndex;
             updateSponsorLogo();
             rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
+          } else {
+            showThemeCard();
+            rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
           }
         } else {
-          // If no sponsors exist yet, keep spotlighting theme card
           showThemeCard();
           rotatorTimer = setTimeout(runRotatorCycle, THEME_SPOTLIGHT_SECONDS * 1000);
         }
       }
     }
 
-    // ==========================================
-    // 🖼️ AUTOMATIC GITHUB SPONSOR ENGINE
-    // ==========================================
     async function loadSponsorsAutomatically() {
       try {
         const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SPONSORS_FOLDER}?_t=${Date.now()}`);
         if (res.ok) {
           const files = await res.json();
-          const apiSponsors = files
-            .filter(f => f.name && f.name.match(/\.(png|jpe?g|svg|webp)$/i))
-            .map(f => f.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
+          if (Array.isArray(files)) {
+            const sponsorFiles = files.filter(f => {
+              if (!f.name || !f.name.match(/\.(png|jpe?g|svg|webp)$/i)) return false;
+              return !isMhLogo(f.name);
+            });
 
-          if (apiSponsors.length > 0) {
-            sponsorFileList = apiSponsors;
-            try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch(e) {}
-            
-            dbScheduleRef.update({
-              autoSponsors: apiSponsors,
-              secret: WRITE_SECRET
-            }).catch(() => {});
+            const mhLogoFile = files.find(f => f.name && isMhLogo(f.name));
+            if (mhLogoFile) {
+              const mhImg = document.getElementById('themeMhLogo');
+              if (mhImg) {
+                mhImg.src = mhLogoFile.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(mhLogoFile.name)}`;
+              }
+            }
 
-            updateSponsorLogo();
+            const apiSponsors = sponsorFiles.map(f => f.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
+
+            if (apiSponsors.length > 0) {
+              sponsorFileList = apiSponsors;
+              try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch(e) {}
+
+              dbScheduleRef.update({
+                autoSponsors: apiSponsors,
+                secret: WRITE_SECRET
+              }).catch(() => {});
+
+              updateSponsorLogo();
+            }
           }
         }
       } catch(e) {}
 
-      // Start the rotation cycle
       if (rotatorTimer) clearTimeout(rotatorTimer);
       rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
     }
@@ -1283,6 +1329,9 @@
       setTimeout(() => {
         img.src = targetSrc;
         img.onload = () => { img.style.opacity = '1'; };
+        if (img.complete && img.naturalWidth > 0) {
+          img.style.opacity = '1';
+        }
       }, 250);
     }
 
@@ -1296,13 +1345,12 @@
       updateSponsorLogo();
     }
 
-    // INIT
     loadSponsorsAutomatically();
     renderSchedule();
     setInterval(renderSchedule, 1000);
 
     if (isPanel) {
-      populateSlotsDropdown();
+      renderVisualScheduleEditor();
     }
   </script>
 </body>
