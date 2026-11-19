@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Musikhjälpen Master Hub</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Firebase Realtime Engine -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <style>
     * { box-sizing: border-box; }
 
@@ -37,11 +42,12 @@
     }
 
     /* Layer Depth Order */
-    #layerAlerts   { z-index: 5; }
-    #layerSchedule { z-index: 10; }
-    #layerGoals    { z-index: 15; }
-    #layerBossa    { z-index: 20; }
-    #layerGiveaway { z-index: 30; }
+    #layerAlerts    { z-index: 5; }
+    #layerSchedule  { z-index: 10; }
+    #layerGoals     { z-index: 15; }
+    #layerBossa     { z-index: 20; }
+    #layerUtmaning  { z-index: 25; }
+    #layerGiveaway  { z-index: 30; }
 
     /* ========================================================
        🎛️ 2. OBS DOCK: ZERO DEAD SPACE FLEX ARCHITECTURE
@@ -98,7 +104,112 @@
       border-radius: 3px;
     }
 
-    /* 🎯 BÖSSA: Adjusted to 355px so the Följare button fits with NO scrollbar */
+    /* ⚔️ UTMANING QUICK CONTROLLER */
+    .dock-utmaning-box {
+      background: #141418;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .utmaning-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .utmaning-header-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #a1a1aa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-status {
+      font-size: 9px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      background: #27272a;
+      color: #71717a;
+    }
+
+    .badge-status.active {
+      background: #ff334b;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255, 51, 75, 0.6);
+      animation: pulseBadge 1.2s infinite;
+    }
+
+    @keyframes pulseBadge {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .utmaning-input-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .utmaning-input {
+      flex: 1;
+      background: #0b0b0d;
+      border: 1px solid #27272a;
+      border-radius: 4px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 11px;
+      padding: 7px 10px;
+      outline: none;
+    }
+
+    .utmaning-input:focus {
+      border-color: #ace600;
+    }
+
+    .btn-utmaning {
+      background: #ace600;
+      color: #0b0b0d;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-utmaning:hover {
+      background: #c3f524;
+      transform: translateY(-1px);
+    }
+
+    .btn-utmaning.active {
+      background: #ff334b !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 12px rgba(255, 51, 75, 0.6);
+      animation: pulseBtn 1.2s infinite alternate;
+    }
+
+    @keyframes pulseBtn {
+      0% { transform: scale(1); }
+      100% { transform: scale(0.98); }
+    }
+
+    /* 🎯 BÖSSA: Fits up to Följare with no scrollbar */
     #wrapperBossa {
       flex: 0 0 355px;
       height: 355px;
@@ -143,6 +254,7 @@
     <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGoals" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
+    <iframe id="layerUtmaning" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGiveaway" class="overlay-frame" allow="autoplay"></iframe>
   </div>
 
@@ -156,6 +268,21 @@
       <div class="dock-master-title">
         <span>KONTROLLPANEL</span>
         <span class="badge-hub">MASTER HUB</span>
+      </div>
+    </div>
+
+    <!-- ⚔️ UTMANING QUICK CONTROLLER -->
+    <div class="dock-utmaning-box">
+      <div class="utmaning-top-row">
+        <span class="utmaning-header-label">⚔️ UTMANING</span>
+        <span id="utmaningStatusBadge" class="badge-status">AV</span>
+      </div>
+      <div class="utmaning-input-row">
+        <input type="text" id="utmaningCustomText" class="utmaning-input" placeholder="Skriv utmaning (t.ex. Gör 20 squats)..." />
+        <button id="btnToggleUtmaning" class="btn-utmaning" onclick="toggleUtmaning()">
+          <span id="btnUtmaningIcon">⚔️</span>
+          <span id="btnUtmaningText">STARTA UTMANING</span>
+        </button>
       </div>
     </div>
 
@@ -175,6 +302,268 @@
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
 
+    // ========================================================
+    // 🔊 CENTRAL AUDIO ENGINE (ALL SOUNDS PLAY HERE IN OVERLAY)
+    // ========================================================
+    const SOUNDS_FOLDER = "sounds";
+
+    // 10 Random Donation Sounds
+    const CUSTOM_SOUND_FILES = [
+      "0.mp3", "1.mp3", "2.mp3", "3.mp3", "4.mp3",
+      "5.mp3", "6.mp3", "7.mp3", "8.mp3", "9.mp3"
+    ];
+
+    // Local Alert Sounds
+    const SOUND_RAID = `${SOUNDS_FOLDER}/raid_alert.mp3`;
+    const SOUND_SUB_BITS_FOLLOW = `${SOUNDS_FOLDER}/ping_alert.mp3`;
+    const SOUND_UTMANING_CUSTOM = `${SOUNDS_FOLDER}/mrb_hello_utmaning.mp3`;
+    const SOUND_UTMANING_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
+
+    // Grouped Soundboard Sounds (Randomized per click)
+    const SOUNDBOARD_GROUPS = {
+      knocking: [
+        `${SOUNDS_FOLDER}/door_knocking_soundboard.mp3`,
+        `${SOUNDS_FOLDER}/door_knocking2_soundboard.mp3`,
+        `${SOUNDS_FOLDER}/window_knocking_soundboard.mp3`
+      ],
+      scary: [
+        `${SOUNDS_FOLDER}/scary_sound1_soundboard.mp3`,
+        `${SOUNDS_FOLDER}/scary_sound_soundboard2.mp3`
+      ],
+      discord: [
+        `${SOUNDS_FOLDER}/discord_notification_soundboard.mp3`
+      ]
+    };
+
+    // Dedicated Soundboard Sounds (100% Local Files)
+    const SOUNDBOARD_URLS = {
+      homer_bart: `${SOUNDS_FOLDER}/homer_and_bart_soundboard.mp3`,
+      applause: `${SOUNDS_FOLDER}/applause_soundboard.mp3`,
+      mrb_magic: `${SOUNDS_FOLDER}/mrb_magic_soundboard.mp3`,
+      mrb_ohno: `${SOUNDS_FOLDER}/mrb_ohno_soundboard.mp3`
+    };
+
+    const soundFileList = CUSTOM_SOUND_FILES.map(f => `${SOUNDS_FOLDER}/${f}`);
+    let soundPool = [];
+    let lastPlayedSound = null;
+    let masterSoundboardVolume = 0.8;
+
+    function getNextDonationSound() {
+      if (!soundFileList || soundFileList.length === 0) return '';
+      if (soundFileList.length === 1) return soundFileList[0];
+
+      if (soundPool.length === 0) {
+        soundPool = [...soundFileList];
+        for (let i = soundPool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [soundPool[i], soundPool[j]] = [soundPool[j], soundPool[i]];
+        }
+        if (soundPool[soundPool.length - 1] === lastPlayedSound && soundPool.length > 1) {
+          [soundPool[soundPool.length - 1], soundPool[0]] = [soundPool[0], soundPool[soundPool.length - 1]];
+        }
+      }
+
+      const next = soundPool.pop();
+      lastPlayedSound = next;
+      return next;
+    }
+
+    if (!isPanel) {
+      const allPreloadFiles = [
+        ...soundFileList,
+        SOUND_RAID,
+        SOUND_SUB_BITS_FOLLOW,
+        SOUND_UTMANING_CUSTOM,
+        SOUNDBOARD_URLS.homer_bart,
+        SOUNDBOARD_URLS.applause,
+        SOUNDBOARD_URLS.mrb_magic,
+        SOUNDBOARD_URLS.mrb_ohno,
+        ...SOUNDBOARD_GROUPS.knocking,
+        ...SOUNDBOARD_GROUPS.scary,
+        ...SOUNDBOARD_GROUPS.discord
+      ];
+
+      allPreloadFiles.forEach(src => {
+        const a = new Audio();
+        a.preload = 'auto';
+        a.src = src;
+      });
+    }
+
+    // Central Sound Player Function
+    function playMasterSound(type, soundKey = '', volume = null) {
+      if (isPanel) return;
+
+      let soundUrl = '';
+      let vol = 0.8;
+
+      if (type === 'donation') {
+        soundUrl = getNextDonationSound();
+        vol = 0.8;
+      } else if (type === 'raid') {
+        soundUrl = SOUND_RAID;
+        vol = 0.85;
+      } else if (type === 'sub' || type === 'bits' || type === 'follow') {
+        soundUrl = SOUND_SUB_BITS_FOLLOW;
+        vol = 0.65;
+      } else if (type === 'utmaning') {
+        soundUrl = SOUND_UTMANING_CUSTOM;
+        vol = 0.95;
+      } else if (type === 'soundboard') {
+        if (typeof volume === 'number' && !isNaN(volume)) {
+          vol = Math.max(0, Math.min(1, volume));
+        } else {
+          vol = masterSoundboardVolume;
+        }
+
+        if (SOUNDBOARD_GROUPS[soundKey]) {
+          const list = SOUNDBOARD_GROUPS[soundKey];
+          soundUrl = list[Math.floor(Math.random() * list.length)];
+        } else {
+          soundUrl = SOUNDBOARD_URLS[soundKey] || '';
+        }
+      }
+
+      if (!soundUrl) return;
+
+      const audio = new Audio(soundUrl);
+      audio.volume = Math.max(0, Math.min(1, vol));
+      audio.play().catch(() => {
+        if (type === 'utmaning' && SOUND_UTMANING_FALLBACK) {
+          const fb = new Audio(SOUND_UTMANING_FALLBACK);
+          fb.volume = Math.max(0, Math.min(1, vol));
+          fb.play().catch(() => {});
+        }
+      });
+    }
+
+    // De-duplication handler
+    let lastHandledTriggerId = "";
+    function handleSoundRequest(soundType, soundKey, volume, triggerId) {
+      if (triggerId && triggerId === lastHandledTriggerId) return;
+      if (triggerId) lastHandledTriggerId = triggerId;
+
+      playMasterSound(soundType, soundKey, volume);
+    }
+
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'PLAY_SOUND') {
+        handleSoundRequest(
+          event.data.soundType, 
+          event.data.soundKey, 
+          event.data.volume, 
+          event.data.triggerId
+        );
+      }
+    });
+
+    try {
+      const soundBroadcast = new BroadcastChannel('mh_sound_bus');
+      soundBroadcast.onmessage = (event) => {
+        if (event.data && event.data.type === 'PLAY_SOUND') {
+          handleSoundRequest(
+            event.data.soundType, 
+            event.data.soundKey, 
+            event.data.volume, 
+            event.data.triggerId
+          );
+        }
+      };
+    } catch(e) {}
+
+    // ========================================================
+    // 📡 FIREBASE SETUP & REALTIME SYNC
+    // ========================================================
+    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    if (!firebase.apps.length) {
+      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+    }
+    const db = firebase.database();
+    const utmaningDbRef = db.ref('utmaning');
+    let utmaningStateActive = false;
+
+    // Listen to real-time volume changes from Mod Panel slider
+    db.ref('soundboard/volume').on('value', (snap) => {
+      const v = snap.val();
+      if (typeof v === 'number' && !isNaN(v)) {
+        masterSoundboardVolume = Math.max(0, Math.min(1, v));
+      }
+    });
+
+    // Listen to Soundboard triggers via Firebase
+    const initTimestamp = Date.now();
+    if (!isPanel) {
+      db.ref('soundboard/trigger').on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val && val.sound && val.timestamp > initTimestamp) {
+          handleSoundRequest(
+            'soundboard', 
+            val.sound, 
+            val.volume, 
+            val.triggerId || ('fb-' + val.timestamp)
+          );
+        }
+      });
+    }
+
+    function updateUtmaningUI(isActive) {
+      utmaningStateActive = isActive;
+      const btn = document.getElementById('btnToggleUtmaning');
+      const badge = document.getElementById('utmaningStatusBadge');
+      const icon = document.getElementById('btnUtmaningIcon');
+      const text = document.getElementById('btnUtmaningText');
+
+      if (!btn) return;
+
+      if (isActive) {
+        btn.classList.add('active');
+        badge.classList.add('active');
+        badge.textContent = "AKTIV";
+        icon.textContent = "🛑";
+        text.textContent = "AVSLUTA UTMANING";
+      } else {
+        btn.classList.remove('active');
+        badge.classList.remove('active');
+        badge.textContent = "AV";
+        icon.textContent = "⚔️";
+        text.textContent = "STARTA UTMANING";
+      }
+    }
+
+    function toggleUtmaning() {
+      const inputEl = document.getElementById('utmaningCustomText');
+      const customText = inputEl ? inputEl.value.trim() : "";
+      const nextActiveState = !utmaningStateActive;
+
+      const payload = {
+        active: nextActiveState,
+        text: customText,
+        timestamp: Date.now()
+      };
+
+      utmaningDbRef.set(payload);
+
+      try {
+        new BroadcastChannel('mh_utmaning_channel').postMessage(payload);
+      } catch(e) {}
+
+      updateUtmaningUI(nextActiveState);
+    }
+
+    utmaningDbRef.on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val) {
+        updateUtmaningUI(Boolean(val.active));
+        const inputEl = document.getElementById('utmaningCustomText');
+        if (inputEl && val.text && !utmaningStateActive) {
+          inputEl.value = val.text;
+        }
+      }
+    });
+
+    // ========================================================
+    // 🚀 ROUTING: DOCK CONTROLLER VS OVERLAY VIEW
+    // ========================================================
     if (isPanel) {
       document.body.classList.add('mode-panel');
       document.getElementById('panelContainer').style.display = 'flex';
@@ -189,6 +578,7 @@
       document.getElementById('layerSchedule').src = "schedule.html#overlay";
       document.getElementById('layerGoals').src = "goals.html#overlay";
       document.getElementById('layerBossa').src = "countdown_and_bossa.html#overlay";
+      document.getElementById('layerUtmaning').src = "utmaningar.html#overlay";
       document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
     }
   </script>
