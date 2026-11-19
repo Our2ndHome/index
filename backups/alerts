@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Musikhjälpen Stream Alerts</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
   
+  <!-- Firebase Realtime Engine -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -21,34 +22,71 @@
       color: #ffffff;
       width: 100vw;
       height: 100vh;
+      position: relative;
       pointer-events: none;
     }
 
+    /* 🌧️ CSS EMOTE RAIN LAYER */
+    .emote-rain-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 99990;
+    }
+
+    .falling-emote {
+      position: absolute;
+      top: -100px;
+      will-change: transform, opacity;
+      animation: fallDown linear forwards;
+    }
+
+    @keyframes fallDown {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.95;
+      }
+      85% {
+        opacity: 0.95;
+      }
+      100% {
+        transform: translateY(118vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    /* 🚨 MAIN ALERT BANNER (Donations & Raids) */
     .alert-banner {
       position: absolute;
-      top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0.6);
+      transform: translate(-50%, -50%);
       opacity: 0;
       visibility: hidden;
       text-align: center;
       background: transparent !important;
       border: none !important;
-      box-shadow: none !important;
       padding: 10px 20px;
-      text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
       z-index: 99999;
-      transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), visibility 0.3s;
+    }
+
+    .highlight {
+      color: #ace600 !important;
+      text-shadow: 0 0 16px rgba(172, 230, 0, 0.6);
     }
 
     .donor-name {
       color: #ace600;
       display: block;
-      font-size: 54px;
+      font-size: 52px;
       font-weight: 900;
       margin-bottom: 4px;
+      text-transform: uppercase;
       text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(172, 230, 0, 0.6);
     }
 
@@ -56,6 +94,7 @@
       color: #ffffff;
       font-size: 32px;
       font-weight: 900;
+      text-transform: uppercase;
       text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
     }
 
@@ -67,142 +106,667 @@
       margin-top: 8px;
       text-transform: none;
       white-space: normal;
-      max-width: 600px;
+      max-width: 650px;
       margin-left: auto;
       margin-right: auto;
       line-height: 1.3;
       text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
     }
 
-    .show-alert {
-      opacity: 1 !important;
+    /* 🌟 2-ROW SECONDARY ALERTS (Subs, Bits, Follows) */
+    .minor-alert-badge {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      text-align: center;
+    }
+
+    .minor-alert-name {
+      font-size: 28px;
+      font-weight: 900;
+      color: #ace600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 18px rgba(172, 230, 0, 0.5);
+    }
+
+    .minor-alert-detail {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.85);
+    }
+
+    /* 🎬 SMOOTH ANIMATIONS */
+    .anim-top-in {
+      animation: dropFromTopSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       visibility: visible !important;
-      transform: translate(-50%, -50%) scale(1) !important;
+    }
+
+    @keyframes dropFromTopSmooth {
+      0% {
+        top: -15%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+      }
+      100% {
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .anim-bottom-in {
+      animation: riseFromBottomSmooth 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      visibility: visible !important;
+    }
+
+    @keyframes riseFromBottomSmooth {
+      0% {
+        top: 115%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+      }
+      100% {
+        top: calc(50% + 210px);
+        left: 50%;
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .anim-exit {
+      animation: alertExitSmooth 0.4s ease forwards !important;
+    }
+
+    @keyframes alertExitSmooth {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="alert-banner" id="alertBanner">
-    <span class="donor-name" id="donorName">JOHAN</span> 
-    <div class="alert-subtext">DONERADE <span id="alertAmount">50 KR</span>!</div>
-    <div class="alert-comment" id="alertComment"></div>
-  </div>
+  <div class="emote-rain-layer" id="emoteRainLayer"></div>
+  <div class="alert-banner" id="alertBanner"></div>
 
   <script>
-    const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
-    const GITHUB_USERNAME = "Our2ndHome";
-    const GITHUB_REPO = "index";
-    const SOUNDS_FOLDER = "sounds";
-    const SOUND_VOLUME = 0.8;
-    const MIN_ALERT_DISPLAY_MS = 4500;
-    const PAUSE_BETWEEN_ALERTS_MS = 5000;
-
-    const BACKUP_SOUNDS = [
-      'sounds/ssstik.io_1786298964532.mp3',
-      'sounds/ssstik.io_1786298991426.mp3',
-      'sounds/ssstik.io_1786299005161.mp3'
-    ];
-
-    function formatSEK(num) {
-      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
-    }
-
-    let lastProcessedAlertId = 0;
-    let initialLoad = true;
-    let soundFileList = [...BACKUP_SOUNDS];
-
-    const alertQueue = [];
-    let isProcessingAlert = false;
-
-    if (!firebase.apps.length) {
-      firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
-    }
-    const dbRef = firebase.database().ref('bossa');
-
-    async function loadSounds() {
+    (function () {
       try {
-        const res = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${SOUNDS_FOLDER}`);
-        if (res.ok) {
-          const files = await res.json();
-          const sounds = files
-            .filter(f => f.name.match(/\.(mp3|wav|ogg)$/i))
-            .map(f => `${SOUNDS_FOLDER}/${encodeURIComponent(f.name)}`);
-          if (sounds.length > 0) soundFileList = sounds;
+        const isSelfDock = window.location.hash.includes('panel') || window.location.hash.includes('dock');
+        let isParentDock = false;
+        try {
+          if (window.parent && window.parent !== window) {
+            isParentDock = window.parent.location.hash.includes('panel') || window.parent.location.hash.includes('dock');
+          }
+        } catch (e) {}
+
+        if (isSelfDock || isParentDock) {
+          console.log("Alerts disabled inside panel/dock.");
+          return;
         }
-      } catch(e) {}
-    }
-    loadSounds();
+      } catch (e) {}
 
-    dbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (!data) return;
+      // ========================================================
+      // 🤖 STREAMER.BOT CHAT BOT CONNECTION
+      // ========================================================
+      const SB_WS_URL = "ws://127.0.0.1:8080/";
+      let sbWs = null;
+      let isSbConnected = false;
 
-      if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
-        lastProcessedAlertId = data.alertId;
-
-        if (Array.isArray(data.alerts) && data.alerts.length > 0) {
-          data.alerts.forEach(item => {
-            enqueueAlert(item.donor || "Givare", item.amount || 50, item.comment || "Tack för gåvan!");
-          });
-        } else if (data.diff > 0) {
-          enqueueAlert(data.donor || "Givare", data.diff, data.comment || "Tack för gåvan!");
+      function connectStreamerbot() {
+        try {
+          sbWs = new WebSocket(SB_WS_URL);
+        } catch (e) {
+          setTimeout(connectStreamerbot, 5000);
+          return;
         }
-      } else if (initialLoad) {
-        lastProcessedAlertId = data.alertId || 0;
-        initialLoad = false;
+
+        sbWs.onopen = () => {
+          isSbConnected = true;
+          console.log("🤖 [Streamer.bot Alerts Chat] Connected & Ready to send messages!");
+        };
+
+        sbWs.onclose = () => {
+          isSbConnected = false;
+          setTimeout(connectStreamerbot, 4000);
+        };
+
+        sbWs.onerror = () => {
+          try { sbWs.close(); } catch (e) {}
+        };
       }
-    });
 
-    function enqueueAlert(donor, amount, comment) {
-      alertQueue.push({ donor, amount, comment });
-      processAlertQueue();
-    }
+      function sendStreamerbotChat(chatMessage) {
+        if (!isSbConnected || !sbWs || sbWs.readyState !== WebSocket.OPEN) return;
 
-    async function processAlertQueue() {
-      if (isProcessingAlert || alertQueue.length === 0) return;
-      isProcessingAlert = true;
+        const reqId = "chat-" + Math.random().toString(36).substring(2, 9);
 
-      const alert = alertQueue.shift();
-      const banner = document.getElementById('alertBanner');
+        // 1. Native Streamer.bot SendMessage request
+        sbWs.send(JSON.stringify({
+          request: "SendMessage",
+          id: reqId,
+          message: chatMessage,
+          bot: true
+        }));
 
-      if (banner) {
-        document.getElementById('donorName').innerText = alert.donor;
-        document.getElementById('alertAmount').innerText = formatSEK(alert.amount);
-        document.getElementById('alertComment').innerText = alert.comment ? `"${alert.comment}"` : "";
+        // 2. Action fallback (for Action named "Send Twitch Message")
+        sbWs.send(JSON.stringify({
+          request: "DoAction",
+          action: { name: "Send Twitch Message" },
+          args: { message: chatMessage },
+          id: "act-" + reqId
+        }));
+      }
 
-        banner.classList.remove('show-alert');
-        void banner.offsetWidth;
-        banner.classList.add('show-alert');
+      connectStreamerbot();
 
-        const soundPromise = playAlertSound();
-        const displayPromise = new Promise(resolve => setTimeout(resolve, MIN_ALERT_DISPLAY_MS));
+      // ========================================================
+      // 🎛️ OBS WEBSOCKET & CAMERA CONTROL CONFIGURATION
+      // ========================================================
+      const OBS_WS_URL = "ws://127.0.0.1:4455";
+      const SCENE_GAMING = "Musikhjälpen|Gaming Scene";
+      const SCENE_INTERMISSION = "Musikhjälpen|Intermission Scene";
+
+      const SOURCE_WEBCAM = "Webcam Source";
+      const SOURCE_WEBCAM_SCENE = "Webcam Scene";
+
+      let obsWs = null;
+      let isObsConnected = false;
+      const pendingObsRequests = new Map();
+
+      function connectOBS() {
+        try {
+          obsWs = new WebSocket(OBS_WS_URL);
+        } catch (e) {
+          setTimeout(connectOBS, 5000);
+          return;
+        }
+
+        obsWs.onopen = () => {};
+
+        obsWs.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.op === 0) {
+              obsWs.send(JSON.stringify({
+                op: 1,
+                d: { rpcVersion: 1, eventSubscriptions: 1023 }
+              }));
+            }
+            if (msg.op === 2) {
+              isObsConnected = true;
+              console.log("🔌 [OBS Alerts WebSocket] Connected & Ready!");
+            }
+            if (msg.op === 7) {
+              const { requestId, requestStatus, responseData } = msg.d;
+              if (pendingObsRequests.has(requestId)) {
+                const { resolve, reject } = pendingObsRequests.get(requestId);
+                pendingObsRequests.delete(requestId);
+                if (requestStatus && requestStatus.result) {
+                  resolve(responseData);
+                } else {
+                  reject(new Error(requestStatus ? requestStatus.comment : "Request failed"));
+                }
+              }
+            }
+          } catch (e) {}
+        };
+
+        obsWs.onclose = () => {
+          isObsConnected = false;
+          pendingObsRequests.forEach(({ reject }) => reject(new Error("OBS Connection closed")));
+          pendingObsRequests.clear();
+          setTimeout(connectOBS, 4000);
+        };
+
+        obsWs.onerror = () => {
+          try { obsWs.close(); } catch (e) {}
+        };
+      }
+
+      function sendObsRequest(requestType, requestData = {}) {
+        return new Promise((resolve, reject) => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) {
+            return reject(new Error("OBS WebSocket not connected"));
+          }
+          const requestId = "req-" + Math.random().toString(36).substring(2, 9);
+          pendingObsRequests.set(requestId, { resolve, reject });
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: {
+              requestType,
+              requestId,
+              requestData
+            }
+          }));
+
+          setTimeout(() => {
+            if (pendingObsRequests.has(requestId)) {
+              pendingObsRequests.delete(requestId);
+              reject(new Error("OBS request timeout"));
+            }
+          }, 3000);
+        });
+      }
+
+      function sendFilterTrigger(sourceName, filterName) {
+        if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+
+        obsWs.send(JSON.stringify({
+          op: 6,
+          d: {
+            requestType: "SetSourceFilterEnabled",
+            requestId: "flt-off-" + Math.random(),
+            requestData: {
+              sourceName: sourceName,
+              filterName: filterName,
+              filterEnabled: false
+            }
+          }
+        }));
+
+        setTimeout(() => {
+          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
+          obsWs.send(JSON.stringify({
+            op: 6,
+            d: {
+              requestType: "SetSourceFilterEnabled",
+              requestId: "flt-on-" + Math.random(),
+              requestData: {
+                sourceName: sourceName,
+                filterName: filterName,
+                filterEnabled: true
+              }
+            }
+          }));
+        }, 20);
+      }
+
+      function triggerWebcamMove(direction) {
+        if (direction === "in") {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        } else {
+          sendFilterTrigger(SOURCE_WEBCAM, "Move Value out");
+          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+        }
+      }
+
+      function isMatchingScene(currentName, targetName) {
+        if (!currentName || !targetName) return false;
+        const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+        if (cleanA === cleanB) return true;
+
+        const baseA = cleanA.split('|').pop().trim();
+        const baseB = cleanB.split('|').pop().trim();
+        return baseA === baseB;
+      }
+
+      async function getCurrentObsScene() {
+        try {
+          const res = await sendObsRequest("GetCurrentProgramScene");
+          return res.currentProgramSceneName || "";
+        } catch (e) {
+          return "";
+        }
+      }
+
+      async function setObsScene(targetSceneName) {
+        try {
+          await sendObsRequest("SetCurrentProgramScene", { sceneName: targetSceneName });
+        } catch (e) {
+          const altName = targetSceneName.includes(" | ")
+            ? targetSceneName.replace(/\s*\|\s*/g, "|")
+            : targetSceneName.replace(/\|/g, " | ");
+          try {
+            await sendObsRequest("SetCurrentProgramScene", { sceneName: altName });
+          } catch (e2) {}
+        }
+      }
+
+      connectOBS();
+
+      // ========================================================
+      // 📡 FIREBASE & ASSETS
+      // ========================================================
+      const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+      const EMOTES_FOLDER = "emotes";
+
+      const CUSTOM_EMOTE_FILES = [
+        "Our2ndHome-EmoteHype-500x500.png",
+        "Our2ndHome-EmoteLove-500x500.png",
+        "Our2ndHome-EmoteWoop-500x500.png",
+        "Our2ndHome-IconLogo-512x512x.png",
+        "DisgustingFoodMuseum_Sponsor.png",
+        "ElinPK_Sponsor.png",
+        "EscapeHouse_Sponsor.png",
+        "RandomNerd_Sponsor.png"
+      ];
+
+      const EMBEDDED_FALLBACK_EMOTES = [
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,88 C50,88 10,55 10,32 C10,18 20,8 34,8 C42,8 50,15 50,15 C50,15 58,8 66,8 C80,8 90,18 90,32 C90,55 50,88 50,88 Z" fill="%23ace600" stroke="%237bb500" stroke-width="4"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 64,35 96,40 73,63 78,95 50,80 22,95 27,63 4,40 36,35" fill="%23ffd700" stroke="%23ff9900" stroke-width="4"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,8 90,36 50,92 10,36" fill="%2300e5ff" stroke="%23ffffff" stroke-width="3"/><polygon points="50,8 50,92 10,36" fill="%2300b0ff"/><polygon points="32,36 50,8 68,36 50,92" fill="%23ffffff" opacity="0.6"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,5 C55,25 75,35 75,55 C75,75 60,95 50,95 C40,95 25,75 25,55 C25,40 40,25 40,15 C40,15 35,30 50,5 Z" fill="%23ff4500"/><path d="M50,35 C53,45 62,52 62,65 C62,75 55,85 50,85 C45,85 38,75 38,65 C38,55 46,45 46,38 Z" fill="%23ffd700"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="15,75 85,75 95,30 68,55 50,20 32,55 5,30" fill="%23ffbb00" stroke="%23cc9900" stroke-width="4"/><circle cx="50" cy="20" r="6" fill="%23ace600"/><circle cx="95" cy="30" r="6" fill="%23ace600"/><circle cx="5" cy="30" r="6" fill="%23ace600"/></svg>',
+        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M35,75 A15,12 0 1,1 20,63 L20,25 L75,15 L75,55 A15,12 0 1,1 60,43 L60,25 L35,30 Z" fill="%2300ffcc" stroke="%2300b399" stroke-width="3"/></svg>'
+      ];
+
+      const PAUSE_BETWEEN_ALERTS_MS = 1400;
+
+      function getAlertDuration(type) {
+        if (type === 'donation') return 30000;
+        if (type === 'raid') return 20000;
+        return 10000;
+      }
+
+      let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
+      let lastProcessedAlertId = 0;
+      let initialLoad = true;
+
+      const alertQueue = [];
+      let isProcessingAlert = false;
+
+      function formatSEK(num) {
+        return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
+      }
+
+      function escapeHTML(str) {
+        return String(str || '').replace(/[&<>'"]/g, tag => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        }[tag] || tag));
+      }
+
+      function preloadImages(urls) {
+        urls.forEach(url => {
+          const img = new Image();
+          img.src = url;
+        });
+      }
+      preloadImages(emoteFileList);
+
+      function triggerEmoteRain(count = 8) {
+        const list = (emoteFileList && emoteFileList.length > 0) ? emoteFileList : EMBEDDED_FALLBACK_EMOTES;
+        const layer = document.getElementById('emoteRainLayer');
+        if (!layer) return;
+
+        for (let i = 0; i < count; i++) {
+          const img = document.createElement('img');
+          img.className = 'falling-emote';
+
+          img.onerror = function() {
+            this.onerror = null;
+            this.src = EMBEDDED_FALLBACK_EMOTES[i % EMBEDDED_FALLBACK_EMOTES.length];
+          };
+
+          img.src = list[Math.floor(Math.random() * list.length)];
+
+          const size = Math.floor(Math.random() * 26) + 38;
+          const left = Math.random() * 95;
+          const duration = (Math.random() * 2.0 + 4.2).toFixed(2);
+          const delay = (Math.random() * 0.7).toFixed(2);
+
+          img.style.width = `${size}px`;
+          img.style.height = `${size}px`;
+          img.style.left = `${left}vw`;
+          img.style.animationDuration = `${duration}s`;
+          img.style.animationDelay = `${delay}s`;
+
+          img.addEventListener('animationend', () => {
+            img.remove();
+          });
+
+          layer.appendChild(img);
+        }
+      }
+
+      // ========================================================
+      // 🔊 CENTRAL AUDIO ENGINE ROUTER (DEFERRED TO OVERLAY.HTML)
+      // ========================================================
+      function playAlertSound(type, duration) {
+        return new Promise((resolve) => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'PLAY_SOUND', soundType: type }, '*');
+          }
+
+          try {
+            new BroadcastChannel('mh_sound_bus').postMessage({ type: 'PLAY_SOUND', soundType: type });
+          } catch (e) {}
+
+          let isStandalone = false;
+          try {
+            isStandalone = (window.parent === window);
+          } catch (e) {
+            isStandalone = false;
+          }
+
+          if (isStandalone) {
+            try {
+              let localFallback = '';
+              if (type === 'raid') localFallback = "sounds/raid_alert.mp3";
+              else if (type === 'sub' || type === 'bits' || type === 'follow') localFallback = "sounds/ping_alert.mp3";
+              else localFallback = "sounds/0.mp3";
+
+              const audio = new Audio(localFallback);
+              audio.volume = 0.8;
+              audio.play().catch(() => {});
+            } catch (e) {}
+          }
+
+          setTimeout(resolve, Math.min(duration, 8000));
+        });
+      }
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
+      }
+      const dbRef = firebase.database().ref('bossa');
+
+      dbRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
+          lastProcessedAlertId = data.alertId;
+
+          if (Array.isArray(data.alerts) && data.alerts.length > 0) {
+            data.alerts.forEach(item => enqueueAlert(item));
+          } else if (data.diff > 0 || data.donor) {
+            enqueueAlert({
+              type: data.type || 'donation',
+              donor: data.donor || "Givare",
+              amount: data.diff || data.amount || 50,
+              comment: data.comment || ""
+            });
+          }
+        } else if (initialLoad) {
+          lastProcessedAlertId = data.alertId || 0;
+          initialLoad = false;
+        }
+      });
+
+      function enqueueAlert(item) {
+        alertQueue.push(item);
+        processAlertQueue();
+      }
+
+      async function processAlertQueue() {
+        if (isProcessingAlert || alertQueue.length === 0) return;
+        isProcessingAlert = true;
+
+        const item = alertQueue.shift();
+        const banner = document.getElementById('alertBanner');
+        const type = (item.type || 'donation').toLowerCase();
+        const displayDuration = getAlertDuration(type);
+
+        const isDonationOrRaid = (type === 'donation' || type === 'raid');
+        let didSwitchScene = false;
+        let originalSceneName = "";
+
+        // 🎬 SWITCH TO INTERMISSION SCENE
+        if (isDonationOrRaid && isObsConnected) {
+          const currentScene = await getCurrentObsScene();
+          if (isMatchingScene(currentScene, SCENE_GAMING)) {
+            originalSceneName = currentScene;
+            triggerWebcamMove("out");
+            await setObsScene(SCENE_INTERMISSION);
+            didSwitchScene = true;
+            await new Promise(r => setTimeout(r, 350));
+          }
+        }
+
+        banner.className = 'alert-banner';
+        let chatAnnouncement = "";
+
+        // 🎯 1. DONATION ALERT
+        if (type === 'donation') {
+          const rawDonor = String(item.donor || item.name || '').trim();
+          const rawComment = String(item.comment || item.message || '').trim();
+          const amountFormatted = formatSEK(item.amount || 50);
+
+          const isSecretHero = /hemlig\s*hj[aä]lte|anonym/i.test(rawDonor) ||
+                               /hemlig\s*hj[aä]lte|anonym/i.test(rawComment) ||
+                               !rawDonor || rawDonor.toLowerCase() === 'givare';
+
+          if (isSecretHero) {
+            const cleanComment = /hemlig\s*hj[aä]lte\s*gav\s*en\s*g[aå]va/i.test(rawComment) ? '' : rawComment;
+
+            banner.innerHTML = `
+              <span class="donor-name">EN HEMLIG HJÄLTE</span>
+              <div class="alert-subtext">GAV <span class="highlight">${amountFormatted}</span>!</div>
+              ${cleanComment ? `<div class="alert-comment">"${escapeHTML(cleanComment)}"</div>` : ''}
+            `;
+
+            chatAnnouncement = `our2ndHomeL En hemlig hjälte gav ${amountFormatted}!${cleanComment ? ` "${cleanComment}"` : ''} our2ndHomeR`;
+          } else {
+            banner.innerHTML = `
+              <span class="donor-name">${escapeHTML(rawDonor)}</span>
+              <div class="alert-subtext">DONERADE <span class="highlight">${amountFormatted}</span>!</div>
+              ${rawComment ? `<div class="alert-comment">"${escapeHTML(rawComment)}"</div>` : ''}
+            `;
+
+            chatAnnouncement = `our2ndHomeL ${rawDonor} donerade ${amountFormatted}!${rawComment ? ` "${rawComment}"` : ''} our2ndHomeR`;
+          }
+          banner.classList.add('anim-top-in');
+        } 
+        // 🎯 2. RAID ALERT
+        else if (type === 'raid') {
+          const raider = item.donor || item.name || 'Raider';
+          const viewers = item.viewers || 1;
+          banner.innerHTML = `
+            <span class="donor-name">${escapeHTML(raider)}</span>
+            <div class="alert-subtext">RAIDAR MED <span class="highlight">${viewers}</span> TITTARE!</div>
+          `;
+          banner.classList.add('anim-top-in');
+
+          chatAnnouncement = `our2ndHomeL ${raider} raidar med ${viewers} tittare! our2ndHomeR`;
+        } 
+        // 🎯 3. SECONDARY ALERTS
+        else if (type === 'sub') {
+          const subber = item.donor || item.name || 'Tittare';
+          const months = item.months || 1;
+          banner.innerHTML = `
+            <div class="minor-alert-badge">
+              <div class="minor-alert-name">${escapeHTML(subber)}</div>
+              <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
+            </div>
+          `;
+          banner.classList.add('anim-bottom-in');
+
+          chatAnnouncement = `our2ndHomeL ${subber} prenumererade i ${months} mån! our2ndHomeR`;
+        } 
+        else if (type === 'bits') {
+          const cheerer = item.donor || item.name || 'Tittare';
+          const bits = item.bits || item.amount || 100;
+          banner.innerHTML = `
+            <div class="minor-alert-badge">
+              <div class="minor-alert-name">${escapeHTML(cheerer)}</div>
+              <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
+            </div>
+          `;
+          banner.classList.add('anim-bottom-in');
+
+          chatAnnouncement = `our2ndHomeL ${cheerer} cheerade ${bits} bits! our2ndHomeR`;
+        }
+        else if (type === 'follow') {
+          const follower = item.donor || item.name || 'Någon';
+          banner.innerHTML = `
+            <div class="minor-alert-badge">
+              <div class="minor-alert-name">${escapeHTML(follower)}</div>
+              <div class="minor-alert-detail">FÖLJER KANALEN!</div>
+            </div>
+          `;
+          banner.classList.add('anim-bottom-in');
+
+          // Matches exact requested pattern
+          chatAnnouncement = `our2ndHomeL ${follower} började följa. our2ndHomeR`;
+        }
+
+        // 💬 Send automated message to Twitch chat via Streamer.bot
+        if (chatAnnouncement) {
+          sendStreamerbotChat(chatAnnouncement);
+        }
+
+        let rainInterval = null;
+        if (isDonationOrRaid) {
+          triggerEmoteRain(35);
+          rainInterval = setInterval(() => {
+            triggerEmoteRain(8);
+          }, 900);
+        }
+
+        const soundPromise = playAlertSound(type, displayDuration);
+        const displayPromise = new Promise(resolve => setTimeout(resolve, displayDuration));
 
         await Promise.all([soundPromise, displayPromise]);
-        banner.classList.remove('show-alert');
+
+        if (rainInterval) {
+          clearInterval(rainInterval);
+          rainInterval = null;
+        }
+
+        banner.classList.remove('anim-top-in', 'anim-bottom-in');
+        banner.classList.add('anim-exit');
+        await new Promise(r => setTimeout(r, 400));
+
+        banner.className = 'alert-banner';
+        banner.innerHTML = '';
+
+        // 🎬 SWITCH BACK TO GAMING SCENE
+        if (didSwitchScene && isObsConnected) {
+          const activeScene = await getCurrentObsScene();
+          if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
+            triggerWebcamMove("in");
+            await setObsScene(originalSceneName);
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
+
+        setTimeout(() => {
+          isProcessingAlert = false;
+          processAlertQueue();
+        }, PAUSE_BETWEEN_ALERTS_MS);
       }
-
-      setTimeout(() => {
-        isProcessingAlert = false;
-        processAlertQueue();
-      }, PAUSE_BETWEEN_ALERTS_MS);
-    }
-
-    function playAlertSound() {
-      return new Promise((resolve) => {
-        if (!soundFileList || soundFileList.length === 0) return resolve();
-        try {
-          const audio = new Audio(soundFileList[Math.floor(Math.random() * soundFileList.length)]);
-          audio.volume = SOUND_VOLUME;
-          let done = false;
-          const finish = () => { if (!done) { done = true; resolve(); } };
-          audio.onended = finish;
-          audio.onerror = finish;
-          audio.play().catch(() => done());
-          setTimeout(finish, 7000);
-        } catch(e) { resolve(); }
-      });
-    }
+    })();
   </script>
 </body>
 </html>
