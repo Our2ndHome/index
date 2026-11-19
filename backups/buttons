@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>OBS Button Deck</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap');
 
         * {
             margin: 0;
@@ -14,24 +14,23 @@
         }
 
         body {
-            background-color: #18181b;
+            background-color: #111114;
             color: #efeff1;
             font-family: 'Inter', sans-serif;
-            padding: 12px;
+            padding: 10px;
             overflow-y: auto;
         }
 
-        /* Top Status Bar */
         .status-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 11px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #adadb8;
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #71717a;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
 
         .status-indicator {
@@ -41,80 +40,314 @@
         }
 
         .dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background-color: #eb0400; /* Red when disconnected */
+            background-color: #eb0400;
         }
 
         .dot.connected {
-            background-color: #00f593; /* Green when ready */
+            background-color: #00ff88;
+            box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
         }
 
-        /* Button Grid */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 10px;
+        .section-title {
+            font-size: 9px;
+            font-weight: 800;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
         }
 
-        /* Stream-Deck Style Buttons */
-        .deck-btn {
-            background: #26262c;
+        /* 🎵 SPOTIFY SKIP BUTTON */
+        .btn-spotify-skip {
+            width: 100%;
+            background: #18181c;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 3px solid #1f1f23;
-            border-radius: 8px;
+            border-bottom: 2px solid #141418;
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            padding: 9px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            transition: all 0.08s ease;
+        }
+
+        .btn-spotify-skip:hover {
+            background: #24242c;
+            border-color: #1db954;
+            color: #1db954;
+        }
+
+        .btn-spotify-skip:active, .btn-spotify-skip.flashing {
+            transform: translateY(1px);
+            background: #1db954 !important;
+            color: #000000 !important;
+            border-color: #1db954 !important;
+        }
+
+        .spotify-left-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .spotify-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #1db954;
+            box-shadow: 0 0 6px rgba(29, 185, 84, 0.6);
+        }
+
+        .btn-spotify-skip.flashing .spotify-dot {
+            background-color: #000000;
+        }
+
+        .shortcut-badge {
+            font-size: 9px;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.1);
+            color: #a1a1aa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
+        }
+        .btn-spotify-skip:hover .shortcut-badge {
+            color: #1db954;
+            background: rgba(29, 185, 84, 0.15);
+        }
+        .btn-spotify-skip.flashing .shortcut-badge {
+            color: #000000;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .dual-row {
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+            margin-bottom: 8px;
+        }
+
+        .dual-row .input-sub-group {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .deck-input {
+            flex: 1;
+            background: #18181c;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 8px 10px;
+            outline: none;
+            user-select: auto;
+        }
+
+        .deck-input:focus { border-color: #00ff88; }
+
+        .deck-submit-btn {
+            background: #1c1c22;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 2px solid #141418;
+            border-radius: 6px;
+            color: #00ff88;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 8px 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .deck-submit-btn:hover { background: #272730; border-color: #00ff88; }
+        .deck-submit-btn:active { transform: translateY(1px); }
+
+        .grid { display: grid; gap: 6px; }
+        .grid-webcam { grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; }
+        .grid-scenes { grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
+        .grid-props { grid-template-columns: repeat(5, 1fr); margin-bottom: 14px; }
+
+        .deck-btn {
+            background: #1c1c22;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 2px solid #141418;
+            border-radius: 6px;
             color: #efeff1;
             font-family: inherit;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
-            padding: 16px 8px;
+            padding: 10px 4px;
             cursor: pointer;
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: all 0.1s ease;
+            gap: 4px;
+            transition: all 0.12s ease;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .dual-row .deck-btn {
+            width: 115px;
+            flex-shrink: 0;
+            padding: 6px 4px;
         }
 
         .deck-btn:hover {
-            background: #323239;
+            background: #272730;
             border-color: rgba(255, 255, 255, 0.2);
         }
 
         .deck-btn:active {
-            transform: translateY(2px);
+            transform: translateY(1px);
             border-bottom-width: 1px;
         }
 
         .deck-btn .tag {
-            width: 24px;
-            height: 4px;
+            width: 18px;
+            height: 3px;
             border-radius: 2px;
-            margin-bottom: 4px;
         }
+
+        .btn-sub {
+            font-size: 8px;
+            color: #71717a;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: -2px;
+        }
+
+        .deck-btn.active-scene {
+            background: #1e2922 !important;
+            border-color: #00ff88 !important;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3) !important;
+        }
+
+        .deck-btn.active-scene .btn-sub { color: #00ff88 !important; }
+        .deck-btn.webcam-is-hidden { border-color: rgba(0, 255, 136, 0.35); }
     </style>
 </head>
 <body>
 
     <div class="status-bar">
-        <span>Controls</span>
+        <span>OBS Kontrollpanel</span>
         <div class="status-indicator">
             <span class="dot" id="dot"></span>
             <span id="status-text">Connecting...</span>
         </div>
     </div>
 
-    <!-- Buttons Render Here -->
-    <div class="grid" id="button-grid"></div>
+    <!-- 🎵 SPOTIFY SKIP BUTTON -->
+    <div class="section-title">Musik (Spotify)</div>
+    <button class="btn-spotify-skip" id="btn-skip-spotify" onclick="remoteSkipSpotify()">
+        <div class="spotify-left-box">
+            <span class="spotify-dot"></span>
+            <span id="spotify-skip-label">⏭️ NÄSTA LÅT (SKIP)</span>
+        </div>
+        <span class="shortcut-badge">F9</span>
+    </button>
+
+    <!-- 📷 ROW 1: WEBCAM 1 CONTROLS -->
+    <div class="section-title">Webcam Kontroller</div>
+    <div class="grid grid-webcam" id="webcam-grid"></div>
+
+    <!-- 🎬 ROW 2: SCENES -->
+    <div class="section-title">Scener</div>
+    <div class="grid grid-scenes" id="scene-grid"></div>
+
+    <!-- ⚙️ ROW 3: ÄNDRA DESSA (SOURCE PROPERTIES) -->
+    <div class="section-title">Ändra dessa:</div>
+    <div class="grid grid-props" id="props-grid"></div>
+
+    <!-- 👥 ROW 4: STREAMER 2 & WEBCAM 2 -->
+    <div class="section-title" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+      Streamer 2 & Extra Webcam (Valfri)
+    </div>
+    <div class="dual-row">
+        <div class="input-sub-group">
+            <input type="text" id="streamer-name-input-2" class="deck-input" placeholder="Streamer 2 namn..." />
+            <button class="deck-submit-btn" id="streamer-submit-btn-2" onclick="submitStreamerName2()">Sätt</button>
+        </div>
+        <button id="btn-webcam-2-toggle" class="deck-btn" onclick="handleWebcam2Click()">
+            <div class="tag" style="background-color: #f2711c"></div>
+            <span class="btn-label">Göm Webcam 2</span>
+        </button>
+    </div>
 
     <script>
-        // ================= BUTTON CONFIGURATION =================
-        const BUTTONS = [
+        const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+        const WRITE_SECRET = "Our2ndHomeSecret2026!";
+
+        const TEXT_SOURCE_NAME_2 = "Streamer - Name Source 2";
+        const CHAT_SOURCE_NAME = "twitchchat.html";
+        const HTML_FILES_SCENE = "Html Files";
+
+        const SOURCE_WEBCAM = "Webcam Source";
+        const SOURCE_WEBCAM_SCENE = "Webcam Scene";
+
+        // 🎯 EXACT SOURCE NAME
+        const OBS_HOTKEY_TRIGGER_SOURCE = "Hotkey - Skip Spotify";
+
+        let lastSkipSentTime = 0;
+        let isSkipDebouncing = false;
+
+        function remoteSkipSpotify() {
+            if (isSkipDebouncing) return;
+            isSkipDebouncing = true;
+
+            const btn = document.getElementById('btn-skip-spotify');
+            if (btn) {
+                btn.classList.add('flashing');
+                setTimeout(() => btn.classList.remove('flashing'), 140);
+            }
+
+            const now = Date.now();
+            lastSkipSentTime = Math.max(now, lastSkipSentTime + 1);
+
+            fetch(`${FIREBASE_DATABASE_URL}/spotify_control.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'skip',
+                    timestamp: lastSkipSentTime,
+                    secret: WRITE_SECRET
+                })
+            }).catch(err => console.error("Firebase skip failed:", err));
+
+            setTimeout(() => { isSkipDebouncing = false; }, 350);
+        }
+
+        // Local hotkey when browser dock has focus
+        window.addEventListener('keydown', (e) => {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                return;
+            }
+
+            if (e.key === 'F9' || (e.shiftKey && (e.key === 'N' || e.key === 'n'))) {
+                e.preventDefault();
+                remoteSkipSpotify();
+            }
+        });
+
+        const WEBCAM_BUTTONS = [
             {
-                label: "Webcam Left",
+                label: "Webcam Vänster",
                 color: "#9146FF",
                 actions: [
                     { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Left" },
@@ -122,51 +355,115 @@
                 ]
             },
             {
-                label: "Webcam Right",
+                label: "Webcam Höger",
                 color: "#00b5ad",
                 actions: [
                     { source: "Musikhjälpen|Gaming Scene", filter: "Move Webcam Source Right" },
                     { source: "Html Files", filter: "Move Chat Source Left" }
                 ]
             },
-            // Hide / Toggle Webcam scene item:
             {
-                label: "Hide Webcam",
+                id: "btn-webcam-toggle",
+                label: "Göm Webcam 1",
                 color: "#f2711c",
-                scene: "Musikhjälpen | Gaming Scene",
+                isToggle1: true,
+                scene: "Musikhjälpen|Gaming Scene",
                 source: "Webcam Scene"
             }
         ];
-        // ========================================================
+
+        const SCENE_BUTTONS = [
+            { label: "Start", sublabel: "Scene", color: "#eab308", sceneName: "Musikhjälpen|Starting Scene" },
+            { label: "Gaming", sublabel: "Scene", color: "#00ff88", sceneName: "Musikhjälpen|Gaming Scene" },
+            { label: "Intermission", sublabel: "Scene", color: "#3b82f6", sceneName: "Intermission Scene" },
+            { label: "Ending", sublabel: "Scene", color: "#ef4444", sceneName: "Ending Scene" }
+        ];
+
+        const PROPERTIES_BUTTONS = [
+            { label: "Main Mic", sublabel: "Audio", color: "#ef4444", source: "Main Mic" },
+            { label: "Game", sublabel: "Audio", color: "#3b82f6", source: "Game Audio" },
+            { label: "Game", sublabel: "Capture", color: "#a855f7", source: "Game Capture" },
+            { label: "Display", sublabel: "Capture", color: "#06b6d4", source: "Display Capture" },
+            { label: "Webcam", sublabel: "Source", color: "#f97316", source: "Webcam Source" }
+        ];
 
         let ws = null;
         let isConnected = false;
         const pendingRequests = new Map();
+        let currentActiveScene = "";
+        let lastAutoFilteredScene = "";
+
+        let webcam1ItemId = null;
+        let webcam2ItemId = null;
+        let hotkeySkipItemId = null;
 
         function connectOBS() {
             ws = new WebSocket('ws://127.0.0.1:4455');
 
-            ws.onopen = () => {};
-
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
 
-                // OpCode 0: Hello from OBS
                 if (msg.op === 0) {
                     ws.send(JSON.stringify({
                         op: 1,
-                        d: { rpcVersion: 1 }
+                        d: { rpcVersion: 1, eventSubscriptions: 1023 }
                     }));
                 }
 
-                // OpCode 2: Identified & ready
                 if (msg.op === 2) {
                     isConnected = true;
                     document.getElementById('dot').classList.add('connected');
                     document.getElementById('status-text').textContent = "Ready";
+
+                    sendRequest("GetCurrentProgramScene").then(res => {
+                        if (res && res.currentProgramSceneName) {
+                            updateActiveSceneUI(res.currentProgramSceneName);
+                            handleSceneAutoFilters(res.currentProgramSceneName);
+                        }
+                    }).catch(() => {});
+
+                    fetchCurrentText(TEXT_SOURCE_NAME_2, 'streamer-name-input-2');
+
+                    syncWebcamItem("Musikhjälpen|Gaming Scene", "Webcam Scene", (id) => webcam1ItemId = id, updateWebcamToggleUI);
+                    syncWebcamItem("Musikhjälpen|Gaming Scene", "Webcam Scene 2", (id) => webcam2ItemId = id, (isEnabled) => {
+                        updateWebcam2ToggleUI(isEnabled);
+                        setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, isEnabled);
+                        setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !isEnabled);
+                    });
+
+                    // 🎯 DIRECT LINK: Syncs with "Hotkey - Skip Spotify" inside "Html Files"
+                    syncWebcamItem(HTML_FILES_SCENE, OBS_HOTKEY_TRIGGER_SOURCE, (id) => {
+                        hotkeySkipItemId = id;
+                        console.log(`[Spotify Hotkey] Linked successfully to 'Html Files' (Item ID: ${id})`);
+                    }, () => {});
                 }
 
-                // OpCode 7: Request Responses
+                if (msg.op === 5 && msg.d && msg.d.eventType === "CurrentProgramSceneChanged") {
+                    const newScene = msg.d.eventData.sceneName;
+                    updateActiveSceneUI(newScene);
+                    handleSceneAutoFilters(newScene);
+                }
+
+                if (msg.op === 5 && msg.d && msg.d.eventType === "SceneItemEnableStateChanged") {
+                    const { sceneItemId, sceneItemEnabled, sceneName } = msg.d.eventData;
+
+                    if (sceneItemId === webcam1ItemId) {
+                        updateWebcamToggleUI(sceneItemEnabled);
+                    } else if (sceneItemId === webcam2ItemId) {
+                        updateWebcam2ToggleUI(sceneItemEnabled);
+                        setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, sceneItemEnabled);
+                        setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !sceneItemEnabled);
+                    } 
+                    // 🎯 GLOBAL HOTKEY FIRED VIA OBS!
+                    else if (hotkeySkipItemId && sceneItemId === hotkeySkipItemId && sceneItemEnabled) {
+                        remoteSkipSpotify();
+                        // Automatically re-hide the source so you can press the hotkey again
+                        setTimeout(() => {
+                            setSceneItemState(HTML_FILES_SCENE, OBS_HOTKEY_TRIGGER_SOURCE, false);
+                        }, 50);
+                    }
+                }
+
                 if (msg.op === 7) {
                     const { requestId, requestStatus, responseData } = msg.d;
                     if (pendingRequests.has(requestId)) {
@@ -194,84 +491,47 @@
             ws.onerror = () => ws.close();
         }
 
-        // Generic Promise-based request wrapper for OBS v5
         function sendRequest(requestType, requestData = {}) {
             return new Promise((resolve, reject) => {
-                if (!isConnected || !ws) {
-                    return reject(new Error("Not connected to OBS"));
-                }
+                if (!isConnected || !ws) return reject(new Error("Not connected to OBS"));
                 const requestId = "req-" + Math.random().toString(36).substring(2, 9);
                 pendingRequests.set(requestId, { resolve, reject });
                 ws.send(JSON.stringify({
                     op: 6,
-                    d: {
-                        requestType,
-                        requestId,
-                        requestData
-                    }
+                    d: { requestType, requestId, requestData }
                 }));
             });
         }
 
-        // Toggles a source (scene item) visibility inside a specific scene
-        async function toggleSceneItem(sceneName, sourceName) {
-            if (!isConnected) return;
+        function handleSceneAutoFilters(sceneName) {
+            if (isMatchingScene(sceneName, lastAutoFilteredScene)) return;
+            lastAutoFilteredScene = sceneName;
 
-            let targetScene = sceneName;
-            let itemId = null;
-
-            // 1. Fetch the scene item ID (with spacing fallback)
-            try {
-                const res = await sendRequest("GetSceneItemId", {
-                    sceneName: targetScene,
-                    sourceName: sourceName
-                });
-                itemId = res.sceneItemId;
-            } catch (err) {
-                const altScene = targetScene.includes(" | ")
-                    ? targetScene.replace(/\s*\|\s*/g, "|")
-                    : targetScene.replace(/\|/g, " | ");
-
-                try {
-                    const res = await sendRequest("GetSceneItemId", {
-                        sceneName: altScene,
-                        sourceName: sourceName
-                    });
-                    itemId = res.sceneItemId;
-                    targetScene = altScene;
-                } catch (err2) {
-                    console.error(`Could not locate source "${sourceName}" inside "${targetScene}" or "${altScene}".`);
-                    return;
-                }
+            if (isMatchingScene(sceneName, "Gaming Scene")) {
+                sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
+            } else if (isMatchingScene(sceneName, "Starting Scene") ||
+                       isMatchingScene(sceneName, "Ending Scene") ||
+                       isMatchingScene(sceneName, "Intermission Scene")) {
+                sendFilterTrigger(SOURCE_WEBCAM, "Move Value out");
             }
 
-            // 2. Fetch current visibility state and invert it
-            try {
-                const statusRes = await sendRequest("GetSceneItemEnabled", {
-                    sceneName: targetScene,
-                    sceneItemId: itemId
-                });
-
-                await sendRequest("SetSceneItemEnabled", {
-                    sceneName: targetScene,
-                    sceneItemId: itemId,
-                    sceneItemEnabled: !statusRes.sceneItemEnabled
-                });
-            } catch (err) {
-                console.error("Failed to toggle visibility:", err);
+            if (isMatchingScene(sceneName, "Starting Scene") || isMatchingScene(sceneName, "Ending Scene")) {
+                sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value in");
+            } else if (isMatchingScene(sceneName, "Gaming Scene") || isMatchingScene(sceneName, "Intermission Scene")) {
+                sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
             }
+
+            setTimeout(() => { lastAutoFilteredScene = ""; }, 600);
         }
 
-        // Triggers an individual filter on a specific source/scene
         function sendFilterTrigger(sourceName, filterName) {
-            if (!isConnected) return;
+            if (!isConnected || !ws) return;
 
-            // Toggle filter false then true to force animation replay
             ws.send(JSON.stringify({
                 op: 6,
                 d: {
                     requestType: "SetSourceFilterEnabled",
-                    requestId: "req-" + Math.random(),
+                    requestId: "flt-off-" + Math.random(),
                     requestData: {
                         sourceName: sourceName,
                         filterName: filterName,
@@ -281,11 +541,12 @@
             }));
 
             setTimeout(() => {
+                if (!isConnected || !ws) return;
                 ws.send(JSON.stringify({
                     op: 6,
                     d: {
                         requestType: "SetSourceFilterEnabled",
-                        requestId: "req-" + Math.random(),
+                        requestId: "flt-on-" + Math.random(),
                         requestData: {
                             sourceName: sourceName,
                             filterName: filterName,
@@ -293,44 +554,314 @@
                         }
                     }
                 }));
-            }, 30);
+            }, 20);
         }
 
-        // Handles clicks for filter actions or scene item toggles
-        function handleButtonClick(btn) {
-            if (btn.actions && Array.isArray(btn.actions)) {
-                btn.actions.forEach(action => {
-                    if (action.filter) {
-                        sendFilterTrigger(action.source, action.filter);
-                    } else if (action.scene && action.source) {
-                        toggleSceneItem(action.scene, action.source);
-                    }
-                });
-            } else if (btn.filter && btn.source) {
-                sendFilterTrigger(btn.source, btn.filter);
-            } else if (btn.scene && btn.source) {
-                toggleSceneItem(btn.scene, btn.source);
+        function isMatchingScene(currentName, targetName) {
+            if (!currentName || !targetName) return false;
+            const cleanA = currentName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            const cleanB = targetName.replace(/\s*\|\s*/g, "|").trim().toLowerCase();
+            if (cleanA === cleanB) return true;
+
+            const baseA = cleanA.split('|').pop().trim();
+            const baseB = cleanB.split('|').pop().trim();
+            return baseA === baseB;
+        }
+
+        async function switchScene(sceneName) {
+            if (!isConnected) return;
+
+            handleSceneAutoFilters(sceneName);
+            updateActiveSceneUI(sceneName);
+
+            try {
+                await sendRequest("SetCurrentProgramScene", { sceneName });
+            } catch (err) {
+                const prefix1 = "Musikhjälpen|" + sceneName;
+                const prefix2 = "Musikhjälpen | " + sceneName;
+                try {
+                    await sendRequest("SetCurrentProgramScene", { sceneName: prefix1 });
+                } catch (e1) {
+                    try {
+                        await sendRequest("SetCurrentProgramScene", { sceneName: prefix2 });
+                    } catch (e2) {}
+                }
             }
         }
 
-        // Render buttons onto screen
-        function renderButtons() {
-            const grid = document.getElementById('button-grid');
-            grid.innerHTML = '';
+        function updateActiveSceneUI(activeSceneName) {
+            currentActiveScene = activeSceneName;
+            const buttons = document.querySelectorAll('#scene-grid .deck-btn');
 
-            BUTTONS.forEach(btn => {
-                const buttonEl = document.createElement('button');
-                buttonEl.className = 'deck-btn';
-                buttonEl.innerHTML = `
-                    <div class="tag" style="background-color: ${btn.color || '#9146FF'}"></div>
-                    <span>${btn.label}</span>
-                `;
-                buttonEl.onclick = () => handleButtonClick(btn);
-                grid.appendChild(buttonEl);
+            buttons.forEach((btnEl, idx) => {
+                const sceneBtn = SCENE_BUTTONS[idx];
+                if (sceneBtn && isMatchingScene(activeSceneName, sceneBtn.sceneName)) {
+                    btnEl.classList.add('active-scene');
+                } else {
+                    btnEl.classList.remove('active-scene');
+                }
             });
         }
 
-        renderButtons();
+        function updateWebcamToggleUI(isVisible) {
+            const btnEl = document.getElementById('btn-webcam-toggle');
+            if (!btnEl) return;
+            const labelEl = btnEl.querySelector('.btn-label');
+            const tagEl = btnEl.querySelector('.tag');
+
+            if (isVisible) {
+                if (labelEl) labelEl.textContent = "Göm Webcam 1";
+                if (tagEl) tagEl.style.backgroundColor = "#f2711c";
+                btnEl.classList.remove('webcam-is-hidden');
+            } else {
+                if (labelEl) labelEl.textContent = "Visa Webcam 1";
+                if (tagEl) tagEl.style.backgroundColor = "#00ff88";
+                btnEl.classList.add('webcam-is-hidden');
+            }
+        }
+
+        function updateWebcam2ToggleUI(isVisible) {
+            const btnEl = document.getElementById('btn-webcam-2-toggle');
+            if (!btnEl) return;
+            const labelEl = btnEl.querySelector('.btn-label');
+            const tagEl = btnEl.querySelector('.tag');
+
+            if (isVisible) {
+                if (labelEl) labelEl.textContent = "Göm Webcam 2";
+                if (tagEl) tagEl.style.backgroundColor = "#f2711c";
+                btnEl.classList.remove('webcam-is-hidden');
+            } else {
+                if (labelEl) labelEl.textContent = "Visa Webcam 2";
+                if (tagEl) tagEl.style.backgroundColor = "#00ff88";
+                btnEl.classList.add('webcam-is-hidden');
+            }
+        }
+
+        async function setSceneItemState(sceneName, sourceName, enabled) {
+            if (!isConnected) return;
+            let targetScene = sceneName;
+            let itemId = null;
+
+            try {
+                const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
+                itemId = res.sceneItemId;
+            } catch (e) {
+                const altScene = targetScene.includes(" | ")
+                    ? targetScene.replace(/\s*\|\s*/g, "|")
+                    : (targetScene.includes("|") ? targetScene.replace(/\|/g, " | ") : targetScene);
+                try {
+                    const res = await sendRequest("GetSceneItemId", { sceneName: altScene, sourceName });
+                    itemId = res.sceneItemId;
+                    targetScene = altScene;
+                } catch (e2) {
+                    return;
+                }
+            }
+
+            if (itemId !== null) {
+                try {
+                    await sendRequest("SetSceneItemEnabled", {
+                        sceneName: targetScene,
+                        sceneItemId: itemId,
+                        sceneItemEnabled: enabled
+                    });
+                } catch (err) {}
+            }
+        }
+
+        async function syncWebcamItem(sceneName, sourceName, setItemIdCallback, updateUICallback) {
+            try {
+                let targetScene = sceneName;
+                let itemId = null;
+
+                try {
+                    const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
+                    itemId = res.sceneItemId;
+                } catch (e) {
+                    const altScene = targetScene.includes(" | ")
+                        ? targetScene.replace(/\s*\|\s*/g, "|")
+                        : (targetScene.includes("|") ? targetScene.replace(/\|/g, " | ") : targetScene);
+                    const res = await sendRequest("GetSceneItemId", { sceneName: altScene, sourceName });
+                    itemId = res.sceneItemId;
+                    targetScene = altScene;
+                }
+
+                if (itemId !== null) {
+                    setItemIdCallback(itemId);
+                    const statusRes = await sendRequest("GetSceneItemEnabled", { sceneName: targetScene, sceneItemId: itemId });
+                    updateUICallback(statusRes.sceneItemEnabled);
+                }
+            } catch (e) {}
+        }
+
+        async function toggleSceneItemGeneric(sceneName, sourceName, setItemIdCallback, callback) {
+            if (!isConnected) return;
+
+            let targetScene = sceneName;
+            let itemId = null;
+
+            try {
+                const res = await sendRequest("GetSceneItemId", { sceneName: targetScene, sourceName });
+                itemId = res.sceneItemId;
+            } catch (err) {
+                const altScene = targetScene.includes(" | ")
+                    ? targetScene.replace(/\s*\|\s*/g, "|")
+                    : (targetScene.includes("|") ? targetScene.replace(/\|/g, " | ") : targetScene);
+
+                try {
+                    const res = await sendRequest("GetSceneItemId", { sceneName: altScene, sourceName });
+                    itemId = res.sceneItemId;
+                    targetScene = altScene;
+                } catch (err2) {
+                    return;
+                }
+            }
+
+            try {
+                setItemIdCallback(itemId);
+                const statusRes = await sendRequest("GetSceneItemEnabled", {
+                    sceneName: targetScene,
+                    sceneItemId: itemId
+                });
+
+                const willBeEnabled = !statusRes.sceneItemEnabled;
+
+                await sendRequest("SetSceneItemEnabled", {
+                    sceneName: targetScene,
+                    sceneItemId: itemId,
+                    sceneItemEnabled: willBeEnabled
+                });
+
+                if (callback) callback(willBeEnabled);
+            } catch (err) {}
+        }
+
+        function handleWebcam2Click() {
+            toggleSceneItemGeneric(
+                "Musikhjälpen|Gaming Scene", 
+                "Webcam Scene 2", 
+                (id) => webcam2ItemId = id, 
+                (willBeEnabled) => {
+                    updateWebcam2ToggleUI(willBeEnabled);
+                    setSceneItemState(HTML_FILES_SCENE, TEXT_SOURCE_NAME_2, willBeEnabled);
+                    setSceneItemState(HTML_FILES_SCENE, CHAT_SOURCE_NAME, !willBeEnabled);
+                }
+            );
+        }
+
+        async function updateTextSource(inputName, newText) {
+            if (!isConnected) return;
+            try {
+                await sendRequest("SetInputSettings", {
+                    inputName: inputName,
+                    inputSettings: { text: newText },
+                    overlay: true
+                });
+            } catch (err) {}
+        }
+
+        async function fetchCurrentText(inputName, elementId) {
+            if (!isConnected) return;
+            try {
+                const res = await sendRequest("GetInputSettings", { inputName });
+                if (res && res.inputSettings && typeof res.inputSettings.text === 'string') {
+                    const inputEl = document.getElementById(elementId);
+                    if (inputEl && document.activeElement !== inputEl) {
+                        inputEl.value = res.inputSettings.text;
+                    }
+                }
+            } catch (err) {}
+        }
+
+        function submitStreamerName2() {
+            const inputEl = document.getElementById('streamer-name-input-2');
+            const submitBtn = document.getElementById('streamer-submit-btn-2');
+            if (!inputEl) return;
+
+            const text = inputEl.value.trim();
+            updateTextSource(TEXT_SOURCE_NAME_2, text);
+
+            if (submitBtn) {
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "✓ Sparat!";
+                submitBtn.style.color = "#ffffff";
+                setTimeout(() => {
+                    submitBtn.innerText = originalText;
+                    submitBtn.style.color = "#00ff88";
+                }, 1200);
+            }
+        }
+
+        const input2 = document.getElementById('streamer-name-input-2');
+        if (input2) {
+            input2.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') submitStreamerName2();
+            });
+        }
+
+        async function openSourceProperties(inputName) {
+            try {
+                await sendRequest("OpenInputPropertiesDialog", { inputName });
+            } catch (err) {}
+        }
+
+        function handleButtonClick(btn) {
+            if (btn.actions && Array.isArray(btn.actions)) {
+                btn.actions.forEach(action => {
+                    sendFilterTrigger(action.source, action.filter);
+                });
+            } else if (btn.isToggle1) {
+                toggleSceneItemGeneric(btn.scene, btn.source, (id) => webcam1ItemId = id, updateWebcamToggleUI);
+            } else if (btn.scene && btn.source) {
+                toggleSceneItemGeneric(btn.scene, btn.source, () => {}, () => {});
+            }
+        }
+
+        function renderDeck() {
+            const webcamGrid = document.getElementById('webcam-grid');
+            webcamGrid.innerHTML = '';
+            WEBCAM_BUTTONS.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.className = 'deck-btn';
+                if (btn.isToggle1) buttonEl.id = 'btn-webcam-toggle';
+                buttonEl.innerHTML = `
+                    <div class="tag" style="background-color: ${btn.color}"></div>
+                    <span class="btn-label">${btn.label}</span>
+                `;
+                buttonEl.onclick = () => handleButtonClick(btn);
+                webcamGrid.appendChild(buttonEl);
+            });
+
+            const sceneGrid = document.getElementById('scene-grid');
+            sceneGrid.innerHTML = '';
+            SCENE_BUTTONS.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.className = 'deck-btn';
+                buttonEl.innerHTML = `
+                    <div class="tag" style="background-color: ${btn.color}"></div>
+                    <span>${btn.label}</span>
+                    <span class="btn-sub">${btn.sublabel}</span>
+                `;
+                buttonEl.onclick = () => switchScene(btn.sceneName);
+                sceneGrid.appendChild(buttonEl);
+            });
+
+            const propsGrid = document.getElementById('props-grid');
+            propsGrid.innerHTML = '';
+            PROPERTIES_BUTTONS.forEach(btn => {
+                const buttonEl = document.createElement('button');
+                buttonEl.className = 'deck-btn';
+                buttonEl.innerHTML = `
+                    <div class="tag" style="background-color: ${btn.color}"></div>
+                    <span>${btn.label}</span>
+                    <span class="btn-sub">${btn.sublabel}</span>
+                `;
+                buttonEl.onclick = () => openSourceProperties(btn.source);
+                propsGrid.appendChild(buttonEl);
+            });
+        }
+
+        renderDeck();
         connectOBS();
     </script>
 </body>
