@@ -70,9 +70,19 @@
       background: transparent !important;
       border: none !important;
       padding: 10px 20px;
-      white-space: nowrap;
+      max-width: 90vw;
+      white-space: normal;
+      word-wrap: break-word;
       pointer-events: none;
       z-index: 99999;
+    }
+
+    .pos-top {
+      top: 40%;
+    }
+
+    .pos-bottom {
+      top: calc(50% + 210px);
     }
 
     .highlight {
@@ -87,6 +97,7 @@
       font-weight: 900;
       margin-bottom: 4px;
       text-transform: uppercase;
+      line-height: 1.1;
       text-shadow: 0 4px 14px rgba(0, 0, 0, 0.95), 0 0 20px rgba(172, 230, 0, 0.6);
     }
 
@@ -95,6 +106,7 @@
       font-size: 32px;
       font-weight: 900;
       text-transform: uppercase;
+      line-height: 1.2;
       text-shadow: 0 4px 12px rgba(0, 0, 0, 0.95);
     }
 
@@ -187,6 +199,7 @@
     }
 
     .anim-exit {
+      visibility: visible !important;
       animation: alertExitSmooth 0.4s ease forwards !important;
     }
 
@@ -224,29 +237,81 @@
         }
       } catch (e) {}
 
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
       // ========================================================
-      // 🤖 STREAMER.BOT CHAT BOT CONNECTION
+      // 🤖 STREAMER.BOT CHAT BOT CONNECTION (Action: "Send Twitch Message")
       // ========================================================
       const SB_WS_URL = "ws://127.0.0.1:8080/";
       let sbWs = null;
       let isSbConnected = false;
+      let sbReconnectTimer = null;
+      let sbHelloTimer = null;
+      const pendingSbRequests = new Map();
+
+      function scheduleSbReconnect() {
+        if (sbReconnectTimer) return;
+        sbReconnectTimer = setTimeout(() => {
+          sbReconnectTimer = null;
+          connectStreamerbot();
+        }, 4000);
+      }
 
       function connectStreamerbot() {
+        if (sbWs && (sbWs.readyState === WebSocket.CONNECTING || sbWs.readyState === WebSocket.OPEN)) {
+          return;
+        }
+
         try {
           sbWs = new WebSocket(SB_WS_URL);
         } catch (e) {
-          setTimeout(connectStreamerbot, 5000);
+          scheduleSbReconnect();
           return;
         }
 
         sbWs.onopen = () => {
-          isSbConnected = true;
-          console.log("🤖 [Streamer.bot Alerts Chat] Connected & Ready to send messages!");
+          clearTimeout(sbHelloTimer);
+          sbHelloTimer = setTimeout(() => {
+            if (!isSbConnected && sbWs && sbWs.readyState === WebSocket.OPEN) {
+              isSbConnected = true;
+              console.log("🤖 [Streamer.bot Alerts Chat] Connected & Ready!");
+            }
+          }, 500);
+        };
+
+        sbWs.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+
+            if (msg.request === "Hello") {
+              clearTimeout(sbHelloTimer);
+              if (msg.authentication) {
+                console.error("❌ [Streamer.bot] Authentication is enabled, but this script expects no password.");
+                return;
+              }
+              isSbConnected = true;
+              console.log("🤖 [Streamer.bot Alerts Chat] Connected & Ready to send messages!");
+              return;
+            }
+
+            if (msg.id && pendingSbRequests.has(msg.id)) {
+              const { resolve, timer } = pendingSbRequests.get(msg.id);
+              clearTimeout(timer);
+              pendingSbRequests.delete(msg.id);
+              resolve(msg);
+            }
+          } catch (e) {}
         };
 
         sbWs.onclose = () => {
+          clearTimeout(sbHelloTimer);
           isSbConnected = false;
-          setTimeout(connectStreamerbot, 4000);
+          pendingSbRequests.forEach(({ reject, timer }) => {
+            clearTimeout(timer);
+            reject(new Error("Streamer.bot connection closed"));
+          });
+          pendingSbRequests.clear();
+          scheduleSbReconnect();
         };
 
         sbWs.onerror = () => {
@@ -254,26 +319,43 @@
         };
       }
 
-      function sendStreamerbotChat(chatMessage) {
-        if (!isSbConnected || !sbWs || sbWs.readyState !== WebSocket.OPEN) return;
+      async function sendStreamerbotChat(chatMessage) {
+        const cleanMsg = String(chatMessage || "").replace(/[\r\n]+/g, " ").trim();
+        if (!cleanMsg || !isSbConnected || !sbWs || sbWs.readyState !== WebSocket.OPEN) return;
 
-        const reqId = "chat-" + Math.random().toString(36).substring(2, 9);
+        const reqId = "act-" + Math.random().toString(36).substring(2, 9);
 
-        // 1. Native Streamer.bot SendMessage request
-        sbWs.send(JSON.stringify({
-          request: "SendMessage",
-          id: reqId,
-          message: chatMessage,
-          bot: true
-        }));
+        try {
+          const res = await new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+              if (pendingSbRequests.has(reqId)) {
+                pendingSbRequests.delete(reqId);
+                reject(new Error("Streamer.bot request timeout"));
+              }
+            }, 3000);
 
-        // 2. Action fallback (for Action named "Send Twitch Message")
-        sbWs.send(JSON.stringify({
-          request: "DoAction",
-          action: { name: "Send Twitch Message" },
-          args: { message: chatMessage },
-          id: "act-" + reqId
-        }));
+            pendingSbRequests.set(reqId, { resolve, reject, timer });
+
+            try {
+              sbWs.send(JSON.stringify({
+                request: "DoAction",
+                action: { name: "Send Twitch Message" },
+                args: { message: cleanMsg },
+                id: reqId
+              }));
+            } catch (err) {
+              clearTimeout(timer);
+              pendingSbRequests.delete(reqId);
+              reject(err);
+            }
+          });
+
+          if (res && res.status && res.status !== "ok") {
+            console.warn("⚠️ [Streamer.bot] 'Send Twitch Message' returned non-ok:", res);
+          }
+        } catch (err) {
+          console.warn("⚠️ [Streamer.bot] Chat message failed:", err.message);
+        }
       }
 
       connectStreamerbot();
@@ -288,15 +370,48 @@
       const SOURCE_WEBCAM = "Webcam Source";
       const SOURCE_WEBCAM_SCENE = "Webcam Scene";
 
+      // Shared lock keys to coordinate Intermission Scene with utmaningar.html
+      const LOCK_KEY_ALERT = "mh_scene_lock_alert_ts";
+      const LOCK_KEY_UTMANING = "mh_scene_lock_utmaning_ts";
+      const LOCK_KEY_RETURN_SCENE = "mh_scene_lock_return_scene";
+
+      try {
+        localStorage.removeItem(LOCK_KEY_ALERT);
+      } catch (e) {}
+
+      function isLockActive(key, maxAgeMs = 120000) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return false;
+          const ts = parseInt(raw, 10);
+          return Number.isFinite(ts) && (Date.now() - ts) < maxAgeMs;
+        } catch (e) {
+          return false;
+        }
+      }
+
       let obsWs = null;
       let isObsConnected = false;
+      let obsReconnectTimer = null;
       const pendingObsRequests = new Map();
 
+      function scheduleObsReconnect() {
+        if (obsReconnectTimer) return;
+        obsReconnectTimer = setTimeout(() => {
+          obsReconnectTimer = null;
+          connectOBS();
+        }, 4000);
+      }
+
       function connectOBS() {
+        if (obsWs && (obsWs.readyState === WebSocket.CONNECTING || obsWs.readyState === WebSocket.OPEN)) {
+          return;
+        }
+
         try {
           obsWs = new WebSocket(OBS_WS_URL);
         } catch (e) {
-          setTimeout(connectOBS, 5000);
+          scheduleObsReconnect();
           return;
         }
 
@@ -306,6 +421,10 @@
           try {
             const msg = JSON.parse(event.data);
             if (msg.op === 0) {
+              if (msg.d && msg.d.authentication) {
+                console.error("❌ [OBS WebSocket] Authentication is enabled in OBS, but this script expects no password.");
+                return;
+              }
               obsWs.send(JSON.stringify({
                 op: 1,
                 d: { rpcVersion: 1, eventSubscriptions: 1023 }
@@ -318,10 +437,11 @@
             if (msg.op === 7) {
               const { requestId, requestStatus, responseData } = msg.d;
               if (pendingObsRequests.has(requestId)) {
-                const { resolve, reject } = pendingObsRequests.get(requestId);
+                const { resolve, reject, timer } = pendingObsRequests.get(requestId);
+                clearTimeout(timer);
                 pendingObsRequests.delete(requestId);
                 if (requestStatus && requestStatus.result) {
-                  resolve(responseData);
+                  resolve(responseData || {});
                 } else {
                   reject(new Error(requestStatus ? requestStatus.comment : "Request failed"));
                 }
@@ -332,9 +452,12 @@
 
         obsWs.onclose = () => {
           isObsConnected = false;
-          pendingObsRequests.forEach(({ reject }) => reject(new Error("OBS Connection closed")));
+          pendingObsRequests.forEach(({ reject, timer }) => {
+            clearTimeout(timer);
+            reject(new Error("OBS Connection closed"));
+          });
           pendingObsRequests.clear();
-          setTimeout(connectOBS, 4000);
+          scheduleObsReconnect();
         };
 
         obsWs.onerror = () => {
@@ -348,65 +471,58 @@
             return reject(new Error("OBS WebSocket not connected"));
           }
           const requestId = "req-" + Math.random().toString(36).substring(2, 9);
-          pendingObsRequests.set(requestId, { resolve, reject });
-          obsWs.send(JSON.stringify({
-            op: 6,
-            d: {
-              requestType,
-              requestId,
-              requestData
-            }
-          }));
-
-          setTimeout(() => {
+          const timer = setTimeout(() => {
             if (pendingObsRequests.has(requestId)) {
               pendingObsRequests.delete(requestId);
               reject(new Error("OBS request timeout"));
             }
           }, 3000);
+
+          pendingObsRequests.set(requestId, { resolve, reject, timer });
+
+          try {
+            obsWs.send(JSON.stringify({
+              op: 6,
+              d: { requestType, requestId, requestData }
+            }));
+          } catch (err) {
+            clearTimeout(timer);
+            pendingObsRequests.delete(requestId);
+            reject(err);
+          }
         });
       }
 
-      function sendFilterTrigger(sourceName, filterName) {
-        if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
-
-        obsWs.send(JSON.stringify({
-          op: 6,
-          d: {
-            requestType: "SetSourceFilterEnabled",
-            requestId: "flt-off-" + Math.random(),
-            requestData: {
-              sourceName: sourceName,
-              filterName: filterName,
-              filterEnabled: false
-            }
-          }
-        }));
-
-        setTimeout(() => {
-          if (!isObsConnected || !obsWs || obsWs.readyState !== WebSocket.OPEN) return;
-          obsWs.send(JSON.stringify({
-            op: 6,
-            d: {
-              requestType: "SetSourceFilterEnabled",
-              requestId: "flt-on-" + Math.random(),
-              requestData: {
-                sourceName: sourceName,
-                filterName: filterName,
-                filterEnabled: true
-              }
-            }
-          }));
-        }, 20);
+      async function sendFilterTrigger(sourceName, filterName) {
+        if (!isObsConnected) return;
+        try {
+          await sendObsRequest("SetSourceFilterEnabled", {
+            sourceName,
+            filterName,
+            filterEnabled: false
+          });
+          await delay(25);
+          await sendObsRequest("SetSourceFilterEnabled", {
+            sourceName,
+            filterName,
+            filterEnabled: true
+          });
+        } catch (err) {
+          console.warn(`⚠️ [OBS Filter] "${filterName}" on "${sourceName}" failed:`, err.message);
+        }
       }
 
-      function triggerWebcamMove(direction) {
+      async function triggerWebcamMove(direction) {
         if (direction === "in") {
-          sendFilterTrigger(SOURCE_WEBCAM, "Move Value in");
-          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+          await Promise.all([
+            sendFilterTrigger(SOURCE_WEBCAM, "Move Value in"),
+            sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out")
+          ]);
         } else {
-          sendFilterTrigger(SOURCE_WEBCAM, "Move Value out");
-          sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out");
+          await Promise.all([
+            sendFilterTrigger(SOURCE_WEBCAM, "Move Value out"),
+            sendFilterTrigger(SOURCE_WEBCAM_SCENE, "Move Value out")
+          ]);
         }
       }
 
@@ -424,7 +540,7 @@
       async function getCurrentObsScene() {
         try {
           const res = await sendObsRequest("GetCurrentProgramScene");
-          return res.currentProgramSceneName || "";
+          return res.sceneName || res.currentProgramSceneName || "";
         } catch (e) {
           return "";
         }
@@ -433,13 +549,18 @@
       async function setObsScene(targetSceneName) {
         try {
           await sendObsRequest("SetCurrentProgramScene", { sceneName: targetSceneName });
+          return true;
         } catch (e) {
           const altName = targetSceneName.includes(" | ")
             ? targetSceneName.replace(/\s*\|\s*/g, "|")
             : targetSceneName.replace(/\|/g, " | ");
           try {
             await sendObsRequest("SetCurrentProgramScene", { sceneName: altName });
-          } catch (e2) {}
+            return true;
+          } catch (e2) {
+            console.warn(`⚠️ [OBS Scene] Could not switch to "${targetSceneName}":`, e2.message);
+            return false;
+          }
         }
       }
 
@@ -472,6 +593,7 @@
       ];
 
       const PAUSE_BETWEEN_ALERTS_MS = 1400;
+      const MAX_EMOTE_NODES = 100;
 
       function getAlertDuration(type) {
         if (type === 'donation') return 30000;
@@ -480,14 +602,31 @@
       }
 
       let emoteFileList = CUSTOM_EMOTE_FILES.map(f => `${EMOTES_FOLDER}/${encodeURIComponent(f)}`);
-      let lastProcessedAlertId = 0;
+      let lastProcessedAlertId = null;
       let initialLoad = true;
+      let localHoldingIntermission = false;
 
       const alertQueue = [];
       let isProcessingAlert = false;
 
+      let soundChannel = null;
+      try {
+        soundChannel = new BroadcastChannel('mh_sound_bus');
+      } catch (e) {}
+
+      function parseAmount(val, fallback = 50) {
+        if (typeof val === 'number' && Number.isFinite(val)) return val;
+        if (typeof val === 'string') {
+          const cleaned = val.replace(/\s+/g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+          const parsed = parseFloat(cleaned);
+          if (Number.isFinite(parsed)) return parsed;
+        }
+        return fallback;
+      }
+
       function formatSEK(num) {
-        return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
+        const safeNum = parseAmount(num, 50);
+        return new Intl.NumberFormat('sv-SE').format(Math.round(safeNum)) + ' KR';
       }
 
       function escapeHTML(str) {
@@ -499,6 +638,10 @@
       function preloadImages(urls) {
         urls.forEach(url => {
           const img = new Image();
+          img.onerror = () => {
+            console.warn(`⚠️ Emote missing, removing from pool: ${url}`);
+            emoteFileList = emoteFileList.filter(u => u !== url);
+          };
           img.src = url;
         });
       }
@@ -510,6 +653,10 @@
         if (!layer) return;
 
         for (let i = 0; i < count; i++) {
+          if (layer.childElementCount >= MAX_EMOTE_NODES) {
+            layer.firstElementChild.remove();
+          }
+
           const img = document.createElement('img');
           img.className = 'falling-emote';
 
@@ -522,16 +669,21 @@
 
           const size = Math.floor(Math.random() * 26) + 38;
           const left = Math.random() * 95;
-          const duration = (Math.random() * 2.0 + 4.2).toFixed(2);
-          const delay = (Math.random() * 0.7).toFixed(2);
+          const duration = parseFloat((Math.random() * 2.0 + 4.2).toFixed(2));
+          const delaySec = parseFloat((Math.random() * 0.7).toFixed(2));
 
           img.style.width = `${size}px`;
           img.style.height = `${size}px`;
           img.style.left = `${left}vw`;
           img.style.animationDuration = `${duration}s`;
-          img.style.animationDelay = `${delay}s`;
+          img.style.animationDelay = `${delaySec}s`;
+
+          const cleanupTimer = setTimeout(() => {
+            if (img.parentNode) img.remove();
+          }, (duration + delaySec + 1) * 1000);
 
           img.addEventListener('animationend', () => {
+            clearTimeout(cleanupTimer);
             img.remove();
           });
 
@@ -544,22 +696,24 @@
       // ========================================================
       function playAlertSound(type, duration) {
         return new Promise((resolve) => {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'PLAY_SOUND', soundType: type }, '*');
-          }
+          const triggerId = "alt-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7);
 
+          let hasParent = false;
           try {
-            new BroadcastChannel('mh_sound_bus').postMessage({ type: 'PLAY_SOUND', soundType: type });
-          } catch (e) {}
-
-          let isStandalone = false;
-          try {
-            isStandalone = (window.parent === window);
+            hasParent = !!(window.parent && window.parent !== window);
           } catch (e) {
-            isStandalone = false;
+            hasParent = false;
           }
 
-          if (isStandalone) {
+          if (hasParent) {
+            window.parent.postMessage({ type: 'PLAY_SOUND', soundType: type, triggerId }, '*');
+          } else {
+            if (soundChannel) {
+              try {
+                soundChannel.postMessage({ type: 'PLAY_SOUND', soundType: type, triggerId });
+              } catch (e) {}
+            }
+
             try {
               let localFallback = '';
               if (type === 'raid') localFallback = "sounds/raid_alert.mp3";
@@ -583,25 +737,42 @@
 
       dbRef.on('value', (snapshot) => {
         const data = snapshot.val();
+
+        if (initialLoad) {
+          lastProcessedAlertId = (data && data.alertId !== undefined) ? data.alertId : null;
+          initialLoad = false;
+          return;
+        }
+
         if (!data) return;
 
-        if (!initialLoad && data.alertId && data.alertId !== lastProcessedAlertId) {
+        const hasValidAlertId = data.alertId !== undefined && data.alertId !== null && data.alertId !== '' && data.alertId !== 0;
+        if (hasValidAlertId && data.alertId !== lastProcessedAlertId) {
           lastProcessedAlertId = data.alertId;
 
-          if (Array.isArray(data.alerts) && data.alerts.length > 0) {
-            data.alerts.forEach(item => enqueueAlert(item));
+          const alertsArray = Array.isArray(data.alerts)
+            ? data.alerts
+            : (data.alerts && typeof data.alerts === 'object' ? Object.values(data.alerts) : []);
+
+          if (alertsArray.length > 0) {
+            alertsArray.forEach(item => {
+              if (item && typeof item === 'object') enqueueAlert(item);
+            });
           } else if (data.diff > 0 || data.donor) {
+            const fallbackAmt = (data.diff !== undefined && data.diff !== null && data.diff > 0)
+              ? data.diff
+              : (data.amount !== undefined && data.amount !== null ? data.amount : 50);
+
             enqueueAlert({
               type: data.type || 'donation',
               donor: data.donor || "Givare",
-              amount: data.diff || data.amount || 50,
+              amount: fallbackAmt,
               comment: data.comment || ""
             });
           }
-        } else if (initialLoad) {
-          lastProcessedAlertId = data.alertId || 0;
-          initialLoad = false;
         }
+      }, (error) => {
+        console.error("❌ [Firebase] Listener error:", error);
       });
 
       function enqueueAlert(item) {
@@ -613,158 +784,208 @@
         if (isProcessingAlert || alertQueue.length === 0) return;
         isProcessingAlert = true;
 
-        const item = alertQueue.shift();
-        const banner = document.getElementById('alertBanner');
-        const type = (item.type || 'donation').toLowerCase();
-        const displayDuration = getAlertDuration(type);
-
-        const isDonationOrRaid = (type === 'donation' || type === 'raid');
-        let didSwitchScene = false;
-        let originalSceneName = "";
-
-        // 🎬 SWITCH TO INTERMISSION SCENE
-        if (isDonationOrRaid && isObsConnected) {
-          const currentScene = await getCurrentObsScene();
-          if (isMatchingScene(currentScene, SCENE_GAMING)) {
-            originalSceneName = currentScene;
-            triggerWebcamMove("out");
-            await setObsScene(SCENE_INTERMISSION);
-            didSwitchScene = true;
-            await new Promise(r => setTimeout(r, 350));
-          }
-        }
-
-        banner.className = 'alert-banner';
-        let chatAnnouncement = "";
-
-        // 🎯 1. DONATION ALERT
-        if (type === 'donation') {
-          const rawDonor = String(item.donor || item.name || '').trim();
-          const rawComment = String(item.comment || item.message || '').trim();
-          const amountFormatted = formatSEK(item.amount || 50);
-
-          const isSecretHero = /hemlig\s*hj[aä]lte|anonym/i.test(rawDonor) ||
-                               /hemlig\s*hj[aä]lte|anonym/i.test(rawComment) ||
-                               !rawDonor || rawDonor.toLowerCase() === 'givare';
-
-          if (isSecretHero) {
-            const cleanComment = /hemlig\s*hj[aä]lte\s*gav\s*en\s*g[aå]va/i.test(rawComment) ? '' : rawComment;
-
-            banner.innerHTML = `
-              <span class="donor-name">EN HEMLIG HJÄLTE</span>
-              <div class="alert-subtext">GAV <span class="highlight">${amountFormatted}</span>!</div>
-              ${cleanComment ? `<div class="alert-comment">"${escapeHTML(cleanComment)}"</div>` : ''}
-            `;
-
-            chatAnnouncement = `our2ndHomeL En hemlig hjälte gav ${amountFormatted}!${cleanComment ? ` "${cleanComment}"` : ''} our2ndHomeR`;
-          } else {
-            banner.innerHTML = `
-              <span class="donor-name">${escapeHTML(rawDonor)}</span>
-              <div class="alert-subtext">DONERADE <span class="highlight">${amountFormatted}</span>!</div>
-              ${rawComment ? `<div class="alert-comment">"${escapeHTML(rawComment)}"</div>` : ''}
-            `;
-
-            chatAnnouncement = `our2ndHomeL ${rawDonor} donerade ${amountFormatted}!${rawComment ? ` "${rawComment}"` : ''} our2ndHomeR`;
-          }
-          banner.classList.add('anim-top-in');
-        } 
-        // 🎯 2. RAID ALERT
-        else if (type === 'raid') {
-          const raider = item.donor || item.name || 'Raider';
-          const viewers = item.viewers || 1;
-          banner.innerHTML = `
-            <span class="donor-name">${escapeHTML(raider)}</span>
-            <div class="alert-subtext">RAIDAR MED <span class="highlight">${viewers}</span> TITTARE!</div>
-          `;
-          banner.classList.add('anim-top-in');
-
-          chatAnnouncement = `our2ndHomeL ${raider} raidar med ${viewers} tittare! our2ndHomeR`;
-        } 
-        // 🎯 3. SECONDARY ALERTS
-        else if (type === 'sub') {
-          const subber = item.donor || item.name || 'Tittare';
-          const months = item.months || 1;
-          banner.innerHTML = `
-            <div class="minor-alert-badge">
-              <div class="minor-alert-name">${escapeHTML(subber)}</div>
-              <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
-            </div>
-          `;
-          banner.classList.add('anim-bottom-in');
-
-          chatAnnouncement = `our2ndHomeL ${subber} prenumererade i ${months} mån! our2ndHomeR`;
-        } 
-        else if (type === 'bits') {
-          const cheerer = item.donor || item.name || 'Tittare';
-          const bits = item.bits || item.amount || 100;
-          banner.innerHTML = `
-            <div class="minor-alert-badge">
-              <div class="minor-alert-name">${escapeHTML(cheerer)}</div>
-              <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
-            </div>
-          `;
-          banner.classList.add('anim-bottom-in');
-
-          chatAnnouncement = `our2ndHomeL ${cheerer} cheerade ${bits} bits! our2ndHomeR`;
-        }
-        else if (type === 'follow') {
-          const follower = item.donor || item.name || 'Någon';
-          banner.innerHTML = `
-            <div class="minor-alert-badge">
-              <div class="minor-alert-name">${escapeHTML(follower)}</div>
-              <div class="minor-alert-detail">FÖLJER KANALEN!</div>
-            </div>
-          `;
-          banner.classList.add('anim-bottom-in');
-
-          // Matches exact requested pattern
-          chatAnnouncement = `our2ndHomeL ${follower} började följa. our2ndHomeR`;
-        }
-
-        // 💬 Send automated message to Twitch chat via Streamer.bot
-        if (chatAnnouncement) {
-          sendStreamerbotChat(chatAnnouncement);
-        }
-
         let rainInterval = null;
-        if (isDonationOrRaid) {
-          triggerEmoteRain(35);
-          rainInterval = setInterval(() => {
-            triggerEmoteRain(8);
-          }, 900);
-        }
+        const banner = document.getElementById('alertBanner');
 
-        const soundPromise = playAlertSound(type, displayDuration);
-        const displayPromise = new Promise(resolve => setTimeout(resolve, displayDuration));
+        try {
+          const item = alertQueue.shift();
+          const type = String(item.type || 'donation').toLowerCase().trim();
+          const supportedTypes = ['donation', 'raid', 'sub', 'bits', 'follow'];
 
-        await Promise.all([soundPromise, displayPromise]);
-
-        if (rainInterval) {
-          clearInterval(rainInterval);
-          rainInterval = null;
-        }
-
-        banner.classList.remove('anim-top-in', 'anim-bottom-in');
-        banner.classList.add('anim-exit');
-        await new Promise(r => setTimeout(r, 400));
-
-        banner.className = 'alert-banner';
-        banner.innerHTML = '';
-
-        // 🎬 SWITCH BACK TO GAMING SCENE
-        if (didSwitchScene && isObsConnected) {
-          const activeScene = await getCurrentObsScene();
-          if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
-            triggerWebcamMove("in");
-            await setObsScene(originalSceneName);
-            await new Promise(r => setTimeout(r, 500));
+          if (!supportedTypes.includes(type)) {
+            console.warn("⚠️ Skipping unknown alert type:", type, item);
+            return;
           }
-        }
 
-        setTimeout(() => {
-          isProcessingAlert = false;
-          processAlertQueue();
-        }, PAUSE_BETWEEN_ALERTS_MS);
+          const displayDuration = getAlertDuration(type);
+          const isDonationOrRaid = (type === 'donation' || type === 'raid');
+
+          // 🎬 SWITCH TO INTERMISSION SCENE (Coordinated with utmaningar.html)
+          if (isDonationOrRaid && isObsConnected) {
+            try { localStorage.setItem(LOCK_KEY_ALERT, String(Date.now())); } catch (e) {}
+
+            if (!localHoldingIntermission) {
+              const currentScene = await getCurrentObsScene();
+              if (isMatchingScene(currentScene, SCENE_GAMING)) {
+                await triggerWebcamMove("out");
+                const switched = await setObsScene(SCENE_INTERMISSION);
+                if (switched) {
+                  localHoldingIntermission = true;
+                  try { localStorage.setItem(LOCK_KEY_RETURN_SCENE, currentScene); } catch (e) {}
+                  await delay(350);
+                }
+              } else if (isMatchingScene(currentScene, SCENE_INTERMISSION) && isLockActive(LOCK_KEY_UTMANING, 300000)) {
+                localHoldingIntermission = true;
+              }
+            }
+          }
+
+          banner.className = 'alert-banner';
+          let chatAnnouncement = "";
+
+          // 🎯 1. DONATION ALERT
+          if (type === 'donation') {
+            const rawDonor = String(item.donor || item.name || '').trim();
+            const rawComment = String(item.comment || item.message || '').trim();
+            const amountFormatted = formatSEK(parseAmount(item.amount, 50));
+
+            const isAnonDonor = /hemlig\s*hj[aä]lte|anonym/i.test(rawDonor) ||
+                                !rawDonor ||
+                                rawDonor.toLowerCase() === 'givare';
+            const isBoilerplateHeroComment = /hemlig\s*hj[aä]lte\s*gav\s*en\s*g[aå]va/i.test(rawComment);
+            const isSecretHero = isAnonDonor || isBoilerplateHeroComment;
+
+            if (isSecretHero) {
+              const cleanComment = isBoilerplateHeroComment ? '' : rawComment;
+
+              banner.innerHTML = `
+                <span class="donor-name">EN HEMLIG HJÄLTE</span>
+                <div class="alert-subtext">GAV <span class="highlight">${amountFormatted}</span>!</div>
+                ${cleanComment ? `<div class="alert-comment">"${escapeHTML(cleanComment)}"</div>` : ''}
+              `;
+
+              chatAnnouncement = `our2ndHomeL En hemlig hjälte gav ${amountFormatted}!${cleanComment ? ` "${cleanComment}"` : ''} our2ndHomeR`;
+            } else {
+              banner.innerHTML = `
+                <span class="donor-name">${escapeHTML(rawDonor)}</span>
+                <div class="alert-subtext">DONERADE <span class="highlight">${amountFormatted}</span>!</div>
+                ${rawComment ? `<div class="alert-comment">"${escapeHTML(rawComment)}"</div>` : ''}
+              `;
+
+              chatAnnouncement = `our2ndHomeL ${rawDonor} donerade ${amountFormatted}!${rawComment ? ` "${rawComment}"` : ''} our2ndHomeR`;
+            }
+
+            void banner.offsetWidth;
+            banner.classList.add('pos-top', 'anim-top-in');
+          }
+          // 🎯 2. RAID ALERT
+          else if (type === 'raid') {
+            const raider = String(item.donor || item.name || 'Raider').trim();
+            const viewers = Math.max(1, parseInt(item.viewers, 10) || 1);
+            banner.innerHTML = `
+              <span class="donor-name">${escapeHTML(raider)}</span>
+              <div class="alert-subtext">RAIDAR MED <span class="highlight">${viewers}</span> TITTARE!</div>
+            `;
+            void banner.offsetWidth;
+            banner.classList.add('pos-top', 'anim-top-in');
+
+            chatAnnouncement = `our2ndHomeL ${raider} raidar med ${viewers} tittare! our2ndHomeR`;
+          }
+          // 🎯 3. SECONDARY ALERTS
+          else if (type === 'sub') {
+            const subber = String(item.donor || item.name || 'Tittare').trim();
+            const months = Math.max(1, parseInt(item.months, 10) || 1);
+            banner.innerHTML = `
+              <div class="minor-alert-badge">
+                <div class="minor-alert-name">${escapeHTML(subber)}</div>
+                <div class="minor-alert-detail">PRENUMERERADE I <span class="highlight">${months} MÅN</span>!</div>
+              </div>
+            `;
+            void banner.offsetWidth;
+            banner.classList.add('pos-bottom', 'anim-bottom-in');
+
+            chatAnnouncement = `our2ndHomeL ${subber} prenumererade i ${months} mån! our2ndHomeR`;
+          }
+          else if (type === 'bits') {
+            const cheerer = String(item.donor || item.name || 'Tittare').trim();
+            const bits = Math.max(1, parseInt(item.bits || item.amount, 10) || 100);
+            banner.innerHTML = `
+              <div class="minor-alert-badge">
+                <div class="minor-alert-name">${escapeHTML(cheerer)}</div>
+                <div class="minor-alert-detail">CHEERADE <span class="highlight">${bits} BITS</span>!</div>
+              </div>
+            `;
+            void banner.offsetWidth;
+            banner.classList.add('pos-bottom', 'anim-bottom-in');
+
+            chatAnnouncement = `our2ndHomeL ${cheerer} cheerade ${bits} bits! our2ndHomeR`;
+          }
+          else if (type === 'follow') {
+            const follower = String(item.donor || item.name || 'Någon').trim();
+            banner.innerHTML = `
+              <div class="minor-alert-badge">
+                <div class="minor-alert-name">${escapeHTML(follower)}</div>
+                <div class="minor-alert-detail">FÖLJER KANALEN!</div>
+              </div>
+            `;
+            void banner.offsetWidth;
+            banner.classList.add('pos-bottom', 'anim-bottom-in');
+
+            chatAnnouncement = `our2ndHomeL ${follower} började följa. our2ndHomeR`;
+          }
+
+          // 💬 Send automated message to Twitch chat via Streamer.bot
+          if (chatAnnouncement) {
+            sendStreamerbotChat(chatAnnouncement);
+          }
+
+          if (isDonationOrRaid) {
+            triggerEmoteRain(35);
+            rainInterval = setInterval(() => {
+              triggerEmoteRain(8);
+            }, 900);
+          }
+
+          await Promise.all([
+            playAlertSound(type, displayDuration),
+            delay(displayDuration)
+          ]);
+
+          if (rainInterval) {
+            clearInterval(rainInterval);
+            rainInterval = null;
+          }
+
+          banner.classList.remove('anim-top-in', 'anim-bottom-in');
+          banner.classList.add('anim-exit');
+          await delay(400);
+
+          banner.className = 'alert-banner';
+          banner.innerHTML = '';
+
+          // 🎬 SWITCH BACK TO GAMING SCENE (unless another donation/raid or active Utmaning holds Intermission)
+          const nextItem = alertQueue[0];
+          const nextType = nextItem ? String(nextItem.type || 'donation').toLowerCase().trim() : '';
+          const nextIsDonationOrRaid = nextType === 'donation' || nextType === 'raid';
+
+          if (!nextIsDonationOrRaid) {
+            try { localStorage.removeItem(LOCK_KEY_ALERT); } catch (e) {}
+
+            if (localHoldingIntermission && !isLockActive(LOCK_KEY_UTMANING, 300000)) {
+              let returnScene = "";
+              try {
+                returnScene = localStorage.getItem(LOCK_KEY_RETURN_SCENE) || "";
+                localStorage.removeItem(LOCK_KEY_RETURN_SCENE);
+              } catch (e) {}
+
+              if (returnScene && isObsConnected) {
+                const activeScene = await getCurrentObsScene();
+                if (isMatchingScene(activeScene, SCENE_INTERMISSION)) {
+                  await triggerWebcamMove("in");
+                  await setObsScene(returnScene);
+                  await delay(500);
+                }
+              }
+            }
+            localHoldingIntermission = false;
+          }
+        } catch (err) {
+          console.error("❌ [Alert Queue] Unexpected error while processing alert:", err);
+          if (banner) {
+            banner.className = 'alert-banner';
+            banner.innerHTML = '';
+          }
+          localHoldingIntermission = false;
+          try { localStorage.removeItem(LOCK_KEY_ALERT); } catch (e) {}
+        } finally {
+          if (rainInterval) {
+            clearInterval(rainInterval);
+          }
+          setTimeout(() => {
+            isProcessingAlert = false;
+            processAlertQueue();
+          }, PAUSE_BETWEEN_ALERTS_MS);
+        }
       }
     })();
   </script>
