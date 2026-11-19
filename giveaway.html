@@ -150,8 +150,8 @@
         to bottom,
         rgba(0, 0, 0, 0) 0%,
         rgba(0, 0, 0, 0.4) 10%,
-        rgba(0, 0, 1) 28%,
-        rgba(0, 0, 1) 72%,
+        rgba(0, 0, 0, 1) 28%,
+        rgba(0, 0, 0, 1) 72%,
         rgba(0, 0, 0, 0.4) 90%,
         rgba(0, 0, 0, 0) 100%
       );
@@ -159,8 +159,8 @@
         to bottom,
         rgba(0, 0, 0, 0) 0%,
         rgba(0, 0, 0, 0.4) 10%,
-        rgba(0, 0, 1) 28%,
-        rgba(0, 0, 1) 72%,
+        rgba(0, 0, 0, 1) 28%,
+        rgba(0, 0, 0, 1) 72%,
         rgba(0, 0, 0, 0.4) 90%,
         rgba(0, 0, 0, 0) 100%
       );
@@ -493,9 +493,17 @@
     const WRITE_SECRET = "Our2ndHomeSecret2026!";
     const STORAGE_KEY_CHATTERS = "mh_overlay_chatters";
     const STORAGE_KEY_PRIZE = "mh_overlay_prize_text";
-    const STORAGE_KEY_ENTRIES_OPEN = "mh_giveaway_entries_open";
 
     const TWITCH_CHANNEL = "our2ndhome";
+    const IGNORED_BOTS = new Set([
+      "nightbot",
+      "streamelements",
+      "streamlabs",
+      "moobot",
+      "fossabot",
+      "wizebot",
+      TWITCH_CHANNEL.toLowerCase()
+    ]);
 
     const EMOTES_FOLDER = "emotes";
     const CUSTOM_EMOTE_FILES = [
@@ -533,10 +541,17 @@
     let lastTickTime = 0;
     let lastProcessedActionId = 0;
     let isInitialActionLoad = true;
+    let lastGeneratedActionId = 0;
 
     let loadedEmoteImages = [];
     let celebrationParticles = [];
     let celebrationAnimId = null;
+    let prizeDebounceTimer = null;
+
+    function getUniqueActionId() {
+      lastGeneratedActionId = Math.max(Date.now(), lastGeneratedActionId + 1);
+      return lastGeneratedActionId;
+    }
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -572,74 +587,92 @@
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbChattersRef = firebase.database().ref('giveaway_chatters');
+    const dbStateRef = firebase.database().ref('giveaway_state');
     const dbActionRef = firebase.database().ref('giveaway_action');
 
     function preloadEmoteImages() {
       loadedEmoteImages = [];
+      if (isPanel) return;
       CUSTOM_EMOTE_FILES.forEach(filename => {
         const img = new Image();
         img.src = `${EMOTES_FOLDER}/${encodeURIComponent(filename)}`;
         img.onload = () => {
           loadedEmoteImages.push(img);
-          updateStatsUI();
         };
       });
     }
     preloadEmoteImages();
 
     let twitchSocket = null;
+    let twitchReconnectTimer = null;
 
     function normalizeUserKey(name) {
-      return (name || '').replace(/^@+/, '').trim().toLowerCase();
+      return String(name || '').replace(/^@+/, '').trim().toLowerCase().replace(/[.#$\[\]/]/g, '');
+    }
+
+    function scheduleTwitchReconnect() {
+      if (twitchReconnectTimer) return;
+      twitchReconnectTimer = setTimeout(() => {
+        twitchReconnectTimer = null;
+        connectNativeTwitchIRC();
+      }, 3000);
     }
 
     function connectNativeTwitchIRC() {
+      if (!isPanel) return; // Only the Dock connects to Twitch IRC to avoid duplicate writes
+      if (twitchSocket && (twitchSocket.readyState === WebSocket.CONNECTING || twitchSocket.readyState === WebSocket.OPEN)) {
+        return;
+      }
+
       try {
-        if (twitchSocket) {
-          try { twitchSocket.close(); } catch(e) {}
-        }
-
         updateDockStatus(`Ansluter till Twitch IRC (#${TWITCH_CHANNEL})...`);
-        twitchSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        twitchSocket = ws;
 
-        twitchSocket.onopen = () => {
+        ws.onopen = () => {
+          if (twitchSocket !== ws) return;
           isTwitchConnected = true;
-          twitchSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-          twitchSocket.send(`PASS SCHMOOPIIE`);
-          twitchSocket.send(`NICK justinfan${Math.floor(Math.random() * 80000 + 1000)}`);
-          twitchSocket.send(`JOIN #${TWITCH_CHANNEL.toLowerCase().replace('#', '')}`);
+          ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+          ws.send('PASS SCHMOOPIIE');
+          ws.send(`NICK justinfan${Math.floor(Math.random() * 80000 + 1000)}`);
+          ws.send(`JOIN #${TWITCH_CHANNEL.toLowerCase().replace('#', '')}`);
           updateDockStatus(`🟢 Ansluten till Twitch (#${TWITCH_CHANNEL})! Redo att ta emot meddelanden.`);
         };
 
-        twitchSocket.onmessage = (event) => {
+        ws.onmessage = (event) => {
+          if (twitchSocket !== ws) return;
           const raw = event.data || '';
           const lines = raw.split('\r\n');
 
           for (const line of lines) {
             if (!line) continue;
             if (line.startsWith('PING')) {
-              twitchSocket.send('PONG :tmi.twitch.tv');
+              ws.send('PONG :tmi.twitch.tv');
               continue;
             }
-            if (line.includes('PRIVMSG')) {
+            if (line.includes(' PRIVMSG #')) {
               parseTwitchChatMessage(line);
             }
           }
         };
 
-        twitchSocket.onerror = () => {
+        ws.onerror = () => {
+          if (twitchSocket !== ws) return;
           isTwitchConnected = false;
           updateDockStatus(`⚠️ WebSocket fel mot Twitch. Försöker igen...`, true);
+          try { ws.close(); } catch (e) {}
         };
 
-        twitchSocket.onclose = () => {
+        ws.onclose = () => {
+          if (twitchSocket !== ws) return;
           isTwitchConnected = false;
           updateDockStatus(`⚪ Frånkopplad från Twitch. Återansluter om 3s...`, true);
-          setTimeout(connectNativeTwitchIRC, 3000);
+          scheduleTwitchReconnect();
         };
       } catch (e) {
         isTwitchConnected = false;
         updateDockStatus(`❌ Chat fel: ${e.message}`, true);
+        scheduleTwitchReconnect();
       }
     }
 
@@ -654,7 +687,7 @@
           if (nickMatch && nickMatch[1]) displayName = nickMatch[1];
         }
 
-        const privIndex = line.indexOf(' PRIVMSG ');
+        const privIndex = line.indexOf(' PRIVMSG #');
         if (privIndex === -1) return;
 
         const colonIndex = line.indexOf(' :', privIndex);
@@ -673,16 +706,23 @@
 
     function handleIncomingChatMessage(username, message) {
       const userKey = normalizeUserKey(username);
+      if (!userKey) return;
 
-      if (areEntriesOpen) {
+      if (areEntriesOpen && !IGNORED_BOTS.has(userKey)) {
         if (!chatterMap[userKey]) {
-          chatterMap[userKey] = {
+          const entry = {
             displayName: username,
             time: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
           };
+          chatterMap[userKey] = entry;
           saveChatters();
           updateStatsUI();
-          syncChattersToCloud();
+
+          dbChattersRef.child('map/' + userKey).set(entry).catch(() => {});
+          dbChattersRef.update({
+            secret: WRITE_SECRET,
+            timestamp: Date.now()
+          }).catch(() => {});
 
           if (!isSpinning) {
             initInitialStage();
@@ -700,8 +740,8 @@
     function displayWinnerChatResponse(username, message, broadcast = true) {
       winnerHasResponded = true;
 
-      let rawMsg = (message || '').trim();
-      let formattedMsg = rawMsg.length > 28 ? `"${rawMsg.substring(0, 28).trim()}..."` : `"${rawMsg}"`;
+      const rawMsg = (message || '').trim();
+      const formattedMsg = rawMsg.length > 28 ? `"${rawMsg.substring(0, 28).trim()}..."` : `"${rawMsg}"`;
 
       if (giveawayTimerBadge) {
         giveawayTimerBadge.innerHTML = `
@@ -716,7 +756,9 @@
       }
 
       if (broadcast) {
-        const actionId = Date.now();
+        const actionId = getUniqueActionId();
+        lastProcessedActionId = actionId;
+
         dbActionRef.set({
           type: 'WINNER_CHATTED',
           winner: username,
@@ -735,7 +777,9 @@
     }
 
     function getChattersPool() {
-      return Object.values(chatterMap).map(c => c.displayName);
+      return Object.values(chatterMap)
+        .map(c => c && c.displayName)
+        .filter(Boolean);
     }
 
     function saveChatters() {
@@ -747,13 +791,21 @@
     function loadChatters() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY_CHATTERS);
-        if (saved) chatterMap = JSON.parse(saved);
+        if (saved) chatterMap = JSON.parse(saved) || {};
 
         const savedPrize = localStorage.getItem(STORAGE_KEY_PRIZE);
         if (savedPrize !== null) setPrizeText(savedPrize, false);
 
         areEntriesOpen = false;
       } catch (e) {}
+
+      if (isPanel) {
+        dbStateRef.update({
+          areEntriesOpen: false,
+          secret: WRITE_SECRET,
+          timestamp: Date.now()
+        }).catch(() => {});
+      }
 
       updateEntriesUI();
       updateStatsUI();
@@ -766,20 +818,61 @@
         areEntriesOpen: areEntriesOpen,
         secret: WRITE_SECRET,
         timestamp: Date.now()
-      }).catch(() => {});
+      }).catch(err => console.warn("⚠️ Firebase chatters sync failed:", err.message));
     }
 
     dbChattersRef.on('value', (snap) => {
       const data = snap.val();
-      if (data && data.map && !isSpinning) {
-        chatterMap = data.map;
-        if (typeof data.areEntriesOpen === 'boolean') areEntriesOpen = data.areEntriesOpen;
+      if (isSpinning) return;
+
+      chatterMap = (data && data.map && typeof data.map === 'object') ? data.map : {};
+      saveChatters();
+      updateStatsUI();
+      initInitialStage();
+    }, (err) => {
+      console.warn("⚠️ Firebase chatters listener error:", err.message);
+    });
+
+    dbStateRef.on('value', (snap) => {
+      const state = snap.val();
+      if (!state) return;
+
+      if (typeof state.areEntriesOpen === 'boolean') {
+        areEntriesOpen = state.areEntriesOpen;
+        updateEntriesUI();
+      }
+      if (typeof state.prize === 'string') {
+        if (!prizeInput || document.activeElement !== prizeInput) {
+          setPrizeText(state.prize, false);
+        }
+      }
+    }, (err) => {
+      console.warn("⚠️ Firebase state listener error:", err.message);
+    });
+
+    function handleIncomingAction(act) {
+      if (!act || !act.type) return;
+      const actId = act.actionId || act.timestamp || 0;
+      if (actId && actId === lastProcessedActionId) return;
+      if (actId) lastProcessedActionId = actId;
+
+      if (act.type === 'START_SPIN') {
+        executeSpin(act.winner, act.delayMs || 10000, act.spinDistance || 75, act.pool);
+      } else if (act.type === 'WINNER_CHATTED') {
+        displayWinnerChatResponse(act.winner, act.message, false);
+      } else if (act.type === 'CLOSE_GIVEAWAY' || act.type === 'CLAIM_CLOSE' || act.type === 'CANCEL_CLOSE') {
+        finalizeCloseAndHide();
+      } else if (act.type === 'RESET') {
+        chatterMap = {};
+        currentWinner = null;
+        winnerHasResponded = false;
+        areEntriesOpen = false;
         saveChatters();
         updateEntriesUI();
+        finalizeCloseAndHide();
         updateStatsUI();
-        initInitialStage();
       }
-    });
+    }
 
     dbActionRef.on('value', (snap) => {
       const act = snap.val();
@@ -791,74 +884,41 @@
         return;
       }
 
-      if (act.type === 'START_SPIN' && act.actionId && act.actionId !== lastProcessedActionId) {
-        lastProcessedActionId = act.actionId;
-        executeSpin(act.winner, act.delayMs || 10000, act.spinDistance || 75);
-      } else if (act.type === 'WINNER_CHATTED' && act.actionId && act.actionId !== lastProcessedActionId) {
-        lastProcessedActionId = act.actionId;
-        displayWinnerChatResponse(act.winner, act.message, false);
-      } else if ((act.type === 'CLOSE_GIVEAWAY' || act.type === 'CLAIM_CLOSE' || act.type === 'CANCEL_CLOSE') && act.actionId && act.actionId !== lastProcessedActionId) {
-        lastProcessedActionId = act.actionId;
-        finalizeCloseAndHide();
-      } else if (act.type === 'RESET') {
-        chatterMap = {};
-        currentWinner = null;
-        winnerHasResponded = false;
-        finalizeCloseAndHide();
-        updateStatsUI();
-      } else if (act.type === 'UPDATE_PRIZE') {
-        setPrizeText(act.prize, false);
-      } else if (act.type === 'TOGGLE_ENTRIES') {
-        areEntriesOpen = act.open;
-        updateEntriesUI();
-      }
+      handleIncomingAction(act);
+    }, (err) => {
+      console.warn("⚠️ Firebase action listener error:", err.message);
     });
 
     if (bus) {
       bus.onmessage = (e) => {
         const { type, payload } = e.data || {};
-        if (type === 'START_SPIN' && payload.actionId !== lastProcessedActionId) {
-          lastProcessedActionId = payload.actionId;
-          executeSpin(payload.winner, payload.delayMs, payload.spinDistance);
+        if (!type) return;
+
+        if (type === 'UPDATE_PRIZE' && payload) {
+          if (!prizeInput || document.activeElement !== prizeInput) {
+            setPrizeText(payload.prize, false);
+          }
+          return;
         }
-        if (type === 'WINNER_CHATTED' && payload.actionId !== lastProcessedActionId) {
-          lastProcessedActionId = payload.actionId;
-          displayWinnerChatResponse(payload.winner, payload.message, false);
-        }
-        if ((type === 'CLOSE_GIVEAWAY' || type === 'CLAIM_CLOSE' || type === 'CANCEL_CLOSE') && payload.actionId !== lastProcessedActionId) {
-          lastProcessedActionId = payload.actionId;
-          finalizeCloseAndHide();
-        }
-        if (type === 'RESET') {
-          chatterMap = {};
-          currentWinner = null;
-          winnerHasResponded = false;
-          finalizeCloseAndHide();
-          updateStatsUI();
-        }
-        if (type === 'UPDATE_PRIZE') setPrizeText(payload.prize, false);
-        if (type === 'TOGGLE_ENTRIES') {
-          areEntriesOpen = payload.open;
+        if (type === 'TOGGLE_ENTRIES' && payload) {
+          areEntriesOpen = Boolean(payload.open);
           updateEntriesUI();
+          return;
         }
+
+        handleIncomingAction(Object.assign({ type }, payload || {}));
       };
     }
 
     function toggleEntriesState() {
       areEntriesOpen = !areEntriesOpen;
-      try {
-        localStorage.setItem(STORAGE_KEY_ENTRIES_OPEN, areEntriesOpen ? 'true' : 'false');
-      } catch (e) {}
-
       updateEntriesUI();
-      syncChattersToCloud();
 
-      dbActionRef.set({
-        type: 'TOGGLE_ENTRIES',
-        open: areEntriesOpen,
+      dbStateRef.update({
+        areEntriesOpen: areEntriesOpen,
         secret: WRITE_SECRET,
         timestamp: Date.now()
-      }).catch(() => {});
+      }).catch(err => console.warn("⚠️ Toggle entries failed:", err.message));
 
       if (bus) bus.postMessage({ type: 'TOGGLE_ENTRIES', payload: { open: areEntriesOpen } });
     }
@@ -914,13 +974,13 @@
       container.innerHTML = filtered.map(c => `
         <div class="chatter-row">
           <span>${escapeHTML(c.displayName)}</span>
-          <span class="chatter-time">${c.time || 'Aktiv'}</span>
+          <span class="chatter-time">${escapeHTML(c.time || 'Aktiv')}</span>
         </div>
       `).join('');
     }
 
     function setPrizeText(text, broadcast = true) {
-      const clean = (text || '').trim();
+      const clean = String(text || '').trim();
       if (giveawayPrizeDisplay) {
         if (clean) {
           giveawayPrizeDisplay.innerHTML = `
@@ -932,14 +992,25 @@
         }
       }
 
-      if (prizeInput) prizeInput.value = clean;
+      if (prizeInput && document.activeElement !== prizeInput) {
+        prizeInput.value = clean;
+      }
+
       try {
         localStorage.setItem(STORAGE_KEY_PRIZE, clean);
       } catch (e) {}
 
       if (broadcast) {
-        dbActionRef.set({ type: 'UPDATE_PRIZE', prize: clean, secret: WRITE_SECRET });
         if (bus) bus.postMessage({ type: 'UPDATE_PRIZE', payload: { prize: clean } });
+
+        clearTimeout(prizeDebounceTimer);
+        prizeDebounceTimer = setTimeout(() => {
+          dbStateRef.update({
+            prize: clean,
+            secret: WRITE_SECRET,
+            timestamp: Date.now()
+          }).catch(() => {});
+        }, 250);
       }
     }
 
@@ -954,7 +1025,7 @@
         if (AudioCtx) audioCtx = new AudioCtx();
       }
       if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+        audioCtx.resume().catch(() => {});
       }
       return audioCtx;
     }
@@ -1089,25 +1160,31 @@
       getAudioContext();
       const winner = pool[Math.floor(Math.random() * pool.length)];
       const spinDistance = (holdDelayMs <= 5000) ? 45 : 75;
-      const actionId = Date.now();
+      const actionId = getUniqueActionId();
       lastProcessedActionId = actionId;
 
       dbActionRef.set({
         type: 'START_SPIN',
         winner: winner,
+        pool: pool,
         delayMs: holdDelayMs,
         spinDistance: spinDistance,
         actionId: actionId,
         secret: WRITE_SECRET,
         timestamp: actionId
-      });
+      }).catch(err => console.warn("⚠️ Start spin sync failed:", err.message));
 
-      if (bus) bus.postMessage({ type: 'START_SPIN', payload: { winner, delayMs: holdDelayMs, spinDistance, actionId } });
+      if (bus) {
+        bus.postMessage({
+          type: 'START_SPIN',
+          payload: { winner, pool, delayMs: holdDelayMs, spinDistance, actionId }
+        });
+      }
 
-      executeSpin(winner, holdDelayMs, spinDistance);
+      executeSpin(winner, holdDelayMs, spinDistance, pool);
     }
 
-    function executeSpin(winnerName, holdDelayMs = 10000, spinDistance = 75) {
+    function executeSpin(winnerName, holdDelayMs = 10000, spinDistance = 75, providedPool = null) {
       getAudioContext();
       stopTimers();
       clearCelebrationEffects();
@@ -1119,7 +1196,14 @@
 
       if (giveawayWidget) giveawayWidget.classList.add('active');
 
-      const names = getChattersPool();
+      let names = (Array.isArray(providedPool) && providedPool.length > 0)
+        ? providedPool.filter(Boolean)
+        : getChattersPool();
+
+      if (names.length === 0) {
+        names = [winnerName || "VINNARE"];
+      }
+
       trackNamesList = [];
       for (let i = 0; i < 7; i++) {
         trackNamesList.push(names[i % names.length]);
@@ -1133,16 +1217,18 @@
       const pickDifferent = (notThis) => {
         if (names.length <= 1) return names[0] || winnerName;
         let chosen;
+        let tries = 0;
         do {
           chosen = names[Math.floor(Math.random() * names.length)];
-        } while (chosen === notThis);
+          tries++;
+        } while (chosen === notThis && tries < 10);
         return chosen;
       };
 
       let lastAdded = trackNamesList[trackNamesList.length - 1] || "";
       while (trackNamesList.length < totalTrackNeeded) {
         const nextIdx = trackNamesList.length;
-        let name = (nextIdx === targetOffset) ? winnerName : pickDifferent(lastAdded);
+        const name = (nextIdx === targetOffset) ? winnerName : pickDifferent(lastAdded);
         trackNamesList.push(name);
         lastAdded = name;
       }
@@ -1222,14 +1308,18 @@
       }, holdDelayMs);
     }
 
-    // 🎯 SINGLE UNIFIED CLOSE ACTION
+    // 🎯 SINGLE UNIFIED CLOSE / CANCEL ACTION
     function closeGiveaway() {
-      if (isSpinning) return;
-
-      const actionId = Date.now();
+      const actionId = getUniqueActionId();
       lastProcessedActionId = actionId;
 
-      dbActionRef.set({ type: 'CLOSE_GIVEAWAY', actionId: actionId, secret: WRITE_SECRET, timestamp: actionId });
+      dbActionRef.set({
+        type: 'CLOSE_GIVEAWAY',
+        actionId: actionId,
+        secret: WRITE_SECRET,
+        timestamp: actionId
+      }).catch(() => {});
+
       if (bus) bus.postMessage({ type: 'CLOSE_GIVEAWAY', payload: { actionId } });
 
       finalizeCloseAndHide();
@@ -1245,9 +1335,11 @@
       if (giveawayWidget) giveawayWidget.classList.remove('active');
 
       setTimeout(() => {
-        currentWinner = null;
-        if (giveawayTimerBadge) giveawayTimerBadge.innerHTML = "";
-        initInitialStage();
+        if (!isSpinning) {
+          currentWinner = null;
+          if (giveawayTimerBadge) giveawayTimerBadge.innerHTML = "";
+          initInitialStage();
+        }
       }, 450);
     }
 
@@ -1359,6 +1451,7 @@
     }
 
     function clearCelebrationEffects() {
+      celebrationParticles = [];
       if (celebrationAnimId) {
         cancelAnimationFrame(celebrationAnimId);
         celebrationAnimId = null;
@@ -1399,11 +1492,19 @@
         saveChatters();
         syncChattersToCloud();
 
-        dbActionRef.set({ type: 'RESET', actionId: Date.now(), secret: WRITE_SECRET }).catch(() => {});
-        if (bus) bus.postMessage({ type: 'RESET' });
+        dbStateRef.update({
+          areEntriesOpen: false,
+          secret: WRITE_SECRET,
+          timestamp: Date.now()
+        }).catch(() => {});
+
+        const actionId = getUniqueActionId();
+        lastProcessedActionId = actionId;
+        dbActionRef.set({ type: 'RESET', actionId: actionId, secret: WRITE_SECRET }).catch(() => {});
+        if (bus) bus.postMessage({ type: 'RESET', payload: { actionId } });
 
         updateStatsUI();
-        initInitialStage();
+        finalizeCloseAndHide();
       }
     }
 
@@ -1415,7 +1516,9 @@
 
     loadChatters();
     initInitialStage();
-    connectNativeTwitchIRC();
+    if (isPanel) {
+      connectNativeTwitchIRC();
+    }
   </script>
 </body>
 </html>
