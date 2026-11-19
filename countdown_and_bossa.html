@@ -125,7 +125,7 @@
 
     .progress-bar-fill {
       height: 100%;
-      width: 1%;
+      width: 0%;
       background: #ace600;
       border-radius: 999px;
       transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
@@ -186,6 +186,11 @@
       background: #332d18;
       color: #ffea00;
       border: 1px solid #ffea00;
+    }
+    .status-pill.offline {
+      background: #381414;
+      color: #ff4d4d;
+      border: 1px solid #ff4d4d;
     }
 
     .summary-text {
@@ -275,6 +280,7 @@
       font-size: 11px;
       cursor: pointer;
     }
+    .manual-row button:hover { background: #24242a; border-color: #ace600; color: #ace600; }
 
     .test-grid {
       display: grid;
@@ -333,7 +339,7 @@
     <div class="header-box">
       <span class="header-title">
         💰 BÖSSA
-        <span id="dockStatusPill" class="status-pill online">🟢 LIVE ANSLUTEN (0 KR)</span>
+        <span id="dockStatusPill" class="status-pill syncing">🟡 ANSLUTER...</span>
       </span>
     </div>
 
@@ -348,14 +354,14 @@
     <div class="field-row">
       <span class="field-label">SÄTT BELOPP:</span>
       <div style="display:flex; gap:4px; width:65%;">
-        <input type="number" id="dockDirectTotalInput" placeholder="Belopp (kr)" style="width:100%;">
+        <input type="number" id="dockDirectTotalInput" min="0" step="1" placeholder="Belopp (kr)" style="width:100%;">
         <button class="btn-dark" style="width:auto; margin:0; padding:5px 8px;" onclick="dockSetTotal()">Sätt</button>
       </div>
     </div>
 
     <div class="manual-row" style="margin-top: 6px;">
       <input type="text" id="dockManualName" name="name" placeholder="Namn" value="Lisa">
-      <input type="number" id="dockManualAmount" name="amount" placeholder="Kr" value="250">
+      <input type="number" id="dockManualAmount" name="amount" min="1" step="1" placeholder="Kr" value="250">
       <button id="dockSubmitDonationBtn" onclick="dockSubmitManualDonation()">+ Lägg till</button>
     </div>
 
@@ -392,52 +398,91 @@
       return arr[Math.floor(Math.random() * arr.length)];
     }
 
+    function parseSafeNumber(val, fallback = 0) {
+      const n = typeof val === 'number' ? val : parseFloat(String(val ?? '').replace(/\s+/g, '').replace(',', '.'));
+      return Number.isFinite(n) ? n : fallback;
+    }
+
     function formatSEK(num) {
-      return new Intl.NumberFormat('sv-SE').format(Math.round(num)) + ' KR';
+      return new Intl.NumberFormat('sv-SE').format(Math.round(parseSafeNumber(num, 0))) + ' KR';
+    }
+
+    let lastGeneratedAlertId = 0;
+    function getUniqueAlertId() {
+      lastGeneratedAlertId = Math.max(Date.now(), lastGeneratedAlertId + 1);
+      return lastGeneratedAlertId;
     }
 
     const hash = window.location.hash.toLowerCase();
-    const isPanel = hash.includes('panel');
+    const isPanel = hash.includes('panel') || hash.includes('dock');
 
     let currentTotal = 0;
+    let isFirebaseOnline = false;
+    let isForceSyncing = false;
+    let syncTimeoutTimer = null;
+    let countdownTimer = null;
 
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbRef = firebase.database().ref('bossa');
+    const connectedRef = firebase.database().ref('.info/connected');
+
+    connectedRef.on('value', (snap) => {
+      isFirebaseOnline = Boolean(snap.val());
+      updateStatusDisplay();
+    });
 
     dbRef.on('value', (snapshot) => {
       const data = snapshot.val();
-      if (!data) return;
+      isFirebaseOnline = true;
 
-      const newTotal = data.total || 0;
-      currentTotal = newTotal;
+      if (!data) {
+        updateTotalDisplaySmooth(0);
+        updateStatusDisplay();
+        return;
+      }
+
+      currentTotal = Math.max(0, parseSafeNumber(data.total, 0));
+      isForceSyncing = Boolean(data.forceSync);
+
+      if (!isForceSyncing && syncTimeoutTimer) {
+        clearTimeout(syncTimeoutTimer);
+        syncTimeoutTimer = null;
+      }
 
       updateTotalDisplaySmooth(currentTotal);
-
-      if (data.forceSync) {
-        updateStatusDisplay(true);
-      } else {
-        updateStatusDisplay(false);
-      }
+      updateStatusDisplay();
+    }, (error) => {
+      console.error("❌ [Firebase] Read error:", error);
+      isFirebaseOnline = false;
+      updateStatusDisplay();
     });
 
     function updateTotalDisplaySmooth(num) {
+      const safeNum = Math.max(0, parseSafeNumber(num, 0));
       const el = document.getElementById('totalDisplay');
-      if (el) el.innerText = formatSEK(num);
+      if (el) el.innerText = formatSEK(safeNum);
 
-      const percent = Math.min(100, Math.max(0, (num / GOAL_TARGET_KR) * 100));
+      const percent = Math.min(100, Math.max(0, (safeNum / GOAL_TARGET_KR) * 100));
       const bar = document.getElementById('goalProgressBar');
-      if (bar) bar.style.width = `${Math.max(1, percent)}%`;
+      if (bar) {
+        bar.style.width = `${safeNum <= 0 ? 0 : Math.max(1, percent)}%`;
+      }
 
       const targetText = document.getElementById('goalTargetText');
-      if (targetText) targetText.innerText = `MÅL: 40 000 KR (${percent.toFixed(1)}%)`;
+      if (targetText) {
+        targetText.innerText = `MÅL: ${formatSEK(GOAL_TARGET_KR)} (${percent.toFixed(1)}%)`;
+      }
     }
 
-    function updateStatusDisplay(isSyncing = false) {
+    function updateStatusDisplay() {
       const pill = document.getElementById('dockStatusPill');
       if (pill) {
-        if (isSyncing) {
+        if (!isFirebaseOnline) {
+          pill.innerText = "🔴 FRÅNKOPPLAD";
+          pill.className = "status-pill offline";
+        } else if (isForceSyncing) {
           pill.innerText = "⚡ SYNKAR BÖSSAN...";
           pill.className = "status-pill syncing";
         } else {
@@ -453,62 +498,100 @@
     }
 
     function dockRequestResync() {
-      updateStatusDisplay(true);
+      isForceSyncing = true;
+      updateStatusDisplay();
+
+      clearTimeout(syncTimeoutTimer);
+      syncTimeoutTimer = setTimeout(() => {
+        if (isForceSyncing) {
+          console.warn("⚠️ Sync request timed out—check if Streamer.bot sync script is running.");
+          isForceSyncing = false;
+          updateStatusDisplay();
+        }
+      }, 10000);
 
       dbRef.update({
         forceSync: true,
         secret: WRITE_SECRET
       }).catch(err => {
+        clearTimeout(syncTimeoutTimer);
+        isForceSyncing = false;
+        updateStatusDisplay();
         alert("Kunde inte begära synk: " + err.message);
       });
     }
 
     function dockSetTotal() {
-      const val = parseFloat(document.getElementById('dockDirectTotalInput').value);
-      if (isNaN(val)) return;
-      dbRef.set({ total: val, diff: 0, donor: "", comment: "", alertId: 0, alerts: [], forceSync: false, secret: WRITE_SECRET });
+      const inputEl = document.getElementById('dockDirectTotalInput');
+      const val = parseSafeNumber(inputEl ? inputEl.value : '', NaN);
+      if (!Number.isFinite(val) || val < 0) {
+        alert("Ange ett giltigt belopp (0 eller högre).");
+        return;
+      }
+
+      dbRef.transaction((currentData) => {
+        const base = (currentData && typeof currentData === 'object') ? currentData : {};
+        return Object.assign({}, base, {
+          total: val,
+          amount: val,
+          diff: 0,
+          donor: "",
+          comment: "",
+          alertId: 0,
+          alerts: [],
+          forceSync: false,
+          secret: WRITE_SECRET
+        });
+      }).catch(err => {
+        alert("Kunde inte sätta belopp: " + err.message);
+      });
     }
 
     function dockSubmitManualDonation() {
       const donor = document.getElementById('dockManualName').value.trim() || "Lisa";
-      const amount = parseFloat(document.getElementById('dockManualAmount').value) || 100;
+      const amount = parseSafeNumber(document.getElementById('dockManualAmount').value, NaN);
       const comment = document.getElementById('dockManualComment').value.trim();
 
-      dbRef.set({
-        total: currentTotal + amount,
-        diff: amount,
-        donor: donor,
-        comment: comment,
-        alertId: Date.now(),
-        alerts: [{ type: 'donation', donor: donor, amount: amount, comment: comment }],
-        forceSync: false,
-        secret: WRITE_SECRET
-      });
-    }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        alert("Ange ett giltigt donationsbelopp större än 0.");
+        return;
+      }
 
-    function dockTriggerTestAlert(type) {
-      const uniqueId = Date.now();
+      const uniqueId = getUniqueAlertId();
 
-      if (type === 'donation') {
-        const donor = getRandomItem(RANDOM_NAMES);
-        const amount = getRandomItem(RANDOM_AMOUNTS);
-        const comment = getRandomItem(RANDOM_COMMENTS);
-
-        dbRef.set({
-          total: currentTotal + amount,
+      dbRef.transaction((currentData) => {
+        const base = (currentData && typeof currentData === 'object') ? currentData : {};
+        const latestTotal = Math.max(0, parseSafeNumber(base.total, currentTotal));
+        const newTotal = latestTotal + amount;
+        return Object.assign({}, base, {
+          total: newTotal,
+          amount: newTotal,
           diff: amount,
           donor: donor,
           comment: comment,
+          type: 'donation',
           alertId: uniqueId,
           alerts: [{ type: 'donation', donor: donor, amount: amount, comment: comment }],
           forceSync: false,
           secret: WRITE_SECRET
         });
-        return;
-      }
+      }).catch(err => {
+        alert("Kunde inte lägga till donation: " + err.message);
+      });
+    }
 
+    function dockTriggerTestAlert(type) {
+      const uniqueId = getUniqueAlertId();
       let alertObj = {};
-      if (type === 'raid') {
+
+      if (type === 'donation') {
+        alertObj = {
+          type: 'donation',
+          donor: getRandomItem(RANDOM_NAMES),
+          amount: getRandomItem(RANDOM_AMOUNTS),
+          comment: getRandomItem(RANDOM_COMMENTS)
+        };
+      } else if (type === 'raid') {
         alertObj = { type: 'raid', donor: getRandomItem(RANDOM_RAIDERS), viewers: getRandomItem(RANDOM_VIEWERS) };
       } else if (type === 'sub') {
         alertObj = { type: 'sub', donor: getRandomItem(RANDOM_NAMES), months: getRandomItem(RANDOM_MONTHS) };
@@ -518,17 +601,40 @@
         alertObj = { type: 'follow', donor: getRandomItem(RANDOM_NAMES) };
       }
 
-      dbRef.set({
-        total: currentTotal,
-        diff: 0,
-        donor: "",
-        comment: "",
-        alertId: uniqueId,
-        alerts: [alertObj],
-        forceSync: false,
-        secret: WRITE_SECRET
+      // Keeps real charity total untouched during alert tests
+      dbRef.transaction((currentData) => {
+        const base = (currentData && typeof currentData === 'object') ? currentData : {};
+        const latestTotal = Math.max(0, parseSafeNumber(base.total, currentTotal));
+        return Object.assign({}, base, {
+          total: latestTotal,
+          diff: 0,
+          donor: "",
+          comment: "",
+          alertId: uniqueId,
+          alerts: [alertObj],
+          forceSync: false,
+          secret: WRITE_SECRET
+        });
+      }).catch(err => {
+        alert("Kunde inte skicka test-alert: " + err.message);
       });
     }
+
+    const directTotalInput = document.getElementById('dockDirectTotalInput');
+    if (directTotalInput) {
+      directTotalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') dockSetTotal();
+      });
+    }
+
+    ['dockManualName', 'dockManualAmount', 'dockManualComment'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') dockSubmitManualDonation();
+        });
+      }
+    });
 
     function updateCountdown() {
       const label = document.getElementById('countdownLabel');
@@ -539,6 +645,10 @@
       if (diff <= 0) {
         timerDisplay.innerText = "00:00:00";
         label.innerText = "INSAMLINGEN ÄR AVSLUTAD!";
+        if (countdownTimer) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+        }
         return;
       }
 
@@ -554,12 +664,14 @@
       timerDisplay.innerHTML = `${days}D <span class="sep-dot"></span> ${h}:${m}:${s}`;
     }
 
+    updateTotalDisplaySmooth(0);
+
     if (isPanel) {
       document.body.classList.add('mode-panel');
     } else {
       document.body.classList.add('mode-overlay');
       updateCountdown();
-      setInterval(updateCountdown, 1000);
+      countdownTimer = setInterval(updateCountdown, 1000);
     }
   </script>
 </body>
