@@ -41,13 +41,13 @@
       pointer-events: none;
     }
 
-    /* Layer Depth Order */
-    #layerAlerts    { z-index: 5; }
+    /* Layer Depth Order (Alerts & Emote Rain on top) */
     #layerSchedule  { z-index: 10; }
     #layerGoals     { z-index: 15; }
     #layerBossa     { z-index: 20; }
     #layerUtmaning  { z-index: 25; }
     #layerGiveaway  { z-index: 30; }
+    #layerAlerts    { z-index: 35; }
 
     /* ========================================================
        🎛️ 2. OBS DOCK: ZERO DEAD SPACE FLEX ARCHITECTURE
@@ -250,12 +250,12 @@
        📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
-    <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGoals" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerUtmaning" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGiveaway" class="overlay-frame" allow="autoplay"></iframe>
+    <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
   </div>
 
   <!-- ========================================================
@@ -307,19 +307,16 @@
     // ========================================================
     const SOUNDS_FOLDER = "sounds";
 
-    // 10 Random Donation Sounds
     const CUSTOM_SOUND_FILES = [
       "0.mp3", "1.mp3", "2.mp3", "3.mp3", "4.mp3",
       "5.mp3", "6.mp3", "7.mp3", "8.mp3", "9.mp3"
     ];
 
-    // Local Alert Sounds
     const SOUND_RAID = `${SOUNDS_FOLDER}/raid_alert.mp3`;
     const SOUND_SUB_BITS_FOLLOW = `${SOUNDS_FOLDER}/ping_alert.mp3`;
     const SOUND_UTMANING_CUSTOM = `${SOUNDS_FOLDER}/mrb_hello_utmaning.mp3`;
     const SOUND_UTMANING_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
 
-    // Grouped Soundboard Sounds (Randomized per click)
     const SOUNDBOARD_GROUPS = {
       knocking: [
         `${SOUNDS_FOLDER}/door_knocking_soundboard.mp3`,
@@ -335,7 +332,6 @@
       ]
     };
 
-    // Dedicated Soundboard Sounds (100% Local Files)
     const SOUNDBOARD_URLS = {
       homer_bart: `${SOUNDS_FOLDER}/homer_and_bart_soundboard.mp3`,
       applause: `${SOUNDS_FOLDER}/applause_soundboard.mp3`,
@@ -390,7 +386,6 @@
       });
     }
 
-    // Central Sound Player Function
     function playMasterSound(type, soundKey = '', volume = null) {
       if (isPanel) return;
 
@@ -428,7 +423,8 @@
 
       const audio = new Audio(soundUrl);
       audio.volume = Math.max(0, Math.min(1, vol));
-      audio.play().catch(() => {
+      audio.play().catch(err => {
+        console.warn(`⚠️ [Master Audio] Could not play "${soundUrl}":`, err.message);
         if (type === 'utmaning' && SOUND_UTMANING_FALLBACK) {
           const fb = new Audio(SOUND_UTMANING_FALLBACK);
           fb.volume = Math.max(0, Math.min(1, vol));
@@ -437,11 +433,28 @@
       });
     }
 
-    // De-duplication handler
-    let lastHandledTriggerId = "";
+    // De-duplication handler (supports triggerId, soundId, and rapid fallback dedup)
+    const handledTriggerIds = new Set();
+    let lastUnnamedSoundKey = "";
+    let lastUnnamedSoundAt = 0;
+
     function handleSoundRequest(soundType, soundKey, volume, triggerId) {
-      if (triggerId && triggerId === lastHandledTriggerId) return;
-      if (triggerId) lastHandledTriggerId = triggerId;
+      if (triggerId) {
+        if (handledTriggerIds.has(triggerId)) return;
+        handledTriggerIds.add(triggerId);
+        if (handledTriggerIds.size > 50) {
+          const first = handledTriggerIds.values().next().value;
+          handledTriggerIds.delete(first);
+        }
+      } else {
+        const keySig = `${soundType}:${soundKey || ''}`;
+        const now = Date.now();
+        if (keySig === lastUnnamedSoundKey && (now - lastUnnamedSoundAt) < 250) {
+          return;
+        }
+        lastUnnamedSoundKey = keySig;
+        lastUnnamedSoundAt = now;
+      }
 
       playMasterSound(soundType, soundKey, volume);
     }
@@ -449,32 +462,40 @@
     window.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'PLAY_SOUND') {
         handleSoundRequest(
-          event.data.soundType, 
-          event.data.soundKey, 
-          event.data.volume, 
-          event.data.triggerId
+          event.data.soundType,
+          event.data.soundKey,
+          event.data.volume,
+          event.data.triggerId || event.data.soundId
         );
       }
     });
 
+    let soundBroadcast = null;
     try {
-      const soundBroadcast = new BroadcastChannel('mh_sound_bus');
+      soundBroadcast = new BroadcastChannel('mh_sound_bus');
       soundBroadcast.onmessage = (event) => {
         if (event.data && event.data.type === 'PLAY_SOUND') {
           handleSoundRequest(
-            event.data.soundType, 
-            event.data.soundKey, 
-            event.data.volume, 
-            event.data.triggerId
+            event.data.soundType,
+            event.data.soundKey,
+            event.data.volume,
+            event.data.triggerId || event.data.soundId
           );
         }
       };
-    } catch(e) {}
+    } catch (e) {}
+
+    let utmaningChannel = null;
+    try {
+      utmaningChannel = new BroadcastChannel('mh_utmaning_channel');
+    } catch (e) {}
 
     // ========================================================
     // 📡 FIREBASE SETUP & REALTIME SYNC
     // ========================================================
     const FIREBASE_DATABASE_URL = "https://musikhjalpen-6306e-default-rtdb.europe-west1.firebasedatabase.app";
+    const WRITE_SECRET = "Our2ndHomeSecret2026!";
+
     if (!firebase.apps.length) {
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
@@ -482,27 +503,38 @@
     const utmaningDbRef = db.ref('utmaning');
     let utmaningStateActive = false;
 
-    // Listen to real-time volume changes from Mod Panel slider
+    // Listen to real-time volume changes (supports both number and { volume } object)
     db.ref('soundboard/volume').on('value', (snap) => {
-      const v = snap.val();
+      const raw = snap.val();
+      const v = (raw && typeof raw === 'object') ? raw.volume : raw;
       if (typeof v === 'number' && !isNaN(v)) {
         masterSoundboardVolume = Math.max(0, Math.min(1, v));
       }
     });
 
-    // Listen to Soundboard triggers via Firebase
-    const initTimestamp = Date.now();
+    // Listen to Soundboard triggers via Firebase (clock-skew safe)
+    let isInitialSoundLoad = true;
+    let lastFbSoundId = "";
+
     if (!isPanel) {
       db.ref('soundboard/trigger').on('value', (snapshot) => {
         const val = snapshot.val();
-        if (val && val.sound && val.timestamp > initTimestamp) {
-          handleSoundRequest(
-            'soundboard', 
-            val.sound, 
-            val.volume, 
-            val.triggerId || ('fb-' + val.timestamp)
-          );
+
+        if (isInitialSoundLoad) {
+          isInitialSoundLoad = false;
+          if (val) lastFbSoundId = val.triggerId || ('fb-' + (val.timestamp || ''));
+          return;
         }
+
+        if (val && val.sound) {
+          const tid = val.triggerId || ('fb-' + val.timestamp);
+          if (tid === lastFbSoundId) return;
+          lastFbSoundId = tid;
+
+          handleSoundRequest('soundboard', val.sound, val.volume, tid);
+        }
+      }, (err) => {
+        console.warn("⚠️ [Master Hub] Soundboard listener error:", err.message);
       });
     }
 
@@ -535,17 +567,25 @@
       const customText = inputEl ? inputEl.value.trim() : "";
       const nextActiveState = !utmaningStateActive;
 
+      if (nextActiveState && !customText) {
+        if (inputEl) inputEl.focus();
+        return;
+      }
+
       const payload = {
         active: nextActiveState,
         text: customText,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        secret: WRITE_SECRET
       };
 
-      utmaningDbRef.set(payload);
+      utmaningDbRef.set(payload).catch(err => {
+        console.error("❌ [Master Hub] Could not update utmaning:", err.message);
+      });
 
-      try {
-        new BroadcastChannel('mh_utmaning_channel').postMessage(payload);
-      } catch(e) {}
+      if (utmaningChannel) {
+        try { utmaningChannel.postMessage(payload); } catch (e) {}
+      }
 
       updateUtmaningUI(nextActiveState);
     }
@@ -555,10 +595,12 @@
       if (val) {
         updateUtmaningUI(Boolean(val.active));
         const inputEl = document.getElementById('utmaningCustomText');
-        if (inputEl && val.text && !utmaningStateActive) {
+        if (inputEl && document.activeElement !== inputEl && typeof val.text === 'string') {
           inputEl.value = val.text;
         }
       }
+    }, (err) => {
+      console.warn("⚠️ [Master Hub] Utmaning listener error:", err.message);
     });
 
     // ========================================================
@@ -574,12 +616,12 @@
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
 
-      document.getElementById('layerAlerts').src = "alerts.html";
       document.getElementById('layerSchedule').src = "schedule.html#overlay";
       document.getElementById('layerGoals').src = "goals.html#overlay";
       document.getElementById('layerBossa').src = "countdown_and_bossa.html#overlay";
       document.getElementById('layerUtmaning').src = "utmaningar.html#overlay";
       document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
+      document.getElementById('layerAlerts').src = "alerts.html";
     }
   </script>
 </body>
