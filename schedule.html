@@ -319,7 +319,8 @@
       display: flex;
       flex-direction: column;
       position: relative;
-      flex: 1;
+      flex: 1 1 0%;
+      min-width: 0;
       align-items: center;
       text-align: center;
       padding: 0 4px;
@@ -327,6 +328,7 @@
 
     .node-time {
       height: 22px;
+      max-width: 100%;
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -334,6 +336,8 @@
       font-weight: 800;
       color: #ffffff;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       letter-spacing: 1px;
     }
 
@@ -359,13 +363,15 @@
 
     .node-streamer {
       height: 22px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
+      max-width: 100%;
+      display: block;
+      line-height: 22px;
       font-size: 14px;
       font-weight: 900;
       color: #ffffff;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       letter-spacing: 0.8px;
     }
 
@@ -386,7 +392,7 @@
     }
 
     /* ========================================================
-       🎛️ 2. OBS DOCK: CONTROLLER (CLEAN NATIVE WIDGET)
+       🎛️ 2. OBS DOCK: CONTROLLER
        ======================================================== */
     .dock-container {
       width: 100%;
@@ -651,7 +657,7 @@
     </div>
   </div>
 
-  <!-- 🎛️ 2. OBS CONTROL DOCK (CLEAN SCHEDULE CONTROLLER WITHOUT EXTRA BOXES) -->
+  <!-- 🎛️ 2. OBS CONTROL DOCK -->
   <div id="panelRoot" class="dock-container">
     
     <div class="header-box">
@@ -746,21 +752,20 @@
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 00:00", end: "2026-12-06 10:00", timeText: "00:00 - 10:00", name: "Sista Natten", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 10:00", end: "2026-12-06 15:00", timeText: "10:00 - 15:00", name: "Spurt-Inlägget", giveaway: "" },
       { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 15:00", end: "2026-12-06 20:00", timeText: "15:00 - 20:00", name: "Stora Finalen", giveaway: "🎁 SLUT-GIVEAWAY!" },
-      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 20:00", end: "2026-12-06 23:59", timeText: "20:00 - 23:59", name: "Avslutning & Tack!", giveaway: "" }
+      { day: "SÖNDAG 6 DEC", dayId: "SUN", start: "2026-12-06 20:00", end: "2026-12-07 00:00", timeText: "20:00 - 00:00", name: "Avslutning & Tack!", giveaway: "" }
     ];
 
     let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
     let sponsorFileList = [...KNOWN_SPONSORS];
     let currentSponsorIndex = 0;
-    let scheduleMode = 'real';
+    let lastSponsorIndexFromDb = null;
 
     let currentDisplayedDayId = null;
     let isDayTransitioning = false;
-    let isSimulationLocked = false;
-    let simulationLockTimer = null;
 
     let isShowingTheme = false;
     let rotatorTimer = null;
+    let sponsorFadeTimer = null;
     let activeEditingDayId = "MON";
 
     function isMhLogo(filename) {
@@ -777,7 +782,7 @@
           sponsorFileList = parsed.filter(url => !isMhLogo(url));
         }
       }
-    } catch(e) {}
+    } catch (e) {}
 
     const hash = window.location.hash.toLowerCase();
     const isPanel = hash.includes('panel') || hash.includes('dock');
@@ -795,8 +800,22 @@
 
     try {
       const cachedSched = localStorage.getItem(STORAGE_KEY_SCHEDULE);
-      if (cachedSched) currentSchedule = JSON.parse(cachedSched);
-    } catch(e) {}
+      if (cachedSched) {
+        const parsed = JSON.parse(cachedSched);
+        if (Array.isArray(parsed) && parsed.length > 0) currentSchedule = parsed;
+      }
+    } catch (e) {}
+
+    function notifyParentHeight() {
+      if (!isPanel) return;
+      try {
+        if (window.parent && window.parent !== window) {
+          const panelEl = document.getElementById('panelRoot');
+          const h = panelEl ? (panelEl.scrollHeight || panelEl.offsetHeight) : document.body.scrollHeight;
+          window.parent.postMessage({ type: 'SCHEDULE_HEIGHT', height: h }, '*');
+        }
+      } catch (e) {}
+    }
 
     function updateDockStatus(msg, isError = false) {
       const pill = document.getElementById('dockStatusPill');
@@ -817,109 +836,127 @@
 
       if (data.schedule && Array.isArray(data.schedule)) {
         currentSchedule = data.schedule;
-        try { localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule)); } catch(e) {}
+        try { localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule)); } catch (e) {}
         renderSchedule();
         if (isPanel) renderVisualScheduleEditor();
       }
 
       if (Array.isArray(data.autoSponsors) && data.autoSponsors.length > 0) {
-        sponsorFileList = data.autoSponsors.filter(url => !isMhLogo(url));
-        try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsorFileList)); } catch(e) {}
-        updateSponsorLogo();
+        const filtered = data.autoSponsors.filter(url => !isMhLogo(url));
+        if (filtered.length > 0 && JSON.stringify(filtered) !== JSON.stringify(sponsorFileList)) {
+          sponsorFileList = filtered;
+          try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsorFileList)); } catch (e) {}
+          updateSponsorLogo();
+        }
       }
 
-      if (typeof data.sponsorIndex === 'number' && sponsorFileList.length > 0) {
+      if (typeof data.sponsorIndex === 'number' && data.sponsorIndex !== lastSponsorIndexFromDb && sponsorFileList.length > 0) {
+        lastSponsorIndexFromDb = data.sponsorIndex;
         currentSponsorIndex = data.sponsorIndex % sponsorFileList.length;
         showSponsorCard();
         updateSponsorLogo();
       }
 
       updateDockStatus("Synkad");
+    }, (err) => {
+      console.warn("⚠️ Firebase schedule listener error:", err.message);
+      updateDockStatus("Anslutningsfel", true);
     });
 
     function parseDate(dateStr) {
-      if (dateStr instanceof Date) return dateStr;
-      return new Date(dateStr.replace(' ', 'T') + (dateStr.length === 16 ? ':00' : ''));
+      if (dateStr instanceof Date) return new Date(dateStr.getTime());
+      const str = String(dateStr || '').trim();
+      if (!str) return new Date(NaN);
+      return new Date(str.replace(' ', 'T') + (str.length === 16 ? ':00' : ''));
+    }
+
+    function parseClockToMinutes(clockStr) {
+      const parts = String(clockStr || '').split(':').map(Number);
+      if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) return -1;
+      return parts[0] * 60 + parts[1];
     }
 
     function parseTimeRangeToDates(dayId, timeRangeStr) {
       const baseDateStr = DAY_BASE_DATES[dayId] || "2026-11-30";
       const clean = (timeRangeStr || '').replace(/\./g, ':').trim();
       const match = clean.match(/([0-9]{1,2}:[0-9]{2})\s*[-–—]\s*([0-9]{1,2}:[0-9]{2})/);
-      
-      if (!match) {
-        return null;
-      }
+      if (!match) return null;
 
       const startClock = match[1].padStart(5, '0');
-      const endClock = match[2].padStart(5, '0');
+      const rawEndClock = match[2].padStart(5, '0');
+      const startMin = parseClockToMinutes(startClock);
+      const endMin = parseClockToMinutes(rawEndClock);
+      if (startMin < 0 || endMin < 0) return null;
+
+      const is24 = rawEndClock === "24:00";
+      const endClockForIso = is24 ? "00:00" : rawEndClock;
+      const isOvernight = is24 || rawEndClock === "00:00" || endMin <= startMin;
 
       const startISO = `${baseDateStr} ${startClock}`;
       let endISO;
-      const isMidnight = endClock === "00:00" || endClock === "24:00";
 
-      if (isMidnight) {
+      if (isOvernight) {
         const parts = baseDateStr.split('-').map(Number);
         const baseD = new Date(parts[0], parts[1] - 1, parts[2]);
         baseD.setDate(baseD.getDate() + 1);
         const nextY = baseD.getFullYear();
         const nextM = String(baseD.getMonth() + 1).padStart(2, '0');
         const nextD = String(baseD.getDate()).padStart(2, '0');
-        endISO = `${nextY}-${nextM}-${nextD} 00:00`;
+        endISO = `${nextY}-${nextM}-${nextD} ${endClockForIso}`;
       } else {
-        endISO = `${baseDateStr} ${endClock}`;
+        endISO = `${baseDateStr} ${endClockForIso}`;
       }
 
       return {
-        cleanTimeText: `${startClock} - ${endClock}`,
+        cleanTimeText: `${startClock} - ${rawEndClock}`,
         start: startISO,
-        end: endISO,
-        isMidnight: isMidnight
+        end: endISO
       };
     }
 
-    function generateTestSchedule() {
-      const now = new Date();
-      const d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const d2 = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-
-      return [
-        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 12, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 15, 0, 0), timeText: "12:00 - 15:00", name: "Invigning (Test)", giveaway: "" },
-        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 15, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 18, 0, 0), timeText: "15:00 - 18:00", name: "PixelPionjären (Test)", giveaway: "" },
-        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 18, 0, 0), end: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 21, 0, 0), timeText: "18:00 - 21:00", name: "KaffeKungen (Test)", giveaway: "🎁 TEST GIVEAWAY!" },
-        { day: "MÅNDAG (TEST)", dayId: "TEST_MON", start: new Date(d1.getFullYear(), d1.getMonth(), d1.getDate(), 21, 0, 0), end: new Date(d2.getFullYear(), d2.getMonth(), d2.getDate(), 0, 0, 0), timeText: "21:00 - 00:00", name: "Nattstreamers (Test)", giveaway: "" }
-      ];
-    }
-
     function getActiveSchedule() {
-      if (scheduleMode === 'test') {
-        return generateTestSchedule();
-      }
       if (!currentSchedule || currentSchedule.length === 0) return [];
 
-      const now = new Date();
-      const firstEvStart = parseDate(currentSchedule[0].start);
-      const lastEvEnd = parseDate(currentSchedule[currentSchedule.length - 1].end);
-      const isOutsideDates = now < firstEvStart || now > lastEvEnd;
-      const dayOrder = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+      let minStartMs = Infinity;
+      let maxEndMs = -Infinity;
 
-      return currentSchedule.map(ev => {
-        if (isOutsideDates) {
-          const dayIndex = dayOrder.indexOf(ev.dayId);
-          const [startStr, endStr] = ev.timeText.split(' - ').map(s => s.trim());
-          const [sh, sm] = startStr.replace('.', ':').split(':').map(Number);
-          const [eh, em] = endStr.replace('.', ':').split(':').map(Number);
-
-          const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (dayIndex !== -1 ? dayIndex : 0));
-          const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), sh, sm, 0);
-          let end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), eh === 0 ? 24 : eh, em, 0);
-
-          if (eh < sh && eh !== 0) {
-            end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + 1, eh, em, 0);
-          }
-          return { ...ev, start, end };
+      const resolved = currentSchedule.map(ev => {
+        const start = parseDate(ev.start);
+        const end = parseDate(ev.end);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end <= start) {
+          end.setDate(end.getDate() + 1);
         }
-        return { ...ev, start: parseDate(ev.start), end: parseDate(ev.end) };
+        if (!isNaN(start.getTime())) minStartMs = Math.min(minStartMs, start.getTime());
+        if (!isNaN(end.getTime())) maxEndMs = Math.max(maxEndMs, end.getTime());
+        return { ...ev, start, end };
+      });
+
+      const now = new Date();
+      const isOutsideDates = (minStartMs !== Infinity && maxEndMs !== -Infinity)
+        ? (now.getTime() < minStartMs || now.getTime() > maxEndMs)
+        : false;
+
+      if (!isOutsideDates) return resolved;
+
+      const dayOrder = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+      return currentSchedule.map((ev, idx) => {
+        const dayIndex = dayOrder.indexOf(ev.dayId);
+        const match = String(ev.timeText || '').replace(/\./g, ':').match(/([0-9]{1,2}:[0-9]{2})\s*[-–—]\s*([0-9]{1,2}:[0-9]{2})/);
+
+        if (!match) return resolved[idx];
+
+        const [sh, sm] = match[1].split(':').map(Number);
+        const [eh, em] = match[2].split(':').map(Number);
+
+        const baseDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (dayIndex !== -1 ? dayIndex : 0));
+        const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), sh, sm, 0);
+        const end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), eh, em, 0);
+
+        if (end <= start) {
+          end.setDate(end.getDate() + 1);
+        }
+
+        return { ...ev, start, end };
       });
     }
 
@@ -931,43 +968,37 @@
 
       const dayEvents = schedule.filter(ev => ev.dayId === activeDayId);
       const totalDayCount = dayEvents.length;
-      let activeSlotIndex = dayEvents.findIndex(ev => now >= ev.start && now < ev.end);
+      const activeSlotIndex = dayEvents.findIndex(ev => now >= ev.start && now < ev.end);
 
       if (totalDayCount > 0) {
+        let totalProgressPct = 0;
+
         if (activeSlotIndex === -1) {
-          activeSlotIndex = 0;
-          if (isReset) {
-            if (fillLineEl) fillLineEl.style.transition = 'none';
-            if (cursorEl) cursorEl.style.transition = 'none';
-          }
-          if (fillLineEl) fillLineEl.style.width = `0%`;
-          if (cursorEl) cursorEl.style.left = `0%`;
-          if (isReset && fillLineEl) {
-            void fillLineEl.offsetWidth;
-            fillLineEl.style.transition = 'width 0.3s linear';
-            if (cursorEl) cursorEl.style.transition = 'left 0.3s linear';
-          }
+          const completedCount = dayEvents.filter(ev => now >= ev.end).length;
+          totalProgressPct = (completedCount / totalDayCount) * 100;
         } else {
           const currentEv = dayEvents[activeSlotIndex];
           const startMs = currentEv.start.getTime();
           const endMs = currentEv.end.getTime();
           const nowMs = now.getTime();
 
-          let slotFraction = (nowMs >= startMs && nowMs < endMs) ? (nowMs - startMs) / (endMs - startMs) : 0;
+          let slotFraction = (endMs > startMs && nowMs >= startMs && nowMs < endMs)
+            ? (nowMs - startMs) / (endMs - startMs)
+            : 0;
           slotFraction = Math.min(1, Math.max(0, slotFraction));
-          const totalProgressPct = Math.min(100, Math.max(0, ((activeSlotIndex + slotFraction) / totalDayCount) * 100));
+          totalProgressPct = Math.min(100, Math.max(0, ((activeSlotIndex + slotFraction) / totalDayCount) * 100));
+        }
 
-          if (isReset) {
-            if (fillLineEl) fillLineEl.style.transition = 'none';
-            if (cursorEl) cursorEl.style.transition = 'none';
-          }
-          if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
-          if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
-          if (isReset && fillLineEl) {
-            void fillLineEl.offsetWidth;
-            fillLineEl.style.transition = 'width 0.3s linear';
-            if (cursorEl) cursorEl.style.transition = 'left 0.3s linear';
-          }
+        if (isReset && fillLineEl) {
+          fillLineEl.style.transition = 'none';
+          if (cursorEl) cursorEl.style.transition = 'none';
+        }
+        if (fillLineEl) fillLineEl.style.width = `${totalProgressPct}%`;
+        if (cursorEl) cursorEl.style.left = `${totalProgressPct}%`;
+        if (isReset && fillLineEl) {
+          void fillLineEl.offsetWidth;
+          fillLineEl.style.transition = 'width 0.3s linear';
+          if (cursorEl) cursorEl.style.transition = 'left 0.3s linear';
         }
       }
 
@@ -982,7 +1013,7 @@
             <div class="node-tick-wrapper">
               ${index > 0 ? '<div class="node-divider-tick"></div>' : ''}
             </div>
-            <div class="node-streamer ${hasGiveaway ? 'is-giveaway-text' : ''}">${primaryText}</div>
+            <div class="node-streamer ${hasGiveaway ? 'is-giveaway-text' : ''}" title="${primaryText}">${primaryText}</div>
           </div>
         `;
       }).join('');
@@ -1013,16 +1044,11 @@
       if (schedule.length === 0) return;
       const now = new Date();
 
-      if (isSimulationLocked && currentDisplayedDayId) {
-        updateScheduleDOM(currentDisplayedDayId, schedule, now, false);
-        return;
-      }
-
-      let activeEv = schedule.find(ev => now >= ev.start && now < ev.end);
+      const activeEv = schedule.find(ev => now >= ev.start && now < ev.end);
       let activeDayId = activeEv ? activeEv.dayId : null;
 
       if (!activeDayId) {
-        let nextEv = schedule.find(ev => ev.start > now);
+        const nextEv = schedule.find(ev => ev.start > now);
         activeDayId = nextEv ? nextEv.dayId : schedule[0].dayId;
       }
 
@@ -1033,6 +1059,32 @@
 
       currentDisplayedDayId = activeDayId;
       updateScheduleDOM(activeDayId, schedule, now, false);
+    }
+
+    function syncUnsavedDomEditsToMemory() {
+      const slotsContainer = document.getElementById('slotsListContainer');
+      if (!slotsContainer) return;
+
+      const cards = Array.from(slotsContainer.querySelectorAll('.slot-editor-card'));
+      const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
+
+      cards.forEach((card, i) => {
+        if (!daySlots[i]) return;
+        const timeVal = card.querySelector('.slot-time-input').value.trim();
+        const nameVal = card.querySelector('.slot-name-input').value.trim();
+        const giveawayVal = card.querySelector('.slot-giveaway-input').value.trim();
+
+        daySlots[i].timeText = timeVal || daySlots[i].timeText;
+        daySlots[i].name = nameVal || daySlots[i].name;
+        daySlots[i].giveaway = giveawayVal;
+
+        const parsed = parseTimeRangeToDates(activeEditingDayId, timeVal);
+        if (parsed) {
+          daySlots[i].start = parsed.start;
+          daySlots[i].end = parsed.end;
+          daySlots[i].timeText = parsed.cleanTimeText;
+        }
+      });
     }
 
     function renderVisualScheduleEditor() {
@@ -1058,6 +1110,7 @@
             Inga pass för ${activeDayCfg.full}. Klicka nedan för att lägga till.
           </div>
         `;
+        requestAnimationFrame(notifyParentHeight);
         return;
       }
 
@@ -1072,9 +1125,12 @@
           <input type="text" class="slot-giveaway-input" placeholder="🎁 Giveaway (valfri)" value="${escapeHTML(slot.giveaway || '')}">
         </div>
       `).join('');
+
+      requestAnimationFrame(notifyParentHeight);
     }
 
     function switchActiveEditingDay(dayId) {
+      syncUnsavedDomEditsToMemory();
       activeEditingDayId = dayId;
       renderVisualScheduleEditor();
     }
@@ -1111,10 +1167,12 @@
         });
       }
 
+      updatedDaySlots.sort((a, b) => a.start.localeCompare(b.start));
+
       const newSchedule = [];
       let replaced = false;
 
-      for (let ev of currentSchedule) {
+      for (const ev of currentSchedule) {
         if (ev.dayId === activeEditingDayId) {
           if (!replaced) {
             newSchedule.push(...updatedDaySlots);
@@ -1130,7 +1188,7 @@
 
       try {
         localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule));
-      } catch(e) {}
+      } catch (e) {}
 
       renderVisualScheduleEditor();
       renderSchedule();
@@ -1138,17 +1196,18 @@
 
       const saveBtn = document.getElementById('btnSaveSchedule');
       if (saveBtn) {
-        const oldText = saveBtn.innerHTML;
         saveBtn.innerHTML = `✓ Sparat!`;
         saveBtn.style.background = "#c2f524";
         setTimeout(() => {
-          saveBtn.innerHTML = oldText;
+          saveBtn.innerHTML = `💾 Spara ändringar för <span id="saveDayNameText">${activeDayCfg.label}</span>`;
           saveBtn.style.background = "var(--primary-color)";
         }, 1200);
       }
     }
 
     function addNewSlotToActiveDay() {
+      syncUnsavedDomEditsToMemory();
+
       const activeDayCfg = DAYS_CONFIG.find(d => d.id === activeEditingDayId);
       const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
 
@@ -1157,9 +1216,9 @@
 
       if (daySlots.length > 0) {
         const lastSlot = daySlots[daySlots.length - 1];
-        const match = (lastSlot.timeText || '').match(/-\s*([0-9]{1,2}:[0-9]{2})/);
+        const match = (lastSlot.timeText || '').match(/[-–—]\s*([0-9]{1,2}:[0-9]{2})/);
         if (match) {
-          newStartTime = match[1];
+          newStartTime = match[1].padStart(5, '0');
           const [h, m] = newStartTime.split(':').map(Number);
           const nextH = (h + 2) % 24;
           newEndTime = `${String(nextH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -1191,6 +1250,8 @@
     }
 
     function deleteSlotByIndex(daySlotIdx) {
+      syncUnsavedDomEditsToMemory();
+
       const daySlots = currentSchedule.filter(ev => ev.dayId === activeEditingDayId);
       if (daySlots.length <= 1) {
         return updateDockStatus("Minst ett pass krävs!", true);
@@ -1208,7 +1269,7 @@
     function syncScheduleToFirebase(feedbackMsg) {
       try {
         localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(currentSchedule));
-      } catch(e) {}
+      } catch (e) {}
 
       updateDockStatus("Synkar...");
       dbScheduleRef.update({
@@ -1218,7 +1279,7 @@
       }).then(() => {
         renderSchedule();
         if (feedbackMsg) updateDockStatus(feedbackMsg);
-      }).catch(err => {
+      }).catch(() => {
         updateDockStatus("Fel vid sparande", true);
       });
     }
@@ -1301,7 +1362,7 @@
 
             if (apiSponsors.length > 0) {
               sponsorFileList = apiSponsors;
-              try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch(e) {}
+              try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch (e) {}
 
               dbScheduleRef.update({
                 autoSponsors: apiSponsors,
@@ -1312,7 +1373,7 @@
             }
           }
         }
-      } catch(e) {}
+      } catch (e) {}
 
       if (rotatorTimer) clearTimeout(rotatorTimer);
       rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
@@ -1325,10 +1386,22 @@
       const targetSrc = sponsorFileList[currentSponsorIndex % sponsorFileList.length];
       if (!targetSrc) return;
 
+      clearTimeout(sponsorFadeTimer);
       img.style.opacity = '0';
-      setTimeout(() => {
-        img.src = targetSrc;
+
+      sponsorFadeTimer = setTimeout(() => {
         img.onload = () => { img.style.opacity = '1'; };
+        img.onerror = () => {
+          const filename = decodeURIComponent(targetSrc.split('/').pop().split('?')[0]);
+          const localFallback = `${SPONSORS_FOLDER}/${encodeURIComponent(filename)}`;
+          if (!targetSrc.startsWith(SPONSORS_FOLDER + '/') && img.src !== localFallback) {
+            img.onerror = () => { img.style.opacity = '1'; };
+            img.src = localFallback;
+          } else {
+            img.style.opacity = '1';
+          }
+        };
+        img.src = targetSrc;
         if (img.complete && img.naturalWidth > 0) {
           img.style.opacity = '1';
         }
@@ -1341,11 +1414,13 @@
       }[tag] || tag));
     }
 
-    if (sponsorFileList.length > 0) {
-      updateSponsorLogo();
+    if (!isPanel) {
+      if (sponsorFileList.length > 0) {
+        updateSponsorLogo();
+      }
+      loadSponsorsAutomatically();
     }
 
-    loadSponsorsAutomatically();
     renderSchedule();
     setInterval(renderSchedule, 1000);
 
