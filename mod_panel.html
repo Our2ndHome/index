@@ -138,6 +138,9 @@
         gap: 8px;
         flex: 2 1 650px;
       }
+      .sponsor-card {
+        grid-column: 1 / -1;
+      }
       .schema-column {
         flex: 1 1 380px;
       }
@@ -332,6 +335,43 @@
     .sound-pad:hover { border-color: #ace600; background: #27272a; }
     .sound-pad:active { transform: scale(0.97); }
 
+    /* 🤝 SPONSOR HOLD GRID */
+    .sponsor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 6px;
+    }
+
+    .sponsor-btn {
+      background: #1f1f23;
+      border: 1px solid #27272a;
+      border-radius: 4px;
+      color: #e4e4e7;
+      padding: 9px 8px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sponsor-btn:hover {
+      border-color: #ace600;
+      background: #27272a;
+      color: #ffffff;
+    }
+    .sponsor-btn.is-held {
+      background: #ace600;
+      border-color: #ace600;
+      color: #0b0b0d;
+      font-weight: 900;
+      box-shadow: 0 0 10px rgba(172, 230, 0, 0.45);
+    }
+
     /* 📅 SCHEMA FRAME */
     .schedule-native-frame {
       width: 100%;
@@ -458,6 +498,15 @@
           </div>
         </div>
 
+        <!-- 5. SPONSOR HOLD CONTROLLER -->
+        <div class="mod-card sponsor-card">
+          <div class="card-title">
+            <span>🤝 SPONSORER (KLICKA FÖR ATT HÅLLA)</span>
+            <span id="badgeSponsorHold" class="status-pill offline">AUTO</span>
+          </div>
+          <div class="sponsor-grid" id="sponsorGrid"></div>
+        </div>
+
       </div>
 
       <!-- COLUMN 2: SCHEMA CONTROLLER -->
@@ -485,8 +534,10 @@
 
     let soundBus = null;
     let utmaningBus = null;
+    let sponsorBus = null;
     try { soundBus = new BroadcastChannel('mh_sound_bus'); } catch (e) {}
     try { utmaningBus = new BroadcastChannel('mh_utmaning_channel'); } catch (e) {}
+    try { sponsorBus = new BroadcastChannel('mh_sponsor_control_bus'); } catch (e) {}
 
     let toastTimer = null;
     function showToast(msg, isError = false) {
@@ -511,6 +562,125 @@
         badge.textContent = "OFFLINE";
       }
     });
+
+    // ========================================================
+    // 🤝 SPONSOR HOLD CONTROLLER
+    // ========================================================
+    const DEFAULT_SPONSORS = [
+      "sponsors/DisgustingFoodMuseum_Sponsor.png",
+      "sponsors/ElinPK_Sponsor.png",
+      "sponsors/EscapeHouse_Sponsor.png",
+      "sponsors/RandomNerd_Sponsor.png"
+    ];
+
+    let sponsorList = [...DEFAULT_SPONSORS];
+    let heldSponsorFile = null;
+
+    function isMhLogo(urlOrName) {
+      if (!urlOrName) return false;
+      const lower = String(urlOrName).toLowerCase();
+      return lower.includes('musikhjalpen') || lower.includes('musikhjälpen');
+    }
+
+    function getSponsorFilenameKey(urlOrName) {
+      if (!urlOrName) return '';
+      try {
+        return decodeURIComponent(String(urlOrName).split('/').pop().split('?')[0]).trim().toLowerCase();
+      } catch (e) {
+        return String(urlOrName).trim().toLowerCase();
+      }
+    }
+
+    function formatSponsorLabel(urlOrName) {
+      let name = '';
+      try {
+        name = decodeURIComponent(String(urlOrName).split('/').pop().split('?')[0]);
+      } catch (e) {
+        name = String(urlOrName);
+      }
+      name = name.replace(/\.(png|jpe?g|svg|webp)$/i, '');
+      name = name.replace(/[_-]?sponsor\d*$/i, '');
+      name = name.replace(/[_-]+/g, ' ');
+      name = name.replace(/([a-zåäö])([A-ZÅÄÖ])/g, '$1 $2');
+      return name.trim() || 'Sponsor';
+    }
+
+    function renderSponsorButtons() {
+      const grid = document.getElementById('sponsorGrid');
+      const badge = document.getElementById('badgeSponsorHold');
+      if (!grid) return;
+
+      if (badge) {
+        if (heldSponsorFile) {
+          badge.className = "status-pill";
+          badge.textContent = "LÅST";
+        } else {
+          badge.className = "status-pill offline";
+          badge.textContent = "AUTO";
+        }
+      }
+
+      grid.innerHTML = '';
+      sponsorList.forEach(url => {
+        const fileKey = getSponsorFilenameKey(url);
+        const label = formatSponsorLabel(url);
+        const isHeld = (heldSponsorFile === fileKey);
+
+        const btn = document.createElement('button');
+        btn.className = `sponsor-btn${isHeld ? ' is-held' : ''}`;
+        btn.title = isHeld ? `Klicka för att släppa (${label})` : `Klicka för att visa & hålla ${label}`;
+        btn.textContent = isHeld ? `🔒 ${label}` : label;
+        btn.addEventListener('click', () => toggleSponsorHold(fileKey, label));
+        grid.appendChild(btn);
+      });
+    }
+
+    function toggleSponsorHold(fileKey, displayLabel) {
+      const nextLocked = (heldSponsorFile === fileKey) ? null : fileKey;
+      heldSponsorFile = nextLocked;
+      renderSponsorButtons();
+
+      db.ref('sponsor_control').set({
+        lockedFile: nextLocked,
+        timestamp: Date.now(),
+        secret: WRITE_SECRET
+      }).then(() => {
+        if (nextLocked) {
+          showToast(`🔒 Håller sponsor: ${displayLabel}`);
+        } else {
+          showToast("🔄 Sponsorrotation återupptagen (AUTO)");
+        }
+      }).catch(err => {
+        showToast("❌ Kunde inte ändra sponsor: " + err.message, true);
+      });
+
+      if (sponsorBus) {
+        try {
+          sponsorBus.postMessage({ type: 'SPONSOR_HOLD_UPDATE', lockedFile: nextLocked });
+        } catch (e) {}
+      }
+    }
+
+    db.ref('schedule_data/autoSponsors').on('value', (snap) => {
+      const val = snap.val();
+      if (Array.isArray(val) && val.length > 0) {
+        const filtered = val.filter(u => !isMhLogo(u));
+        if (filtered.length > 0) {
+          sponsorList = filtered;
+          renderSponsorButtons();
+        }
+      }
+    });
+
+    db.ref('sponsor_control').on('value', (snap) => {
+      const val = snap.val();
+      heldSponsorFile = (val && val.lockedFile) ? getSponsorFilenameKey(val.lockedFile) : null;
+      renderSponsorButtons();
+    }, (err) => {
+      console.warn("⚠️ Firebase sponsor_control listener error:", err.message);
+    });
+
+    renderSponsorButtons();
 
     // ========================================================
     // 🔊 SOUNDBOARD VOLUME CONTROLLER & STORAGE
