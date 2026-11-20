@@ -758,7 +758,8 @@
     let currentSchedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
     let sponsorFileList = [...KNOWN_SPONSORS];
     let currentSponsorIndex = 0;
-    let lastSponsorIndexFromDb = null;
+    let currentDisplayedSponsorFile = "";
+    let heldSponsorFile = null;
 
     let currentDisplayedDayId = null;
     let isDayTransitioning = false;
@@ -766,12 +767,22 @@
     let isShowingTheme = false;
     let rotatorTimer = null;
     let sponsorFadeTimer = null;
+    let themePreloadTimer = null;
     let activeEditingDayId = "MON";
 
     function isMhLogo(filename) {
       if (!filename) return false;
       const lower = filename.toLowerCase();
       return lower.includes('musikhjalpen') || lower.includes('musikhjälpen');
+    }
+
+    function getFilenameKey(urlOrName) {
+      if (!urlOrName) return '';
+      try {
+        return decodeURIComponent(String(urlOrName).split('/').pop().split('?')[0]).trim().toLowerCase();
+      } catch (e) {
+        return String(urlOrName).trim().toLowerCase();
+      }
     }
 
     try {
@@ -797,6 +808,7 @@
       firebase.initializeApp({ databaseURL: FIREBASE_DATABASE_URL });
     }
     const dbScheduleRef = firebase.database().ref('schedule_data');
+    const dbSponsorControlRef = firebase.database().ref('sponsor_control');
 
     try {
       const cachedSched = localStorage.getItem(STORAGE_KEY_SCHEDULE);
@@ -843,18 +855,24 @@
 
       if (Array.isArray(data.autoSponsors) && data.autoSponsors.length > 0) {
         const filtered = data.autoSponsors.filter(url => !isMhLogo(url));
-        if (filtered.length > 0 && JSON.stringify(filtered) !== JSON.stringify(sponsorFileList)) {
+        const currentKeys = sponsorFileList.map(getFilenameKey).join('|');
+        const nextKeys = filtered.map(getFilenameKey).join('|');
+
+        if (filtered.length > 0 && currentKeys !== nextKeys) {
           sponsorFileList = filtered;
           try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsorFileList)); } catch (e) {}
-          updateSponsorLogo();
-        }
-      }
 
-      if (typeof data.sponsorIndex === 'number' && data.sponsorIndex !== lastSponsorIndexFromDb && sponsorFileList.length > 0) {
-        lastSponsorIndexFromDb = data.sponsorIndex;
-        currentSponsorIndex = data.sponsorIndex % sponsorFileList.length;
-        showSponsorCard();
-        updateSponsorLogo();
+          if (heldSponsorFile) {
+            const heldIdx = sponsorFileList.findIndex(u => getFilenameKey(u) === heldSponsorFile);
+            if (heldIdx !== -1) currentSponsorIndex = heldIdx;
+          } else {
+            currentSponsorIndex = currentSponsorIndex % sponsorFileList.length;
+          }
+
+          if (!isPanel && !isShowingTheme) {
+            updateSponsorLogo(true);
+          }
+        }
       }
 
       updateDockStatus("Synkad");
@@ -862,6 +880,55 @@
       console.warn("⚠️ Firebase schedule listener error:", err.message);
       updateDockStatus("Anslutningsfel", true);
     });
+
+    function applySponsorHoldState(lockedFileRaw) {
+      if (isPanel) return;
+
+      const lockedKey = lockedFileRaw ? getFilenameKey(lockedFileRaw) : null;
+
+      if (lockedKey) {
+        heldSponsorFile = lockedKey;
+        clearTimeout(rotatorTimer);
+        clearTimeout(themePreloadTimer);
+
+        const idx = sponsorFileList.findIndex(u => getFilenameKey(u) === lockedKey);
+        if (idx !== -1) {
+          currentSponsorIndex = idx;
+        }
+
+        if (isShowingTheme) {
+          updateSponsorLogo(true);
+          showSponsorCard();
+        } else {
+          updateSponsorLogo(false);
+        }
+      } else {
+        const wasHeld = Boolean(heldSponsorFile);
+        heldSponsorFile = null;
+        if (wasHeld) {
+          clearTimeout(rotatorTimer);
+          rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
+        }
+      }
+    }
+
+    if (!isPanel) {
+      dbSponsorControlRef.on('value', (snap) => {
+        const val = snap.val();
+        applySponsorHoldState(val && val.lockedFile ? val.lockedFile : null);
+      }, (err) => {
+        console.warn("⚠️ Firebase sponsor_control listener error:", err.message);
+      });
+
+      try {
+        const sponsorBus = new BroadcastChannel('mh_sponsor_control_bus');
+        sponsorBus.onmessage = (e) => {
+          if (e.data && e.data.type === 'SPONSOR_HOLD_UPDATE') {
+            applySponsorHoldState(e.data.lockedFile || null);
+          }
+        };
+      } catch (e) {}
+    }
 
     function parseDate(dateStr) {
       if (dateStr instanceof Date) return new Date(dateStr.getTime());
@@ -1296,9 +1363,18 @@
         themeCard.classList.remove('card-hidden');
         themeCard.classList.add('card-active');
       }
+
+      // Silently preload Sponsor #0 while the sponsor card is hidden behind the theme card (prevents flash!)
+      clearTimeout(themePreloadTimer);
+      themePreloadTimer = setTimeout(() => {
+        if (!isShowingTheme || heldSponsorFile || sponsorFileList.length === 0) return;
+        currentSponsorIndex = 0;
+        updateSponsorLogo(true);
+      }, 800);
     }
 
     function showSponsorCard() {
+      clearTimeout(themePreloadTimer);
       isShowingTheme = false;
       const sponsorCard = document.getElementById('sponsorWidget');
       const themeCard = document.getElementById('themeWidget');
@@ -1313,11 +1389,14 @@
     }
 
     function runRotatorCycle() {
-      if (isPanel) return;
+      if (isPanel || heldSponsorFile) return;
 
       if (isShowingTheme) {
         currentSponsorIndex = 0;
-        updateSponsorLogo();
+        const targetKey = getFilenameKey(sponsorFileList[0]);
+        if (currentDisplayedSponsorFile !== targetKey) {
+          updateSponsorLogo(true);
+        }
         showSponsorCard();
         rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
       } else {
@@ -1326,7 +1405,7 @@
 
           if (nextIndex < sponsorFileList.length) {
             currentSponsorIndex = nextIndex;
-            updateSponsorLogo();
+            updateSponsorLogo(false);
             rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
           } else {
             showThemeCard();
@@ -1361,6 +1440,9 @@
             const apiSponsors = sponsorFiles.map(f => f.download_url || `${SPONSORS_FOLDER}/${encodeURIComponent(f.name)}`);
 
             if (apiSponsors.length > 0) {
+              const currentKeys = sponsorFileList.map(getFilenameKey).join('|');
+              const nextKeys = apiSponsors.map(getFilenameKey).join('|');
+
               sponsorFileList = apiSponsors;
               try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(apiSponsors)); } catch (e) {}
 
@@ -1369,43 +1451,77 @@
                 secret: WRITE_SECRET
               }).catch(() => {});
 
-              updateSponsorLogo();
+              if (heldSponsorFile) {
+                const heldIdx = sponsorFileList.findIndex(u => getFilenameKey(u) === heldSponsorFile);
+                if (heldIdx !== -1) currentSponsorIndex = heldIdx;
+              } else if (currentKeys !== nextKeys && !isShowingTheme) {
+                updateSponsorLogo(true);
+              }
             }
           }
         }
       } catch (e) {}
 
-      if (rotatorTimer) clearTimeout(rotatorTimer);
-      rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
+      if (!heldSponsorFile) {
+        if (rotatorTimer) clearTimeout(rotatorTimer);
+        rotatorTimer = setTimeout(runRotatorCycle, SPONSOR_ROTATE_SECONDS * 1000);
+      }
     }
 
-    function updateSponsorLogo() {
+    function updateSponsorLogo(instant = false) {
       const img = document.getElementById('sponsorLogo');
       if (!img || sponsorFileList.length === 0) return;
 
       const targetSrc = sponsorFileList[currentSponsorIndex % sponsorFileList.length];
       if (!targetSrc) return;
 
-      clearTimeout(sponsorFadeTimer);
-      img.style.opacity = '0';
+      const targetKey = getFilenameKey(targetSrc);
+      if (currentDisplayedSponsorFile === targetKey && img.style.opacity === '1') {
+        return;
+      }
 
-      sponsorFadeTimer = setTimeout(() => {
-        img.onload = () => { img.style.opacity = '1'; };
-        img.onerror = () => {
-          const filename = decodeURIComponent(targetSrc.split('/').pop().split('?')[0]);
-          const localFallback = `${SPONSORS_FOLDER}/${encodeURIComponent(filename)}`;
-          if (!targetSrc.startsWith(SPONSORS_FOLDER + '/') && img.src !== localFallback) {
-            img.onerror = () => { img.style.opacity = '1'; };
-            img.src = localFallback;
+      clearTimeout(sponsorFadeTimer);
+
+      const loadImageNow = () => {
+        currentDisplayedSponsorFile = targetKey;
+
+        const reveal = () => {
+          if (instant) {
+            const prevTransition = img.style.transition;
+            img.style.transition = 'none';
+            img.style.opacity = '1';
+            void img.offsetWidth;
+            img.style.transition = prevTransition || '';
           } else {
             img.style.opacity = '1';
           }
         };
+
+        img.onload = reveal;
+        img.onerror = () => {
+          const filename = decodeURIComponent(targetSrc.split('/').pop().split('?')[0]);
+          const localFallback = `${SPONSORS_FOLDER}/${encodeURIComponent(filename)}`;
+          if (!targetSrc.startsWith(SPONSORS_FOLDER + '/') && img.src !== localFallback) {
+            img.onerror = reveal;
+            img.src = localFallback;
+          } else {
+            reveal();
+          }
+        };
+
         img.src = targetSrc;
         if (img.complete && img.naturalWidth > 0) {
-          img.style.opacity = '1';
+          reveal();
         }
-      }, 250);
+      };
+
+      if (instant || !currentDisplayedSponsorFile) {
+        loadImageNow();
+      } else {
+        img.style.opacity = '0';
+        // Wait for the full 0.4s CSS opacity fade-out before switching image src
+        sponsorFadeTimer = setTimeout(loadImageNow, 420);
+      }
     }
 
     function escapeHTML(str) {
@@ -1416,7 +1532,7 @@
 
     if (!isPanel) {
       if (sponsorFileList.length > 0) {
-        updateSponsorLogo();
+        updateSponsorLogo(true);
       }
       loadSponsorsAutomatically();
     }
