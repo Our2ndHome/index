@@ -502,6 +502,7 @@
       "moobot",
       "fossabot",
       "wizebot",
+      "o2ndh",
       TWITCH_CHANNEL.toLowerCase()
     ]);
 
@@ -619,7 +620,7 @@
     }
 
     function connectNativeTwitchIRC() {
-      if (!isPanel) return; // Only the Dock connects to Twitch IRC to avoid duplicate writes
+      if (!isPanel) return;
       if (twitchSocket && (twitchSocket.readyState === WebSocket.CONNECTING || twitchSocket.readyState === WebSocket.OPEN)) {
         return;
       }
@@ -718,11 +719,12 @@
           saveChatters();
           updateStatsUI();
 
-          dbChattersRef.child('map/' + userKey).set(entry).catch(() => {});
+          // Multi-path update on $node level so Firebase secret rule passes
           dbChattersRef.update({
+            ['map/' + userKey]: entry,
             secret: WRITE_SECRET,
             timestamp: Date.now()
-          }).catch(() => {});
+          }).catch(err => console.warn("⚠️ Firebase chatter add failed:", err.message));
 
           if (!isSpinning) {
             initInitialStage();
