@@ -125,7 +125,7 @@
       text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95);
     }
 
-    /* 🌟 2-ROW SECONDARY ALERTS (Subs, Bits, Follows) */
+    /* 🌟 2-ROW SECONDARY ALERTS (Subs, Gift Subs, Bits, Follows) */
     .minor-alert-badge {
       background: transparent !important;
       border: none !important;
@@ -696,6 +696,7 @@
       // ========================================================
       function playAlertSound(type, duration) {
         return new Promise((resolve) => {
+          const soundType = (type === 'giftsub' || type === 'giftbomb') ? 'sub' : type;
           const triggerId = "alt-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7);
 
           let hasParent = false;
@@ -706,18 +707,18 @@
           }
 
           if (hasParent) {
-            window.parent.postMessage({ type: 'PLAY_SOUND', soundType: type, triggerId }, '*');
+            window.parent.postMessage({ type: 'PLAY_SOUND', soundType, triggerId }, '*');
           } else {
             if (soundChannel) {
               try {
-                soundChannel.postMessage({ type: 'PLAY_SOUND', soundType: type, triggerId });
+                soundChannel.postMessage({ type: 'PLAY_SOUND', soundType, triggerId });
               } catch (e) {}
             }
 
             try {
               let localFallback = '';
-              if (type === 'raid') localFallback = "sounds/raid_alert.mp3";
-              else if (type === 'sub' || type === 'bits' || type === 'follow') localFallback = "sounds/ping_alert.mp3";
+              if (soundType === 'raid') localFallback = "sounds/raid_alert.mp3";
+              else if (soundType === 'sub' || soundType === 'bits' || soundType === 'follow') localFallback = "sounds/ping_alert.mp3";
               else localFallback = "sounds/0.mp3";
 
               const audio = new Audio(localFallback);
@@ -790,7 +791,7 @@
         try {
           const item = alertQueue.shift();
           const type = String(item.type || 'donation').toLowerCase().trim();
-          const supportedTypes = ['donation', 'raid', 'sub', 'bits', 'follow'];
+          const supportedTypes = ['donation', 'raid', 'sub', 'giftsub', 'giftbomb', 'bits', 'follow'];
 
           if (!supportedTypes.includes(type)) {
             console.warn("⚠️ Skipping unknown alert type:", type, item);
@@ -885,6 +886,34 @@
             banner.classList.add('pos-bottom', 'anim-bottom-in');
 
             chatAnnouncement = `our2ndHomeL ${subber} prenumererade i ${months} mån! our2ndHomeR`;
+          }
+          else if (type === 'giftsub') {
+            const gifter = String(item.donor || item.name || 'Tittare').trim();
+            const recipient = String(item.recipient || 'Tittare').trim();
+            banner.innerHTML = `
+              <div class="minor-alert-badge">
+                <div class="minor-alert-name">${escapeHTML(gifter)}</div>
+                <div class="minor-alert-detail">GAV EN SUB TILL <span class="highlight">${escapeHTML(recipient)}</span>!</div>
+              </div>
+            `;
+            void banner.offsetWidth;
+            banner.classList.add('pos-bottom', 'anim-bottom-in');
+
+            chatAnnouncement = `our2ndHomeL ${gifter} gav en sub till ${recipient}! our2ndHomeR`;
+          }
+          else if (type === 'giftbomb') {
+            const gifter = String(item.donor || item.name || 'Tittare').trim();
+            const gifts = Math.max(1, parseInt(item.gifts || item.amount, 10) || 1);
+            banner.innerHTML = `
+              <div class="minor-alert-badge">
+                <div class="minor-alert-name">${escapeHTML(gifter)}</div>
+                <div class="minor-alert-detail">GAV BORT <span class="highlight">${gifts} ${gifts === 1 ? 'SUB' : 'SUBS'}</span>!</div>
+              </div>
+            `;
+            void banner.offsetWidth;
+            banner.classList.add('pos-bottom', 'anim-bottom-in');
+
+            chatAnnouncement = `our2ndHomeL ${gifter} gav bort ${gifts} ${gifts === 1 ? 'sub' : 'subs'}! our2ndHomeR`;
           }
           else if (type === 'bits') {
             const cheerer = String(item.donor || item.name || 'Tittare').trim();
