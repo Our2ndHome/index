@@ -972,7 +972,8 @@
         }
       }
 
-      db.ref('moderation/actions').push({
+      // Stored at $sub level (/moderation/<pushId>) so Firebase secret rule passes
+      db.ref('moderation').push({
         type: type,
         user: user,
         duration: selectedDuration,
