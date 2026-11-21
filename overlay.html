@@ -41,13 +41,13 @@
       pointer-events: none;
     }
 
-    /* Layer Depth Order (Alerts & Emote Rain on top) */
+    /* Layer Depth Order (Emote rain sits behind Schedule, Sponsors, Goals & Countdown) */
+    #layerAlerts    { z-index: 5; }
     #layerSchedule  { z-index: 10; }
     #layerGoals     { z-index: 15; }
     #layerBossa     { z-index: 20; }
     #layerUtmaning  { z-index: 25; }
     #layerGiveaway  { z-index: 30; }
-    #layerAlerts    { z-index: 35; }
 
     /* ========================================================
        🎛️ 2. OBS DOCK: ZERO DEAD SPACE FLEX ARCHITECTURE
@@ -250,12 +250,12 @@
        📺 1. STREAM OVERLAY VIEW
        ======================================================== -->
   <div id="overlayContainer" style="display: none;">
+    <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerSchedule" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGoals" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerBossa" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerUtmaning" class="overlay-frame" allow="autoplay"></iframe>
     <iframe id="layerGiveaway" class="overlay-frame" allow="autoplay"></iframe>
-    <iframe id="layerAlerts" class="overlay-frame" allow="autoplay"></iframe>
   </div>
 
   <!-- ========================================================
@@ -616,12 +616,12 @@
       document.body.classList.add('mode-overlay');
       document.getElementById('overlayContainer').style.display = 'block';
 
+      document.getElementById('layerAlerts').src = "alerts.html";
       document.getElementById('layerSchedule').src = "schedule.html#overlay";
       document.getElementById('layerGoals').src = "goals.html#overlay";
       document.getElementById('layerBossa').src = "countdown_and_bossa.html#overlay";
       document.getElementById('layerUtmaning').src = "utmaningar.html#overlay";
       document.getElementById('layerGiveaway').src = "giveaway.html#overlay";
-      document.getElementById('layerAlerts').src = "alerts.html";
     }
   </script>
 </body>
