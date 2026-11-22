@@ -130,55 +130,6 @@
             background: rgba(0, 0, 0, 0.2);
         }
 
-        /* 🔄 REFRESH ALL BROWSER SOURCES BUTTON */
-        .btn-refresh-sources {
-            width: 100%;
-            background: #18181c;
-            border: 1px solid rgba(59, 130, 246, 0.35);
-            border-bottom: 2px solid #141418;
-            border-radius: 6px;
-            color: #93c5fd;
-            font-family: inherit;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            padding: 9px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 6px;
-            transition: all 0.12s ease;
-        }
-
-        .btn-refresh-sources:hover:not(:disabled) {
-            background: #1e293b;
-            border-color: #3b82f6;
-            color: #ffffff;
-        }
-
-        .btn-refresh-sources:active:not(:disabled) {
-            transform: translateY(1px);
-        }
-
-        .btn-refresh-sources:disabled {
-            opacity: 0.6;
-            cursor: wait;
-        }
-
-        .btn-refresh-sources.success {
-            background: #143820 !important;
-            border-color: #00ff88 !important;
-            color: #00ff88 !important;
-        }
-
-        .btn-refresh-sources.error {
-            background: #381414 !important;
-            border-color: #ff4d4d !important;
-            color: #ff4d4d !important;
-        }
-
         .dual-row {
             display: flex;
             gap: 6px;
@@ -338,11 +289,6 @@
             <span class="btn-label">Göm Webcam 2</span>
         </button>
     </div>
-
-    <!-- 🔄 ROW 5: REFRESH ALL BROWSER SOURCES -->
-    <button id="btn-refresh-sources" class="btn-refresh-sources" onclick="refreshAllBrowserSources()">
-        🔄 UPPDATERA ALLA BROWSER-KÄLLOR (RENSA CACHE)
-    </button>
 
     <script>
         const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -620,70 +566,6 @@
                     reject(err);
                 }
             });
-        }
-
-        let refreshBtnTimer = null;
-        async function refreshAllBrowserSources() {
-            const btn = document.getElementById('btn-refresh-sources');
-            const defaultLabel = "🔄 UPPDATERA ALLA BROWSER-KÄLLOR (RENSA CACHE)";
-            if (!btn) return;
-
-            clearTimeout(refreshBtnTimer);
-
-            const showResult = (text, stateClass) => {
-                btn.disabled = false;
-                btn.classList.remove('success', 'error');
-                if (stateClass) btn.classList.add(stateClass);
-                btn.textContent = text;
-                refreshBtnTimer = setTimeout(() => {
-                    btn.classList.remove('success', 'error');
-                    btn.textContent = defaultLabel;
-                }, 2200);
-            };
-
-            if (!isConnected) {
-                showResult("⚠️ Ej ansluten till OBS WebSocket", "error");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.classList.remove('success', 'error');
-            btn.textContent = "🔄 Uppdaterar & rensar cache...";
-
-            try {
-                const res = await sendRequest("GetInputList");
-                const inputs = Array.isArray(res.inputs) ? res.inputs : [];
-                const browserSources = inputs.filter(inp =>
-                    inp && (inp.unversionedInputKind === 'browser_source' || inp.inputKind === 'browser_source')
-                );
-
-                if (browserSources.length === 0) {
-                    showResult("⚠️ Inga browser-källor hittades", "error");
-                    return;
-                }
-
-                let refreshedCount = 0;
-                await Promise.all(browserSources.map(async (src) => {
-                    try {
-                        await sendRequest("PressInputPropertiesButton", {
-                            inputName: src.inputName,
-                            propertyName: "refreshnocache"
-                        });
-                        refreshedCount++;
-                    } catch (err) {
-                        console.warn(`⚠️ Could not refresh "${src.inputName}":`, err.message);
-                    }
-                }));
-
-                if (refreshedCount > 0) {
-                    showResult(`✓ Uppdaterade ${refreshedCount} browser-källor!`, "success");
-                } else {
-                    showResult("⚠️ Kunde inte uppdatera browser-källor", "error");
-                }
-            } catch (err) {
-                console.error("❌ Failed to list/refresh browser sources:", err);
-                showResult("❌ Fel vid uppdatering av källor", "error");
-            }
         }
 
         function handleSceneAutoFilters(sceneName) {
