@@ -228,7 +228,7 @@
         .grid { display: grid; gap: 6px; }
         .grid-webcam { grid-template-columns: repeat(3, 1fr); margin-bottom: 12px; }
         .grid-scenes { grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
-        .grid-props { grid-template-columns: repeat(5, 1fr); margin-bottom: 14px; }
+        .grid-props { grid-template-columns: repeat(3, 1fr); margin-bottom: 14px; }
 
         .deck-btn {
             background: #1c1c22;
@@ -446,6 +446,7 @@
         const PROPERTIES_BUTTONS = [
             { label: "Main Mic", sublabel: "Audio", color: "#ef4444", source: "Main Mic" },
             { label: "Game", sublabel: "Audio", color: "#3b82f6", source: "Game Audio" },
+            { label: "Discord", sublabel: "Audio", color: "#5865F2", source: "Discord Audio", scene: HTML_FILES_SCENE },
             { label: "Game", sublabel: "Capture", color: "#a855f7", source: "Game Capture" },
             { label: "Display", sublabel: "Capture", color: "#06b6d4", source: "Display Capture" },
             { label: "Webcam", sublabel: "Source", color: "#f97316", source: "Webcam Source" }
