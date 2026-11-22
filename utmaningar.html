@@ -579,7 +579,7 @@
         soundChannel = new BroadcastChannel('mh_sound_bus');
       } catch (e) {}
 
-      function playHornSoundViaOverlay() {
+      function playHornSoundViaOverlay(soundType = 'utmaning') {
         const triggerId = "utm-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7);
 
         let hasParent = false;
@@ -590,15 +590,18 @@
         }
 
         if (hasParent) {
-          window.parent.postMessage({ type: 'PLAY_SOUND', soundType: 'utmaning', triggerId }, '*');
+          window.parent.postMessage({ type: 'PLAY_SOUND', soundType, triggerId }, '*');
         } else {
           if (soundChannel) {
             try {
-              soundChannel.postMessage({ type: 'PLAY_SOUND', soundType: 'utmaning', triggerId });
+              soundChannel.postMessage({ type: 'PLAY_SOUND', soundType, triggerId });
             } catch (e) {}
           }
           try {
-            const audio = new Audio("sounds/mrb_hello_utmaning.mp3");
+            const fallbackFile = (soundType === 'utmaning_nom')
+              ? "sounds/nom_eat.mp3"
+              : "sounds/mrb_hello_utmaning.mp3";
+            const audio = new Audio(fallbackFile);
             audio.volume = 0.95;
             audio.play().catch(() => {});
           } catch (e) {}
@@ -658,7 +661,8 @@
 
         if (!isUtmaningActive || myToken !== utmaningSessionToken) return;
 
-        playHornSoundViaOverlay();
+        const isSkalbagge = /skalbagge/i.test(challengeContent);
+        playHornSoundViaOverlay(isSkalbagge ? 'utmaning_nom' : 'utmaning');
         triggerEmoteCannon();
 
         descEl.textContent = challengeContent;
