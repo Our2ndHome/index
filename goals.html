@@ -673,7 +673,7 @@
     }
 
     // ========================================================
-    // 🔌 NATIVE OBS WEBSOCKET (ONLY IN DOCK PANEL)
+    // 🔌 NATIVE OBS WEBSOCKET (ONLY IN THIS PORTABLE OBS DOCK)
     // ========================================================
     let obsWs = null;
     let isObsWsConnected = false;
@@ -898,8 +898,6 @@
     }
     const dbStreamersRef = firebase.database().ref('streamers');
     const dbBossaRef = firebase.database().ref('bossa');
-    const dbActiveStreamerRef = firebase.database().ref('active_streamer');
-    const dbGoalsConfigRef = firebase.database().ref('goals_config');
 
     function updateObsLiveStatus(isStreaming) {
       isObsStreaming = isStreaming;
@@ -928,7 +926,6 @@
 
           loadSavedStreamerPass(val);
           setObsTextSource(val);
-          syncActiveStreamerToFirebase(val, isObsStreaming);
 
           if (isObsStreaming) {
             handleStreamerWentLive();
@@ -988,22 +985,7 @@
 
       applyVisibilityState();
       if (bus) bus.postMessage({ type: 'GOALS_VISIBILITY_TOGGLED', hidden: isGoalsHidden });
-
-      dbGoalsConfigRef.update({
-        hidden: isGoalsHidden,
-        secret: WRITE_SECRET,
-        timestamp: Date.now()
-      }).catch(() => {});
     }
-
-    dbGoalsConfigRef.on('value', (snap) => {
-      const cfg = snap.val();
-      if (cfg && typeof cfg.hidden === 'boolean') {
-        isGoalsHidden = cfg.hidden;
-        try { localStorage.setItem(STORAGE_KEY_HIDDEN, isGoalsHidden ? 'true' : 'false'); } catch (e) {}
-        applyVisibilityState();
-      }
-    });
 
     function parseLinesToGoalObjects(text) {
       if (!text || !text.trim()) return [];
@@ -1292,16 +1274,6 @@
         }
       }, (err) => {
         console.warn("⚠️ Firebase streamer listener error:", err.message);
-      });
-    }
-
-    // In Overlay mode, follow active_streamer changes in Firebase if no ?streamer= override was provided
-    if (!isPanel && !streamerFromUrl) {
-      dbActiveStreamerRef.on('value', (snap) => {
-        const act = snap.val();
-        if (act && act.name && act.name !== currentStreamerName) {
-          loadSavedStreamerPass(act.name);
-        }
       });
     }
 
