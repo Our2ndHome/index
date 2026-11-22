@@ -316,6 +316,7 @@
     const SOUND_RAID = `${SOUNDS_FOLDER}/raid_alert.mp3`;
     const SOUND_SUB_BITS_FOLLOW = `${SOUNDS_FOLDER}/ping_alert.mp3`;
     const SOUND_UTMANING_CUSTOM = `${SOUNDS_FOLDER}/mrb_hello_utmaning.mp3`;
+    const SOUND_UTMANING_NOM = `${SOUNDS_FOLDER}/nom_eat.mp3`;
     const SOUND_UTMANING_FALLBACK = "https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3";
 
     const SOUNDBOARD_GROUPS = {
@@ -334,7 +335,6 @@
     };
 
     const SOUNDBOARD_URLS = {
-      homer_bart: `${SOUNDS_FOLDER}/homer_and_bart_soundboard.mp3`,
       applause: `${SOUNDS_FOLDER}/applause_soundboard.mp3`,
       mrb_magic: `${SOUNDS_FOLDER}/mrb_magic_soundboard.mp3`,
       mrb_ohno: `${SOUNDS_FOLDER}/mrb_ohno_soundboard.mp3`,
@@ -372,7 +372,7 @@
         SOUND_RAID,
         SOUND_SUB_BITS_FOLLOW,
         SOUND_UTMANING_CUSTOM,
-        SOUNDBOARD_URLS.homer_bart,
+        SOUND_UTMANING_NOM,
         SOUNDBOARD_URLS.applause,
         SOUNDBOARD_URLS.mrb_magic,
         SOUNDBOARD_URLS.mrb_ohno,
@@ -406,6 +406,9 @@
         vol = 0.65;
       } else if (type === 'utmaning') {
         soundUrl = SOUND_UTMANING_CUSTOM;
+        vol = 0.95;
+      } else if (type === 'utmaning_nom') {
+        soundUrl = SOUND_UTMANING_NOM;
         vol = 0.95;
       } else if (type === 'soundboard') {
         if (typeof volume === 'number' && !isNaN(volume)) {
