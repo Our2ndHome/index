@@ -408,7 +408,7 @@
       <div class="mod-title">
         <span>🛡️ MODERATORPANEL</span>
         <div class="status-group">
-          <span id="badgeStreamerbot" class="status-pill offline">STREAMER.BOT: OFF</span>
+          <span id="badgeStreamerbot" class="status-pill offline">ANSLUTER...</span>
           <span id="badgeFirebase" class="status-pill offline">ANSLUTER...</span>
         </div>
       </div>
@@ -532,6 +532,9 @@
     }
     const db = firebase.database();
 
+    let isFirebaseConnected = false;
+    let isSbConnected = false;
+
     let soundBus = null;
     let utmaningBus = null;
     let sponsorBus = null;
@@ -551,16 +554,49 @@
       toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 2500);
     }
 
-    db.ref('.info/connected').on('value', (snap) => {
-      const badge = document.getElementById('badgeFirebase');
-      if (!badge) return;
-      if (snap.val()) {
-        badge.className = "status-pill";
-        badge.textContent = "ONLINE";
-      } else {
-        badge.className = "status-pill offline";
-        badge.textContent = "OFFLINE";
+    function updateConnectionUI() {
+      const fbBadge = document.getElementById('badgeFirebase');
+      const sbBadge = document.getElementById('badgeStreamerbot');
+      const modeLabel = document.getElementById('modModeLabel');
+
+      if (fbBadge) {
+        fbBadge.className = isFirebaseConnected ? "status-pill" : "status-pill offline";
+        fbBadge.textContent = isFirebaseConnected ? "ONLINE" : "OFFLINE";
       }
+
+      if (isSbConnected) {
+        if (sbBadge) {
+          sbBadge.className = "status-pill";
+          sbBadge.textContent = "STREAMER.BOT: ON";
+        }
+        if (modeLabel) {
+          modeLabel.textContent = "DIREKTLÄGE";
+          modeLabel.style.color = "#ace600";
+        }
+      } else if (isFirebaseConnected) {
+        if (sbBadge) {
+          sbBadge.className = "status-pill";
+          sbBadge.textContent = "FJÄRRKÖ: REDO";
+        }
+        if (modeLabel) {
+          modeLabel.textContent = "VIA SERVER";
+          modeLabel.style.color = "#ace600";
+        }
+      } else {
+        if (sbBadge) {
+          sbBadge.className = "status-pill offline";
+          sbBadge.textContent = "STREAMER.BOT: OFF";
+        }
+        if (modeLabel) {
+          modeLabel.textContent = "KLIPPBOARD";
+          modeLabel.style.color = "#71717a";
+        }
+      }
+    }
+
+    db.ref('.info/connected').on('value', (snap) => {
+      isFirebaseConnected = Boolean(snap.val());
+      updateConnectionUI();
     });
 
     // ========================================================
@@ -799,34 +835,20 @@
     window.addEventListener('resize', adjustScheduleHeight);
 
     // ========================================================
-    // 🤖 STREAMER.BOT DIRECT WEBSOCKET CONNECTION
+    // 🤖 STREAMER.BOT DIRECT WEBSOCKET (OPTIONAL FOR HOST PC)
     // ========================================================
     const SB_WS_URL = "ws://127.0.0.1:8080/";
     let sbWs = null;
-    let isSbConnected = false;
     let sbReconnectTimer = null;
     let sbHelloTimer = null;
     const pendingSbRequests = new Map();
-
-    function setStreamerbotUI(connected) {
-      const badge = document.getElementById('badgeStreamerbot');
-      const modeLabel = document.getElementById('modModeLabel');
-      if (badge) {
-        badge.className = connected ? "status-pill" : "status-pill offline";
-        badge.textContent = connected ? "STREAMER.BOT: ON" : "STREAMER.BOT: OFF";
-      }
-      if (modeLabel) {
-        modeLabel.textContent = connected ? "DIREKTLÄGE" : "KLIPPBOARD";
-        modeLabel.style.color = connected ? "#ace600" : "#71717a";
-      }
-    }
 
     function scheduleSbReconnect() {
       if (sbReconnectTimer) return;
       sbReconnectTimer = setTimeout(() => {
         sbReconnectTimer = null;
         connectStreamerbot();
-      }, 4000);
+      }, 6000);
     }
 
     function connectStreamerbot() {
@@ -846,7 +868,7 @@
         sbHelloTimer = setTimeout(() => {
           if (!isSbConnected && sbWs && sbWs.readyState === WebSocket.OPEN) {
             isSbConnected = true;
-            setStreamerbotUI(true);
+            updateConnectionUI();
           }
         }, 500);
       };
@@ -862,7 +884,7 @@
               return;
             }
             isSbConnected = true;
-            setStreamerbotUI(true);
+            updateConnectionUI();
             return;
           }
 
@@ -878,7 +900,7 @@
       sbWs.onclose = () => {
         clearTimeout(sbHelloTimer);
         isSbConnected = false;
-        setStreamerbotUI(false);
+        updateConnectionUI();
         pendingSbRequests.forEach(({ reject, timer }) => {
           clearTimeout(timer);
           reject(new Error("Connection closed"));
@@ -893,6 +915,7 @@
     }
 
     connectStreamerbot();
+    updateConnectionUI();
 
     function sendToStreamerbot(actionName, args) {
       return new Promise((resolve) => {
@@ -930,7 +953,7 @@
     }
 
     // ========================================================
-    // 🔨 TWITCH TIMEOUT & BAN EXECUTION
+    // 🔨 TWITCH TIMEOUT & BAN EXECUTION (LOCAL + REMOTE RELAY)
     // ========================================================
     let selectedDuration = 600;
 
@@ -972,26 +995,33 @@
         }
       }
 
-      // Stored at $sub level (/moderation/<pushId>) so Firebase secret rule passes
-      db.ref('moderation').push({
-        type: type,
-        user: user,
-        duration: selectedDuration,
-        reason: reason,
-        command: chatCommand,
-        executedByStreamerbot: sentDirectly,
-        timestamp: Date.now(),
-        secret: WRITE_SECRET
-      }).catch(() => {});
+      // If not executed directly via local WS, Streamer.bot's central C# listener executes it via /moderation
+      try {
+        await db.ref('moderation').push({
+          type: type,
+          user: user,
+          duration: selectedDuration,
+          reason: reason,
+          command: chatCommand,
+          executed: sentDirectly,
+          executedByStreamerbot: sentDirectly,
+          timestamp: Date.now(),
+          secret: WRITE_SECRET
+        });
 
-      if (sentDirectly) {
-        showToast(`⚡ Streamer.bot utförde: ${type.toUpperCase()} på ${user}!`);
-      } else if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(chatCommand)
-          .then(() => showToast(`📋 Kopierade: ${chatCommand}`))
-          .catch(() => showToast(`⚠️ Kunde inte kopiera kommando: ${chatCommand}`, true));
-      } else {
-        showToast(`⚠️ Streamer.bot offline: ${chatCommand}`, true);
+        if (sentDirectly) {
+          showToast(`⚡ Utförde direkt: ${type.toUpperCase()} på ${user}!`);
+        } else {
+          showToast(`⚡ Skickade ${type.toUpperCase()} på ${user} till Twitch!`);
+        }
+      } catch (err) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(chatCommand)
+            .then(() => showToast(`📋 Kopierade (offline): ${chatCommand}`))
+            .catch(() => showToast(`❌ Kunde inte skicka ${type}: ${err.message}`, true));
+        } else {
+          showToast(`❌ Kunde inte skicka ${type}: ${err.message}`, true);
+        }
       }
 
       document.getElementById('twitchUser').value = "";
