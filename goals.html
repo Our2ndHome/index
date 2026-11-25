@@ -549,7 +549,7 @@
         <span class="section-title">⏱️ Streamer Live-Pass</span>
         <div class="control-row">
           <span class="control-label">STREAMER:</span>
-          <input type="text" id="streamerNameInput" placeholder="T.ex. Mille" style="width:65%;">
+          <input type="text" id="streamerNameInput" placeholder="Skriv ditt eget namn..." style="width:65%;">
         </div>
         <span class="auto-badge-note">⚡ Passet och streamtiteln reagerar ENDAST när denna specifika OBS sänder live.</span>
       </div>
@@ -623,6 +623,8 @@
     let isFocusingInput = false;
     let currentActiveStreamerRef = null;
     let isObsStreaming = false;
+    let hasLocalPanelStatus = false;
+    let localPanelIsLive = false;
 
     let lastLeftGoals = [];
     let lastRightGoals = [];
@@ -687,6 +689,23 @@
       }, 3000);
     }
 
+    function healStaleLiveStateIfOffline() {
+      if (!isPanel || !isObsWsConnected || isObsStreaming) return;
+      if (streamerIsLiveFromDb || streamerShiftStart >= 0) {
+        streamerIsLiveFromDb = false;
+        streamerShiftStart = -1;
+        if (currentStreamerName && currentStreamerName !== "Streamer") {
+          const key = getStreamerKey(currentStreamerName);
+          dbStreamersRef.child(key).update({
+            isLive: false,
+            shiftStart: -1,
+            secret: WRITE_SECRET
+          }).catch(() => {});
+        }
+        renderGoalsLadder();
+      }
+    }
+
     function connectObsWebSocket() {
       if (!isPanel) return;
       if (obsWs && (obsWs.readyState === WebSocket.CONNECTING || obsWs.readyState === WebSocket.OPEN)) {
@@ -746,8 +765,20 @@
                     secret: WRITE_SECRET
                   }).catch(() => {});
                 }
-                renderGoalsLadder();
+              } else if (!isStreaming) {
+                healStaleLiveStateIfOffline();
               }
+
+              if (bus) {
+                bus.postMessage({
+                  type: 'STREAM_LIVE_STATUS',
+                  isStreaming: isStreaming,
+                  streamer: currentStreamerName,
+                  shiftStart: streamerShiftStart
+                });
+              }
+
+              renderGoalsLadder();
             }
 
             if (msg.op === 5 && msg.d && msg.d.eventType === "StreamStateChanged") {
@@ -843,6 +874,7 @@
 
       streamerEarnedSoFar += currentShiftEarned;
       streamerShiftStart = -1;
+      streamerIsLiveFromDb = false;
 
       const key = getStreamerKey(currentStreamerName);
       dbStreamersRef.child(key).update({
@@ -861,6 +893,7 @@
           type: 'STREAM_LIVE_STATUS',
           isStreaming: false,
           streamer: currentStreamerName,
+          shiftStart: -1,
           earnedSoFar: streamerEarnedSoFar
         });
       }
@@ -947,7 +980,10 @@
 
     function getLiveSessionEarned() {
       let earned = streamerEarnedSoFar + streamerManualAdj;
-      const isLiveActive = isObsStreaming || streamerIsLiveFromDb;
+
+      const isLiveActive = (isPanel && isObsWsConnected)
+        ? isObsStreaming
+        : (hasLocalPanelStatus ? localPanelIsLive : streamerIsLiveFromDb);
 
       if (isLiveActive && streamerShiftStart >= 0 && currentGlobalTotal >= streamerShiftStart) {
         earned += (currentGlobalTotal - streamerShiftStart);
@@ -1268,6 +1304,10 @@
             if (area && !isFocusingInput) area.value = data.goalsText;
           }
 
+          if (isPanel && isObsWsConnected && !isObsStreaming && streamerIsLiveFromDb) {
+            healStaleLiveStateIfOffline();
+          }
+
           updateWingHeaders();
           renderGoalsLadder();
           updateDockDisplay();
@@ -1336,10 +1376,19 @@
           }
         } else if (type === 'STREAM_LIVE_STATUS') {
           if (!streamer || getStreamerKey(streamer) === getStreamerKey(currentStreamerName)) {
+            hasLocalPanelStatus = true;
+            localPanelIsLive = !!isStreaming;
             streamerIsLiveFromDb = !!isStreaming;
             if (typeof shiftStart === 'number') streamerShiftStart = shiftStart;
             renderGoalsLadder();
           }
+        } else if (type === 'REQUEST_LIVE_STATUS' && isPanel) {
+          bus.postMessage({
+            type: 'STREAM_LIVE_STATUS',
+            isStreaming: isObsStreaming,
+            streamer: currentStreamerName,
+            shiftStart: streamerShiftStart
+          });
         }
       };
     }
@@ -1420,6 +1469,10 @@
           streamerShiftStart = -1;
           streamerManualAdj = 0;
           streamerIsLiveFromDb = false;
+        }
+
+        if (isPanel && isObsWsConnected && !isObsStreaming && streamerIsLiveFromDb) {
+          healStaleLiveStateIfOffline();
         }
 
         listenToStreamer(key);
@@ -1512,6 +1565,8 @@
 
     if (isPanel) {
       connectObsWebSocket();
+    } else if (bus) {
+      bus.postMessage({ type: 'REQUEST_LIVE_STATUS' });
     }
 
     if (currentStreamerName && currentStreamerName !== "Streamer") {
